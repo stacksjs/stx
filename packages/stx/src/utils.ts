@@ -1432,7 +1432,11 @@ export async function renderComponentWithSlot(
       const buttonVariant = typeof props.variant === 'string' ? props.variant.trim().toLowerCase() : ''
       const nativeButtonUsage = options._nativeHostAttrs && /^button$/i.test(baseName)
         && !sharedButtonVariants.has(buttonVariant)
-      const targetIsFallback = options._targetComponentFallbackNames?.some(name => name.toLowerCase() === baseName.toLowerCase())
+      // Whether this name has a shared counterpart at all, separately from
+      // which of the two this call selected: both answers are a decision about
+      // the render target, and both have to reach the file.
+      const nameHasSharedCounterpart = options._targetComponentFallbackNames?.some(name => name.toLowerCase() === baseName.toLowerCase()) ?? false
+      const targetIsFallback = nameHasSharedCounterpart
         && (!checkedControl || sharedCheckedUsage)
         && (!textInput || sharedTextInputUsage)
         && (!video || sharedVideoUsage)
@@ -1470,19 +1474,24 @@ export async function renderComponentWithSlot(
           searchDirs.push(fallback)
         }
       }
-      // A converged name is RESOLVED by the predicates above, not merely
+      // A target decision is RESOLVED by the predicates above, not merely
       // suggested by them (stacksjs/stx#2175).
       //
-      // They read this call's own props and events and decide it is the shared
-      // component. Re-entering the ordinary name search afterwards let
-      // something else answer, because the package holding the shared file is
-      // searched below every project directory. An app whose web dashboard had
-      // a `Dashboard/UI/Button.stx` got that on its native screens: markup the
-      // native compiler cannot render, 71 unknown-class/unknown-icon
-      // diagnostics, and nothing naming the cause. Before these shapes
-      // converged (#2091) they never reached the search at all -- they were
-      // pinned to the native primitive -- which is why the regression arrived
-      // with the convergence rather than with any ordering change.
+      // They read this call's own props and events and choose between the
+      // shared component and the render target's own primitive. Re-entering
+      // the ordinary name search afterwards let a third thing answer, because
+      // both of those live below every project directory. An app whose web
+      // dashboard had a `Dashboard/UI/Button.stx` got that on its native
+      // screens: markup the native compiler cannot render, 71
+      // unknown-class/unknown-icon diagnostics, and nothing naming the cause.
+      // Before these shapes converged (#2091) they never reached the search at
+      // all -- they were pinned to the primitive -- which is why the regression
+      // arrived with the convergence rather than with any ordering change.
+      //
+      // Both answers are treated the same way, because the defect is the same
+      // in both directions: a `variant="toolbar"` button is the host's own
+      // control and selects the primitive, and that selection was being
+      // intercepted by the identical nested file.
       //
       // An override is still an override: a file the app itself named
       // `Button.stx`, sitting in one of its component roots, wins as it always
@@ -1490,13 +1499,20 @@ export async function renderComponentWithSlot(
       // into subdirectories, because a Dashboard's button is the Dashboard's
       // and reading it as the app's `<Button>` is the whole defect. An explicit
       // `@import` outranks all of this, and nothing here touches the web path
-      // or any name outside `_targetComponentFallbackNames`.
-      if (targetIsFallback) {
-        const sharedDirs = ((options as any)._pluginComponentDirs as unknown[] | undefined ?? [])
+      // or any name outside `_targetComponentFallbackNames` -- a primitive with
+      // no shared counterpart, `View` or `Text`, keeps the order it had.
+      if (nameHasSharedCounterpart) {
+        const selected = (targetIsFallback
+          ? ((options as any)._pluginComponentDirs as unknown[] | undefined ?? [])
+          : (options._targetComponentDirs ?? []))
           .filter((dir): dir is string => typeof dir === 'string' && dir.length > 0)
-        if (sharedDirs.length) {
+        if (selected.length) {
+          // The selected directories are not themselves an app override, and
+          // the primitive one is already in the list by this point, so asking
+          // whether the app names this component has to exclude them.
           const hostDirs = searchDirs.slice(packageDirCount)
             .map(dir => path.isAbsolute(dir) ? dir : path.resolve(resolveBase, dir))
+            .filter(dir => !selected.includes(dir))
           const overrideKey = `${baseName}\0${hostDirs.join('\0')}`
           let overridden = convergedOverrideCache.get(overrideKey)
           if (overridden === undefined) {
@@ -1514,9 +1530,12 @@ export async function renderComponentWithSlot(
             convergedOverrideCache.set(overrideKey, overridden)
           }
           if (!overridden) {
-            const converged = sharedDirs.filter(dir => !searchDirs.includes(dir))
-            if (converged.length)
-              searchDirs.splice(packageDirCount, 0, ...converged)
+            for (const dir of selected) {
+              const at = searchDirs.indexOf(dir)
+              if (at >= 0)
+                searchDirs.splice(at, 1)
+            }
+            searchDirs.splice(packageDirCount, 0, ...selected)
           }
         }
       }
