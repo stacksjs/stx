@@ -43,7 +43,14 @@ it('bounds a stuck startup and stops its actual HTTP listener', async () => {
   const fixture = resources()
   const server = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: () => new Response('ready') })
   fixture.view.navigate = () => new Promise(() => {})
-  await expect(prepareTestBrowser({ createServer: () => server, createView: fixture.createView, startupTimeoutMs: 20 })).rejects.toThrow('Browser startup readiness failed: Browser navigation timed out')
+  // The budget is one number for the whole startup, counted from before the
+  // server and the view are made. At 20ms a loaded machine spent it on that
+  // setup and never entered navigation, so this asserted one correct bound
+  // and got the other -- "exceeded its 20ms budget before navigation" -- and
+  // failed for a reason that has nothing to do with a stuck navigation.
+  // 200ms is still a bound no real startup meets and leaves the hang below
+  // as the only thing that can expire it.
+  await expect(prepareTestBrowser({ createServer: () => server, createView: fixture.createView, startupTimeoutMs: 200 })).rejects.toThrow('Browser startup readiness failed: Browser navigation timed out')
   expect(fixture.calls).toEqual(['close'])
   await expect(fetch(server.url)).rejects.toThrow()
 }, 1000)
