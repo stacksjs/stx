@@ -12,7 +12,7 @@ export function hoistDocumentStyles(html: string): string {
   if (!headClose)
     return html
 
-  const protectedTags = new Set(['template', 'svg', 'noscript', 'math'])
+  const protectedTags = new Set(['template', 'svg', 'noscript', 'math', 'textarea', 'title', 'xmp', 'iframe', 'noembed', 'noframes', 'plaintext'])
   let protectedDepth = 0
   const ranges: { start: number, end: number }[] = []
   for (let index = 0; index < tags.length; index++) {
@@ -28,6 +28,10 @@ export function hoistDocumentStyles(html: string): string {
       continue
     const close = tags[index + 1]
     if (close?.name.toLowerCase() === 'style' && close.closing) {
+      // An implicit @scope root is the style element's parent. Relocating it
+      // changes that meaning, so it must remain in its original context.
+      if (/@scope\s*\{/.test(html.slice(tag.end, close.start)))
+        continue
       ranges.push({ start: tag.start, end: close.end })
       index++
     }

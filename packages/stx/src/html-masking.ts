@@ -43,6 +43,10 @@ export interface HtmlTagToken {
 }
 
 const HTML_TAG_NAME = /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)\b/y
+// RCDATA and legacy raw-text bodies can contain tag-looking text. Treat them
+// as opaque just like scripts/styles when callers scan actual DOM elements.
+const RAW_TEXT_CLOSE = new Map(['textarea', 'title', 'xmp', 'iframe', 'noembed', 'noframes'].map(name => [name, new RegExp(`</${name}\\s*>`, 'ig')]))
+
 
 /** Scan tags once, without overlapping whitespace quantifiers or rescanning suffixes. */
 export function scanHtmlTags(html: string): HtmlTagToken[] {
@@ -86,8 +90,11 @@ export function scanHtmlTags(html: string): HtmlTagToken[] {
     tags.push({ start, end: end + 1, name: name[2], attributes: html.slice(attributeStart, selfClosing ? end - 1 : end), closing, selfClosing })
     cursor = end + 1
     const lower = name[2].toLowerCase()
-    if (!closing && (lower === 'script' || lower === 'style')) {
-      const close = lower === 'script' ? SCRIPT_CLOSE : STYLE_CLOSE
+    if (!closing && lower === 'plaintext')
+      break
+    const rawClose = RAW_TEXT_CLOSE.get(lower)
+    if (!closing && (lower === 'script' || lower === 'style' || rawClose)) {
+      const close = rawClose ?? (lower === 'script' ? SCRIPT_CLOSE : STYLE_CLOSE)
       close.lastIndex = cursor
       const found = close.exec(html)
       if (!found) break

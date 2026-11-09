@@ -25,6 +25,14 @@ describe('styles before first paint', () => {
     expect(hoistDocumentStyles(html)).toBe(html)
   })
 
+  it('preserves literal CSS in RCDATA/raw text and styles with an implicit scope root', () => {
+    const local = '<textarea><template><style>.literal {}</style></textarea><xmp><style>.example {}</style></xmp><section><style>@scope { p { color: red } }</style></section>'
+    const html = hoistDocumentStyles(`<html><head></head><body>${local}<style>.page {}</style></body></html>`)
+    expect(html).toContain(`<body>${local}</body>`)
+    expect(html.slice(0, html.indexOf('</head>'))).toContain('<style>.page {}</style>')
+    expect(hoistDocumentStyles('<html><head></head><body><plaintext><style>literal')).toBe('<html><head></head><body><plaintext><style>literal')
+  })
+
   it('leaves fragments without a head and incomplete style elements untouched', () => {
     const fragment = '<article>Hello</article><style>.page {}</style>'
     expect(hoistDocumentStyles(fragment)).toBe(fragment)
