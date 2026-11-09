@@ -48,6 +48,8 @@ jobs:
       - run: bun run lint
       - run: bun run format:check
       - run: bun run preflight:release
+      - name: Warm the browser before the startup budget
+        run: bun scripts/warm-test-browser.ts
       - run: bun test --preload ./scripts/browser-test-preload.ts packages examples --max-concurrency=1
 
       - name: Component Tests with Coverage
