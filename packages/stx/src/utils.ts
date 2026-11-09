@@ -1308,9 +1308,34 @@ export async function renderComponentWithSlot(
       // Page-specific components should take precedence over global componentsDir
       const originalFilePath = parentContext.__originalFilePath as string | undefined
       const searchDirs: string[] = []
+      // A tag written INSIDE a package is that package's question before it is
+      // the host's, exactly as in `userComponentFileExists` above (#2170).
+      //
+      // This resolver is the one that actually loads the file, and it was the
+      // one path that never got that ranking: the ordering was added to the
+      // existence check and to `componentFileCandidates`, so a package's own
+      // `<Avatar>` and `<Button>` still resolved to the host application's
+      // components of those names, and the package component rendered against
+      // markup it was never written for (stacksjs/stx#2175). Resolution is
+      // recursive below, so naming the declared roots is enough to reach
+      // `src/ui/avatar/Avatar.stx`. An app component still wins the names it
+      // shares with a package (stacksjs/stx#2927).
+      //
+      // Deliberately asked WITHOUT a project root, which restricts it to an
+      // installed dependency. Passing one would also treat a file inside the
+      // repository being built as "a package", and since this resolver picks
+      // the file rather than only testing for one, stx's own conventional
+      // roots would then outrank everything for its own sources: a native
+      // fixture's `<Video>` resolved to `packages/stx/dist/native/primitives`
+      // instead of the shared component, in 15 tests.
+      for (const dir of packageComponentDirs(parentFilePath)) {
+        if (!searchDirs.includes(dir)) searchDirs.push(dir)
+      }
       // Named layer resources follow app-first precedence, even when a shared
       // page happens to have sibling components. Explicit imports stay local.
-      searchDirs.push(...(options._layerComponentDirs ?? []))
+      for (const dir of options._layerComponentDirs ?? []) {
+        if (!searchDirs.includes(dir)) searchDirs.push(dir)
+      }
 
       if (originalFilePath) {
         const originalDir = path.join(path.dirname(originalFilePath), 'components')
