@@ -11,7 +11,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
-import { generatePlaceholder as tsGeneratePlaceholder, processImage as tsProcessImage } from 'ts-images'
 import { createTempDir, removeTempDir, withTempDir } from '../temp-dir'
 
 // ============================================================================
@@ -382,6 +381,8 @@ export async function resizeAndConvert(
     return instance.toBuffer()
   }
 
+  const { processImage: tsProcessImage } = await import('ts-images')
+
   // A scratch directory rather than a bare file in the temp folder, so an
   // interrupted build cannot leave the output behind (see temp-dir.ts).
   return await withTempDir('img', async (dir) => {
@@ -449,6 +450,9 @@ async function generatePlaceholder(
 
     return `rgb(${dominant.r}, ${dominant.g}, ${dominant.b})`
   }
+
+  // Initialization errors must propagate, outside the per-image recovery below.
+  const { generatePlaceholder: tsGeneratePlaceholder } = await import('ts-images')
 
   // ts-images fallback. It only takes file paths, so write the buffer to a
   // temp file, call generatePlaceholder, parse the dataURL out of the result.

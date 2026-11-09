@@ -30,8 +30,6 @@ import { promisify } from 'node:util'
  * The sync call is the version that reads faster and behaves worse under
  * exactly the load this feature exists for.
  */
-const brotliCompress = promisify(zlib.brotliCompress)
-const gzipCompress = promisify(zlib.gzip)
 
 /**
  * Content types worth compressing.
@@ -254,7 +252,7 @@ export async function compressResponse(
     let compressed = compressedByBody.get(key)
     if (!compressed) {
       compressed = encoding === 'br'
-        ? await brotliCompress(body, {
+        ? await promisify(zlib.brotliCompress)(body, {
             params: {
               [zlib.constants.BROTLI_PARAM_QUALITY]: quality,
               // Lets brotli size its window to the input instead of assuming a
@@ -262,7 +260,7 @@ export async function compressResponse(
               [zlib.constants.BROTLI_PARAM_SIZE_HINT]: body.length,
             },
           })
-        : await gzipCompress(body)
+        : await promisify(zlib.gzip)(body)
       rememberCompressed(key, compressed)
     }
 
