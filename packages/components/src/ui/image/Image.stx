@@ -182,7 +182,33 @@ export const imageStyle = [
 </script>
 
 <script client>
-const imageSrc = useReactiveProp('src', {{ originalSrc }})
+const liveSrcProp = useReactiveProp('src', {{ srcProp }})
+const liveSourceProp = useReactiveProp('source', {{ sourceUrl }})
+/**
+ * The URL inside whatever shape `source` arrived in.
+ *
+ * A parent binding delivers the caller's real value, so an object payload
+ * stays an object; the attribute it also reflects carries that object as
+ * JSON. Both shapes are normalised here rather than in useReactiveProp's
+ * `parse`, which a typed value never reaches -- that is the whole point of
+ * the typed delivery, and a `parse` written for the string form is simply
+ * skipped for it. Reading the object with String() produced the URL
+ * "[object Object]".
+ */
+function sourceUrlOf(value) {
+  if (value == null) return ''
+  if (typeof value === 'object') return String(value.uri ?? '')
+  const text = String(value)
+  if (text.charAt(0) === '{') {
+    try {
+      const parsed = JSON.parse(text)
+      if (parsed && typeof parsed === 'object') return String(parsed.uri ?? '')
+    }
+    catch (error) { /* not a payload; use the text as the URL */ }
+  }
+  return text
+}
+const imageSrc = derived(() => liveSrcProp() || sourceUrlOf(liveSourceProp()) || '')
 const liveAlt = useReactiveProp('alt', {{ originalAlt }})
 const liveDecorative = useReactiveProp('decorative', {{ decorative }})
 // Typed parent writes can bypass DOM parsing; keep the server $bool contract.

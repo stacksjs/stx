@@ -28,16 +28,6 @@ export function usesSharedImageApi(names: Iterable<string>, events: Iterable<str
   // primitive they already rendered through.
   if (props.has('resizemode') && (props.has('fit') || props.has('objectfit'))) return false
   if (props.has('src') && props.has('source')) return false
-  // A `source` the server can read becomes an ordinary `src` on the way in.
-  // A client-reactive one cannot: the shared file's own `src` binding owns
-  // that prop on the host node, so a `{ uri }` payload delivered past it is
-  // overwritten rather than read. Those calls keep the primitive, which takes
-  // the payload natively, until the binding layer can carry an object.
-  if (!props.has('src')) {
-    const authored = entries.get('source')
-    const resolvable = typeof authored === 'string' ? !!authored.trim() : !!authored
-    if (!resolvable) return false
-  }
   // Plain src calls keep their old builtin/primitive selection. These authored
   // presentation props opt into the shared component on both targets.
   // `resizeMode` joins them: it makes the same decision `fit` does, so a call

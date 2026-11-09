@@ -77,6 +77,57 @@ describe.each([false, true])('shared Image source (minify=%s)', (minify) => {
     finally { phone.unmount() }
   }, 30_000)
 
+  it('takes the native source under either shape, typed payload or reflected JSON', async () => {
+    // The parent binding hands the caller's real value to the component, so a
+    // `{ uri }` payload stays an object, while the attribute it also reflects
+    // carries that object as JSON. useReactiveProp's `parse` is not applied to
+    // the typed value -- that is what typed delivery is for -- so a component
+    // normalising a prop has to do it where it reads it. Reading this one with
+    // String() gave every such image the URL "[object Object]".
+    const legacy = `@import('Image', '${image}')
+<script client>
+const payload = state({ uri: '/one.png' })
+const plain = state('/plain.png')
+window.probe = { payload, plain }
+</script><section>
+<Image testID="payload" :source="payload" alt="Payload" resizeMode="contain" />
+<Image testID="plain" :source="plain" alt="Plain" resizeMode="cover" />
+<Image testID="fixed" source="/fixed.png" alt="Fixed" resizeMode="stretch" />
+</section>`
+    const { code } = await compileNativeScreen(legacy, { minify })
+    const phone = mountNativeScreen(code)
+    try {
+      await phone.settle()
+      const sourceOf = (id: string): unknown => phone.byTestID(id)!.props.source
+      expect(sourceOf('payload')).toBe('/one.png')
+      expect(sourceOf('plain')).toBe('/plain.png')
+      expect(sourceOf('fixed')).toBe('/fixed.png')
+      // resizeMode drove the fit on each, under the native name.
+      expect(phone.byTestID('payload')!.style.objectFit).toBe('contain')
+      expect(phone.byTestID('plain')!.style.objectFit).toBe('cover')
+      expect(phone.byTestID('fixed')!.style.objectFit).toBe('fill')
+      // A replacement payload is followed, and identity is kept across it.
+      const id = phone.byTestID('payload')!.id
+      phone.context.probe.payload.set({ uri: '/two.png' })
+      phone.context.probe.plain.set('/second-plain.png')
+      await phone.settle()
+      expect(phone.byTestID('payload')!.id).toBe(id)
+      expect(sourceOf('payload')).toBe('/two.png')
+      expect(sourceOf('plain')).toBe('/second-plain.png')
+      // An emptied payload clears the image rather than painting "undefined".
+      for (const empty of [{ uri: '' }, {}, null]) {
+        phone.context.probe.payload.set(empty)
+        await phone.settle()
+        expect(sourceOf('payload')).toBeNull()
+      }
+      phone.context.probe.payload.set({ uri: '/back.png' })
+      await phone.settle()
+      expect(sourceOf('payload')).toBe('/back.png')
+      expect(phone.mutationErrors).toEqual([])
+    }
+    finally { phone.unmount() }
+  }, 30_000)
+
   it('preserves initial browser candidates, drops stale ones on changes, and restores them with the original URL', async () => {
     const root = createTempDir('stx-shared-image-')
     try {

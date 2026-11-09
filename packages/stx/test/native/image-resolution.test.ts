@@ -54,12 +54,6 @@ it.each([
   ':source="url" resizeMode="contain"',
   'source="/legacy.png" resizeMode="contain"',
   'source="/legacy.png" alt="Legacy"',
-  // A reactive `source` carries a payload the shared file cannot receive:
-  // its own `src` binding owns that prop on the host node. The primitive
-  // takes the object natively, so these calls keep it.
-  ':source="url" alt="Legacy" resizeMode="cover"',
-  ':source="url" decorative resizeMode="contain"',
-  'source="" alt="Legacy" resizeMode="contain"',
   'src="/photo.png" alt="Photo" fit="contain" @load-start="void 0"',
   'src="/photo.png" alt="Photo" fit="contain" provider="cloudinary"',
   'src="/photo.png" alt="Photo" fit="contain" preload',
@@ -103,6 +97,30 @@ it.each([
     expect(html).toContain(`object-fit: ${fit}`)
     // And the native URL reached the img under its web name.
     expect(html).toContain('/legacy.png')
+  }
+  finally { await rm(root, { recursive: true, force: true }) }
+}, 30_000)
+
+it.each([
+  ':source="url" alt="Legacy" resizeMode="cover"',
+  ':source="url" decorative resizeMode="contain"',
+  'source="" alt="Legacy" resizeMode="contain"',
+])('renders a client-reactive native source through the shared file: %s', async (attributes) => {
+  const source = `<script client>const url=state({uri:'/legacy.png'})</script><section><Image ${attributes} /></section>`
+  const { root, file } = await fixture(source)
+  try {
+    const result = await compileScreenSource(source, file, { root })
+    expect(result.dependencies).toContain(shared)
+    expect(result.dependencies).not.toContain(primitive)
+    const config = await loadStxConfig(root)
+    const dependencies = new Set<string>()
+    const html = await processDirectives(source, {}, file, { ...defaultConfig, ...config, root, cache: false }, dependencies)
+    expect(dependencies.has(shared)).toBe(true)
+    expect(html).toContain('<picture')
+    // Nothing is painted server-side, since the URL is the client's to supply:
+    // the img ships with no src and the binding fills it after hydration.
+    const img = html.slice(html.indexOf('<img'), html.indexOf('>', html.indexOf('<img')))
+    expect(img).not.toContain(' src="')
   }
   finally { await rm(root, { recursive: true, force: true }) }
 }, 30_000)

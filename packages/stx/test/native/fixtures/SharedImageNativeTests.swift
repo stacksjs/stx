@@ -147,13 +147,17 @@ final class SharedImageNativeTests: XCTestCase {
         // Object geometry is the shared file's own path; the primitive sets
         // contentMode instead, so this distinguishes the two implementations.
         XCTAssertTrue(converged.usesObjectGeometry)
-        screen.view.layoutIfNeeded(); converged.layoutIfNeeded()
+        // Its URL is a `{ uri }` payload its own binding delivers after
+        // hydration, which host() does not wait for, so wait for the decode.
         // The authored style sized the box, rather than the scope filling the
         // parent, and resizeMode became the fit: a 20x10 source contained in
         // a 40x40 box is its full width, centred down.
+        try await wait("converged image fits its authored box", {
+            screen.view.layoutIfNeeded(); converged.layoutIfNeeded()
+            return converged.image != nil
+                && converged.subviews.compactMap { $0 as? UIImageView }.first?.frame == CGRect(x: 0, y: 10, width: 40, height: 20)
+        })
         XCTAssertEqual(converged.bounds.size, CGSize(width: 40, height: 40))
-        XCTAssertNotNil(converged.image)
-        XCTAssertEqual(try pixels(converged).frame, CGRect(x: 0, y: 10, width: 40, height: 20))
         // Its neighbour keeps the primitive on two counts, both deliberate: it
         // states no alt, and a reactive `source` carries a payload the shared
         // file cannot receive.

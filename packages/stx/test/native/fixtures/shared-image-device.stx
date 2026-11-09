@@ -18,11 +18,12 @@ window.imageProbe = { source, fit, position, shown, loads, errors, errorMessages
       width="100" height="100" className="w-full h-full" placeholder="none"
       :fit="fit" :position="position" @load="loads.set(loads() + 1)" @error="errors.set(errors() + 1); errorMessages.set([...errorMessages(), $event.error?.message ?? ''])" />
   </div>
-  {{-- The native `source`/`resizeMode` API on the shared file (#2091), as a
-       value the server can read. The call below keeps the primitive on two
-       counts, and both are deliberate: it states no alt, and a reactive
-       `source` carries a payload the shared file cannot receive. --}}
-  <Image testID="shared-legacy-photo" source="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAKCAYAAAC0VX7mAAAAHElEQVR4nGP4z8DwnxhMpLL/RKscNXDUwKFkIAC3/Y6AcbKdYQAAAABJRU5ErkJggg==" alt="Converged fixture" resizeMode="contain" placeholder="none" style="width:40px;height:40px" />
+  {{-- The native `source`/`resizeMode` API on the shared file (#2091), with
+       the payload shape a host hands through: a `{ uri }` object delivered by
+       the parent binding, not a string. Its alt-less neighbour keeps the
+       primitive, because these props opting into shared presentation is not
+       an exception to the accessibility contract the shared file enforces. --}}
+  <Image testID="shared-legacy-photo" :source="{ uri: wide }" alt="Converged fixture" resizeMode="contain" placeholder="none" style="width:40px;height:40px" />
   <Image testID="legacy-photo" :source="{ uri: wide }" resizeMode="contain" style="width:40px;height:40px" />
   <span testID="image-loads" :text="'Loads: ' + loads()"></span>
   <span testID="image-errors" :text="'Errors: ' + errors()"></span>
