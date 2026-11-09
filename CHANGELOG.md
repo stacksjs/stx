@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.840...v0.2.841)
+
+## ✨ Features
+
+- **native-testing**: tap a choice in a bar button's menu ([c76c6fa](https://github.com/stacksjs/stx/commit/c76c6fa)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.841 ([d0235e3](https://github.com/stacksjs/stx/commit/d0235e3)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.839...v0.2.840)
 
 ## ✨ Features
