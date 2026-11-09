@@ -76,6 +76,7 @@ import { existsSync } from 'node:fs'
 import { processConditionals } from './conditionals'
 import { isProduction, isTest } from './env'
 import { findBodyOpenTag, replaceBodyOpenTag } from './find-body-tag'
+import { skipLeadingHtmlTrivia } from './html-masking'
 import { processExpressions, usesSignalsInScript } from './expressions'
 import { buildRuntimeGlobalsDestructure } from './runtime-globals'
 import { rendersAsElement } from './component-renderer'
@@ -447,10 +448,11 @@ function addScopeToRootElement(html: string, scopeId: string): { html: string, m
 
   // Skip comments (real <!-- --> and masked \x00STX_HTML_COMMENT_N\x00
   // placeholders from process.ts), whitespace, and find the first real element
-  const elementMatch = html.match(/^(\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*)(<[a-zA-Z][a-zA-Z0-9-]*)(\s[^>]*>|>)/s)
+  const leadingLen = skipLeadingHtmlTrivia(html)
+  const elementMatch = html.slice(leadingLen).match(/^(<[a-zA-Z][a-zA-Z0-9-]*)(\s[^>]*>|>)/s)
   if (elementMatch) {
-    const rootTag = elementMatch[2] + elementMatch[3]
-    const root = elementMatch[2].slice(1)
+    const rootTag = elementMatch[1] + elementMatch[2]
+    const root = elementMatch[1].slice(1)
     // Check if root element already has data-stx-scope (from x-data reactive bridge)
     const existingScope = rootTag.match(/data-stx-scope="([^"]*)"/)
     if (existingScope) {
@@ -458,11 +460,11 @@ function addScopeToRootElement(html: string, scopeId: string): { html: string, m
       // can register signals under that scope instead
       return { html, mergedIntoExisting: existingScope[1], stamped: true, root }
     }
-    const before = elementMatch[1]
-    const tagStart = elementMatch[2]
-    const afterTag = elementMatch[3]
+    const before = html.slice(0, leadingLen)
+    const tagStart = elementMatch[1]
+    const afterTag = elementMatch[2]
     return {
-      html: `${before}${tagStart} data-stx-scope="${scopeId}"${afterTag}${html.slice(elementMatch[0].length)}`,
+      html: `${before}${tagStart} data-stx-scope="${scopeId}"${afterTag}${html.slice(leadingLen + elementMatch[0].length)}`,
       mergedIntoExisting: null,
       stamped: true,
       root,
