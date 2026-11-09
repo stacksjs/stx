@@ -1,5 +1,34 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.838...v0.2.839)
+
+## 🐛 Bug Fixes
+
+- **native**: a primitive-selected call reaches the primitive too (#2175) ([716ac4e](https://github.com/stacksjs/stx/commit/716ac4e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2175](https://github.com/stacksjs/stx/issues/2175))
+- **stx**: initialize response encoders on compression requests ([73706b1](https://github.com/stacksjs/stx/commit/73706b1)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: initialize image codecs when processing is requested ([a649e3c](https://github.com/stacksjs/stx/commit/a649e3c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: validate boolean attribute names individually ([661fd62](https://github.com/stacksjs/stx/commit/661fd62)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: scan leading comments before choosing roots ([bf6468a](https://github.com/stacksjs/stx/commit/bf6468a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: load socket provider only for port probes ([0d7da9e](https://github.com/stacksjs/stx/commit/0d7da9e)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- bound the stuck navigation, not the setup before it (#2156) ([0f632bc](https://github.com/stacksjs/stx/commit/0f632bc)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2156](https://github.com/stacksjs/stx/issues/2156))
+
+## 🔧 Chores
+
+- release v0.2.839 ([2ab680e](https://github.com/stacksjs/stx/commit/2ab680e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' ([d3a0d23](https://github.com/stacksjs/stx/commit/d3a0d23)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- Merge remote-tracking branch 'origin/main' ([0ca542e](https://github.com/stacksjs/stx/commit/0ca542e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.837...v0.2.838)
 
 ## 🐛 Bug Fixes
