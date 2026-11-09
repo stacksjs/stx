@@ -42,6 +42,32 @@ export interface HtmlTagToken {
   selfClosing: boolean
 }
 
+const LEADING_WHITESPACE = /\s*/y
+const MASKED_HTML_COMMENT = /\x00STX_HTML_COMMENT_\d+\x00/y
+
+/** Stop at the first content after whitespace and complete, optionally masked comments. */
+export function skipLeadingHtmlTrivia(html: string): number {
+  let cursor = 0
+  while (cursor < html.length) {
+    LEADING_WHITESPACE.lastIndex = cursor
+    LEADING_WHITESPACE.exec(html)
+    cursor = LEADING_WHITESPACE.lastIndex
+    if (html.startsWith('<!--', cursor)) {
+      const end = html.indexOf('-->', cursor + 4)
+      if (end === -1) return cursor
+      cursor = end + 3
+      continue
+    }
+    MASKED_HTML_COMMENT.lastIndex = cursor
+    if (MASKED_HTML_COMMENT.test(html)) {
+      cursor = MASKED_HTML_COMMENT.lastIndex
+      continue
+    }
+    return cursor
+  }
+  return cursor
+}
+
 const HTML_TAG_NAME = /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)\b/y
 // RCDATA and legacy raw-text bodies can contain tag-looking text. Treat them
 // as opaque just like scripts/styles when callers scan actual DOM elements.

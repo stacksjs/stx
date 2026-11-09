@@ -4,12 +4,12 @@
  * Provides functions for checking port availability and finding free ports
  */
 
-import net from 'node:net'
-
 /**
  * Check if a port is available on IPv4
  */
 async function isPortAvailableIPv4(port: number): Promise<boolean> {
+  // Static builds load these helpers too; sockets are needed only for a probe.
+  const { default: net } = await import('node:net')
   return new Promise<boolean>((resolve) => {
     const server = net.createServer()
     server.once('error', () => resolve(false))
@@ -24,6 +24,7 @@ async function isPortAvailableIPv4(port: number): Promise<boolean> {
  * Check if a port is available on IPv6
  */
 async function isPortAvailableIPv6(port: number): Promise<boolean> {
+  const { default: net } = await import('node:net')
   return new Promise<boolean>((resolve) => {
     const server = net.createServer()
     server.once('error', () => resolve(false))

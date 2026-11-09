@@ -6,7 +6,7 @@
  * the x-cloak utility for unresolved expressions.
  */
 import { errorLogger } from './error-handling'
-import { mightContainOwnTextMustache, scanAtElementPosition } from './html-masking'
+import { mightContainOwnTextMustache, scanAtElementPosition, skipLeadingHtmlTrivia } from './html-masking'
 import { createSafeFunction, isExpressionSafe } from './safe-evaluator'
 import { contentKey, renderMemo } from './render-memo'
 
@@ -163,8 +163,7 @@ export function processMemoDirective(template: string): string {
     // Skip leading whitespace and comments (real <!-- --> plus the
     // \x00STX_HTML_COMMENT_N\x00 placeholders that process.ts uses to
     // protect comments from directive expansion — see stacksjs/stx#1699)
-    const leading = blockInner.match(/^(\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*)/)
-    const leadingLen = leading ? leading[0].length : 0
+    const leadingLen = skipLeadingHtmlTrivia(blockInner)
     const rest = blockInner.slice(leadingLen)
     const trailing = blockInner.match(/(\s*)$/)
     const trailingLen = trailing ? trailing[0].length : 0

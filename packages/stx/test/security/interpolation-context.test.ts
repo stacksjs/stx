@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { interpolateScriptAttributes, processExpressions } from '../../src/expressions'
+import '../fixtures/boolean-attribute-interpolation.mjs'
 
 describe('context-aware escaped interpolation (#2079)', () => {
   it('keeps spaces and equals signs inside an unquoted attribute value', () => {

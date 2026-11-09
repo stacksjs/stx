@@ -38,7 +38,7 @@ import { isUsableParamName } from './safe-evaluator'
 import { processScopedStyles } from './style-scoping'
 import { findSfcTemplateBlock } from './sfc-template'
 import { importOnce } from './lazy-module'
-import { scanAtElementPosition, stashScriptElements } from './html-masking'
+import { scanAtElementPosition, skipLeadingHtmlTrivia, stashScriptElements } from './html-masking'
 import { hasReactiveDirectives } from './reactive'
 import { markProjectedRefs, markProjectedSlotRoots } from './misc-directives'
 import { collectBlockDeclarations } from './stx-virtual-ts'
@@ -818,11 +818,12 @@ const WRAPPER_HOISTED_OUT_BY_PARSER: ReadonlySet<string> = new Set([
  * of its kind at the top level, closing at the end.
  */
 export function scopeOnRootElement(html: string, attrs: string): string | null {
-  const opening = html.match(/^(\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*)<([a-zA-Z][a-zA-Z0-9-]*)/s)
+  const leadingLen = skipLeadingHtmlTrivia(html)
+  const opening = html.slice(leadingLen).match(/^<([a-zA-Z][a-zA-Z0-9-]*)/)
   if (!opening)
     return null
 
-  const tag = opening[2].toLowerCase()
+  const tag = opening[1].toLowerCase()
   if (!WRAPPER_HOISTED_OUT_BY_PARSER.has(tag))
     return null
 
@@ -848,7 +849,7 @@ export function scopeOnRootElement(html: string, attrs: string): string | null {
   }
   if (!complete) return null
 
-  const insertAt = opening[0].length
+  const insertAt = leadingLen + opening[0].length
   return html.slice(0, insertAt) + attrs + html.slice(insertAt)
 }
 
@@ -2562,16 +2563,17 @@ export async function renderComponentWithSlot(
        * would need a scope per sibling rather than one moved attribute, and
        * nothing in the library does that.
        */
-      const inlineRoot = /^\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*<span(?=[\s/>])/i.test(result)
+      const rootContent = result.slice(skipLeadingHtmlTrivia(result))
+      const inlineRoot = /^<span(?=[\s/>])/i.test(rootContent)
       // Bounded layout components fill the parent's available viewport. Web
       // scopes can be transparent, but native hosts need a real flex item:
       // UIKit/Android do not implement display:contents. Keep the scope (and
       // separate parent/child event handlers) while giving its root a bound.
-      const layoutRoot = /^\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*<[^>]+\bdata-stx-layout-root(?:\s|=|>)/i.test(result)
+      const layoutRoot = /^<[^>]+\bdata-stx-layout-root(?:\s|=|>)/i.test(rootContent)
       // A percentage-sized component needs its scope to keep the containing
       // box too. An auto-height scope between Image and a definite parent
       // otherwise turns 100% into the decoded image's intrinsic height.
-      const fillRoot = /^\s*(?:(?:<!--[\s\S]*?-->|\x00STX_HTML_COMMENT_\d+\x00)\s*)*<[^>]+\bdata-stx-fill-root(?:\s|=|>)/i.test(result)
+      const fillRoot = /^<[^>]+\bdata-stx-fill-root(?:\s|=|>)/i.test(rootContent)
       const wrapperTag = inlineRoot ? 'span' : 'div'
       const wrapperStyle = layoutRoot && options._nativeHostAttrs
         ? ' style="display:flex;flex-direction:column;flex:1;min-height:0;min-width:0"'

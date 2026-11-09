@@ -30,6 +30,7 @@ beforeAll(async () => {
     'plain.stx': `<script client>\n  function ping() { return 'pong' }\n</script>\n<div class="plain" :text="ping()"></div>\n`,
     'merged.stx': `<script client>\n  const hits = state(0)\n</script>\n<div data-stx-scope="shared_root">{{ hits() }}</div>\n`,
     'two.stx': `<script client>\n  const first = state(1)\n</script>\n<script client>\n  const second = state(2)\n</script>\n<div class="two">{{ second() }}</div>\n`,
+    'comments.stx': `<script client>\n  const hits = state(0)\n</script>\n<!-- first -->\n<!-- second -->\n<div class="comments">{{ hits() }}</div>\n`,
     'rootless.stx': `<script client>\n  const hits = state(0)\n</script>\njust text\n`,
     'pascal-root.stx': `<script client>\n  const hits = state(0)\n</script>\n<Card><span>{{ hits() }}</span></Card>\n`,
     'kebab-root.stx': `<script client>\n  const hits = state(0)\n</script>\n<info-card><span>{{ hits() }}</span></info-card>\n`,
@@ -92,6 +93,13 @@ describe('an @include\'s script names the root it binds (#1958)', () => {
     expect(stamped).toHaveLength(1)
     expect(stamped[0][2]).toContain('const second = state(2)')
     expect(owners(html)).toEqual(roots(html))
+  })
+
+  it('stamps the actual root after several leading comments', async () => {
+    const html = await render('comments')
+    expect(roots(html)).toHaveLength(1)
+    expect(owners(html)).toEqual(roots(html))
+    expect(html).toMatch(/<div\b[^>]*\bclass="comments"/)
   })
 
   it('stamps nothing when there is no root', async () => {

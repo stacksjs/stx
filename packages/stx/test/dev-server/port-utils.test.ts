@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import net from 'node:net'
-import { findAvailablePort } from '../../src/dev-server/port-utils'
+import { findAvailablePort, isPortAvailable } from '../../src/dev-server/port-utils'
 
 // =============================================================================
 // Regression: findAvailablePort used to do `startPort + i` without coercing
@@ -37,5 +37,38 @@ describe('findAvailablePort', () => {
     const got = await findAvailablePort(String(wanted))
     expect(got).toBe(wanted)
     expect(typeof got).toBe('number')
+  })
+
+  it('rejects a port held by a real IPv4 listener', async () => {
+    const server = net.createServer()
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject)
+      server.listen(0, '0.0.0.0', resolve)
+    })
+    const port = (server.address() as net.AddressInfo).port
+    try {
+      expect(await isPortAvailable(port)).toBe(false)
+      await expect(findAvailablePort(port, 1)).rejects.toThrow('Could not find an available port')
+    }
+    finally {
+      await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()))
+    }
+    expect(await isPortAvailable(port)).toBe(true)
+  })
+
+  it('checks IPv6 after the IPv4 probe succeeds', async () => {
+    const server = net.createServer()
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject)
+      server.listen({ port: 0, host: '::', ipv6Only: true }, resolve)
+    })
+    const port = (server.address() as net.AddressInfo).port
+    try {
+      expect(await isPortAvailable(port)).toBe(false)
+    }
+    finally {
+      await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()))
+    }
+    expect(await isPortAvailable(port)).toBe(true)
   })
 })
