@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.839...v0.2.840)
+
+## ✨ Features
+
+- **native**: let a navigation bar button open a native menu ([0271d77](https://github.com/stacksjs/stx/commit/0271d77)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **ssg**: run validators from parsed page metadata ([f1790ff](https://github.com/stacksjs/stx/commit/f1790ff)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.840 ([745f9f7](https://github.com/stacksjs/stx/commit/745f9f7)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.838...v0.2.839)
 
 ## 🐛 Bug Fixes
