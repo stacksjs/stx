@@ -646,7 +646,7 @@ function escapeInContext(
     const suffix = source.slice(offset + interpolationLength).trimStart()
     const booleanAttributes = raw.trim()
     if (!suffix.startsWith('=')
-      && (booleanAttributes === '' || /^(?!on)[A-Za-z_:][\w:.-]*(?:\s+(?!on)[A-Za-z_:][\w:.-]*)*$/.test(booleanAttributes))) {
+      && (booleanAttributes === '' || booleanAttributes.split(/\s+/).every(name => /^(?!on)[A-Za-z_:][\w:.-]*$/.test(name)))) {
       return booleanAttributes
     }
     throw new UnsafeInterpolationContextError(
