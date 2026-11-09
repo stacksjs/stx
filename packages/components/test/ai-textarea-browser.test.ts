@@ -10,6 +10,12 @@ import { generateCss } from '../../stx/src/dev-server/ts-css'
 import { processDirectives } from '../../stx/src/process'
 import { createTempDir } from '../../stx/src/temp-dir'
 import { observeBrowserLifecycle } from '../../stx/test-utils/browser-lifecycle'
+import { allowForARealBrowser } from '../../stx/test-utils/browser-timeout'
+
+// bun:test ignores a timeout argument on `describe`, so these cases used to
+// run under the five-second default while the file read as though it had a
+// minute. Set the budget where Bun actually reads it (stacksjs/stx#2156).
+allowForARealBrowser()
 
 let dir = ''
 let view: InstanceType<typeof WebView>
@@ -208,4 +214,4 @@ describe('AiTextarea', () => {
     await Bun.sleep(200)
     expect(await view.evaluate(`window.requests.length`)).toBe(count)
   })
-}, 60_000)
+})
