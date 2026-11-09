@@ -1,5 +1,36 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.833...v0.2.836)
+
+## ✨ Features
+
+- **native**: converge Image's native source and resizeMode on the shared component ([2c71872](https://github.com/stacksjs/stx/commit/2c71872)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091))
+
+## 🐛 Bug Fixes
+
+- **components**: read a native image source under either shape it arrives in ([fd987f5](https://github.com/stacksjs/stx/commit/fd987f5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **stx**: preserve SVG classes in reactive bindings ([2345c1a](https://github.com/stacksjs/stx/commit/2345c1a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: preserve raw text and parent-scoped styles during hoisting ([601f59d](https://github.com/stacksjs/stx/commit/601f59d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: deliver component styles before the first body paint ([04d3c99](https://github.com/stacksjs/stx/commit/04d3c99)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: defer optional image worker provider loading ([3469d12](https://github.com/stacksjs/stx/commit/3469d12)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **native**: pin how an object-valued reactive prop is delivered ([21a1bfc](https://github.com/stacksjs/stx/commit/21a1bfc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 💚 Continuous Integration
+
+- pay for the browser's cold start before the startup budget (#2160) ([404becf](https://github.com/stacksjs/stx/commit/404becf)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2160](https://github.com/stacksjs/stx/issues/2160))
+
+## 🔧 Chores
+
+- release v0.2.836 ([d46f19f](https://github.com/stacksjs/stx/commit/d46f19f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.832...v0.2.833)
 
 ## 🐛 Bug Fixes
