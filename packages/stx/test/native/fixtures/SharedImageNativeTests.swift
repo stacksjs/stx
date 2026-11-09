@@ -136,6 +136,31 @@ final class SharedImageNativeTests: XCTestCase {
         XCTAssertEqual(screen.evaluateScript("imageProbe.errors()")?.toInt32(), 0)
     }
 
+    /// The native `source` + `resizeMode` pair renders through the shared file
+    /// (#2091), while its alt-less neighbour still does not. Both halves
+    /// matter: the accessibility contract the shared file validates during SSR
+    /// is what decides, not the mere presence of the newly accepted props.
+    func testNativeSourceAndResizeModeRenderThroughTheSharedFile() async throws {
+        let (screen, window) = try await host()
+        defer { screen.viewDidDisappear(false); window.isHidden = true }
+        let converged = try XCTUnwrap(find("shared-legacy-photo", in: screen.view) as? CraftNativePositionedImageView)
+        // Object geometry is the shared file's own path; the primitive sets
+        // contentMode instead, so this distinguishes the two implementations.
+        XCTAssertTrue(converged.usesObjectGeometry)
+        screen.view.layoutIfNeeded(); converged.layoutIfNeeded()
+        // The authored style sized the box, rather than the scope filling the
+        // parent, and resizeMode became the fit: a 20x10 source contained in
+        // a 40x40 box is its full width, centred down.
+        XCTAssertEqual(converged.bounds.size, CGSize(width: 40, height: 40))
+        XCTAssertNotNil(converged.image)
+        XCTAssertEqual(try pixels(converged).frame, CGRect(x: 0, y: 10, width: 40, height: 20))
+        // Its neighbour keeps the primitive on two counts, both deliberate: it
+        // states no alt, and a reactive `source` carries a payload the shared
+        // file cannot receive.
+        let legacy = try XCTUnwrap(find("legacy-photo", in: screen.view) as? CraftNativePositionedImageView)
+        XCTAssertFalse(legacy.usesObjectGeometry)
+    }
+
     private func coloredBounds(_ view: UIView) throws -> CGRect {
         let format = UIGraphicsImageRendererFormat(); format.scale = 1
         let shot = UIGraphicsImageRenderer(size: view.bounds.size, format: format).image { _ in

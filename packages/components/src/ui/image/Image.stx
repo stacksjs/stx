@@ -3,7 +3,24 @@ import { deliveredImage, getImagePlaceholder } from '@stacksjs/stx'
 
 export const webpSrc = $props.webpSrc || ''
 export const webpSrcSet = $props.webpSrcSet || ''
-export const originalSrc = $props.src || ''
+/**
+ * The media URL, under either name.
+ *
+ * `source` is the native primitive's name and arrives as a string or as a
+ * `{ uri }` payload; `src` is the web name. `src` wins when a caller writes
+ * both. Accepting `source` is what lets one authored call render through this
+ * file on a host and in a browser (#2091).
+ */
+function mediaUrl(value) {
+  if (typeof value === 'string')
+    return value
+  if (value && typeof value === 'object')
+    return String(value.uri ?? '')
+  return ''
+}
+export const srcProp = $props.src || ''
+export const sourceUrl = mediaUrl($props.source)
+export const originalSrc = srcProp || sourceUrl
 
 /**
  * The optimized variants stx prepared for this image, unless the caller wrote
@@ -18,9 +35,9 @@ export const originalSrc = $props.src || ''
  */
 const explicitSources = Array.isArray($props.sources) ? $props.sources : []
 const explicitSrcSet = $props.srcSet || $props.srcset || ''
-const delivered = !explicitSrcSet && !explicitSources.length && !webpSrc && !webpSrcSet ? deliveredImage($props.src || '') : undefined
+const delivered = !explicitSrcSet && !explicitSources.length && !webpSrc && !webpSrcSet ? deliveredImage(originalSrc) : undefined
 
-export const src = delivered ? delivered.src : ($props.src || '')
+export const src = delivered ? delivered.src : originalSrc
 export const srcSet = delivered ? delivered.srcset : explicitSrcSet
 // Width descriptors mean nothing without `sizes`; 100vw is what a browser
 // assumes anyway, said out loud.
@@ -55,7 +72,7 @@ export const placeholderMode = $props.placeholder ?? null
 // Stacks' former default accepted a preview URL; keep CSS backgrounds too.
 const customPlaceholder = typeof placeholderMode === 'string' && /^(?:data:image\/|https?:\/\/|\/|\.{1,2}\/)/i.test(placeholderMode)
   ? `url(${JSON.stringify(placeholderMode)})` : placeholderMode
-const imagePlaceholder = getImagePlaceholder($props.src || '')
+const imagePlaceholder = getImagePlaceholder(originalSrc)
 export const authoredPlaceholderColor = $props.placeholderColor || ''
 export const paletteColor = imagePlaceholder?.color || '#e5e7eb'
 const placeholderColor = authoredPlaceholderColor || paletteColor
@@ -69,7 +86,18 @@ export const placeholder = placeholderMode === 'empty' || placeholderMode === 'n
 export const aspectRatio = $props.aspectRatio
 export const authoredObjectFit = $props.objectFit || ''
 export const authoredFit = $props.fit || ''
-export const objectFit = authoredObjectFit || authoredFit || 'cover'
+/**
+ * How the image fills its box, under the native name.
+ *
+ * The host reads exactly these four (imageContentMode in
+ * CraftNativeScreen.swift), so the translation to CSS loses nothing. An
+ * explicit web name still wins, and an unrecognised value falls through to
+ * this component's own `cover` default rather than overriding it.
+ */
+const RESIZE_FIT = { contain: 'contain', cover: 'cover', stretch: 'fill', center: 'none' }
+export const resizeMode = typeof $props.resizeMode === 'string' ? $props.resizeMode.trim().toLowerCase() : ''
+export const resizeFit = RESIZE_FIT[resizeMode] || ''
+export const objectFit = authoredObjectFit || authoredFit || resizeFit || 'cover'
 export const authoredObjectPosition = $props.objectPosition || ''
 export const authoredPosition = $props.position || ''
 export const objectPosition = authoredObjectPosition || authoredPosition || 'center'
@@ -79,6 +107,21 @@ export const zoomOnHover = $bool($props.zoomOnHover)
 export const className = $props.className || $props.class || ''
 
 export const hasWebP = !!(webpSrc || webpSrcSet)
+
+/**
+ * An authored `style`, which this file used to drop on the floor.
+ *
+ * The frame carries the component's own `style` attribute, and nothing merged
+ * a caller's into it, so `<Image style="width:40px;height:40px">` rendered at
+ * the inherited 100% x 100% instead. It goes on last so that a caller's
+ * declaration wins the cascade against the defaults above it.
+ *
+ * A style naming BOTH dimensions also withdraws those defaults rather than
+ * merely losing to them: `width: 100%` on the frame is what a host sizes the
+ * node by, and leaving it in place stretched the authored box back out.
+ */
+export const styleProp = typeof $props.style === 'string' ? $props.style.replace(/;\s*$/, '') : ''
+export const hasExplicitBox = /(?:^|;)\s*width\s*:/.test(styleProp) && /(?:^|;)\s*height\s*:/.test(styleProp)
 
 export const roundingRadius = '0.5rem'
 export const roundingRadii = {
@@ -112,8 +155,8 @@ const radius = $bool(rounded) ? (Object.prototype.hasOwnProperty.call(roundingRa
 export const frameStyle = [
   'position: relative',
   'display: block',
-  'width: 100%',
-  'height: 100%',
+  hasExplicitBox ? '' : 'width: 100%',
+  hasExplicitBox ? '' : 'height: 100%',
   'overflow: hidden',
   /*
    * Only when asked for. Deriving a ratio from the intrinsic width and height
@@ -125,6 +168,7 @@ export const frameStyle = [
   aspectRatio ? `aspect-ratio: ${aspectRatio}` : '',
   radius ? `border-radius: ${radius}` : '',
   placeholder ? `background: ${placeholder} center / cover no-repeat` : '',
+  styleProp,
 ].filter(Boolean).join('; ')
 
 export const imageStyle = [
@@ -180,7 +224,10 @@ if (imageBoolean({{ rounded }}, false)) {
 // Keep the documented alias live without letting it override objectFit.
 const primaryFit = useReactiveProp('objectFit', {{ authoredObjectFit }})
 const fallbackFit = useReactiveProp('fit', {{ authoredFit }})
-const imageFit = derived(() => primaryFit() || fallbackFit() || 'cover')
+const resizeFitMap = {{ RESIZE_FIT }}
+const liveResizeMode = useReactiveProp('resizeMode', {{ resizeMode }})
+const liveResizeFit = derived(() => resizeFitMap[String(liveResizeMode() ?? '').trim().toLowerCase()] || '')
+const imageFit = derived(() => primaryFit() || fallbackFit() || liveResizeFit() || 'cover')
 const primaryPosition = useReactiveProp('objectPosition', {{ authoredObjectPosition }})
 const fallbackPosition = useReactiveProp('position', {{ authoredPosition }})
 const imagePosition = derived(() => primaryPosition() || fallbackPosition() || 'center')
@@ -255,7 +302,10 @@ const imagePlaceholderStyles = derived(() => {
 </script>
 
 <picture class="{{ className }}" style="{{ frameStyle }}" :style="{ aspectRatio: imageRatio(), borderRadius: imageRadius(), ...imagePlaceholderStyles() }"
-  @if($native)data-stx-fill-root@endif
+  {{-- Only a frame still sized in percentages needs its scope to carry a
+       containing box (see data-stx-fill-root in utils.ts). One the caller
+       sized outright must not be put inside a scope that fills the parent. --}}
+  @if($native && !hasExplicitBox)data-stx-fill-root@endif
   @if(!$native)
     @if(zoomOnHover)data-stx-image-zoom@endif
     :data-stx-image-zoom="imageZoomEnabled() ? '' : null"

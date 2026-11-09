@@ -21,7 +21,20 @@ it('keeps the native shared Image containing box through its scope without sizin
     expect(button.style.height).toBeUndefined()
     expect(button.style.width).toBeUndefined()
   }
+  // The converged native call (#2091) renders through the shared file, so its
+  // box lives on the scope the frame became. An authored style sizing both
+  // dimensions has to replace the inherited fill there rather than lose to
+  // it, or the host stretches the node back out to its parent.
+  const converged = scopes.find(node => descendants(node).some(child => child.props.testID === 'shared-legacy-photo'))!
+  expect(converged).toBeDefined()
+  // No containing box is imposed on it, so the authored size governs instead
+  // of being nested inside a scope that fills the parent.
+  expect(converged.style.width).toBeUndefined()
+  expect(converged.style.height).toBeUndefined()
+  const convergedFrame = descendants(converged).find(node => node.style?.overflow === 'hidden')!
+  expect(convergedFrame.style).toMatchObject({ width: 40, height: 40 })
   const images = descendants(result.document.root).filter(node => node.type === 'Image')
-  expect(images).toHaveLength(2)
+  expect(images).toHaveLength(3)
+  // The alt-less call beside it keeps the primitive, which sizes the node itself.
   expect(images.find(node => node.props.testID === 'legacy-photo')!.style).toMatchObject({ width: 40, height: 40 })
 }, 30_000)

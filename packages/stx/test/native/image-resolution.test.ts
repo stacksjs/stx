@@ -49,6 +49,17 @@ it.each([
   'src="/photo.png" decorative="false" fit="contain"',
   'src="/photo.png" alt="Photo" fit="contain" resizeMode="center"',
   'src="/photo.png" alt="Photo" fit="contain" :source="unset"',
+  // `source`/`resizeMode` reaching the shared file is not an exception to the
+  // accessibility contract it validates, nor an opt-in on its own.
+  ':source="url" resizeMode="contain"',
+  'source="/legacy.png" resizeMode="contain"',
+  'source="/legacy.png" alt="Legacy"',
+  // A reactive `source` carries a payload the shared file cannot receive:
+  // its own `src` binding owns that prop on the host node. The primitive
+  // takes the object natively, so these calls keep it.
+  ':source="url" alt="Legacy" resizeMode="cover"',
+  ':source="url" decorative resizeMode="contain"',
+  'source="" alt="Legacy" resizeMode="contain"',
   'src="/photo.png" alt="Photo" fit="contain" @load-start="void 0"',
   'src="/photo.png" alt="Photo" fit="contain" provider="cloudinary"',
   'src="/photo.png" alt="Photo" fit="contain" preload',
@@ -64,6 +75,51 @@ it.each([
     const html = await processDirectives(source, {}, file, { ...defaultConfig, ...config, root, cache: false }, dependencies)
     expect(dependencies.has(shared)).toBe(false)
     expect(html).toContain('<img')
+  }
+  finally { await rm(root, { recursive: true, force: true }) }
+}, 30_000)
+
+it.each([
+  ['source="/legacy.png" alt="Legacy" resizeMode="contain"', 'contain'],
+  ['source="/legacy.png" alt="Legacy" resizeMode="cover"', 'cover'],
+  ['source="/legacy.png" decorative resizeMode="stretch"', 'fill'],
+  ['source="/legacy.png" alt="Legacy" resizeMode="center"', 'none'],
+  // An unrecognised mode keeps the component's own default rather than
+  // overriding it with something the host cannot render either.
+  ['source="/legacy.png" alt="Legacy" resizeMode="repeat"', 'cover'],
+])('renders the native Image API through the shared file: %s', async (attributes, fit) => {
+  const source = `<script client>const url=state({uri:'/legacy.png'})</script><section><Image ${attributes} /></section>`
+  const { root, file } = await fixture(source)
+  try {
+    const result = await compileScreenSource(source, file, { root })
+    expect(result.dependencies).toContain(shared)
+    expect(result.dependencies).not.toContain(primitive)
+    const config = await loadStxConfig(root)
+    const dependencies = new Set<string>()
+    const html = await processDirectives(source, {}, file, { ...defaultConfig, ...config, root, cache: false }, dependencies)
+    expect(dependencies.has(shared)).toBe(true)
+    expect(html).toContain('<picture')
+    // The native mode drove the fit, rather than merely being tolerated.
+    expect(html).toContain(`object-fit: ${fit}`)
+    // And the native URL reached the img under its web name.
+    expect(html).toContain('/legacy.png')
+  }
+  finally { await rm(root, { recursive: true, force: true }) }
+}, 30_000)
+
+it('sizes the frame from an authored style instead of stretching past it', async () => {
+  const source = '<section><Image source="/legacy.png" alt="Legacy" resizeMode="contain" style="width:40px;height:40px" /></section>'
+  const { root, file } = await fixture(source)
+  try {
+    const config = await loadStxConfig(root)
+    const html = await processDirectives(source, {}, file, { ...defaultConfig, ...config, root, cache: false }, new Set())
+    const frame = html.slice(html.indexOf('<picture'), html.indexOf('>', html.indexOf('<picture')))
+    // The authored box reaches the frame at all, which it previously did not,
+    // and the inherited fill is withdrawn rather than left to fight it.
+    expect(frame).toContain('width:40px')
+    expect(frame).toContain('height:40px')
+    expect(frame).not.toContain('width: 100%')
+    expect(frame).not.toContain('height: 100%')
   }
   finally { await rm(root, { recursive: true, force: true }) }
 }, 30_000)
