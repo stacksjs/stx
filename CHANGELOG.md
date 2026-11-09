@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.837...v0.2.838)
+
+## 🐛 Bug Fixes
+
+- **native**: a converged name resolves to the shared component (#2175) ([af3db91](https://github.com/stacksjs/stx/commit/af3db91)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2175](https://github.com/stacksjs/stx/issues/2175), [#2091](https://github.com/stacksjs/stx/issues/2091))
+
+## ✅ Tests
+
+- apply the browser budget where Bun reads it (#2156) ([f003d6d](https://github.com/stacksjs/stx/commit/f003d6d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2156](https://github.com/stacksjs/stx/issues/2156))
+
+## 🔧 Chores
+
+- release v0.2.838 ([162d761](https://github.com/stacksjs/stx/commit/162d761)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.836...v0.2.837)
 
 ## 🐛 Bug Fixes
