@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.843...v0.2.844)
+
+## ✨ Features
+
+- say when a component sits inside a <template :for> (#2179) ([bc26cce](https://github.com/stacksjs/stx/commit/bc26cce)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2179](https://github.com/stacksjs/stx/issues/2179))
+
+## 📝 Documentation
+
+- name the space-y trap where the wrapper rule is defined (#2178) ([4fd4d55](https://github.com/stacksjs/stx/commit/4fd4d55)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2178](https://github.com/stacksjs/stx/issues/2178))
+
+## 🔧 Chores
+
+- release v0.2.844 ([20c5972](https://github.com/stacksjs/stx/commit/20c5972)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.842...v0.2.843)
 
 ## ⚡ Performance Improvements
