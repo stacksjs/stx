@@ -40,7 +40,7 @@ import { devHelpers, errorLogger, errorRecovery, safeExecuteAsync, StxRuntimeErr
 // with variable-extractor.ts. Dynamic await import() can resolve to a separate
 // module instance in some Bun configurations.
 import { getHead as getHeadStatic } from './head'
-import { processExpressions, usesSignalsInScript } from './expressions'
+import { processExpressions, processExpressionsChunked, usesSignalsInScript } from './expressions'
 import { processBasicFormDirectives, processErrorDirective, processFormInputDirectives } from './forms'
 import { processTranslateDirective } from './i18n'
 import { processIncludes, processStackPushDirectives, processStackReplacements } from './includes'
@@ -2270,7 +2270,9 @@ async function processOtherDirectives(
   output = processServerBindings(output, context)
 
   // Process expressions now (delayed to allow other directives to generate expressions)
-  output = await processExpressions(output, context, filePath)
+  // The document pass is the one render stage long enough to starve the server
+  // on a page whose interpolations are not inside a loop (stacksjs/stx#2176).
+  output = await processExpressionsChunked(output, context, filePath)
   await yieldDuringRendering()
 
   // Add x-cloak to elements containing unresolved {{ }} expressions (preserved for client-side).

@@ -31,6 +31,7 @@
  * i18n: translate, pluralize, date
  */
 
+import { yieldDuringRendering } from './performance-utils'
 import { findMustacheEnd } from './mustache-span'
 export { findMustacheEnd } from './mustache-span'
 import fs from 'node:fs'
@@ -452,17 +453,51 @@ export function clearCustomFilters(): void {
  * the expression between the braces, and the offset of the match in `input`.
  * An unterminated `{{` is left alone, as the old lazy regex also left it.
  */
-export function replaceInterpolations(
+/**
+ * A pass that can be driven to completion synchronously, or a chunk at a time.
+ *
+ * The scan below is one uninterrupted sweep, and on a page whose interpolations
+ * are not inside a loop that is the whole render: 20,000 of them cost about
+ * 1.3 seconds with 80-85% of it in a single stretch, during which the server
+ * answers nothing (stacksjs/stx#2176). A `@foreach` page is already divided
+ * into thousands of per-iteration pieces, which is why only the loop-free shape
+ * shows it.
+ *
+ * Dividing the SCAN rather than the document is what keeps this safe. Every
+ * offset the replacer receives is still an offset into the whole string, and
+ * the loop and slot scopes it consults are still computed over the whole
+ * string, so nothing about which expressions are evaluated or preserved
+ * changes -- only where the sweep is allowed to pause.
+ */
+type ChunkedPass<T> = Generator<void, T, void>
+
+/** Drive a pass with no pauses at all: the synchronous callers' behaviour. */
+function runToCompletion<T>(pass: ChunkedPass<T>): T {
+  let step = pass.next()
+  while (!step.done)
+    step = pass.next()
+  return step.value
+}
+
+function* replaceInterpolationsPass(
   input: string,
   replacer: (match: string, expr: string, offset: number) => string,
-  braces: number = 2,
-): string {
+  braces: number,
+  yieldAfterMs: number,
+): ChunkedPass<string> {
   const opener = '{'.repeat(braces)
   if (!input.includes(opener))
     return input
 
   let output = ''
   let cursor = 0
+  // Paused on elapsed work, not on a match count. A pause costs an event-loop
+  // turn whose latency is whatever else is queued, so the number of them has to
+  // be bounded by how long the sweep actually runs rather than by how many
+  // interpolations it happens to contain. The clock is read every 64 matches so
+  // a page with a handful never reads it at all.
+  let sinceCheck = 0
+  let lastPause = yieldAfterMs === Number.POSITIVE_INFINITY ? 0 : performance.now()
 
   for (;;) {
     const open = input.indexOf(opener, cursor)
@@ -475,9 +510,25 @@ export function replaceInterpolations(
 
     output += input.slice(cursor, open) + replacer(input.slice(open, close + braces), input.slice(open + braces, close), open)
     cursor = close + braces
+    if (++sinceCheck >= 64) {
+      sinceCheck = 0
+      const now = performance.now()
+      if (now - lastPause >= yieldAfterMs) {
+        lastPause = now
+        yield
+      }
+    }
   }
 
   return cursor === 0 ? input : output + input.slice(cursor)
+}
+
+export function replaceInterpolations(
+  input: string,
+  replacer: (match: string, expr: string, offset: number) => string,
+  braces: number = 2,
+): string {
+  return runToCompletion(replaceInterpolationsPass(input, replacer, braces, Number.POSITIVE_INFINITY))
 }
 
 /**
@@ -1208,7 +1259,12 @@ export function interpolateScriptsInTemplate(
 /**
  * Process template expressions including variables, filters, and operations
  */
-export function processExpressions(template: string, context: Record<string, any>, filePath: string): string {
+/**
+ * The expression pass, as a chunked pass. `yieldAfterMs` is how long the hot
+ * sweep may run uninterrupted before it is allowed to pause; the synchronous
+ * entry point passes Infinity, so it never does.
+ */
+function* processExpressionsPass(template: string, context: Record<string, any>, filePath: string, yieldAfterMs: number): ChunkedPass<string> {
   let output = template
 
   // Protect <style> and <script> blocks that contain NO stx template
@@ -1347,7 +1403,7 @@ export function processExpressions(template: string, context: Record<string, any
   // slot, rendered away from the `:for` on its tag). They shadow the server's
   // names exactly as a loop found in `output` does.
   const enclosingLoopNames = new Set(inheritedClientLoopNames(context))
-  output = replaceInterpolations(output, (match, expr, offset) => {
+  output = yield* replaceInterpolationsPass(output, (match, expr, offset) => {
     const trimmedExpr = expr.trim()
 
     // Braces written inside a binding's string literal are the author's text.
@@ -1497,7 +1553,7 @@ export function processExpressions(template: string, context: Record<string, any
         match,
       )
     }
-  })
+  }, 2, yieldAfterMs)
 
   // Restore the protected <script> and <style> blocks, one pass each.
   //
@@ -1519,6 +1575,51 @@ export function processExpressions(template: string, context: Record<string, any
     output = output.replace(/<!--__STX_STYLE_(\d+)__-->/g, (match, i) => styleBlocks[Number(i)] ?? match)
 
   return output
+}
+
+/**
+ * The expression pass as every nested caller uses it: one uninterrupted sweep.
+ *
+ * `@for` renders through a loop generated by `new Function`, which calls back
+ * synchronously and reads the callback's return value to decide whether to
+ * break, so this entry point cannot become async without rewriting that.
+ */
+export function processExpressions(template: string, context: Record<string, any>, filePath: string): string {
+  return runToCompletion(processExpressionsPass(template, context, filePath, Number.POSITIVE_INFINITY))
+}
+
+/**
+ * How long the document pass may sweep before returning to the event loop.
+ *
+ * The guarantee this serves is the admission test's: a request arriving while a
+ * large page renders is answered inside 250ms. Pausing more often than that
+ * does not improve it and is not free -- each pause waits on a macrotask whose
+ * latency is whatever else is queued, which on a busy process is considerable.
+ * At 100ms a pathological page pauses around fifteen times and an ordinary one
+ * never.
+ */
+const DOCUMENT_YIELD_AFTER_MS = 100
+
+/**
+ * The same pass, for the one caller that renders a whole document and can
+ * afford to return to the event loop while doing it (stacksjs/stx#2176).
+ *
+ * The output is the sweep's own, unchanged: dividing a scan is not the same as
+ * dividing a document, and every offset and scope the replacer reads still
+ * describes the whole string.
+ */
+export async function processExpressionsChunked(template: string, context: Record<string, any>, filePath: string, yieldAfterMs: number = DOCUMENT_YIELD_AFTER_MS): Promise<string> {
+  const pass = processExpressionsPass(template, context, filePath, yieldAfterMs)
+  let step = pass.next()
+  while (!step.done) {
+    // The renderer's own yield: a macrotask rather than a microtask, since a
+    // queued promise does not let the server answer a pending request, and
+    // throttled to 16ms so a page with many interpolations does not pay for a
+    // timer every hundred of them.
+    await yieldDuringRendering()
+    step = pass.next()
+  }
+  return step.value
 }
 
 /**
