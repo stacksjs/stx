@@ -1,5 +1,28 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.839...v0.2.842)
+
+## ✨ Features
+
+- **native-testing**: tap a choice in a bar button's menu ([c76c6fa](https://github.com/stacksjs/stx/commit/c76c6fa)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **native**: let a navigation bar button open a native menu ([0271d77](https://github.com/stacksjs/stx/commit/0271d77)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: a converged tag reaches the component library, not any plugin (#2177) ([923024c](https://github.com/stacksjs/stx/commit/923024c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2177](https://github.com/stacksjs/stx/issues/2177), [stacksjs/stacks#2927](https://github.com/stacksjs/stacks/issues/2927), [#2927](https://github.com/stacksjs/stx/issues/2927))
+- **ssg**: run validators from parsed page metadata ([f1790ff](https://github.com/stacksjs/stx/commit/f1790ff)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.842 ([1e02ec0](https://github.com/stacksjs/stx/commit/1e02ec0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- release v0.2.841 ([713c7d2](https://github.com/stacksjs/stx/commit/713c7d2)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- release v0.2.840 ([ffdb16d](https://github.com/stacksjs/stx/commit/ffdb16d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.840...v0.2.841)
 
 ## ✨ Features
