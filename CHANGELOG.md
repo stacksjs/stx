@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.842...v0.2.843)
+
+## ⚡ Performance Improvements
+
+- **expressions**: let the document pass return to the event loop (#2176) ([47aaa1b](https://github.com/stacksjs/stx/commit/47aaa1b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2176](https://github.com/stacksjs/stx/issues/2176))
+
+## 🔧 Chores
+
+- release v0.2.843 ([f218e9a](https://github.com/stacksjs/stx/commit/f218e9a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.839...v0.2.842)
 
 ## ✨ Features
