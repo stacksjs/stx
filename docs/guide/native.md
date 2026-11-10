@@ -829,7 +829,7 @@ the browser screen host supports the same option.
 ```ts
 craft.navigation.setChrome({
   tabAccessory: {
-    path: '/messages', title: 'Messages', symbol: 'message', badge: '3',
+    path: '/messages', title: 'Messages', symbol: 'bubble.left', badge: '3',
     layout: 'vertical',
     companions: [{
       path: '/add', title: 'Add', symbol: 'plus',
