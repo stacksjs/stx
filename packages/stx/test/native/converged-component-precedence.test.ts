@@ -112,6 +112,25 @@ it('an app that names the component itself still overrides it', async () => {
   expect(dependencies).not.toContain(sharedButton)
 }, 30_000)
 
+it('reaches the component library past a plugin that lists a framework directory first', async () => {
+  // A Stacks app's `config/ui.ts` registers the framework's own components
+  // plugin, which lists `resources/components` ahead of the library on
+  // purpose: on the web a package must not replace a framework component of
+  // the same name. Ranking every plugin root first therefore handed a native
+  // `<Button>` the framework's nested `Dashboard/UI/Button.stx` again
+  // (stacksjs/stx#2177). The library's roots are the ones the convergence
+  // named, so they are the ones that have to win here.
+  const root = createTempDir('stx-converged-library-')
+  await mkdir(join(root, 'framework', 'components', 'Dashboard', 'UI'), { recursive: true })
+  const frameworkButton = join(root, 'framework', 'components', 'Dashboard', 'UI', 'Button.stx')
+  await Bun.write(frameworkButton, '<button data-framework-button="yes" class="aria-disabled:opacity-40"><slot /></button>\n')
+  await Bun.write(join(root, 'framework', 'plugin.ts'), 'export default { name: \'@stacksjs/defaults\', components: [\'./components\'] }\n')
+  await Bun.write(join(root, 'stx.config.ts'), `export default { plugins: [${JSON.stringify(join(root, 'framework', 'plugin.ts'))}, ${JSON.stringify(join(componentsPkg, 'stx-plugin.ts'))}] }`)
+  const dependencies = await compile(root, '<div><Button label="Share Report" /></div>')
+  expect(dependencies).toContain(sharedButton)
+  expect(dependencies).not.toContain(frameworkButton)
+}, 30_000)
+
 it('an explicit @import still outranks the converged component', async () => {
   const { root, hostButton } = await appWithItsOwnButton()
   const dependencies = await compile(root, `@import('Button', ${JSON.stringify(hostButton)})\n<div><Button label="Share Report" /></div>`)

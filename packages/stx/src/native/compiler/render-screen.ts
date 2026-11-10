@@ -115,6 +115,7 @@ export async function compileScreenSource(
     // screen was dead.
     skipEventDirectives: true,
     _pluginComponentDirs: (loaded as any)._pluginComponentDirs ?? [],
+    _componentPackageDirs: (loaded as any)._componentPackageDirs ?? [],
   }
 
   // Native style classes are translated into IR below. Generating and

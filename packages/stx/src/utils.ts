@@ -1502,8 +1502,18 @@ export async function renderComponentWithSlot(
       // or any name outside `_targetComponentFallbackNames` -- a primitive with
       // no shared counterpart, `View` or `Text`, keeps the order it had.
       if (nameHasSharedCounterpart) {
+        // The shared half resolves to the component LIBRARY's roots when they
+        // are known, not to every plugin directory. A Stacks app lists the
+        // framework's own `resources/components` ahead of the library on
+        // purpose, and resolution walks subdirectories, so a nested
+        // `Dashboard/UI/Button.stx` answered first and the app got web markup
+        // on a native screen again (stacksjs/stx#2177). Falls back to the full
+        // plugin list when no component package is registered, which is the
+        // only case where that list IS the library.
+        const componentPackageDirs = ((options as any)._componentPackageDirs as unknown[] | undefined ?? [])
+          .filter((dir): dir is string => typeof dir === 'string' && dir.length > 0)
         const selected = (targetIsFallback
-          ? ((options as any)._pluginComponentDirs as unknown[] | undefined ?? [])
+          ? (componentPackageDirs.length ? componentPackageDirs : ((options as any)._pluginComponentDirs as unknown[] | undefined ?? []))
           : (options._targetComponentDirs ?? []))
           .filter((dir): dir is string => typeof dir === 'string' && dir.length > 0)
         if (selected.length) {

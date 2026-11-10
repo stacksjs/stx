@@ -830,6 +830,13 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
     if (effectivePlugins.length > 0) {
       const { pluginManager } = await import('./plugin-system')
       const pluginComponentDirs: string[] = []
+      // The subset of those roots that belong to a component package -- the
+      // library that provides the shared implementations. A converged tag on a
+      // native target has to reach THAT package, not merely the first plugin
+      // that happens to hold a file of the same name somewhere beneath it
+      // (stacksjs/stx#2177).
+      const componentPackageDirs: string[] = []
+      const componentPackageNames = new Set(loaded.componentPackages ?? ['@stacksjs/components'])
       const pluginPageDirs: Array<{ dir: string, prefix: string }> = []
 
       for (const pluginEntry of effectivePlugins) {
@@ -881,8 +888,19 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
             // four exported, documented components unresolvable as tags
             // (#1823).
             const dirs = Array.isArray(plugin.components) ? plugin.components : [plugin.components]
-            for (const entry of dirs)
-              pluginComponentDirs.push(path.resolve(pluginDir, entry))
+            // Matched on the plugin's declared name as well as its specifier,
+            // so a package registered by an absolute path -- which is how the
+            // monorepo's own fixtures load it -- is still recognised as the
+            // component library.
+            const isComponentPackage = componentPackageNames.has(plugin.name)
+              || componentPackageNames.has(pluginPath)
+              || componentPackageNames.has(pluginPath.replace(/\/stx-plugin$/, ''))
+            for (const entry of dirs) {
+              const resolved = path.resolve(pluginDir, entry)
+              pluginComponentDirs.push(resolved)
+              if (isComponentPackage)
+                componentPackageDirs.push(resolved)
+            }
           }
           if (plugin.pages) {
             const dir = path.resolve(pluginDir, plugin.pages)
@@ -922,6 +940,7 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
 
       // Store plugin directories for component resolution and route discovery
       ;(loaded as any)._pluginComponentDirs = pluginComponentDirs
+      ;(loaded as any)._componentPackageDirs = componentPackageDirs
       ;(loaded as any)._pluginPageDirs = pluginPageDirs
     }
 
