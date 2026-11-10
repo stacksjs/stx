@@ -62,8 +62,8 @@ export function reactiveLoopRanges(template: string): Array<[number, number]> {
  * A component tag inside one of these renders its slot in a separate pass,
  * which needs the names to keep treating them as the loop's.
  */
-export function reactiveLoopScopes(template: string): Array<{ start: number, end: number, names: string[] }> {
-  const ranges: Array<{ start: number, end: number, names: string[] }> = []
+export function reactiveLoopScopes(template: string): Array<{ start: number, end: number, names: string[], tag: string }> {
+  const ranges: Array<{ start: number, end: number, names: string[], tag: string }> = []
   type Scope = (typeof ranges)[number]
   const ancestors = new Map<string, Array<Scope | null>>()
   for (const tag of scanHtmlTags(template)) {
@@ -77,7 +77,7 @@ export function reactiveLoopScopes(template: string): Array<{ start: number, end
     const loopAttr = hasLoop ? parseAttributes(tag.attributes).find(attr => LOOP_ATTRIBUTES.has(attr.name)) : undefined
     const loopValue = typeof loopAttr?.value === 'string' ? loopAttr.value : null
     const scope = loopValue !== null
-      ? { start: tag.start, end: tag.end, names: loopBoundNames(loopValue) }
+      ? { start: tag.start, end: tag.end, names: loopBoundNames(loopValue), tag: tagName }
       : null
     if (scope) ranges.push(scope)
     if (!tag.selfClosing && !VOID_TAGS.has(tagName)) {

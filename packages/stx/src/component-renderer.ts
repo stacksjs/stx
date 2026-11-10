@@ -352,6 +352,38 @@ function parseComponentProps(
  * variable, otherwise null. A lone interpolation is its own expression; text
  * around interpolations becomes a template literal.
  */
+/**
+ * A component inside `<template :for>` loses the loop's bindings, silently.
+ *
+ * stx strips `<template>` wrappers during server processing, and a component
+ * tag inside one renders its slot in a separate pass that no longer sees the
+ * loop. The rows still appear and plain elements inside them still bind, so the
+ * only visible symptom is a component whose props and slot expressions resolve
+ * to nothing -- in one dashboard, every row's action buttons were invisible,
+ * unlabelled squares (stacksjs/stx#2179).
+ *
+ * Put the directive on the element the loop repeats (`<tr :for>`, `<span :for
+ * class="contents">`) and it binds. Saying so here is the difference between a
+ * one-line change and a day spent reading the renderer.
+ */
+const reportedTemplateLoops = new Set<string>()
+
+export function resetTemplateLoopWarnings(): void {
+  reportedTemplateLoops.clear()
+}
+
+function warnComponentInTemplateLoop(tagName: string, filePath: string): void {
+  const key = `${filePath}\u0000${tagName}`
+  if (reportedTemplateLoops.has(key))
+    return
+  reportedTemplateLoops.add(key)
+  console.warn(
+    `[stx] <${tagName}> in ${filePath} is inside a <template :for>, so its props and slot expressions `
+    + `will not see the loop variables and render empty. Put the directive on the element the loop `
+    + `repeats instead -- <tr :for="..."> or <span :for="..." class="contents"> -- which binds correctly.`,
+  )
+}
+
 function clientLoopInterpolation(value: string, clientLoopNames: ReadonlySet<string>): string | null {
   if (clientLoopNames.size === 0)
     return null
@@ -1065,6 +1097,8 @@ async function processCustomElementTags(
 
       // Categorize into ResolvedProps
       const enclosingLoops = clientLoopScopes.filter(({ start, end }) => tag.startIndex >= start && tag.startIndex < end)
+      if (enclosingLoops.some(loop => loop.tag === 'template'))
+        warnComponentInTemplateLoop(tag.tagName, filePath)
       const inClientLoop = enclosingLoops.length > 0
       // Every loop variable in scope at this tag -- including those of a
       // `:for` on the tag itself, which its other attributes and its slot

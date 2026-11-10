@@ -60,8 +60,11 @@ test('nested loop boundaries are matched once, including same-name elements', ()
   const html = opening.repeat(4000) + '</div>'.repeat(4000)
   const scopes = reactiveLoopScopes(html)
   expect(scopes).toHaveLength(4000)
-  expect(scopes[0]).toEqual({ start: 0, end: html.length, names: ['row'] })
-  expect(scopes.at(-1)).toEqual({ start: opening.length * 3999, end: opening.length * 4000 + 6, names: ['row'] })
+  // `tag` rides along so a component tag inside one of these can tell a loop on
+  // a real element from a `<template :for>`, which loses its bindings
+  // (stacksjs/stx#2179).
+  expect(scopes[0]).toEqual({ start: 0, end: html.length, names: ['row'], tag: 'div' })
+  expect(scopes.at(-1)).toEqual({ start: opening.length * 3999, end: opening.length * 4000 + 6, names: ['row'], tag: 'div' })
 })
 
 test('the complete directive pipeline also finishes on the malformed suffix', async () => {
