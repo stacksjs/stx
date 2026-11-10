@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.844...v0.2.845)
+
+## ✨ Features
+
+- **native**: group floating actions in material capsules ([50a51f8](https://github.com/stacksjs/stx/commit/50a51f8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.845 ([43eb1d8](https://github.com/stacksjs/stx/commit/43eb1d8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.843...v0.2.844)
 
 ## ✨ Features
