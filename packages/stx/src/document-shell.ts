@@ -20,6 +20,22 @@ import { generateColorModeBootScript } from './color-mode-boot'
  * selectors, so it generates no box of its own. A deferred island
  * (`stx-hydrate`) keeps one, because its visibility trigger observes it and an
  * element with no box never intersects.
+ *
+ * The cost of generating no box is that the wrapper is still an ELEMENT to a
+ * selector. Sibling-margin utilities set their margin on the parent's direct
+ * children -- `space-y-*` and `space-x-*` compile to `> * + *` or
+ * `> :not([hidden]) ~ :not([hidden])` -- so when that child is a component the
+ * margin lands here and is dropped, and the component renders flush against
+ * what is above it with nothing said (stacksjs/stx#2178). `gap` is unaffected,
+ * because flex and grid items are this wrapper's children, which is the same
+ * reason the rule exists.
+ *
+ * The wrapper cannot simply be dropped in favour of putting the scope on the
+ * component's own root: the native host identifies component boundaries by this
+ * attribute and UIKit and Android do not implement `display: contents`, so
+ * `scopeOnRootElement` takes the root only where a wrapper would be hoisted out
+ * by the parser. Letting it take an ordinary root as well fails 55 tests across
+ * the native host, shared overlays, forms and popovers.
  */
 export const COMPONENT_WRAPPER_RULE = '[data-stx-component-wrapper]:not([stx-hydrate]){display:contents}'
 
