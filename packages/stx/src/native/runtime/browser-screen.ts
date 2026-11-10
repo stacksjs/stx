@@ -97,14 +97,14 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
   }
   const shell = document.createElement('div')
   shell.setAttribute('data-stx-screen-shell', '')
-  shell.style.cssText = 'display:flex;flex-direction:column;height:100dvh;max-width:512px;margin:auto;color:#1c1c1e;background:#f2f2f7;font:17px system-ui,-apple-system,sans-serif;overflow:hidden'
+  shell.style.cssText = 'position:relative;display:flex;flex-direction:column;height:100dvh;max-width:512px;margin:auto;color:#1c1c1e;background:#f2f2f7;font:17px system-ui,-apple-system,sans-serif;overflow:hidden'
   content.style.cssText = 'display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden'
   container.before(shell)
   shell.append(nav, content, tabs)
   content.append(container)
   container.style.cssText = 'display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden'
   nav.style.cssText = 'display:flex;align-items:center;gap:12px;min-height:52px;padding:env(safe-area-inset-top) 16px 0;flex-shrink:0'
-  tabs.style.cssText = 'display:flex;justify-content:space-around;gap:4px;padding:8px 8px max(8px,env(safe-area-inset-bottom));flex-shrink:0;border-top:1px solid #8884'
+  tabs.style.cssText = 'position:relative;display:flex;justify-content:space-around;gap:4px;padding:8px 8px max(8px,env(safe-area-inset-bottom));flex-shrink:0;border-top:1px solid #8884'
   tabs.setAttribute('aria-label', 'Main navigation')
   tabPill.style.cssText = 'display:flex;flex:1;align-items:center;min-width:0;border-radius:32px;padding:4px;background:#8882'
   tabs.append(tabPill)
@@ -189,7 +189,18 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
       dismissAccessoryMenu?.()
       accessoryRenderers.splice(0).forEach(renderer => renderer.dispose())
       tabs.querySelectorAll('[data-tab-accessory]').forEach(button => button.remove())
+      shell.querySelector('[data-tab-accessory-group]')?.remove()
       const primary = patch.tabAccessory as NativeNavigationOptions['tabAccessory']
+      const grouped = primary?.layout === 'vertical' || primary?.layout === 'horizontal'
+      let actionContainer: HTMLElement = tabs
+      if (grouped) {
+        actionContainer = document.createElement('div')
+        actionContainer.setAttribute('data-tab-accessory-group', primary.layout!)
+        actionContainer.setAttribute('role', 'group')
+        actionContainer.setAttribute('aria-label', primary.accessibilityLabel || primary.title)
+        actionContainer.style.cssText = `position:absolute;z-index:2;inset-inline-end:20px;bottom:calc(100% + 8px);display:flex;flex-direction:${primary.layout === 'vertical' ? 'column' : 'row'};padding:2px;border-radius:26px;background:color-mix(in srgb,currentColor 8%,transparent);backdrop-filter:blur(20px);box-shadow:0 4px 16px #0002`
+        tabs.append(actionContainer)
+      }
       const actions: Array<NativeAccessoryCompanion & { badge?: string | null }> = primary ? [...(primary.companions || []).slice(0, 2), primary] : []
       for (const item of actions) {
         if (typeof item.path !== 'string' || !item.path.startsWith('/') || item.path.startsWith('//')) continue
@@ -198,6 +209,15 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
         button.setAttribute('data-tab-accessory', '')
         button.setAttribute('aria-label', `${item.accessibilityLabel || item.title}${item.badge ? `, ${item.badge}` : ''}`)
         button.style.cssText = 'position:relative;display:flex;align-items:center;justify-content:center;width:56px;height:56px;flex-shrink:0;border:0;border-radius:50%;background:#8882;color:inherit'
+        if (grouped) {
+          button.style.cssText = 'position:relative;display:flex;align-items:center;justify-content:center;width:48px;height:48px;flex-shrink:0;border:0;border-radius:24px;background:transparent;color:inherit;cursor:pointer'
+          if (actionContainer.children.length) {
+            const separator = document.createElement('span')
+            separator.setAttribute('aria-hidden', 'true')
+            separator.style.cssText = primary?.layout === 'vertical' ? 'height:1px;margin:0 12px;background:#8885' : 'width:1px;margin:12px 0;background:#8885'
+            actionContainer.append(separator)
+          }
+        }
         const holder = document.createElement('span')
         button.append(holder)
         const accessoryRenderer = new BrowserScreenRenderer(holder, { icons: options.icons, event() {} })
@@ -216,7 +236,7 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
           button.onclick = () => { if (dismissAccessoryMenu) dismissAccessoryMenu(); else showAccessoryMenu(button, choices) }
         }
         else button.onclick = () => platform.navigate(item.path)
-        tabs.append(button)
+        actionContainer.append(button)
       }
     }
     const item = patch.tabItem as NativeTabItemOptions | undefined
@@ -240,7 +260,12 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
     }
     const title = typeof settings.title === 'string' ? settings.title : options.title ?? ''
     if (title) document.title = title
-    if (typeof settings.tabBarHidden === 'boolean') { tabs.hidden = settings.tabBarHidden; tabs.style.display = settings.tabBarHidden ? 'none' : 'flex' }
+    if (typeof settings.tabBarHidden === 'boolean') {
+      tabs.hidden = settings.tabBarHidden
+      tabs.style.display = settings.tabBarHidden ? 'none' : 'flex'
+      const group = shell.querySelector<HTMLElement>('[data-tab-accessory-group]')
+      if (group) group.hidden = settings.tabBarHidden
+    }
     nav.hidden = settings.hidden === true
     nav.style.display = nav.hidden ? 'none' : 'flex'
     const heading = document.createElement('h1')

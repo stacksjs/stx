@@ -47,7 +47,7 @@ function nextBeat() { craft.navigation.setOptions({tabItem:{id:'/m/health',title
 function avatar() { craft.navigation.setOptions({tabItem:{id:'/m/me',image:'https://fixture.invalid/avatar.png'}}) }
 function accessory() { craft.navigation.setOptions({tabAccessory:{path:'/m/messages',title:'Messages',symbol:'message',badge:'3',companions:[{path:'/m/nutrition',title:'Nutrition',symbol:'fork.knife'}]}}) }
 function hideAccessory() { craft.navigation.setOptions({tabAccessory:null}) }
-function addMenu() { craft.navigation.setOptions({tabAccessory:{path:'/m/messages',title:'Messages',symbol:'message',iconOnly:true,companions:[{path:'/m/add',title:'Add',symbol:'plus',menu:[{path:'/m/habits?create=1',title:'Habit'},{path:'/m/nutrition',title:'Nutrition'},{path:'/m/workouts/library?create=1',title:'Workout'},{path:'//outside.invalid',title:'Outside'}]}]}}) }
+function addMenu() { craft.navigation.setOptions({tabAccessory:{path:'/m/messages',title:'Messages',symbol:'message',layout:'vertical',companions:[{path:'/m/add',title:'Add',symbol:'plus',menu:[{path:'/m/habits?create=1',title:'Habit'},{path:'/m/nutrition',title:'Nutrition'},{path:'/m/workouts/library?create=1',title:'Workout'},{path:'//outside.invalid',title:'Outside'}]}]}}) }
 </script><View><Button testID="rate" @click="rate()">Rate</Button><Button testID="clear" @click="clear()">Clear</Button><Button testID="live" @click="live()">Live</Button><Button testID="next" @click="nextBeat()">Next</Button><Button testID="avatar" @click="avatar()">Avatar</Button><Button testID="accessory" @click="accessory()">Messages</Button><Button testID="hideAccessory" @click="hideAccessory()">Hide</Button><Button testID="addMenu" @click="addMenu()">Add menu</Button></View>`)
     writeFileSync(path.join(root, 'platform.ts'), 'export async function createBrowserPlatform() { return {craft:{},capabilities:[],call:async()=>null,navigate(path){globalThis.lastNavigation=path},dispose(){}} }')
     const compiled = await compileBrowserScreen({ root, source: 'Screen.stx', screen: 'Screen', browser: { screen: 'Screen', container: '#screen', appURL: '/m', routes: { '/m/health': 'Screen' }, icons: { plus: { body: '', width: 24, height: 24 }, message: { body: '', width: 24, height: 24 }, 'fork.knife': { body: '', width: 24, height: 24 } }, tabs: [{ id: '/m/health', title: 'Health' }, { id: '/m/me', title: 'Me' }], platformModule: path.join(root, 'platform.ts') } })
@@ -118,7 +118,12 @@ function addMenu() { craft.navigation.setOptions({tabAccessory:{path:'/m/message
     scope.innerWidth = 390
     scope.innerHeight = 844
     await click('addMenu')
+    const group = browser.document.querySelector('[data-tab-accessory-group="vertical"]')!
+    expect(group).not.toBeNull()
+    expect((group as HTMLElement).style.flexDirection).toBe('column')
+    expect([...group.querySelectorAll('button')].map(button => button.getAttribute('aria-label'))).toEqual(['Add', 'Messages'])
     const addButton = browser.document.querySelector('[data-tab-accessory][aria-label="Add"]') as any
+    expect(addButton.style.height).toBe('48px')
     addButton.onclick()
     expect(scope.lastNavigation).toBe('/m/messages')
     expect([...browser.document.querySelectorAll('[role="menuitem"]')].map(row => row.textContent)).toEqual(['Habit', 'Nutrition', 'Workout'])
@@ -137,6 +142,7 @@ function addMenu() { craft.navigation.setOptions({tabAccessory:{path:'/m/message
     expect(browser.document.querySelector('[data-tab-accessory-menu]')).toBeNull()
     addButton.onclick()
     await click('hideAccessory')
+    expect(browser.document.querySelector('[data-tab-accessory-group]')).toBeNull()
     expect(browser.document.querySelector('[data-tab-accessory]')).toBeNull()
     expect(browser.document.querySelector('[data-tab-accessory-menu]')).toBeNull()
     await click('avatar')

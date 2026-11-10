@@ -131,7 +131,7 @@ describe('craft.navigation.setChrome', () => {
 
   it('sends a tab accessory once, and removes it with null', () => {
     const { craft, options, protocol } = host({ name: 'Feed', url: '/feed' })
-    const accessory = { path: '/explore', title: 'Map', symbol: 'map', iconOnly: true, companions: [{ path: '/food', title: 'Food', symbol: 'fork.knife', accessibilityLabel: 'Food log' }] }
+    const accessory = { path: '/explore', title: 'Map', symbol: 'map', layout: 'vertical' as const, companions: [{ path: '/food', title: 'Food', symbol: 'fork.knife', accessibilityLabel: 'Food log' }] }
     craft.navigation.setChrome({ tabAccessory: accessory })
     craft.navigation.setChrome({ tabAccessory: accessory })
     craft.navigation.setChrome({ tabAccessory: null })

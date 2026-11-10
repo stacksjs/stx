@@ -87,6 +87,18 @@ export interface NativeAccessoryCompanion {
   menu?: NativeAccessoryMenuItem[]
 }
 
+/** Floating actions outside the tab stacks, in companion order followed by the primary action. */
+export interface NativeTabAccessory extends Omit<NativeAccessoryCompanion, 'menu'> {
+  badge?: string | null
+  iconOnly?: boolean
+  /** Join the icons in one material capsule, above the trailing edge of the tab bar.
+   * Vertical reads top to bottom; horizontal reads in the host's layout direction.
+   * Omit to retain separate controls. A grouped layout implies iconOnly.
+   */
+  layout?: 'vertical' | 'horizontal'
+  companions?: NativeAccessoryCompanion[]
+}
+
 export interface NativeNavigationOptions {
   title?: string
   /** Inline and large navigation title colour for this screen; null restores the host default. */
@@ -101,7 +113,7 @@ export interface NativeNavigationOptions {
   leftButtons?: NativeNavigationButton[]
   rightButtons?: NativeNavigationButton[]
   /** A destination beside the tab pill. Compact actions may carry up to two companion destinations; null removes the group. */
-  tabAccessory?: { path: string, title: string, symbol: string, badge?: string | null, accessibilityLabel?: string, iconOnly?: boolean, companions?: NativeAccessoryCompanion[] } | null
+  tabAccessory?: NativeTabAccessory | null
   tabItem?: NativeTabItemOptions
 }
 

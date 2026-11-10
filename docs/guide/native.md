@@ -816,3 +816,30 @@ That number includes XCTest synchronization and accessibility lookup overhead;
 it is intentionally not presented as pure JavaScript-to-UIKit bridge latency.
 
 Types for the `craft` object a screen sees (`NativeCraft`, `NativeNavigation`, …) are exported from `@stacksjs/stx/native`.
+
+Floating actions use the typed `NativeTabAccessory` through
+`craft.navigation.setOptions` or shared `setChrome`. Set `layout: 'vertical'`
+for a Maps-style material capsule above the trailing edge of the tab bar,
+or `'horizontal'` for a horizontal capsule. Companions come first, followed
+by the primary action. Each keeps its own 48-point touch target, accessible
+name, native popup and route. Grouping implies `iconOnly`; omit `layout` to
+keep separate buttons. A grouped Craft host is required on iOS/Android;
+the browser screen host supports the same option.
+
+```ts
+craft.navigation.setChrome({
+  tabAccessory: {
+    path: '/messages', title: 'Messages', symbol: 'message', badge: '3',
+    layout: 'vertical',
+    companions: [{
+      path: '/add', title: 'Add', symbol: 'plus',
+      menu: [{ path: '/workouts/new', title: 'Workout', symbol: 'dumbbell' }],
+    }],
+  },
+})
+```
+
+The capsule floats independently of the tab stacks: grouping adds no tab,
+does not narrow the tab bar, and leaves the screen's bottom safe area alone.
+Clear it with `tabAccessory: null`, or hide it together with the tab bar
+using `tabBarHidden: true`.
