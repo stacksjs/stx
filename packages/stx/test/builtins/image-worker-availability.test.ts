@@ -12,7 +12,9 @@ it('loads the image helper before an optional worker provider and reports provid
     const provider = join(directory, 'unavailable.ts')
     // A filesystem dependency avoids Bun's special built-in resolution. Only
     // the provider specifier changes; static versus deferred loading stays real.
-    await writeFile(helper, (await readFile(source, 'utf8')).replace(/(['"])node:worker_threads\1/g, JSON.stringify(provider)))
+    await writeFile(helper, (await readFile(source, 'utf8'))
+      .replace(/(['"])node:worker_threads\1/g, JSON.stringify(provider))
+      .replace(/(['"])\.\.\/installed-entry\1/g, JSON.stringify(join(import.meta.dir, '../../src/installed-entry.ts'))))
     await writeFile(provider, `globalThis.__imageWorkerProviderLoads = (globalThis.__imageWorkerProviderLoads ?? 0) + 1; throw new Error('image worker provider refusal witness'); export const Worker = undefined;`)
     await writeFile(entry, `import { runImageTask, WORKER_UNAVAILABLE } from ${JSON.stringify(helper)}
 if ((globalThis.__imageWorkerProviderLoads ?? 0) !== 0) throw new Error('provider loaded during cold import')

@@ -31,7 +31,9 @@
  * @module framework-composables
  */
 
+import { existsSync } from 'node:fs'
 import path from 'node:path'
+import { resolveInstalledEntry } from './installed-entry'
 import { getPublicEnvDefine } from './public-env'
 import { SERVER_ONLY_COMPOSABLES } from './unresolved-identifiers'
 import { getSharedTranspiler } from './utils'
@@ -163,6 +165,19 @@ export function referencedFrameworkComposables(source: string): string[] {
   return found.slice()
 }
 
+function frameworkComposablesDirectory(): string | undefined {
+  const sibling = path.join(import.meta.dir, 'composables')
+  const extension = import.meta.url.endsWith('.ts') ? 'ts' : 'js'
+  if (existsSync(path.join(sibling, `index.${extension}`)))
+    return sibling
+
+  // In a production server bundle import.meta.dir names the output chunk,
+  // not stx's dist directory. The app still owns its frozen install, just as
+  // it does for the image worker's runtime entry.
+  const installed = resolveInstalledEntry('@stacksjs/stx/composables')
+  return installed ? path.dirname(installed) : undefined
+}
+
 /**
  * Build a script exposing `names` on `window.stx` and as bare globals.
  *
@@ -173,7 +188,9 @@ export async function getFrameworkComposableScript(source: string, composablesDi
   if (names.length === 0)
     return null
 
-  const dir = composablesDir ?? path.join(import.meta.dir, 'composables')
+  const dir = composablesDir ?? frameworkComposablesDirectory()
+  if (!dir)
+    return null
 
   // The directory belongs in the key. The same names resolve to different code
   // in a different directory, and once the directory became a parameter a
