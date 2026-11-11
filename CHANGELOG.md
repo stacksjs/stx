@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.846...v0.2.847)
+
+## 🐛 Bug Fixes
+
+- **router**: add the destination page's stylesheets on a fragment navigation ([1291574](https://github.com/stacksjs/stx/commit/1291574)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_ ([#2121](https://github.com/stacksjs/stx/issues/2121), [#1777](https://github.com/stacksjs/stx/issues/1777))
+
+## 🔧 Chores
+
+- release v0.2.847 ([1934229](https://github.com/stacksjs/stx/commit/1934229)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.845...v0.2.846)
 
 ## 🐛 Bug Fixes
