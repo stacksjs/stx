@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.850...v0.2.851)
+
+## 🐛 Bug Fixes
+
+- **components**: let a bound placeholder follow its source on every field ([43d7a6c](https://github.com/stacksjs/stx/commit/43d7a6c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: keep a bound prop the screen's when it destructured the name ([fdcaa14](https://github.com/stacksjs/stx/commit/fdcaa14)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.851 ([0073cc8](https://github.com/stacksjs/stx/commit/0073cc8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.844...v0.2.850)
 
 ## ✨ Features
