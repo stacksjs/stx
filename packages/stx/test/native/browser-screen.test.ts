@@ -124,7 +124,8 @@ function addMenu() { craft.navigation.setOptions({tabAccessory:{path:'/m/message
     expect([...group.querySelectorAll('button')].map(button => button.getAttribute('aria-label'))).toEqual(['Add', 'Messages'])
     const addButton = browser.document.querySelector('[data-tab-accessory][aria-label="Add"]') as any
     expect(addButton.style.width).toBe('48px')
-    expect(addButton.style.height).toBe('52px')
+    expect(addButton.style.height).toBe('55px')
+    expect(addButton.style.marginTop).toBe('-3.5px')
     // One control: nothing but its actions inside the group.
     expect([...group.children].every(child => child.tagName === 'BUTTON')).toBe(true)
     addButton.onclick()

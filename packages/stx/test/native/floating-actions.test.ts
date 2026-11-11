@@ -31,6 +31,14 @@ describe('floatingActions', () => {
     expect(badge('New')).toBe('New')
   })
 
+  it('marks an action that is on, wherever it is in the group', () => {
+    expect(floatingActions([messages])).not.toHaveProperty('selected')
+    expect(floatingActions([{ ...messages, active: false }])).not.toHaveProperty('selected')
+    expect(floatingActions([{ ...messages, active: true }])).toMatchObject({ selected: true })
+    const group = floatingActions([{ path: '/map', label: 'Map', symbol: 'map.fill' }, { path: '/locate', label: 'Follow me', symbol: 'location', active: true }, messages])!
+    expect(group.companions).toEqual([{ path: '/map', title: 'Map', symbol: 'map.fill' }, { path: '/locate', title: 'Follow me', symbol: 'location', selected: true }])
+  })
+
   it('takes the group away when there is nothing to show', () => {
     expect(floatingActions([])).toBeNull()
     expect(floatingActions([null, false, undefined])).toBeNull()

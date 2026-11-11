@@ -14,6 +14,13 @@ export interface NativeFloatingAction {
   symbol: string
   /** Read in place of `label` when the name alone is not enough. */
   accessibilityLabel?: string
+  /**
+   * On: drawn in the app's tint, filled where its symbol has a fill, and
+   * announced as selected. For a mode the action switched, as Maps' location
+   * arrow is blue while tracking. An action is already drawn this way while
+   * the screen at its `path` is showing.
+   */
+  active?: boolean
   /** An unread count or a short word. A number past 99 reads `99+`; zero and empty show nothing. Only the last action carries one. */
   badge?: string | number | null
   /** Destinations it offers instead of opening `path`. Any action but the last may carry one. */
@@ -77,6 +84,7 @@ export function floatingActions(actions: ReadonlyArray<NativeFloatingAction | nu
       title: action.label,
       symbol: action.symbol,
       ...(action.accessibilityLabel ? { accessibilityLabel: action.accessibilityLabel } : {}),
+      ...(action.active ? { selected: true } : {}),
       ...(action.menu?.length ? { menu: action.menu.map(choice => ({ ...choice })) } : {}),
     }
   })
@@ -85,6 +93,7 @@ export function floatingActions(actions: ReadonlyArray<NativeFloatingAction | nu
     title: primary.label,
     symbol: primary.symbol,
     ...(primary.accessibilityLabel ? { accessibilityLabel: primary.accessibilityLabel } : {}),
+    ...(primary.active ? { selected: true } : {}),
     badge: badgeText(primary.badge),
     ...(layout === 'separate' ? { iconOnly: true } : { layout }),
     companions,

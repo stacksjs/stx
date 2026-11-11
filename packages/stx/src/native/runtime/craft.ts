@@ -83,6 +83,13 @@ export interface NativeAccessoryCompanion {
   title: string
   symbol: string
   accessibilityLabel?: string
+  /**
+   * On: drawn in the app's tint, filled where the symbol has a fill, and
+   * announced as selected. For a mode the action switched (Maps' location
+   * arrow while tracking); the host already draws an action this way while
+   * the screen at its `path` is showing.
+   */
+  selected?: boolean
   /** Opens beside the pressed button. Dismissal leaves the current screen intact. */
   menu?: NativeAccessoryMenuItem[]
 }

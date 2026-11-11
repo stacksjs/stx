@@ -210,9 +210,14 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
         button.setAttribute('aria-label', `${item.accessibilityLabel || item.title}${item.badge ? `, ${item.badge}` : ''}`)
         button.style.cssText = 'position:relative;display:flex;align-items:center;justify-content:center;width:56px;height:56px;flex-shrink:0;border:0;border-radius:50%;background:#8882;color:inherit'
         if (grouped) {
-          // One control, as the host draws it: 48 across, 52 along, no divider.
+          // One control, as the host draws it: 48 across, symbols 55 apart, no divider.
           const vertical = primary?.layout === 'vertical'
-          button.style.cssText = `position:relative;display:flex;align-items:center;justify-content:center;width:${vertical ? 48 : 52}px;height:${vertical ? 52 : 48}px;flex-shrink:0;border:0;border-radius:24px;background:transparent;color:inherit;cursor:pointer`
+          button.style.cssText = `position:relative;display:flex;align-items:center;justify-content:center;width:${vertical ? 48 : 55}px;height:${vertical ? 55 : 48}px;flex-shrink:0;border:0;border-radius:24px;background:transparent;color:inherit;cursor:pointer`
+        }
+        // On: the tint and a pressed state, as the native hosts draw it.
+        if (item.selected === true) {
+          button.setAttribute('aria-pressed', 'true')
+          button.style.color = '#007aff'
         }
         const holder = document.createElement('span')
         button.append(holder)
@@ -233,6 +238,15 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
         }
         else button.onclick = () => platform.navigate(item.path)
         actionContainer.append(button)
+      }
+      if (grouped) {
+        // The first and last symbols sit at the centres of the capsule's
+        // round ends (24 from each), as Maps places them and the hosts do.
+        const vertical = primary?.layout === 'vertical'
+        const first = actionContainer.firstElementChild as HTMLElement | null
+        const last = actionContainer.lastElementChild as HTMLElement | null
+        if (first) first.style[vertical ? 'marginTop' : 'marginInlineStart'] = '-3.5px'
+        if (last) last.style[vertical ? 'marginBottom' : 'marginInlineEnd'] = '-3.5px'
       }
     }
     const item = patch.tabItem as NativeTabItemOptions | undefined

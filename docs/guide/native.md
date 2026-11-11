@@ -840,6 +840,22 @@ keeps its own accessible name, native popup and route. The last action is the
 primary one: it alone shows a `badge` (a number past 99 reads `99+`) and it
 always opens its `path`; a `menu` belongs to an earlier action. At most three.
 
+An action is drawn in the app's tint, filled where its symbol has a fill, and
+announced as selected while it is on. The host does that by itself while the
+screen at the action's `path` is showing; `active: true` says it for a mode
+the action switched, as Maps' location arrow is blue while tracking:
+
+```html
+<FloatingActions :actions="[
+  { path: '/map/layers', label: 'Map mode', symbol: 'map.fill' },
+  { path: '/map/follow', label: 'Follow me', symbol: 'location', active: following() },
+]" />
+```
+
+The group has Maps' proportions on iOS: 48 points across, its first and last
+symbols at the centres of the capsule's round ends, 55 points from one symbol
+to the next.
+
 Actions every screen shares go through the app's chrome instead, built by the
 same rules with `floatingActions()`:
 
