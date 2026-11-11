@@ -39,13 +39,31 @@ async function turnsDuring<T>(work: () => Promise<T> | T): Promise<{ value: T, t
   return { value, turns }
 }
 
+/**
+ * Where two renders part ways, with enough of each side to read. Comparing the
+ * strings directly prints two truncated 70KB previews that look identical,
+ * which is exactly what CI showed the one time this mattered.
+ */
+function firstDifference(expected: string, received: string): null | { index: number, lengths: [number, number], expected: string, received: string } {
+  if (expected === received)
+    return null
+  let index = 0
+  while (index < expected.length && index < received.length && expected[index] === received[index])
+    index++
+  const around = (text: string): string => text.slice(Math.max(0, index - 80), index + 120)
+  return { index, lengths: [expected.length, received.length], expected: around(expected), received: around(received) }
+}
+
 describe('the chunked document pass', () => {
   it('produces exactly what the synchronous pass does', async () => {
     const sync = processExpressions(flat, context, 'flat.stx')
+    // The synchronous pass has to agree with itself before it can be a
+    // reference: if two plain renders differ, the fault is not in the chunking.
+    expect(firstDifference(sync, processExpressions(flat, context, 'flat.stx'))).toBeNull()
     // A zero budget pauses at every opportunity, which is the most divided the
     // scan can be and therefore the hardest case for equivalence.
-    expect(await processExpressionsChunked(flat, context, 'flat.stx', 0)).toBe(sync)
-    expect(await processExpressionsChunked(flat, context, 'flat.stx')).toBe(sync)
+    expect(firstDifference(sync, await processExpressionsChunked(flat, context, 'flat.stx', 0))).toBeNull()
+    expect(firstDifference(sync, await processExpressionsChunked(flat, context, 'flat.stx'))).toBeNull()
     expect(sync).toContain('<span>4000</span>')
     expect(sync).toContain('&lt;b&gt;')
   })
