@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.853...v0.2.854)
+
+## 🐛 Bug Fixes
+
+- **stx**: a directive named in a layout comment no longer nests or loops the layout ([3b69bd2](https://github.com/stacksjs/stx/commit/3b69bd2)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.854 ([a905212](https://github.com/stacksjs/stx/commit/a905212)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.852...v0.2.853)
 
 ## 🐛 Bug Fixes
