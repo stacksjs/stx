@@ -916,6 +916,68 @@ const RESERVED_PARAM_NAMES = new Set([
  * finite per app, but a long-running server rendering many templates should not
  * accumulate every expression it has ever seen.
  */
+/**
+ * Compile a strict function body, and prove the result is the one asked for.
+ *
+ * `new Function` is not a function of its source on every runtime. Bun 1.4.2
+ * keeps compiled code in a cache it matches too loosely, and hands back the
+ * code of a DIFFERENT source of the same length about once in four thousand
+ * distinct compiles:
+ *
+ *   new Function('rows', 'return 1002893 + rows')(0)   // 1002227
+ *
+ * while `toString()` on the result still shows the source that was asked for.
+ * Nothing throws and nothing looks wrong. For a template that is one
+ * expression silently evaluating as another -- `{{ 711 + rows }}` rendered row
+ * 263's answer -- and it is the same primitive every `{{ }}`, `@if` and `@for`
+ * goes through (found through stacksjs/stx#2176; fixed upstream by 1.4.3).
+ *
+ * Source text cannot be trusted to identify the code, so the code is asked.
+ * Every body is prefixed with a guard that answers a private probe with a token
+ * unique to this compile; a function that answers with any other token came
+ * from somewhere else, and the compile is retried with a new token, which is a
+ * new source and therefore a new cache key. The probe runs none of the body.
+ *
+ * The probe value is a per-process secret rather than "any argument in that
+ * position", because callers pass argument lists they did not count: a stray
+ * extra value must fall through to the body, never be mistaken for the probe.
+ */
+const COMPILE_PROBE_SECRET = `stx-compile-probe:${globalThis.crypto.randomUUID()}`
+let compileSequence = 0
+let compileMismatches = 0
+
+/**
+ * How many compiles were asked for, and how many came back as someone else's
+ * code and had to be retried. Zero mismatches on a correct runtime; a non-zero
+ * count is the runtime bug above happening, and being caught.
+ */
+export function compileVerificationStats(): { compiles: number, mismatches: number } {
+  return { compiles: compileSequence, mismatches: compileMismatches }
+}
+
+export function compileVerified(params: readonly string[], body: string): (...args: unknown[]) => unknown {
+  // A context may bind any name, including this one; a duplicate parameter is
+  // a SyntaxError in a strict function.
+  let probeParam = '__stx_compile_probe'
+  while (params.includes(probeParam))
+    probeParam += '_'
+  const probeArgs: unknown[] = Array.from({ length: params.length + 1 })
+  probeArgs[params.length] = COMPILE_PROBE_SECRET
+
+  for (let attempt = 0; attempt < 16; attempt++) {
+    const token = `c${++compileSequence}`
+    // Ahead of the body on its own first line, with its own directive: the
+    // body's `'use strict'` is no longer first and would otherwise lapse.
+    const guard = `'use strict';if(${probeParam}===${JSON.stringify(COMPILE_PROBE_SECRET)})return ${JSON.stringify(token)};`
+    // eslint-disable-next-line no-new-func
+    const compiled = new Function(...params, probeParam, guard + body) as (...args: unknown[]) => unknown
+    if (compiled(...probeArgs) === token)
+      return compiled
+    compileMismatches++
+  }
+  throw new Error('[stx] the JavaScript runtime repeatedly returned code compiled from a different source; refusing to evaluate with it.')
+}
+
 const COMPILED_EXPRESSION_LIMIT = 2000
 const compiledExpressions = new Map<string, (...args: unknown[]) => unknown>()
 
@@ -925,8 +987,7 @@ function compileFunctionBody(params: string[], body: string): (...args: unknown[
   if (cached)
     return cached
 
-  // eslint-disable-next-line no-new-func
-  const compiled = new Function(...params, body) as (...args: unknown[]) => unknown
+  const compiled = compileVerified(params, body)
   // Cleared wholesale rather than evicted one at a time. This is a compile
   // cache for a finite, template-derived key space, so the limit is a runaway
   // guard rather than a working-set bound -- reaching it means something is
@@ -1282,8 +1343,7 @@ export function safeEvaluateCode(code: string, context: Record<string, unknown>)
     const keys = Object.keys(safeContext).filter(key => key !== 'Object' && isUsableParamName(key) && !DANGEROUS_IDENTIFIERS.has(key))
     const values = keys.map(key => safeContext[key])
 
-    // eslint-disable-next-line no-new-func
-    const func = new Function('Object', ...SHADOWED_GLOBAL_NAMES, ...keys, `
+    const func = compileVerified(['Object', ...SHADOWED_GLOBAL_NAMES, ...keys], `
       'use strict';
       ${code}
     `)
@@ -1386,8 +1446,7 @@ export function createSafeLoopFunction(
   }
 
   if (loopType === 'for') {
-    // eslint-disable-next-line no-new-func
-    const compiled = new Function(SAFE_CTOR_PARAM, 'Object', ...SHADOWED_GLOBAL_NAMES, '__stx_warn', ...filteredKeys, `
+    const compiled = compileVerified([SAFE_CTOR_PARAM, 'Object', ...SHADOWED_GLOBAL_NAMES, '__stx_warn', ...filteredKeys], `
       'use strict';
       let result = '';
       for (${expression}) {
@@ -1400,8 +1459,7 @@ export function createSafeLoopFunction(
   }
   else {
     // while loop with safety limit
-    // eslint-disable-next-line no-new-func
-    const compiled = new Function(SAFE_CTOR_PARAM, 'Object', ...SHADOWED_GLOBAL_NAMES, '__stx_warn', ...filteredKeys, `
+    const compiled = compileVerified([SAFE_CTOR_PARAM, 'Object', ...SHADOWED_GLOBAL_NAMES, '__stx_warn', ...filteredKeys], `
       'use strict';
       let result = '';
       let __safeCounter = 0;
