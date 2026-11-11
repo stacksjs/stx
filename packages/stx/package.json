@@ -126,16 +126,20 @@
     "typecheck": "bun tsc -p tsconfig.src.json --noEmit"
   },
   "dependencies": {
-    "@stacksjs/ts-css": "^0.3.21",
     "@stacksjs/clapp": "^0.2.16",
     "@stacksjs/desktop": "workspace:*",
     "@stacksjs/sanitizer": "workspace:*",
+    "@stacksjs/ts-css": "^0.3.21",
     "@stacksjs/ts-i18n": "^0.1.11",
+    "@types/dom-speech-recognition": "^0.0.12",
     "bun-plugin-stx": "workspace:*",
     "bunfig": "^0.15.21",
     "stx-router": "workspace:*",
-    "ts-broadcasting": "^0.0.11",
+    "ts-broadcasting": "^0.0.13",
     "ts-images": "^0.2.22",
     "ts-syntax-highlighter": "^0.2.1"
+  },
+  "devDependencies": {
+    "@dtsx/bun": "^0.11.47"
   }
 }

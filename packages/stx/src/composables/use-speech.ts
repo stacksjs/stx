@@ -1,4 +1,4 @@
-// @ts-nocheck - Skip type checking due to Web Speech API types not being available
+/// <reference types="dom-speech-recognition" preserve="true" />
 /**
  * useSpeech - Web Speech API wrappers
  *

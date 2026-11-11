@@ -1,7 +1,7 @@
 import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
+import { dts } from '@dtsx/bun'
 import { Glob } from 'bun'
-import { dts } from 'bun-plugin-dtsx'
 
 function collectEntrypoints(dir: string): string[] {
   const entries: string[] = []
@@ -85,43 +85,12 @@ function assertBuild(result: Awaited<ReturnType<typeof Bun.build>>, label: strin
   throw new Error(`${label} failed${logs ? `:\n${logs}` : ''}`)
 }
 
-function emitTscDeclaration(entrypoint: string): void {
-  const result = Bun.spawnSync([
-    'bun',
-    '--bun',
-    'tsc',
-    '--ignoreConfig',
-    '--declaration',
-    '--emitDeclarationOnly',
-    '--moduleResolution',
-    'bundler',
-    '--module',
-    'esnext',
-    '--target',
-    'esnext',
-    '--skipLibCheck',
-    '--outDir',
-    'dist',
-    entrypoint,
-  ], {
-    cwd: process.cwd(),
-    stdout: 'pipe',
-    stderr: 'pipe',
-  })
-
-  if (result.exitCode !== 0) {
-    throw new Error(`declaration emit failed for ${entrypoint}:\n${result.stdout.toString()}\n${result.stderr.toString()}`)
-  }
-}
-
 /**
  * Syntax errors in emitted declarations, grouped by file.
  *
- * Only TS1xxx codes are collected. Those are parse failures — unambiguous, and
- * the ones that matter here, because a SYNTAX error in a `.d.ts` cannot be
- * suppressed with `skipLibCheck` (that only silences semantic diagnostics) and
- * makes tsc abort on any consumer program that pulls the file in. Semantic
- * complaints across our own declaration graph are noise for this check.
+ * This immediate build guard collects parser diagnostics (TS1xxx). The
+ * installed-package gate separately checks the public declaration graph with
+ * strict checking and skipLibCheck disabled before publication.
  */
 function findUnparseableDeclarations(): Map<string, string[]> {
   const files = [...new Glob('**/*.d.ts').scanSync({ cwd: resolve('./dist'), absolute: true })]
@@ -153,73 +122,16 @@ function findUnparseableDeclarations(): Map<string, string[]> {
   return broken
 }
 
-/**
- * Fail the build if any emitted declaration does not parse, repairing the ones
- * we can.
- *
- * dtsx truncates some declarations when it bundles the whole source graph in
- * one call — `dist/composables.d.ts` shipped as
- * `navigate: (path: string)) => unknown;`, cut off mid-signature (#1888). The
- * previous mitigation was a hand-maintained list of files to re-emit with tsc,
- * which had exactly one entry and did not include composables. A list that has
- * to be remembered is the same failure mode as the bug it patches, so this
- * detects the condition instead.
- *
- * A broken file is re-emitted with TypeScript, which is authoritative. If it
- * still does not parse afterwards, the build fails rather than publishing
- * declarations that make `tsc` abort in every consumer.
- */
+/** Reject malformed output from the owning declaration compiler. */
 function verifyEmittedDeclarations(): void {
-  let broken = findUnparseableDeclarations()
+  const broken = findUnparseableDeclarations()
   if (broken.size === 0)
     return
 
-  const repaired: string[] = []
-  for (const file of broken.keys()) {
-    // dist/composables.d.ts -> ./src/composables.ts
-    const relative = file.slice(resolve('./dist').length + 1).replace(/\.d\.ts$/, '')
-    const source = `./src/${relative}.ts`
-    if (!existsSync(resolve(source)))
-      continue
-
-    // Deliberately NOT emitTscDeclaration: that throws on a non-zero exit, and
-    // tsc exits non-zero for pre-existing SEMANTIC errors in unrelated sources
-    // it pulls in through the import graph. Declaration emit still succeeds in
-    // that case, and whether the result is usable is decided by the parse check
-    // below — which is the thing we actually care about.
-    Bun.spawnSync([
-      'bun',
-      '--bun',
-      'tsc',
-      '--ignoreConfig',
-      '--declaration',
-      '--emitDeclarationOnly',
-      '--moduleResolution',
-      'bundler',
-      '--module',
-      'esnext',
-      '--target',
-      'esnext',
-      '--skipLibCheck',
-      '--outDir',
-      'dist',
-      source,
-    ], { cwd: process.cwd(), stdout: 'pipe', stderr: 'pipe' })
-    repaired.push(relative)
-  }
-
-  if (repaired.length > 0)
-    console.warn(`[stx:build] re-emitted truncated declarations with tsc: ${repaired.join(', ')}`)
-
-  broken = findUnparseableDeclarations()
-  if (broken.size > 0) {
-    const detail = [...broken]
-      .map(([file, errors]) => `  ${file}\n${errors.map(e => `    ${e}`).join('\n')}`)
-      .join('\n')
-    throw new Error(
-      `Emitted declarations do not parse. These ship in dist/ and a syntax error in a .d.ts is not skipLibCheck-able, so every consumer's tsc run would abort:\n${detail}`,
-    )
-  }
+  const detail = [...broken]
+    .map(([file, errors]) => `  ${file}\n${errors.map(error => `    ${error}`).join('\n')}`)
+    .join('\n')
+  throw new Error(`Emitted declarations do not parse:\n${detail}`)
 }
 
 rmSync('./dist', { recursive: true, force: true })
@@ -237,7 +149,7 @@ const declarationBuild = await Bun.build({
   outdir: './dist',
   root: './src',
   naming: '[dir]/[name].js',
-  plugins: [dts()],
+  plugins: [dts({ root: './src', outdir: './dist', moduleSpecifierMode: 'node' })],
   target: 'bun',
   minify: true,
   packages: 'external',
@@ -322,12 +234,6 @@ if (!cliContent.startsWith('#!/')) {
 }
 chmodSync(cliPath, 0o755)
 
-// dtsx can truncate declarations for a few standalone public modules when
-// bundling the full source graph in one call. Re-emit those public declaration
-// files with TypeScript itself after every dtsx build so subpath consumers get
-// the complete surface.
-emitTscDeclaration('./src/safe-evaluator.ts')
-
 // Copy built-in components to dist
 mkdirSync(resolve('./dist/components'), { recursive: true })
 cpSync(resolve('./src/components'), resolve('./dist/components'), { recursive: true })
@@ -368,6 +274,5 @@ for (const entrypoint of ambientEntrypoints) {
     await Bun.write(declarationPath, `${referenceLine}\n${content}`)
 }
 
-// Last, so it sees exactly what ships: everything dtsx emitted, everything
-// re-emitted with tsc, and the ambient references prepended above.
+// Check the compiler output together with the published ambient references.
 verifyEmittedDeclarations()
