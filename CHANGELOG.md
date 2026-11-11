@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.848...v0.2.849)
+
+## ✅ Tests
+
+- **native**: match the floating actions module key from any cwd ([6b86d2d](https://github.com/stacksjs/stx/commit/6b86d2d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.849 ([af363e6](https://github.com/stacksjs/stx/commit/af363e6)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.847...v0.2.848)
 
 ## ✨ Features
