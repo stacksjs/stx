@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.845...v0.2.846)
+
+## 🐛 Bug Fixes
+
+- **render**: resolve composables from the production install ([e575617](https://github.com/stacksjs/stx/commit/e575617)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 📝 Documentation
+
+- **native**: use a valid SF Symbol for messaging ([ec76ec5](https://github.com/stacksjs/stx/commit/ec76ec5)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.846 ([89f9a3f](https://github.com/stacksjs/stx/commit/89f9a3f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.844...v0.2.845)
 
 ## ✨ Features
