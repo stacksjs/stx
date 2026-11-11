@@ -83,7 +83,8 @@ it('<FloatingActions> is a hidden no-op on a web page, with its helper delivered
     expect(html).toContain('<div data-native="View" class="hidden" aria-hidden="true" data-floating-actions></div>')
     // The component imports its rules; the page has to carry that module, or
     // its script stops at "module is not registered on this page".
-    expect(html).toContain('__stxModules["src/native/floating-actions.ts"] =')
+    // The key is the module's path from wherever the build runs.
+    expect(html).toMatch(/__stxModules\["[^"]*src\/native\/floating-actions\.ts"\] =/)
     // Only a host with chrome is asked to draw them.
     expect(html).toContain('typeof craft !== "undefined"')
   }
