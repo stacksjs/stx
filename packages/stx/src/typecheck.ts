@@ -51,6 +51,7 @@ import {
   declaredGlobalNames,
   firstLinePadding,
   isTemplateArtefact,
+  interpolationScopeCode,
   projectScriptInterpolations,
 } from './stx-virtual-ts'
 import { stxImportDiagnostics } from './stx-module-imports'
@@ -135,7 +136,7 @@ export interface TypecheckResult {
  * against the file containing it — so without this, `../target` was looked for
  * next to `.stx/typecheck/` (#1928).
  */
-export function buildScriptVirtualFile(block: ScriptBlock, serverCode = '', originDir = ''): VirtualFile {
+export function buildScriptVirtualFile(block: ScriptBlock, serverCode = '', originDir = '', interpolationScope = serverCode): VirtualFile {
   const leadingNewlines = block.startLine > 1 ? '\n'.repeat(block.startLine - 1) : ''
 
   // A block may take a server value through an interpolation. As TypeScript
@@ -146,7 +147,10 @@ export function buildScriptVirtualFile(block: ScriptBlock, serverCode = '', orig
   // alone on its line. Projection retains each interpolation newline and
   // records width changes for diagnostic and editor positions.
   // Padded so a body that starts on the tag's own line keeps its column.
-  const projection = projectScriptInterpolations(firstLinePadding(block) + block.code, serverCode)
+  // Inferred against the interpolation scope, which is the server code plus
+  // the component's props (stacksjs/stx#2180); the payload declarations below
+  // still read the server code alone.
+  const projection = projectScriptInterpolations(firstLinePadding(block) + block.code, interpolationScope)
   const code = blankScriptDirectives(projection.code)
 
   /*
@@ -552,6 +556,7 @@ export async function typecheckStxFiles(
       .filter(block => block.kind === 'server')
       .map(block => block.code)
       .join('\n')
+    const interpolationScope = interpolationScopeCode(extractScriptBlocks(source))
 
     for (const d of stxImportDiagnostics(source, blocks)) {
       importDiagnostics.push({
@@ -596,7 +601,7 @@ export async function typecheckStxFiles(
     expressionCount += expressions
 
     blocks.forEach((block, i) => {
-      const virtual = buildScriptVirtualFile(block, serverCode, originDir)
+      const virtual = buildScriptVirtualFile(block, serverCode, originDir, interpolationScope)
       virtualFiles.set(virtualPathFor(file, block.kind, i), {
         virtual,
         source: virtual.text,

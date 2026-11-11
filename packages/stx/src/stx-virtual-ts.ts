@@ -1266,6 +1266,96 @@ export function extractTypeDeclarations(code: string): Array<{ name: string, tex
   return found
 }
 
+/**
+ * Top-level statements that bind a component's props: `const { a } =
+ * defineProps<Props>()`, with or without `withDefaults(...)` around the call.
+ *
+ * A prop is a server value as far as a script interpolation is concerned. The
+ * renderer resolves `{{ issueId }}` in a `<script client>` block against the
+ * component's props and writes the JSON literal in, wherever the props were
+ * declared -- and they are usually declared in a bare `<script>`, which is not
+ * a server block. Interpolations were inferred in the server block's scope
+ * only, so that documented pattern failed the gate with "Cannot find name" on
+ * code that renders correctly, and projects answered with a type-only
+ * `declare const` beside the mustache (stacksjs/stx#2180).
+ *
+ * Only the binding statement is carried across, not the block: a bare script
+ * is client code, and its signals and helpers are NOT available to an
+ * interpolation, so lifting the whole body would turn real "Cannot find name"
+ * errors into silence.
+ */
+export function extractPropsDeclarations(code: string): string[] {
+  const searchable = stripCommentsAndLiterals(code)
+  const found: string[] = []
+  const start = /^[ \t]*(?:export[ \t]+)?(?:const|let|var)[ \t]+/gm
+  let match: RegExpExecArray | null
+  let depth = 0
+  let scanned = 0
+
+  // eslint-disable-next-line no-cond-assign
+  while ((match = start.exec(searchable)) !== null) {
+    // Nesting depth at this declaration, carried forward from the last one.
+    for (; scanned < match.index; scanned++) {
+      const c = searchable[scanned]
+      if (c === '{' || c === '(' || c === '[')
+        depth++
+      else if (c === '}' || c === ')' || c === ']')
+        depth = Math.max(0, depth - 1)
+    }
+    if (depth !== 0)
+      continue
+
+    // The statement ends at the first `;` or newline outside every bracket, so
+    // a destructuring pattern, an inline type literal and a multi-line
+    // `withDefaults(defineProps<P>(), { ... })` are each taken whole.
+    let nesting = 0
+    let end = searchable.length
+    for (let i = match.index + match[0].length; i < searchable.length; i++) {
+      const c = searchable[i]
+      if (c === '{' || c === '(' || c === '[')
+        nesting++
+      else if (c === '}' || c === ')' || c === ']')
+        nesting--
+      else if (nesting <= 0 && (c === ';' || c === '\n')) {
+        end = c === ';' ? i + 1 : i
+        break
+      }
+    }
+    if (/\bdefineProps\s*(?:<|\()/.test(searchable.slice(match.index, end)))
+      found.push(code.slice(match.index, end).replace(/^[ \t]*export[ \t]+/, '').trim())
+  }
+
+  return found
+}
+
+/**
+ * The code a script interpolation is inferred against: the server blocks, plus
+ * the props a non-server block declares (see extractPropsDeclarations) and the
+ * types that declaration names.
+ *
+ * A server block that binds props itself already has them, and a type it
+ * declares under the same name wins, so neither is declared twice in the
+ * scope. Kept separate from the server code the payload and bridge checks
+ * read: those are about what a server block PUBLISHES, and a prop is not
+ * something it publishes.
+ */
+export function interpolationScopeCode(blocks: readonly ScriptBlock[]): string {
+  const serverCode = blocks.filter(block => block.kind === 'server').map(block => block.code).join('\n')
+  if (/\bdefineProps\s*(?:<|\()/.test(stripCommentsAndLiterals(serverCode)))
+    return serverCode
+  const serverTypes = declaredTypeNames(serverCode)
+  const propsScope = blocks.filter(block => block.kind !== 'server').flatMap((block) => {
+    const props = extractPropsDeclarations(block.code)
+    if (!props.length)
+      return []
+    return [
+      ...extractTypeDeclarations(block.code).filter(entry => !serverTypes.has(entry.name)).map(entry => entry.text),
+      ...props,
+    ]
+  })
+  return [serverCode, ...propsScope].filter(Boolean).join('\n')
+}
+
 /** Type names a block declares for itself, which must not be redeclared over it. */
 function declaredTypeNames(code: string): Set<string> {
   return new Set(extractTypeDeclarations(code).map(entry => entry.name))
@@ -1922,7 +2012,7 @@ export function buildVirtualTypeScript(
   const scriptColumns = new Map<number, ScriptColumnEdit[]>()
   const importColumns = new Map<number, ScriptColumnEdit[]>()
   const scriptDeclarations: Array<{ text: string, origin?: MappedLine }> = []
-  const serverCode = blocks.filter(block => block.kind === 'server').map(block => block.code).join('\n')
+  const serverCode = interpolationScopeCode(blocks)
   const components = options.filePath && options.templateExpressions !== false
     ? componentContractChecks(source, maskNonTemplateRegions(source), {
         filePath: options.filePath,
