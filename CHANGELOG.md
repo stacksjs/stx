@@ -1,5 +1,22 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.852...v0.2.853)
+
+## 🐛 Bug Fixes
+
+- qualify public STX declarations and immutable release archives ([7c1a229](https://github.com/stacksjs/stx/commit/7c1a229)) _(by Chris <chris@stacksjs.com>)_ ([#2181](https://github.com/stacksjs/stx/issues/2181))
+- enforce strict public STX declarations before publication ([06ca449](https://github.com/stacksjs/stx/commit/06ca449)) _(by Chris <chris@stacksjs.com>)_
+- **native**: compile an inline test screen against the project's packages ([ecf47bc](https://github.com/stacksjs/stx/commit/ecf47bc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.853 ([7274ddc](https://github.com/stacksjs/stx/commit/7274ddc)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.851...v0.2.852)
 
 ## ✨ Features
