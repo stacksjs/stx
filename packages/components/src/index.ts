@@ -29,6 +29,7 @@ export * from './ui/card'
 
 export * from './ui/checkbox'
 export * from './ui/choice-chips'
+export * from './ui/code-editor'
 export * from './ui/combobox'
 export * from './ui/command-palette'
 export * from './ui/dialog'
@@ -78,6 +79,7 @@ export * from './utils/i18n'
 export * from './utils/keep-alive'
 export * from './utils/lazy-loading'
 export * from './utils/prop-validation'
+export * from './utils/syntax-theme'
 export * from './utils/theme'
 
 // Types

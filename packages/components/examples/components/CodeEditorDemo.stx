@@ -1,0 +1,121 @@
+<script server>
+import { sampleTypeScript } from '../code-editor-sample'
+
+// Two thousand lines: enough that drawing every line, or re-highlighting the
+// whole file on a key, would be felt.
+export const sample = sampleTypeScript(2000)
+export const lineCount = sample.split('\n').length
+</script>
+
+
+<script client>
+const code = state({{ sample }})
+const log = state([])
+const widgets = state([])
+const diagnostics = state([])
+const ghost = state('')
+const caret = state('1:1')
+
+// Names always on offer. A real host would add what its language server says,
+// in answer to the complete event.
+const names = [
+  { label: 'User', kind: 'class', detail: 'model' },
+  { label: 'Order', kind: 'class', detail: 'model' },
+  { label: 'Product', kind: 'class', detail: 'model' },
+  { label: 'where', kind: 'method', detail: '(column, value)', insert: 'where()' },
+  { label: 'whereIn', kind: 'method', detail: '(column, values)' },
+  { label: 'first', kind: 'method', detail: '() => Promise<T | null>' },
+  { label: 'find', kind: 'method', detail: '(id) => Promise<T | null>' },
+  { label: 'orderByDesc', kind: 'method', detail: '(column)' },
+  { label: 'paginate', kind: 'method', detail: '(perPage)' },
+  { label: 'log', kind: 'variable', detail: 'logger' },
+  { label: 'console', kind: 'variable' },
+  { label: 'const', kind: 'keyword' },
+  { label: 'async', kind: 'keyword' },
+  { label: 'await', kind: 'keyword' },
+  { label: 'function', kind: 'keyword' },
+  { label: 'return', kind: 'keyword' },
+]
+
+function note(text) {
+  log.set([text, ...log()].slice(0, 6))
+}
+
+// A component's event hands its payload straight to the handler as $event.
+function onRun(detail) {
+  const lines = detail.value.split('\n').length
+  note('run: ' + lines + ' lines, caret on line ' + (detail.selection.line + 1))
+  widgets.set([{ line: detail.selection.line, text: 'ran ' + lines + ' lines', kind: 'result' }])
+}
+
+function onRunSelection(detail) {
+  const what = detail.selected ? 'selection' : 'line ' + (detail.line + 1)
+  note('run selection: ' + what + ', ' + detail.text.length + ' characters')
+  widgets.set([{ line: detail.line, text: 'ran: ' + detail.text.trim().slice(0, 40), kind: 'result' }])
+}
+
+function onSelection(detail) {
+  caret.set((detail.line + 1) + ':' + (detail.column + 1))
+}
+
+function check() {
+  diagnostics.set([
+    { from: { line: 6, column: 22 }, to: { line: 6, column: 32 }, severity: 'error', message: 'Duplicate function implementation.' },
+    { from: { line: 15, column: 8 }, to: { line: 15, column: 13 }, severity: 'warning', message: '\'label\' could be inlined.' },
+  ])
+  note('2 diagnostics set')
+}
+
+function clearMarks() {
+  diagnostics.set([])
+  widgets.set([])
+  ghost.set('')
+}
+
+function suggest() {
+  ghost.set(' // suggested by the host')
+  note('ghost text shown at the caret: Tab takes it, Escape lets it go')
+}
+</script>
+
+<main class="flex flex-col gap-4 max-w-6xl mx-auto px-4 py-6">
+  <header class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-semibold text-fg">CodeEditor</h1>
+      <p class="text-sm text-fg-muted">{{ lineCount }} lines of TypeScript. Type anywhere: only the lines on screen are drawn, and only the lines a key changes are highlighted again.</p>
+    </div>
+    <dl class="flex gap-6 text-sm text-fg-muted">
+      <div><dt class="inline">Caret </dt><dd class="inline font-mono text-fg" x-text="caret()"></dd></div>
+      <div><dt class="inline">Slowest frame, last second </dt><dd class="inline"><FrameMeter /></dd></div>
+    </dl>
+  </header>
+
+  <div class="flex flex-wrap items-center gap-2 text-sm">
+    <Button size="sm" variant="outline" @click="check()">Set diagnostics</Button>
+    <Button size="sm" variant="outline" @click="suggest()">Show ghost text</Button>
+    <Button size="sm" variant="ghost" @click="clearMarks()">Clear</Button>
+    <span class="ml-auto text-fg-muted">Cmd/Ctrl+Enter runs, with Shift runs the selection. Ctrl+Space completes. Cmd/Ctrl+/ comments. Escape then Tab leaves the editor.</span>
+  </div>
+
+  <CodeEditor
+    id="demo-editor"
+    label="TypeScript scratch file"
+    language="typescript"
+    height="65vh"
+    v-model:value="code"
+    :completions="names"
+    :widgets="widgets()"
+    :diagnostics="diagnostics()"
+    :ghostText="ghost()"
+    @run="onRun($event)"
+    @run-selection="onRunSelection($event)"
+    @selection="onSelection($event)"
+  />
+
+  <section aria-label="Events" class="p-3 text-sm bg-surface border border-line rounded-panel">
+    <p class="text-fg-muted" :show="log().length === 0">Run something to see the events the editor sends.</p>
+    <ul class="font-mono text-fg">
+      <li :for="entry in log()" x-text="entry"></li>
+    </ul>
+  </section>
+</main>

@@ -1,0 +1,497 @@
+<script server>
+export const value = $props.value || ''
+export const language = $props.language || 'typescript'
+export const readonly = $bool($props.readonly)
+export const disabled = $bool($props.disabled)
+export const lineNumbers = $bool($props.lineNumbers, true)
+export const highlight = $bool($props.highlight, true)
+export const autoComplete = $bool($props.autoComplete, true)
+export const inlineDiagnostics = $bool($props.inlineDiagnostics, true)
+export const insertSpaces = $bool($props.insertSpaces, true)
+export const autofocus = $bool($props.autofocus)
+export const tabSize = $num($props.tabSize) || 2
+export const placeholder = $props.placeholder || ''
+export const label = $props.label || 'Code editor'
+export const name = $props.name || ''
+export const className = $props.className || ''
+/*
+ * A CSS length. Left out, the editor is 20rem tall; `height="100%"` fills a
+ * sized parent, which is what a pane in a split layout wants.
+ */
+export const height = $props.height || '20rem'
+/*
+ * `light` or `dark` pins the code colours for this editor whatever the page is
+ * doing; anything else follows the page.
+ */
+export const theme = ['light', 'dark'].includes($props.theme) ? $props.theme : ''
+/*
+ * Ids unique to this instance: the field, the popup it controls and the
+ * status line it is described by all have to be findable when two editors
+ * share a page.
+ */
+export const inputId = $props.id || `code-editor-${$uid}`
+export const popupId = `${inputId}-completions`
+export const statusId = `${inputId}-status`
+export const editorClasses = `relative flex flex-col overflow-hidden rounded-panel border border-line ${className}`.trim()
+/*
+ * Arrays that arrive as plain props. A bound one (`:completions="names()"`)
+ * is read live by the client script; these are what it starts from.
+ */
+export const completions = Array.isArray($props.completions) ? $props.completions : []
+export const widgets = Array.isArray($props.widgets) ? $props.widgets : []
+export const diagnostics = Array.isArray($props.diagnostics) ? $props.diagnostics : []
+export const ghostText = typeof $props.ghostText === 'string' ? $props.ghostText : ''
+</script>
+
+<script client>
+/*
+ * <CodeEditor>: a code editor made of a text field over a painted copy of it.
+ *
+ * This script is the wiring: props in, events out, and the state of the
+ * completion popup as signals for the template. What a key does is in
+ * ./core, how the two layers stay aligned is in ./view, and how they are put
+ * together is in ./controller.
+ */
+import { CodeEditorController } from './controller'
+
+const emit = defineEmits(['input', 'change', 'selection', 'run', 'run-selection', 'complete', 'completion-accept', 'ghost', 'focus', 'blur'])
+
+function asBoolean(value) {
+  if (value == null) return false
+  if (typeof value === 'string') return !['false', '0', 'off', 'no'].includes(value.trim().toLowerCase())
+  return Boolean(value)
+}
+function asList(value) {
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string' && value.charAt(0) === '[') {
+    try { return JSON.parse(value) }
+    catch (e) { return [] }
+  }
+  return []
+}
+function asText(value) { return value == null ? '' : String(value) }
+
+const model = useModel('value', { default: {{ value }}, parse: asText })
+const liveLanguage = useReactiveProp('language', {{ language }}, { parse: asText })
+const liveReadonly = useReactiveProp('readonly', {{ readonly }}, { parse: asBoolean })
+const liveDisabled = useReactiveProp('disabled', {{ disabled }}, { parse: asBoolean })
+const liveLineNumbers = useReactiveProp('lineNumbers', {{ lineNumbers }}, { parse: asBoolean })
+const liveHighlight = useReactiveProp('highlight', {{ highlight }}, { parse: asBoolean })
+const liveCompletions = useReactiveProp('completions', {{ completions }}, { parse: asList })
+const liveWidgets = useReactiveProp('widgets', {{ widgets }}, { parse: asList })
+const liveDiagnostics = useReactiveProp('diagnostics', {{ diagnostics }}, { parse: asList })
+const liveGhostText = useReactiveProp('ghostText', {{ ghostText }}, { parse: asText })
+// A function can only arrive through a bound attribute, and is read as it is.
+const liveKeymap = useReactiveProp('keymap', null, { parse: v => v })
+
+const locked = derived(() => asBoolean(liveReadonly()) || asBoolean(liveDisabled()))
+const isEmpty = state({{ value }} === '')
+const popup = state({ open: false, items: [], activeId: '', left: 0, top: 0, placement: 'below' })
+const popupStyle = derived(() => {
+  const current = popup()
+  const lift = current.placement === 'above' ? ' translateY(-100%)' : ''
+  return 'transform: translate(' + current.left + 'px, ' + current.top + 'px)' + lift
+})
+
+const rootRef = useRef('code-editor')
+let editor = null
+
+onMount(() => {
+  const root = rootRef()
+  if (!root) return
+
+  editor = new CodeEditorController(root, {
+    value: model(),
+    language: liveLanguage(),
+    tabSize: {{ tabSize }},
+    insertSpaces: {{ insertSpaces }},
+    readOnly: locked(),
+    lineNumbers: asBoolean(liveLineNumbers()),
+    highlight: asBoolean(liveHighlight()),
+    autoComplete: {{ autoComplete }},
+    inlineDiagnostics: {{ inlineDiagnostics }},
+    completions: asList(liveCompletions()),
+    keymap: liveKeymap() || {},
+  }, {
+    onChange(value) {
+      isEmpty.set(value === '')
+      model.input(value)
+      emit('input', value)
+      emit('change', value)
+    },
+    onSelection(detail) { emit('selection', detail) },
+    onRun(detail) { emit('run', detail) },
+    onRunSelection(detail) { emit('run-selection', detail) },
+    onCompleteRequest(request) { emit('complete', request) },
+    onCompletionAccept(item) { emit('completion-accept', item) },
+    onGhost(outcome, text) { emit('ghost', { outcome, text }) },
+    onPopup(next) { popup.set(next) },
+    onFocus() { emit('focus') },
+    onBlur() { emit('blur') },
+  })
+
+  // Each prop the parent can change while the editor is up. Registered after
+  // the editor exists, so the first run of each finds something to set.
+  effect(() => {
+    const next = model()
+    isEmpty.set(next === '')
+    editor.setValue(next)
+  })
+  effect(() => editor.setLanguage(liveLanguage()))
+  effect(() => editor.setReadOnly(locked()))
+  effect(() => editor.setLineNumbers(asBoolean(liveLineNumbers())))
+  effect(() => editor.setHighlight(asBoolean(liveHighlight())))
+  effect(() => editor.setCompletions(asList(liveCompletions())))
+  effect(() => editor.setWidgets(asList(liveWidgets())))
+  effect(() => editor.setDiagnostics(asList(liveDiagnostics())))
+  effect(() => editor.setGhostText(liveGhostText() || null))
+  effect(() => editor.setKeymap(liveKeymap() || {}))
+
+  if ({{ autofocus }}) editor.focus()
+})
+
+onDestroy(() => {
+  if (editor) editor.destroy()
+  editor = null
+})
+
+function acceptCompletion(index) {
+  if (editor) editor.acceptCompletion(index)
+}
+
+defineExpose({
+  value: model,
+  getValue: () => (editor ? editor.value : model()),
+  setValue: (text) => { if (editor) editor.setValue(asText(text)) },
+  getSelection: () => (editor ? editor.selection : null),
+  setSelection: (anchor, head) => { if (editor) editor.setSelection(anchor, head) },
+  focus: () => { if (editor) editor.focus() },
+  undo: () => (editor ? editor.core.undo() : false),
+  redo: () => (editor ? editor.core.redo() : false),
+  exec: name => (editor ? editor.core.exec(name) : false),
+  setWidgets: (list) => { if (editor) editor.setWidgets(asList(list)) },
+  setDiagnostics: (list) => { if (editor) editor.setDiagnostics(asList(list)) },
+  setGhostText: (text) => { if (editor) editor.setGhostText(text || null) },
+  showCompletions: (items, options) => { if (editor) editor.showCompletions(asList(items), options || {}) },
+  closeCompletions: () => { if (editor) editor.closeCompletions() },
+  editor: () => editor,
+})
+</script>
+
+<div
+  ref="code-editor"
+  data-stx-code-editor
+  @if(theme)data-syntax-theme="{{ theme }}"@endif
+  class="{{ editorClasses }}"
+  style="height: {{ height }}"
+  :data-readonly="locked() ? '' : null"
+>
+  {{-- The scroller. Both layers are ordinary content inside it, so there is
+       one scroll position and nothing to copy between them. --}}
+  <div data-ce="scroller" class="stx-ce-scroller relative flex-1 min-h-0 overflow-auto">
+    <div data-ce="content" class="stx-ce-content relative flex min-w-full min-h-full">
+      {{-- Never read aloud: the numbers are positions, and the field already
+           reports the line the caret is on. --}}
+      <div data-ce="gutter" aria-hidden="true" class="stx-ce-gutter sticky left-0 z-30 shrink-0 select-none">
+        <div data-ce="gutter-rows" class="stx-ce-gutter-rows"></div>
+      </div>
+
+      <div data-ce="region" class="stx-ce-region relative flex-1">
+        <div data-ce="active-line" aria-hidden="true" class="stx-ce-active-line absolute top-0 left-0 right-0 pointer-events-none" style="display: none"></div>
+        <div data-ce="decorations" aria-hidden="true" class="stx-ce-layer absolute top-0 left-0 pointer-events-none"></div>
+        {{-- The painted copy. Hidden from assistive technology: the field
+             holds the same text and is the thing to read. --}}
+        <div data-ce="rows" aria-hidden="true" class="stx-ce-rows absolute top-0 left-0 right-0 pointer-events-none"></div>
+
+        <textarea
+          data-ce="input"
+          id="{{ inputId }}"
+          @if(name)name="{{ name }}"@endif
+          class="stx-ce-input absolute inset-0 z-10 block w-full h-full m-0 border-0 outline-none resize-none overflow-hidden bg-transparent"
+          wrap="off"
+          spellcheck="false"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          aria-label="{{ label }}"
+          aria-multiline="true"
+          aria-describedby="{{ statusId }}"
+          aria-autocomplete="list"
+          aria-controls="{{ popupId }}"
+          :aria-expanded="popup().open ? 'true' : 'false'"
+          :aria-activedescendant="popup().activeId || null"
+          @if(readonly || disabled)readonly@endif
+          :readonly="locked()"
+          @if(disabled)aria-disabled="true"@endif
+        ></textarea>
+
+        @if(placeholder)
+          <div aria-hidden="true" class="stx-ce-placeholder absolute top-0 left-0 pointer-events-none" :show="isEmpty()">{{ placeholder }}</div>
+        @endif
+
+        <div data-ce="widgets" aria-hidden="true" class="stx-ce-layer absolute top-0 left-0 z-20 pointer-events-none"></div>
+        <span data-ce="measure" aria-hidden="true" class="stx-ce-measure absolute top-0 left-0 invisible pointer-events-none"></span>
+
+        {{-- The completion list. It stays in the document while closed so the
+             field's aria-controls always has something to point at. --}}
+        <ul
+          id="{{ popupId }}"
+          role="listbox"
+          aria-label="Completions"
+          class="stx-ce-popup absolute top-0 left-0 z-40 m-0 p-1 list-none overflow-y-auto rounded-control border border-line bg-panel shadow-lg"
+          :show="popup().open"
+          :style="popupStyle()"
+        >
+          <li
+            :for="entry in popup().items"
+            :key="entry.id"
+            :id="entry.id"
+            role="option"
+            :aria-selected="entry.selected ? 'true' : 'false'"
+            :data-selected="entry.selected ? '' : null"
+            :data-kind="entry.kind || null"
+            class="stx-ce-option flex items-baseline gap-3 px-2 py-0.5 rounded-control cursor-default whitespace-nowrap"
+            @mousedown.prevent="acceptCompletion(entry.index)"
+          >
+            <span class="stx-ce-option-label" x-text="entry.label"></span>
+            <span class="stx-ce-option-detail ml-auto text-fg-soft" x-text="entry.detail"></span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div data-ce="status" id="{{ statusId }}" role="status" aria-live="polite" class="sr-only"></div>
+</div>
+
+<style>
+/*
+ * Everything the editor is drawn with is a custom property, each falling back
+ * to one of the library's role tokens. An app that has themed its roles gets a
+ * matching editor without doing anything; one that wants the editor different
+ * sets these.
+ *
+ * The font size and the line height are lengths in pixels on purpose. The two
+ * layers only stay on the same pixels if a line is a whole number of them.
+ */
+:where([data-stx-code-editor]) {
+  --stx-code-font: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  --stx-code-font-size: 13px;
+  --stx-code-line-height: 20px;
+  --stx-code-padding-y: 8px;
+  --stx-code-padding-x: 12px;
+  --stx-code-bg: var(--stx-panel, #ffffff);
+  --stx-code-fg: var(--stx-fg, #171717);
+  --stx-code-gutter-fg: var(--stx-fg-subtle, #a3a3a3);
+  --stx-code-gutter-active-fg: var(--stx-fg-strong, #404040);
+  --stx-code-caret: var(--stx-accent, #2563eb);
+  --stx-code-selection: color-mix(in srgb, var(--stx-accent, #2563eb) 30%, transparent);
+  --stx-code-active-line: color-mix(in srgb, var(--stx-fg, #171717) 5%, transparent);
+  --stx-code-ghost: var(--stx-fg-subtle, #a3a3a3);
+  --stx-code-error: var(--stx-danger, #dc2626);
+  --stx-code-warning: var(--stx-warning, #ca8a04);
+  --stx-code-info: var(--stx-info, #0891b2);
+  --stx-code-result: var(--stx-fg-soft, #737373);
+  background: var(--stx-code-bg);
+  color: var(--stx-code-fg);
+}
+
+[data-stx-code-editor] :is(.stx-ce-rows, .stx-ce-input, .stx-ce-gutter, .stx-ce-layer, .stx-ce-measure, .stx-ce-placeholder, .stx-ce-popup) {
+  font-family: var(--stx-code-font);
+  font-size: var(--stx-code-font-size);
+  line-height: var(--stx-code-line-height);
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
+  letter-spacing: 0;
+  tab-size: 2;
+}
+
+/* The field and its painted copy: the same box, the same text, the same wrap. */
+[data-stx-code-editor] :is(.stx-ce-rows, .stx-ce-input, .stx-ce-placeholder) {
+  box-sizing: border-box;
+  padding: var(--stx-code-padding-y) var(--stx-code-padding-x);
+  white-space: pre;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+[data-stx-code-editor] :is(.stx-ce-rows) { padding-bottom: 0; padding-top: 0; top: var(--stx-code-padding-y); }
+[data-stx-code-editor] :is(.stx-ce-line) { height: var(--stx-code-line-height); }
+[data-stx-code-editor] :is(.stx-ce-measure) { white-space: pre; }
+[data-stx-code-editor] :is(.stx-ce-placeholder) { color: var(--stx-code-gutter-fg); }
+
+[data-stx-code-editor] :is(.stx-ce-input) {
+  color: inherit;
+  caret-color: var(--stx-code-caret);
+}
+/* Until the view has painted the copy, the field's own text is the text. */
+[data-stx-code-editor][data-ce-ready] :is(.stx-ce-input) {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+[data-stx-code-editor] .stx-ce-input::selection {
+  background: var(--stx-code-selection);
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+[data-stx-code-editor][data-readonly] :is(.stx-ce-input) { cursor: default; }
+
+[data-stx-code-editor] :is(.stx-ce-gutter) {
+  box-sizing: border-box;
+  padding-top: var(--stx-code-padding-y);
+  background: var(--stx-code-bg);
+  color: var(--stx-code-gutter-fg);
+  text-align: right;
+  cursor: default;
+}
+[data-stx-code-editor] :is(.stx-ce-number) {
+  height: var(--stx-code-line-height);
+  padding-right: 1ch;
+  font-variant-numeric: tabular-nums;
+}
+[data-stx-code-editor] :is(.stx-ce-number[data-active]) { color: var(--stx-code-gutter-active-fg); }
+[data-stx-code-editor] :is(.stx-ce-number[data-severity="error"]) { color: var(--stx-code-error); }
+[data-stx-code-editor] :is(.stx-ce-number[data-severity="warning"]) { color: var(--stx-code-warning); }
+[data-stx-code-editor] :is(.stx-ce-number[data-severity="info"], .stx-ce-number[data-severity="hint"]) { color: var(--stx-code-info); }
+
+[data-stx-code-editor] :is(.stx-ce-active-line) {
+  height: var(--stx-code-line-height);
+  background: var(--stx-code-active-line);
+}
+
+/* A squiggle is the text it sits under, invisible, with a wavy line beneath. */
+[data-stx-code-editor] :is(.stx-ce-squiggle) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: var(--stx-code-line-height);
+  color: transparent;
+  white-space: pre;
+  text-decoration: underline wavy var(--stx-code-error);
+  text-decoration-skip-ink: none;
+  text-underline-offset: 2px;
+}
+[data-stx-code-editor] :is(.stx-ce-squiggle[data-severity="warning"]) { text-decoration-color: var(--stx-code-warning); }
+[data-stx-code-editor] :is(.stx-ce-squiggle[data-severity="info"], .stx-ce-squiggle[data-severity="hint"]) { text-decoration-color: var(--stx-code-info); }
+
+[data-stx-code-editor] :is(.stx-ce-trailing, .stx-ce-widget--placed, .stx-ce-ghost) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  white-space: pre;
+}
+[data-stx-code-editor] :is(.stx-ce-trailing) { display: flex; gap: 2ch; }
+[data-stx-code-editor] :is(.stx-ce-widget) { color: var(--stx-code-result); }
+[data-stx-code-editor] :is(.stx-ce-widget[data-kind="error"]) { color: var(--stx-code-error); }
+[data-stx-code-editor] :is(.stx-ce-widget[data-kind="warning"]) { color: var(--stx-code-warning); }
+[data-stx-code-editor] :is(.stx-ce-widget[data-kind="info"], .stx-ce-widget[data-kind="hint"]) { color: var(--stx-code-info); }
+[data-stx-code-editor] :is(.stx-ce-ghost) { color: var(--stx-code-ghost); font-style: italic; }
+[data-stx-code-editor] :is(.stx-ce-ghost--block) { background: var(--stx-code-bg); }
+
+[data-stx-code-editor] :is(.stx-ce-popup) {
+  max-height: 14rem;
+  min-width: 12rem;
+  max-width: 32rem;
+  color: var(--stx-code-fg);
+}
+[data-stx-code-editor] :is(.stx-ce-option[data-selected]) {
+  background: color-mix(in srgb, var(--stx-accent, #2563eb) 18%, transparent);
+}
+
+/* Code colours. The same variables <CodeBlock> draws with, and the same text:
+   syntaxThemeCss() in utils/syntax-theme.ts, which a test holds this to. */
+:where(:root) {
+  --stx-syntax-background: #ffffff;
+  --stx-syntax-foreground: #24292f;
+  --stx-syntax-keyword: #cf222e;
+  --stx-syntax-string: #0a3069;
+  --stx-syntax-comment: #6e7781;
+  --stx-syntax-numeric: #0550ae;
+  --stx-syntax-constant: #0550ae;
+  --stx-syntax-function: #8250df;
+  --stx-syntax-operator: #cf222e;
+  --stx-syntax-punctuation: #24292f;
+  --stx-syntax-type: #953800;
+  --stx-syntax-variable: #953800;
+  --stx-syntax-tag: #116329;
+  --stx-syntax-attribute: #0550ae;
+}
+@media (prefers-color-scheme: dark) {
+:where(:root:not(.light)) {
+  --stx-syntax-background: #0d1117;
+  --stx-syntax-foreground: #c9d1d9;
+  --stx-syntax-keyword: #ff7b72;
+  --stx-syntax-string: #a5d6ff;
+  --stx-syntax-comment: #8b949e;
+  --stx-syntax-numeric: #79c0ff;
+  --stx-syntax-constant: #79c0ff;
+  --stx-syntax-function: #d2a8ff;
+  --stx-syntax-operator: #ff7b72;
+  --stx-syntax-punctuation: #c9d1d9;
+  --stx-syntax-type: #ffa657;
+  --stx-syntax-variable: #ffa657;
+  --stx-syntax-tag: #7ee787;
+  --stx-syntax-attribute: #79c0ff;
+}
+}
+:where(.dark) {
+  --stx-syntax-background: #0d1117;
+  --stx-syntax-foreground: #c9d1d9;
+  --stx-syntax-keyword: #ff7b72;
+  --stx-syntax-string: #a5d6ff;
+  --stx-syntax-comment: #8b949e;
+  --stx-syntax-numeric: #79c0ff;
+  --stx-syntax-constant: #79c0ff;
+  --stx-syntax-function: #d2a8ff;
+  --stx-syntax-operator: #ff7b72;
+  --stx-syntax-punctuation: #c9d1d9;
+  --stx-syntax-type: #ffa657;
+  --stx-syntax-variable: #ffa657;
+  --stx-syntax-tag: #7ee787;
+  --stx-syntax-attribute: #79c0ff;
+}
+:where([data-syntax-theme="light"]) {
+  --stx-syntax-background: #ffffff;
+  --stx-syntax-foreground: #24292f;
+  --stx-syntax-keyword: #cf222e;
+  --stx-syntax-string: #0a3069;
+  --stx-syntax-comment: #6e7781;
+  --stx-syntax-numeric: #0550ae;
+  --stx-syntax-constant: #0550ae;
+  --stx-syntax-function: #8250df;
+  --stx-syntax-operator: #cf222e;
+  --stx-syntax-punctuation: #24292f;
+  --stx-syntax-type: #953800;
+  --stx-syntax-variable: #953800;
+  --stx-syntax-tag: #116329;
+  --stx-syntax-attribute: #0550ae;
+}
+:where([data-syntax-theme="dark"]) {
+  --stx-syntax-background: #0d1117;
+  --stx-syntax-foreground: #c9d1d9;
+  --stx-syntax-keyword: #ff7b72;
+  --stx-syntax-string: #a5d6ff;
+  --stx-syntax-comment: #8b949e;
+  --stx-syntax-numeric: #79c0ff;
+  --stx-syntax-constant: #79c0ff;
+  --stx-syntax-function: #d2a8ff;
+  --stx-syntax-operator: #ff7b72;
+  --stx-syntax-punctuation: #c9d1d9;
+  --stx-syntax-type: #ffa657;
+  --stx-syntax-variable: #ffa657;
+  --stx-syntax-tag: #7ee787;
+  --stx-syntax-attribute: #79c0ff;
+}
+.tok-keyword { color: var(--stx-syntax-keyword); }
+.tok-string { color: var(--stx-syntax-string); }
+.tok-comment { color: var(--stx-syntax-comment); }
+.tok-numeric { color: var(--stx-syntax-numeric); }
+.tok-constant { color: var(--stx-syntax-constant); }
+.tok-function { color: var(--stx-syntax-function); }
+.tok-operator { color: var(--stx-syntax-operator); }
+.tok-punctuation { color: var(--stx-syntax-punctuation); }
+.tok-type { color: var(--stx-syntax-type); }
+.tok-variable { color: var(--stx-syntax-variable); }
+.tok-tag { color: var(--stx-syntax-tag); }
+.tok-attribute { color: var(--stx-syntax-attribute); }
+.tok-comment { font-style: italic; }
+</style>

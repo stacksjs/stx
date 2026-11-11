@@ -111,6 +111,22 @@ if (!chatResult.success) {
   process.exit(1)
 }
 
+// The code editor without its template: the model, the view and the controller
+// that joins them. For a host that mounts an editor itself, or that wants the
+// model alone (it has no DOM in it). The highlighter stays external, so this
+// entry does not carry a tokenizer the host may already have.
+const editorResult = await Bun.build({
+  entrypoints: ['./src/ui/code-editor/editor.ts'],
+  outdir: './dist/code-editor',
+  target: 'browser',
+  minify: false,
+  external: ['@stacksjs/stx', 'ts-syntax-highlighter', 'ts-syntax-highlighter/browser'],
+})
+if (!editorResult.success) {
+  for (const log of editorResult.logs) console.error(log)
+  process.exit(1)
+}
+
 // The overlay stack is browser code too, and an app calls it from its own
 // `<script client>`. The package root reaches the syntax highlighter, which
 // needs Node's streams, so a page importing the stack from the root failed its

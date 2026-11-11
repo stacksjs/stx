@@ -1,0 +1,14 @@
+<script client>
+/*
+ * The slowest frame of the last second. A component rather than a few lines in
+ * the page, because it needs a module (the measuring is not stx's business)
+ * and a component's script is where an import is bundled.
+ */
+import { createFrameMeter } from './frame-meter'
+
+const slowest = state(0)
+const meter = createFrameMeter(value => slowest.set(value))
+onDestroy(() => meter.stop())
+</script>
+
+<span data-frame-meter class="font-mono text-fg" x-text="slowest() + ' ms'">0 ms</span>
