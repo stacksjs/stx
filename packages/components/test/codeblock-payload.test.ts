@@ -99,8 +99,10 @@ describe('#2014 — CodeBlock does not ship code it cannot copy', () => {
       // Narrowly: the DECLARATION. The generated scope boilerplate legitimately
       // contains `typeof code !== 'undefined'`, so a bare search for the word
       // fails on correct output.
-      expect(js, attrs).not.toContain('const code = undefined')
-      expect(js, attrs).toMatch(/const code = "/)
+      // `let` since the block can follow a bound `code` in the browser, and
+      // the copy button has to copy what is now shown.
+      expect(js, attrs).not.toContain('let code = undefined')
+      expect(js, attrs).toMatch(/let code = "/)
     }
   })
 

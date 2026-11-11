@@ -52,6 +52,11 @@
       "bun": "./dist/chat/controller.js",
       "import": "./dist/chat/controller.js"
     },
+    "./code-editor": {
+      "types": "./dist/ui/code-editor/editor.d.ts",
+      "bun": "./dist/code-editor/editor.js",
+      "import": "./dist/code-editor/editor.js"
+    },
     "./overlays": {
       "types": "./dist/utils/overlays.d.ts",
       "bun": "./dist/overlays/overlays.js",
@@ -86,7 +91,7 @@
     "@stacksjs/ts-css": "^0.3.11",
     "@stacksjs/stx": "workspace:*",
     "bun-plugin-stx": "workspace:*",
-    "ts-syntax-highlighter": "^0.2.17",
+    "ts-syntax-highlighter": "^0.2.20",
     "ts-video-player": "^0.1.11"
   },
   "devDependencies": {

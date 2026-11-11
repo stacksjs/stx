@@ -15,14 +15,21 @@ export const lineNumbers = $bool($props.lineNumbers, true)
 export const copyable = $bool($props.copyable, true)
 export const className = $props.className || ''
 
-const result = await highlight(code, { language, theme, lineNumbers })
+/*
+ * `lineNumbers` is still not passed on. `highlight()` can number lines now (as
+ * a CSS counter, so they never reach a copy), but this prop defaults to true
+ * and has always been dropped: honouring it would put numbers on every block
+ * already in use. Turning it on is its own change.
+ */
+const result = await highlight(code, { language, theme })
 export const highlightedCode = applyHeadwindClasses(result.html, className)
-// Exported, not rendered: no stylesheet in this package covers the
-// highlighter's class names, so a consumer needs these rules to see colour --
-// but a <style> inside a component is extracted from the component's source
-// before interpolation runs, so emitting it here ships an empty tag. Until that
-// is fixed in stx, an app includes this itself (or sets its own token styles).
+// The same sheet the <style> block below ships as literal text. A <style>
+// inside a component is extracted from its source before interpolation runs,
+// so `{{ highlightCss }}` in one would ship an empty tag; the literal copy is
+// what a page gets, and this export is for a caller that wants the string.
 export const highlightCss = result.css
+export const renderedOnServer = code !== ''
+export const liveClasses = `rounded-md overflow-auto text-sm leading-relaxed font-mono ${className}`.trim()
 
 /*
  * The clipboard payload, decided on the SERVER.
@@ -57,23 +64,70 @@ export const copyPayload = copyable ? code : ''
  * "1const a = 1" rather than the code. Gating is the version that cannot
  * silently corrupt what lands on the clipboard.
  */
-const code = {{ copyPayload }}
+let code = {{ copyPayload }}
 const copied = state(false)
 
-async function copyToClipboard() {
-  try {
-    await navigator.clipboard.writeText(code)
-    copied.set(true)
-    setTimeout(() => copied.set(false), 2000)
-  }
-  catch (err) {
-    console.error('Failed to copy code:', err)
-  }
+/*
+ * A block whose code is bound (`:code="snippet()"`) follows it in the browser.
+ *
+ * The new code is shown at once, as text. It is coloured as well when the page
+ * hands this block a highlighter: `:highlighter="highlightToHtml"`, the function
+ * this package exports, which runs in a browser through the highlighter's
+ * browser entry. It is passed in rather than imported here because an import
+ * in this script is bundled into every page that has a code block on it, and a
+ * page of static snippets should not download a tokenizer and its grammars to
+ * show HTML the server already coloured.
+ *
+ * `null` as the default for `code`, not the server's code: a default would put
+ * the snippet in this script whether or not anything needs it (#2014).
+ */
+const liveCode = useReactiveProp('code', null, { parse: v => v })
+const liveLanguage = useReactiveProp('language', {{ language }}, { parse: v => (v == null ? '' : String(v)) })
+const liveHighlighter = useReactiveProp('highlighter', null, { parse: v => v })
+const liveHtml = state('')
+// What the server drew. A bound prop is not known there, so it drew nothing.
+let renderedCode = {{ renderedOnServer }} ? null : ''
+let renderedLanguage = {{ language }}
+let request = 0
+
+const themeAttribute = {{ theme }} === 'light' || {{ theme }} === 'dark' ? ' data-syntax-theme="' + {{ theme }} + '"' : ''
+function plainHtml(text) {
+  return '<pre class="syntax"' + themeAttribute + '><code>' + String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</code></pre>'
 }
+
+effect(() => {
+  const next = liveCode()
+  const language = liveLanguage() || {{ language }}
+  const highlighter = liveHighlighter()
+  if (typeof next !== 'string') return
+  // The first value a bound prop delivers is the one the server drew.
+  if (renderedCode === null) {
+    renderedCode = next
+    return
+  }
+  if (next === renderedCode && language === renderedLanguage) return
+
+  renderedCode = next
+  renderedLanguage = language
+  if ({{ copyable }}) code = next
+  const mine = ++request
+  liveHtml.set(plainHtml(next))
+  if (typeof highlighter !== 'function') return
+
+  Promise.resolve()
+    .then(() => highlighter(next, { language, theme: {{ theme }} }))
+    .then((html) => {
+      // A later change has already been drawn, or there was nothing to colour.
+      if (mine === request && typeof html === 'string' && html) liveHtml.set(html)
+    })
+    .catch(() => {})
+})
 </script>
 
 <div class="relative group">
-  {!! highlightedCode !!}
+  {{-- The server's render, until a bound `code` changes; then the browser's. --}}
+  <div :show="!liveHtml()">{!! highlightedCode !!}</div>
+  <div class="{{ liveClasses }}" :show="liveHtml()" :html="liveHtml()"></div>
 
   @if(copyable)
     <button
@@ -107,3 +161,127 @@ async function copyToClipboard() {
     </button>
   @endif
 </div>
+
+<style>
+/* codeBlockCss() in utils/syntax-theme.ts, as literal text. A test holds the two
+   together; change that file and paste, not this. */
+:where(:root) {
+  --stx-syntax-background: #ffffff;
+  --stx-syntax-foreground: #24292f;
+  --stx-syntax-keyword: #cf222e;
+  --stx-syntax-string: #0a3069;
+  --stx-syntax-comment: #6e7781;
+  --stx-syntax-numeric: #0550ae;
+  --stx-syntax-constant: #0550ae;
+  --stx-syntax-function: #8250df;
+  --stx-syntax-operator: #cf222e;
+  --stx-syntax-punctuation: #24292f;
+  --stx-syntax-type: #953800;
+  --stx-syntax-variable: #953800;
+  --stx-syntax-tag: #116329;
+  --stx-syntax-attribute: #0550ae;
+}
+@media (prefers-color-scheme: dark) {
+:where(:root:not(.light)) {
+  --stx-syntax-background: #0d1117;
+  --stx-syntax-foreground: #c9d1d9;
+  --stx-syntax-keyword: #ff7b72;
+  --stx-syntax-string: #a5d6ff;
+  --stx-syntax-comment: #8b949e;
+  --stx-syntax-numeric: #79c0ff;
+  --stx-syntax-constant: #79c0ff;
+  --stx-syntax-function: #d2a8ff;
+  --stx-syntax-operator: #ff7b72;
+  --stx-syntax-punctuation: #c9d1d9;
+  --stx-syntax-type: #ffa657;
+  --stx-syntax-variable: #ffa657;
+  --stx-syntax-tag: #7ee787;
+  --stx-syntax-attribute: #79c0ff;
+}
+}
+:where(.dark) {
+  --stx-syntax-background: #0d1117;
+  --stx-syntax-foreground: #c9d1d9;
+  --stx-syntax-keyword: #ff7b72;
+  --stx-syntax-string: #a5d6ff;
+  --stx-syntax-comment: #8b949e;
+  --stx-syntax-numeric: #79c0ff;
+  --stx-syntax-constant: #79c0ff;
+  --stx-syntax-function: #d2a8ff;
+  --stx-syntax-operator: #ff7b72;
+  --stx-syntax-punctuation: #c9d1d9;
+  --stx-syntax-type: #ffa657;
+  --stx-syntax-variable: #ffa657;
+  --stx-syntax-tag: #7ee787;
+  --stx-syntax-attribute: #79c0ff;
+}
+:where([data-syntax-theme="light"]) {
+  --stx-syntax-background: #ffffff;
+  --stx-syntax-foreground: #24292f;
+  --stx-syntax-keyword: #cf222e;
+  --stx-syntax-string: #0a3069;
+  --stx-syntax-comment: #6e7781;
+  --stx-syntax-numeric: #0550ae;
+  --stx-syntax-constant: #0550ae;
+  --stx-syntax-function: #8250df;
+  --stx-syntax-operator: #cf222e;
+  --stx-syntax-punctuation: #24292f;
+  --stx-syntax-type: #953800;
+  --stx-syntax-variable: #953800;
+  --stx-syntax-tag: #116329;
+  --stx-syntax-attribute: #0550ae;
+}
+:where([data-syntax-theme="dark"]) {
+  --stx-syntax-background: #0d1117;
+  --stx-syntax-foreground: #c9d1d9;
+  --stx-syntax-keyword: #ff7b72;
+  --stx-syntax-string: #a5d6ff;
+  --stx-syntax-comment: #8b949e;
+  --stx-syntax-numeric: #79c0ff;
+  --stx-syntax-constant: #79c0ff;
+  --stx-syntax-function: #d2a8ff;
+  --stx-syntax-operator: #ff7b72;
+  --stx-syntax-punctuation: #c9d1d9;
+  --stx-syntax-type: #ffa657;
+  --stx-syntax-variable: #ffa657;
+  --stx-syntax-tag: #7ee787;
+  --stx-syntax-attribute: #79c0ff;
+}
+.tok-keyword { color: var(--stx-syntax-keyword); }
+.tok-string { color: var(--stx-syntax-string); }
+.tok-comment { color: var(--stx-syntax-comment); }
+.tok-numeric { color: var(--stx-syntax-numeric); }
+.tok-constant { color: var(--stx-syntax-constant); }
+.tok-function { color: var(--stx-syntax-function); }
+.tok-operator { color: var(--stx-syntax-operator); }
+.tok-punctuation { color: var(--stx-syntax-punctuation); }
+.tok-type { color: var(--stx-syntax-type); }
+.tok-variable { color: var(--stx-syntax-variable); }
+.tok-tag { color: var(--stx-syntax-tag); }
+.tok-attribute { color: var(--stx-syntax-attribute); }
+.tok-comment { font-style: italic; }
+.syntax {
+  margin: 0;
+  padding: 1rem;
+  overflow-x: auto;
+  border-radius: 0.375rem;
+  background-color: var(--stx-syntax-background);
+  color: var(--stx-syntax-foreground);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  tab-size: 2;
+}
+.syntax code { display: block; font-family: inherit; }
+.syntax[data-line-numbers] { counter-reset: stx-syntax-line; }
+.syntax[data-line-numbers] .line::before {
+  counter-increment: stx-syntax-line;
+  content: counter(stx-syntax-line);
+  display: inline-block;
+  width: 2.5em;
+  margin-right: 1em;
+  text-align: right;
+  opacity: 0.5;
+  user-select: none;
+}
+</style>
