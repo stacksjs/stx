@@ -198,7 +198,7 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
         actionContainer.setAttribute('data-tab-accessory-group', primary.layout!)
         actionContainer.setAttribute('role', 'group')
         actionContainer.setAttribute('aria-label', primary.accessibilityLabel || primary.title)
-        actionContainer.style.cssText = `position:absolute;z-index:2;inset-inline-end:20px;bottom:calc(100% + 8px);display:flex;flex-direction:${primary.layout === 'vertical' ? 'column' : 'row'};padding:2px;border-radius:26px;background:color-mix(in srgb,currentColor 8%,transparent);backdrop-filter:blur(20px);box-shadow:0 4px 16px #0002`
+        actionContainer.style.cssText = `position:absolute;z-index:2;inset-inline-end:22px;bottom:calc(100% + 10px);display:flex;flex-direction:${primary.layout === 'vertical' ? 'column' : 'row'};border-radius:24px;background:color-mix(in srgb,currentColor 8%,transparent);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:inset 0 0 0 .5px color-mix(in srgb,currentColor 18%,transparent),0 4px 16px #0002`
         tabs.append(actionContainer)
       }
       const actions: Array<NativeAccessoryCompanion & { badge?: string | null }> = primary ? [...(primary.companions || []).slice(0, 2), primary] : []
@@ -210,13 +210,9 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
         button.setAttribute('aria-label', `${item.accessibilityLabel || item.title}${item.badge ? `, ${item.badge}` : ''}`)
         button.style.cssText = 'position:relative;display:flex;align-items:center;justify-content:center;width:56px;height:56px;flex-shrink:0;border:0;border-radius:50%;background:#8882;color:inherit'
         if (grouped) {
-          button.style.cssText = 'position:relative;display:flex;align-items:center;justify-content:center;width:48px;height:48px;flex-shrink:0;border:0;border-radius:24px;background:transparent;color:inherit;cursor:pointer'
-          if (actionContainer.children.length) {
-            const separator = document.createElement('span')
-            separator.setAttribute('aria-hidden', 'true')
-            separator.style.cssText = primary?.layout === 'vertical' ? 'height:1px;margin:0 12px;background:#8885' : 'width:1px;margin:12px 0;background:#8885'
-            actionContainer.append(separator)
-          }
+          // One control, as the host draws it: 48 across, 52 along, no divider.
+          const vertical = primary?.layout === 'vertical'
+          button.style.cssText = `position:relative;display:flex;align-items:center;justify-content:center;width:${vertical ? 48 : 52}px;height:${vertical ? 52 : 48}px;flex-shrink:0;border:0;border-radius:24px;background:transparent;color:inherit;cursor:pointer`
         }
         const holder = document.createElement('span')
         button.append(holder)

@@ -33,6 +33,7 @@ export * from './cli'
 export type * from './runtime/craft'
 export * from './runtime/shared-screen'
 export * from './live-activity'
+export * from './floating-actions'
 
 // Bridge exports
 export * from './bridge/protocol'

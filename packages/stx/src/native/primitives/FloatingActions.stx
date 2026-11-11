@@ -1,0 +1,42 @@
+{{--
+  FloatingActions: the round controls that float over a screen, above the
+  trailing end of the tab bar, joined in one capsule of glass as the map
+  controls in Maps are.
+
+    <FloatingActions :actions="[
+      { path: '/add', label: 'Add', symbol: 'plus', menu: addChoices },
+      { path: '/messages', label: 'Messages', symbol: 'message.fill', badge: unread },
+    ]" />
+
+  `layout` is `vertical` (the default), `horizontal`, or `separate` for a
+  round control each. The host draws them (Liquid Glass on iOS 26), so this
+  takes no room in the screen's own layout; they follow `actions` as it
+  changes and leave with the screen. For actions every screen shares, pass
+  `floatingActions()` from `@stacksjs/stx/native` to `craft.navigation.setChrome`.
+--}}
+<script client>
+import { floatingActions } from '../floating-actions'
+
+const floatingList = useReactiveProp('actions', [])
+const floatingLayout = useReactiveProp('layout', 'vertical')
+// A page drawn by a browser has no host chrome to put them in.
+const floatingHost = typeof craft !== 'undefined' && craft && craft.navigation ? craft.navigation : null
+let floatingSent = ''
+
+effect(() => {
+  if (!floatingHost) return
+  const list = floatingList()
+  const accessory = floatingActions(Array.isArray(list) ? list : [], String(floatingLayout() || 'vertical'))
+  // The same actions again (a parent re-rendered) are not a change to draw.
+  const next = JSON.stringify(accessory)
+  // Nor is having none before any were shown: there is nothing to take away.
+  if (next === floatingSent || (accessory === null && !floatingSent)) return
+  floatingSent = next
+  floatingHost.setOptions({ tabAccessory: accessory })
+})
+
+onDestroy(() => {
+  if (floatingHost && floatingSent && floatingSent !== 'null') floatingHost.setOptions({ tabAccessory: null })
+})
+</script>
+<div data-native="View" class="hidden" aria-hidden="true" data-floating-actions></div>

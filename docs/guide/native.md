@@ -817,14 +817,48 @@ it is intentionally not presented as pure JavaScript-to-UIKit bridge latency.
 
 Types for the `craft` object a screen sees (`NativeCraft`, `NativeNavigation`, …) are exported from `@stacksjs/stx/native`.
 
-Floating actions use the typed `NativeTabAccessory` through
-`craft.navigation.setOptions` or shared `setChrome`. Set `layout: 'vertical'`
-for a Maps-style material capsule above the trailing edge of the tab bar,
-or `'horizontal'` for a horizontal capsule. Companions come first, followed
-by the primary action. Each keeps its own 48-point touch target, accessible
-name, native popup and route. Grouping implies `iconOnly`; omit `layout` to
-keep separate buttons. A grouped Craft host is required on iOS/Android;
-the browser screen host supports the same option.
+### Floating actions
+
+Floating actions are the round controls over a screen, above the trailing end
+of the tab bar: the map controls in Maps. A screen declares its own with
+`<FloatingActions>`; it draws nothing in the screen's layout, follows its
+`actions` as they change, and leaves with the screen.
+
+```html
+<FloatingActions :actions="[
+  { path: '/add', label: 'Add', symbol: 'plus', menu: [{ path: '/workouts/new', title: 'Workout', symbol: 'dumbbell' }] },
+  { path: '/messages', label: 'Messages', symbol: 'message.fill', badge: unread() },
+]" />
+```
+
+Actions read in order, top to bottom. `layout` is `vertical` (the default) or
+`horizontal`, which join them in one capsule, or `separate` for a round
+control each. On iOS 26 the capsule is a single piece of interactive Liquid
+Glass with no dividers, 48 points across and 52 along for each action; pass
+filled symbols for the weight the system's own controls have. Each action
+keeps its own accessible name, native popup and route. The last action is the
+primary one: it alone shows a `badge` (a number past 99 reads `99+`) and it
+always opens its `path`; a `menu` belongs to an earlier action. At most three.
+
+Actions every screen shares go through the app's chrome instead, built by the
+same rules with `floatingActions()`:
+
+```ts
+import { floatingActions } from '@stacksjs/stx/native'
+
+craft.navigation.setChrome({
+  tabAccessory: floatingActions([
+    { path: '/add', label: 'Add', symbol: 'plus', menu: addChoices },
+    { path: '/messages', label: 'Messages', symbol: 'message.fill', badge: unread },
+  ]),
+})
+```
+
+`floatingActions()` answers the typed `NativeTabAccessory` the host draws:
+companions first, then the primary action, with `layout` implying `iconOnly`.
+It can be written by hand through `craft.navigation.setOptions` or
+`setChrome`. A grouped Craft host is required on iOS/Android; the browser
+screen host supports the same option.
 
 ```ts
 craft.navigation.setChrome({

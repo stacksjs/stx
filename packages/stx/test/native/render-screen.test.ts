@@ -299,7 +299,7 @@ const route = state([47, 11, 47.1, 11.2])
 
   it('ships one component per native type the IR declares', async () => {
     const files = [...new Bun.Glob('*.stx').scanSync(nativePrimitivesDir())].sort()
-    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(34)
+    expect(files.filter(file => file !== 'Fragment.stx').length).toBe(35)
     expect(files).toContain('Fragment.stx')
     expect(files).toContain('NativeSegmentedControl.stx')
     expect(files).toContain('Icon.stx')
@@ -320,7 +320,7 @@ const route = state([47, 11, 47.1, 11.2])
       const source = await Bun.file(path.join(dir, file)).text()
       const declared = /data-native="(\w+)"/.exec(source)
       expect(declared, file).toBeTruthy()
-      const aliases: Record<string, string> = { 'NativeSegmentedControl.stx': 'SegmentedControl', 'NativeSidebar.stx': 'Sidebar', 'ToolbarButton.stx': 'Button' }
+      const aliases: Record<string, string> = { 'NativeSegmentedControl.stx': 'SegmentedControl', 'NativeSidebar.stx': 'Sidebar', 'ToolbarButton.stx': 'Button', 'FloatingActions.stx': 'View' }
       expect(declared![1]).toBe(aliases[file] ?? path.basename(file, '.stx'))
     }
   })

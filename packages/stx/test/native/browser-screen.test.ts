@@ -123,7 +123,10 @@ function addMenu() { craft.navigation.setOptions({tabAccessory:{path:'/m/message
     expect((group as HTMLElement).style.flexDirection).toBe('column')
     expect([...group.querySelectorAll('button')].map(button => button.getAttribute('aria-label'))).toEqual(['Add', 'Messages'])
     const addButton = browser.document.querySelector('[data-tab-accessory][aria-label="Add"]') as any
-    expect(addButton.style.height).toBe('48px')
+    expect(addButton.style.width).toBe('48px')
+    expect(addButton.style.height).toBe('52px')
+    // One control: nothing but its actions inside the group.
+    expect([...group.children].every(child => child.tagName === 'BUTTON')).toBe(true)
     addButton.onclick()
     expect(scope.lastNavigation).toBe('/m/messages')
     expect([...browser.document.querySelectorAll('[role="menuitem"]')].map(row => row.textContent)).toEqual(['Habit', 'Nutrition', 'Workout'])

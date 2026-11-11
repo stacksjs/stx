@@ -71,3 +71,21 @@ it('can be turned off', async () => {
   }
   finally { clearComponentCache(); await rm(root, { recursive: true, force: true }) }
 })
+
+it('<FloatingActions> is a hidden no-op on a web page, with its helper delivered', async () => {
+  const root = await realpath(createTempDir('stx-web-floating-actions-'))
+  try {
+    await Bun.write(path.join(root, 'stx.config.ts'), 'export default {}')
+    clearComponentCache()
+    const config = await loadStxConfig(root)
+    const html = await render(root, `<script client>const list = state([{ path: '/map', label: 'Map', symbol: 'map.fill' }])</script><main><FloatingActions :actions="list" /></main>`, config)
+    expect(html).not.toContain('could not be resolved')
+    expect(html).toContain('<div data-native="View" class="hidden" aria-hidden="true" data-floating-actions></div>')
+    // The component imports its rules; the page has to carry that module, or
+    // its script stops at "module is not registered on this page".
+    expect(html).toContain('__stxModules["src/native/floating-actions.ts"] =')
+    // Only a host with chrome is asked to draw them.
+    expect(html).toContain('typeof craft !== "undefined"')
+  }
+  finally { clearComponentCache(); await rm(root, { recursive: true, force: true }) }
+})
