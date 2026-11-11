@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.851...v0.2.852)
+
+## ✨ Features
+
+- **native**: mark a floating action that is on ([d7869bf](https://github.com/stacksjs/stx/commit/d7869bf)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.852 ([bc75dab](https://github.com/stacksjs/stx/commit/bc75dab)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.850...v0.2.851)
 
 ## 🐛 Bug Fixes
