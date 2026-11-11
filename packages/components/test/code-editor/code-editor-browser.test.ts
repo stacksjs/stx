@@ -52,9 +52,40 @@ const caretAt = (id: string, offset: string, end = offset): Promise<unknown> => 
   return true
 `))
 
-/** Type through the engine's own editing, one character at a time, as keys do. */
+/**
+ * The two events a typed character arrives as: a cancellable `beforeinput`,
+ * then the insertion and an `input` - unless the first was cancelled.
+ *
+ * Written out rather than left to `document.execCommand`, because the engines
+ * disagree about it: WebKit sends `beforeinput` for an `execCommand`, Chrome
+ * does not, and a real key press sends it in both. The editor's bracket pairing
+ * and its handling of a keyless line break live in `beforeinput`, so going
+ * through `execCommand` tested them in one engine and silently skipped them in
+ * the other.
+ */
+const INPUT = `
+  const send = (inputType, data, text) => {
+    const f = document.activeElement
+    // A browser does not type into a read-only field. A script can, so say so.
+    if (f.readOnly) return
+    const before = new InputEvent('beforeinput', { inputType, data, bubbles: true, cancelable: true })
+    if (!f.dispatchEvent(before)) return
+    f.setRangeText(text, f.selectionStart, f.selectionEnd, 'end')
+    f.dispatchEvent(new InputEvent('input', { inputType, data, bubbles: true }))
+  }
+`
+
+/** Type one character at a time, as keys do. */
 const type = (text: string): Promise<unknown> => run(`
-  for (const character of ${JSON.stringify(text)}) document.execCommand('insertText', false, character)
+  ${INPUT}
+  for (const character of ${JSON.stringify(text)}) send('insertText', character, character)
+  return true
+`)
+
+/** A line break with no key press behind it. */
+const lineBreak = (): Promise<unknown> => run(`
+  ${INPUT}
+  send('insertLineBreak', null, '\\n')
   return true
 `)
 
@@ -237,7 +268,7 @@ describe('typing', () => {
 
   it('a line break that arrives without a key is indented the same', async () => {
     // What an on-screen keyboard or dictation sends: the input, and no key.
-    await run(`document.execCommand('insertLineBreak'); return true`)
+    await lineBreak()
     await type('y')
 
     expect(await value('small')).toContain('function f() {\n  x\n  y\n  return a')
