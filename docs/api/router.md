@@ -22,6 +22,27 @@ decode, including literal entity text such as `&amp;lt;`.
 The parsed payload title takes precedence over the legacy `X-STX-Title`
 header; that header remains the fallback for older fragment responses.
 
+## Page stylesheets on navigation
+
+A fragment is the routed container's inner content, so it does not include the
+destination's `<head>`. The stylesheets that head links travel separately: when
+a page's head has `<link rel="stylesheet">` tags, the fragment response lists
+them in a second inert payload, `<template data-stx-page-css="1">`, directly
+behind the metadata template. Only `href`, `media`, `crossorigin` and
+`integrity` are carried. Generated utility sheets (`data-css`) are not listed;
+the fragment already carries those and the router orders them itself.
+
+On navigation the router adds each listed stylesheet the document does not have
+yet. It compares absolute URLs, resolving a relative `href` against the
+destination page, so a sheet is never added twice. It never removes or reorders
+a stylesheet that is already in the document, so a previous page's own
+stylesheet stays loaded, exactly as it does on a full-document SPA swap. A new
+sheet is fetched before the content swaps (capped by `cssLoadTimeout`) so the
+destination does not paint without its CSS, and a sheet that fails to load turns
+the navigation into a full page load. A page that links no stylesheet sends no
+payload, which a client reads the same as a response from an older server.
+Older clients leave the template inert.
+
 ## Navigation destination hook
 
 A tenant shell can preserve its explicit scope before the router selects the

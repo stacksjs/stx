@@ -1786,26 +1786,36 @@ else {
       link.setAttribute('data-css','generated');
       link.setAttribute('rel','stylesheet');
       link.setAttribute('href',new URL(href,location.href).href===abs?href:abs);
-      link.setAttribute('media','print');
-      link.setAttribute('data-stx-css-pending','');
-      link.__stxCssReady=new Promise(function(resolve){
-        var timer=setTimeout(finish,o.cssLoadTimeout);
-        function finish(failed){
-          clearTimeout(timer);link.onload=null;link.onerror=null;link.__stxCssReady=null;
-          // A sheet that failed (a 5xx, a dropped connection) is gone for good:
-          // swapping anyway painted the page with only the utilities the
-          // previous page happened to share, which reads as a broken layout.
-          // Drop the dead <link> so a retry fetches it again, and report it.
-          if(failed===true&&link.parentNode)link.parentNode.removeChild(link);
-          resolve(failed!==true);
-        }
-        link.onload=function(){finish(false)};
-        link.onerror=function(){finish(true)};
-      });
-      pending.push(link.__stxCssReady);
-      dhead().appendChild(link);
+      pending.push(holdCss(link));
     });
-    return pending.length?Promise.all(pending).then(function(results){return results.every(function(ok){return ok!==false})}):null;
+    return allCss(pending);
+  }
+
+  // Put a sheet in <head> unapplied and answer with its __stxCssReady, the
+  // promise the swap waits on. Shared by generated and page stylesheets.
+  function holdCss(link){
+    link.setAttribute('media','print');
+    link.setAttribute('data-stx-css-pending','');
+    link.__stxCssReady=new Promise(function(resolve){
+      var timer=setTimeout(finish,o.cssLoadTimeout);
+      function finish(failed){
+        clearTimeout(timer);link.onload=null;link.onerror=null;link.__stxCssReady=null;
+        // A sheet that failed (a 5xx, a dropped connection) is gone for good:
+        // swapping anyway painted the page with only the styles the
+        // previous page happened to share, which reads as a broken layout.
+        // Drop the dead <link> so a retry fetches it again, and report it.
+        if(failed===true&&link.parentNode)link.parentNode.removeChild(link);
+        resolve(failed!==true);
+      }
+      link.onload=function(){finish(false)};
+      link.onerror=function(){finish(true)};
+    });
+    dhead().appendChild(link);
+    return link.__stxCssReady;
+  }
+  // One answer for every sheet a swap waits on: null when there is none.
+  function allCss(pending){
+    return pending.some(Boolean)?Promise.all(pending).then(function(results){return results.indexOf(false)===-1}):null;
   }
 
   // Swap once the destination's sheets are in, or hand the navigation to the
@@ -1856,6 +1866,73 @@ else {
     return hrefs;
   }
 
+  // ── Page stylesheets ──
+  // A fragment is the container's inner content, so the <link rel="stylesheet">
+  // tags the destination declares in its own <head> never arrived with it: a
+  // page reached by a link click rendered with the previous page's CSS and
+  // none of its own, while a full load of the same URL was fine. The server
+  // lists them in a template of their own, behind the fragment marker and the
+  // metadata. They are assets, not metadata (#2121), so applyPageHead never
+  // sees them, and only stylesheet links are read out of the list.
+  //
+  // Additive and deduped by absolute URL, like the full-document path: a sheet
+  // the document has stays where it is, one it lacks is appended once, and
+  // nothing is ever removed or reordered. Generated utility sheets are not
+  // listed; promoteGeneratedCss owns those.
+  var PAGE_CSS=/^(?:<!--stx-fragment[^>]*>)?(?:<template data-stx-page-head[^]*?<\\/template>\\n?)?<template data-stx-page-css="1">([^]*?)<\\/template>\\n?/;
+  var PAGE_CSS_LINK='link[rel="stylesheet"][href]:not([data-css])';
+  function fragmentPageCss(html){
+    var payload=PAGE_CSS.exec(html);
+    if(!payload)return [];
+    // Parsed inert: a <template>'s content fetches nothing and applies nothing.
+    var list=ce('template');
+    list.innerHTML=payload[1];
+    return list.content.querySelectorAll(PAGE_CSS_LINK);
+  }
+  function findPageCss(abs){
+    var found=null;
+    qsa('head '+PAGE_CSS_LINK).forEach(function(link){
+      try{if(!found&&new URL(link.getAttribute('href'),location.href).href===abs)found=link}catch(e){}
+    });
+    return found;
+  }
+  // A sheet this path added goes live under the media its page declared. One
+  // the document already had is left exactly as it was.
+  function releasePageCss(link,media){
+    if(!link||!link.hasAttribute('data-stx-css-pending'))return;
+    link.removeAttribute('data-stx-css-pending');
+    if(media)link.setAttribute('media',media);else link.removeAttribute('media');
+  }
+  // Before the swap, as preloadGeneratedCss: the sheets the document lacks are
+  // added unapplied, and the swap waits for them so the new markup never
+  // paints without its own CSS. Called again at the swap with live set, which
+  // is when they start to apply.
+  //
+  // Each href is resolved against the page that declared it, never the one on
+  // screen: a relative 'assets/app.css' on /docs/intro is /docs/assets/app.css
+  // (#1777). It is stored absolute, so it still names the same file once the
+  // address bar has moved on.
+  function pageCss(links,base,live){
+    var pending=[];
+    links.forEach(function(decl){
+      var abs,link;
+      try{abs=new URL(decl.getAttribute('href'),new URL(base,location.href)).href}catch(e){return}
+      link=findPageCss(abs);
+      if(!link){
+        link=ce('link');
+        ['crossorigin','integrity'].forEach(function(name){
+          if(decl.hasAttribute(name))link.setAttribute(name,decl.getAttribute(name));
+        });
+        link.setAttribute('rel','stylesheet');
+        link.setAttribute('href',abs);
+        holdCss(link);
+      }
+      pending.push(link.__stxCssReady);
+      if(live)releasePageCss(link,decl.getAttribute('media'));
+    });
+    return allCss(pending);
+  }
+
   // Everything page-level the outgoing page registered stays its own from
   // here on: the runtime runs those on stx:load and keeps whatever the
   // incoming page's scripts register next (see beginSwap in the runtime).
@@ -1871,6 +1948,10 @@ else {
     if(isFragment){
       var headPayload=/^<template data-stx-page-head="1">([\\s\\S]*?)<\\/template>\\n?/.exec(html);
       if(headPayload){incomingHead=headPayload[1];html=html.slice(headPayload[0].length)}
+      // The page's stylesheet list comes off as well: it is read here, and
+      // must not be written into the container with the content.
+      var incomingCss=fragmentPageCss(html);
+      html=html.replace(PAGE_CSS,'');
     }
     if(!isFragment&&!isStxDocument(html)){log('[router] non-stx document — full navigation to:',url);location.href=url;return Promise.resolve(false)}
     var ctx=pendingCtx||{direction:pushState==='replace'?'replace':pushState==='tab'?'tab':pushState===false?'pop':'push'};
@@ -1982,6 +2063,8 @@ else {
             dhead().appendChild(cw);
           }
         }
+        // The page's own sheets first, so its generated one still ends last.
+        pageCss(incomingCss,url,true);
         // Already present ones are MOVED last, not skipped — see
         // promoteGeneratedCss for why their order is the whole bug.
         promoteGeneratedCss(fragCssHrefs,location.href);
@@ -2137,7 +2220,8 @@ else {
       // swaps, or the new markup paints once without its utilities and then
       // jumps. Cleanup waits with it so the outgoing page stays live meanwhile.
       // With nothing new to load this runs in the same turn, as it always did.
-      var fragCssReady=preloadGeneratedCss(fragmentCssHrefs(html),location.href);
+      // The page's own stylesheets wait the same way, for the same reason.
+      var fragCssReady=allCss([preloadGeneratedCss(fragmentCssHrefs(html),location.href),pageCss(incomingCss,url)]);
       return afterCss(fragCssReady,url,startFragSwap);
     }
 
@@ -2245,7 +2329,9 @@ else {
         // below also reorders them.
         if(l.hasAttribute('data-css'))return;
         var abs=new URL(href,docBase).href;
-        if(curLinks[abs])return;
+        // Present, but possibly still held unapplied by a fragment navigation
+        // or a prefetch that never swapped; this page makes it live.
+        if(curLinks[abs]){releasePageCss(findPageCss(abs),l.getAttribute('media'));return}
         curLinks[abs]=1;
         var nl=ce('link');
         Array.from(l.attributes).forEach(function(a){nl.setAttribute(a.name,a.value)});
@@ -3773,6 +3859,8 @@ else {
         // as a navigation adds it; the swap makes it live.
         // A whole document's generated sheets too, named the same way in its head.
         preloadGeneratedCss(fragmentCssHrefs(result.html),location.href);
+        // And the stylesheets its own head links, which a fragment lists.
+        pageCss(fragmentPageCss(result.html),href);
       }
     }).catch(function(){}).finally(function(){delete prefetching[key]})},!glance);
   }
@@ -3857,6 +3945,7 @@ else {
     // or loaded) rather than starting them; a failed sheet is the swap's to
     // handle, so it does not hold this up. Generated sheets are root paths.
     preloadGeneratedCss(fragmentCssHrefs(html),location.href);
+    pageCss(fragmentPageCss(html),base);
     var waits=loadModuleRegistries(html,base);
     if(!waits)return null;
     return Promise.race([

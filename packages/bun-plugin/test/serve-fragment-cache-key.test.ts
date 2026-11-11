@@ -94,7 +94,11 @@ describe('the SPA fragment cache key', () => {
     expect(document.toLowerCase()).toContain('<!doctype html>')
     expect(document).toContain('/css/site.css')
     expect(fragment.toLowerCase()).not.toContain('<!doctype html>')
-    expect(fragment).not.toContain('/css/site.css')
+    // The fragment names the page's stylesheet for the router to add, in an
+    // inert template. It links nothing itself: shown as a document, it is
+    // still the unstyled page this file is about.
+    expect(fragment).toContain('<template data-stx-page-css="1"><link rel="stylesheet" href="/css/site.css"></template>')
+    expect(fragment.replace(/<template data-stx-page-css="1">[\s\S]*?<\/template>/, '')).not.toContain('/css/site.css')
   })
 
   it('is declared on the fragment response', async () => {

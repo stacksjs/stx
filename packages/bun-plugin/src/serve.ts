@@ -21,7 +21,7 @@ import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
-import { BUILD_ID_HEADER, decodeTitleEntities, externalScriptsOutsideContainer, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, mergeCssConfig, pageHeadFragment, readResponseHeaders, readResponseStatus, renderFontCSS, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
+import { BUILD_ID_HEADER, decodeTitleEntities, externalScriptsOutsideContainer, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, mergeCssConfig, pageCssFragment, pageHeadFragment, readResponseHeaders, readResponseStatus, renderFontCSS, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
 import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { extractLayoutMetadata } from 'stx-router/layout-metadata'
@@ -3897,6 +3897,11 @@ function __stxOverlay(errs){
       : null
     let fragmentMetadata = fragmentHead ? `<head>${fragmentHead[1]}</head>` : null
     if (fragmentHead) html = html.slice(fragmentHead[0].length)
+    // The page's stylesheet list rides right behind the metadata, and the
+    // router reads it from there. Hold it aside as well, or a tag prepended
+    // below would land between the two.
+    const fragmentCss = fragmentHead ? /^<template data-stx-page-css="1">[\s\S]*?<\/template>\n?/.exec(html)?.[0] ?? '' : ''
+    html = html.slice(fragmentCss.length)
 
     // Theme bootstrap — FOUC guard + dark-mode toggle handler. The
     // <ThemeToggle /> component's click handler is part of this
@@ -3968,7 +3973,7 @@ function __stxOverlay(errs){
     }
 
     html = ensureRouterConfig(html)
-    if (fragmentMetadata !== null) html = pageHeadFragment(fragmentMetadata) + html
+    if (fragmentMetadata !== null) html = pageHeadFragment(fragmentMetadata) + fragmentCss + html
 
     const headers = new Headers(res.headers)
     if (fragmentHead && i18nConfig)
@@ -4992,7 +4997,7 @@ function __stxOverlay(errs){
                   // request-scoped factory prelude is normally emitted in the
                   // document head. Keep the prelude ahead of fragment content so
                   // calls never run before the shared factory is registered.
-                  fragment = `${pageHeadFragment(content)}${headStyles.join('\n')}\n${externalPageScripts.join('\n')}\n${componentFactoryScripts.join('\n')}\n${fragment}\n${clearStale}\n${trailingPageScripts.join('\n')}`
+                  fragment = `${pageHeadFragment(content)}${pageCssFragment(content)}${headStyles.join('\n')}\n${externalPageScripts.join('\n')}\n${componentFactoryScripts.join('\n')}\n${fragment}\n${clearStale}\n${trailingPageScripts.join('\n')}`
 
                   // Carry the page <title> (from the full page, before it was
                   // reduced to the <main> fragment) so the SPA router can keep
