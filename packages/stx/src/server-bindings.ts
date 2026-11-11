@@ -93,6 +93,49 @@ export function reactiveLoopScopes(template: string): Array<{ start: number, end
   return ranges
 }
 
+/** A `space-x-*` / `space-y-*` utility in a static class list, variants included. */
+const SIBLING_MARGIN_UTILITY = /(?:^|\s)((?:[\w-]+:)*-?space-[xy]-(?!reverse(?:\s|$))[\w./[\]-]+)(?=\s|$)/
+
+/**
+ * Element start offsets that are a LATER child of a sibling-margin stack, with
+ * the utility that makes the parent one.
+ *
+ * `space-y-*` and `space-x-*` put their margin on the parent's direct children
+ * after the first. That is the one place a component's scope wrapper is
+ * visible: it generates no box, so a margin that lands on it is dropped and the
+ * component renders flush against the sibling before it (stacksjs/stx#2178).
+ * Only the first child is exempt, because it never receives the margin.
+ */
+export function siblingMarginChildren(template: string): Map<number, string> {
+  const later = new Map<number, string>()
+  const stack: Array<{ name: string, utility: string | null, children: number }> = []
+  for (const tag of scanHtmlTags(template)) {
+    const tagName = tag.name.toLowerCase()
+    if (tag.closing) {
+      for (let i = stack.length - 1; i >= 0; i--) {
+        if (stack[i].name === tagName) {
+          stack.length = i
+          break
+        }
+      }
+      continue
+    }
+    const parent = stack.at(-1)
+    if (parent) {
+      if (parent.utility && parent.children > 0)
+        later.set(tag.start, parent.utility)
+      // `[hidden]` siblings are skipped by the utility's own selector.
+      if (!/(?:^|\s)hidden(?=[\s=]|$)/.test(tag.attributes))
+        parent.children++
+    }
+    if (!tag.selfClosing && !VOID_TAGS.has(tagName)) {
+      const classes = /(?:^|\s)class\s*=\s*(["'])([\s\S]*?)\1/.exec(tag.attributes)?.[2]
+      stack.push({ name: tagName, utility: classes ? (SIBLING_MARGIN_UTILITY.exec(classes)?.[1] ?? null) : null, children: 0 })
+    }
+  }
+  return later
+}
+
 /**
  * Resolve a :class binding value to a class string.
  * Supports object syntax, array syntax, and string expressions.

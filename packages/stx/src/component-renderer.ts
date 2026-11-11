@@ -32,7 +32,7 @@ import { renderComponentWithSlot, userComponentFileExists } from './utils'
 import { createSafeFunction, isExpressionSafe, safeEvaluateObject, freeIdentifiers } from './safe-evaluator'
 import { BOOLEAN_ATTRIBUTE_SENTINEL } from './prop-sentinels'
 import { COMPONENT_PASSTHROUGH_X_ATTRS } from './runtime-globals'
-import { reactiveLoopScopes } from './server-bindings'
+import { reactiveLoopScopes, siblingMarginChildren } from './server-bindings'
 import { inheritedClientLoopNames, loopBoundNames, readsAnyName } from './loop-binding'
 import { stripCommentsAndLiterals } from './strip-literals'
 import { collectTopLevelDeclarations } from './stx-virtual-ts'
@@ -352,6 +352,49 @@ function parseComponentProps(
  * variable, otherwise null. A lone interpolation is its own expression; text
  * around interpolations becomes a template literal.
  */
+/**
+ * A component in a `space-y-*` stack loses its gap, silently.
+ *
+ * A component with a client scope is wrapped in `<div
+ * data-stx-component-wrapper>`, which generates no box so that it stays out of
+ * grid tracks and `.parent > .child` selectors. It is still an element to a
+ * selector, though, and `space-y-*` / `space-x-*` put their margin on the
+ * parent's direct children after the first -- so the margin lands on the
+ * wrapper and is dropped, and the component renders flush against the sibling
+ * before it. One dashboard had 81 such stacks across 61 templates, every gap 0,
+ * and nothing said so (stacksjs/stx#2178).
+ *
+ * The wrapper cannot go (the native host identifies component boundaries by
+ * it), so the useful thing is to name the stack: `gap` reaches through the
+ * wrapper, because flex and grid items are the wrapper's children.
+ */
+const reportedMarginStacks = new Set<string>()
+
+export function resetMarginStackWarnings(): void {
+  reportedMarginStacks.clear()
+}
+
+/** Whether rendered component markup starts with the boxless scope wrapper. */
+function rendersBoxlessWrapper(rendered: string): boolean {
+  const opening = /^\s*(?:<!--[\s\S]*?-->\s*)*<(?:div|span)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/.exec(rendered)
+  // A deferred island keeps its box: the wrapper rule excludes `stx-hydrate`.
+  return !!opening && /\sdata-stx-component-wrapper(?=[\s=]|$)/.test(opening[1]) && !/\sstx-hydrate(?=[\s=]|$)/.test(opening[1])
+}
+
+function warnComponentInMarginStack(tagName: string, utility: string, filePath: string): void {
+  const key = `${filePath}\u0000${tagName}\u0000${utility}`
+  if (reportedMarginStacks.has(key))
+    return
+  reportedMarginStacks.add(key)
+  const axis = /space-x-/.test(utility) ? 'flex' : 'flex flex-col'
+  const gap = utility.replace(/space-[xy]-/, 'gap-')
+  console.warn(
+    `[stx] <${tagName}> in ${filePath} is a later child of a "${utility}" stack, so it gets no spacing: `
+    + `the utility puts its margin on the component's scope wrapper, which generates no box. `
+    + `Use "${axis} ${gap}" on the parent instead -- gap reaches through the wrapper.`,
+  )
+}
+
 /**
  * A component inside `<template :for>` loses the loop's bindings, silently.
  *
@@ -1073,6 +1116,11 @@ async function processCustomElementTags(
     // Scanned per pass, over the string the tag offsets index into: an earlier
     // pass has already replaced tags and moved everything after them.
     const clientLoopScopes = reactiveLoopScopes(result)
+    // Later children of a `space-y-*` / `space-x-*` stack, scanned only when the
+    // markup names such a utility at all and only once a wrapped component
+    // actually turns up inside it (stacksjs/stx#2178).
+    const mayStackSiblings = !options._nativeHostAttrs && /space-[xy]-/.test(result)
+    let marginChildren: Map<number, string> | undefined
 
     // What each tag is replaced by, if anything. Collected rather than spliced
     // in one at a time: a splice rebuilds the whole document, so N component
@@ -1204,6 +1252,13 @@ async function processCustomElementTags(
         renderMetadata,
         tag.tagName,
       )
+
+      if (mayStackSiblings && rendersBoxlessWrapper(processedContent)) {
+        marginChildren ??= siblingMarginChildren(result)
+        const utility = marginChildren.get(tag.startIndex)
+        if (utility)
+          warnComponentInMarginStack(tag.tagName, utility, filePath)
+      }
 
       let finalContent = processedContent
 
