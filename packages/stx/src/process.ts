@@ -1616,6 +1616,30 @@ async function processDirectivesInternal(
       // content is moved.
       layoutContent = absolutizeTemplateImports(layoutContent, layoutFullPath)
 
+      // Comments go before anything reads the layout for directives. The
+      // nested-layout check below used to run on the raw source, so a layout
+      // whose comment explained how pages use it (`{{-- a page opens with
+      // @extends('default') --}}`) "extended" the layout that comment named.
+      // When that was itself, the render recursed without end.
+      layoutContent = layoutContent.replace(/\{\{--[\s\S]*?--\}\}/g, '')
+
+      // A layout that does extend itself, directly or through another, is an
+      // authoring mistake with no render to fall back on. Say which files form
+      // the cycle rather than recursing until the process is killed.
+      const layoutChain: string[] = Array.isArray(context.__layoutChain) ? context.__layoutChain : []
+      if (layoutChain.includes(layoutFullPath)) {
+        const cycle = [...layoutChain.slice(layoutChain.indexOf(layoutFullPath)), layoutFullPath]
+        throw new StxRuntimeError(
+          cycle.length === 2
+            ? `Circular layout: ${layoutFullPath} extends itself`
+            : `Circular layout: ${cycle.join(' -> ')}`,
+          filePath,
+          undefined,
+          undefined,
+          'Remove the @extends or @layout line that points back at a layout already in use',
+        )
+      }
+
       // Check if the layout itself extends another layout (@layout or @extends)
       const nestedLayoutMatch = layoutContent.match(/@(?:layout|extends)\(\s*['"]([^'"]+)['"]\s*\)/)
       if (nestedLayoutMatch) {
@@ -1644,7 +1668,7 @@ async function processDirectivesInternal(
         }
 
         // Create a new context with merged sections for the nested layout
-        const nestedContext = { ...context, __sections: sections }
+        const nestedContext = { ...context, __sections: sections, __layoutChain: [...layoutChain, layoutFullPath] }
 
         // Process the nested layout by recursively calling processDirectives
         // with the modified template that includes the @layout directive
