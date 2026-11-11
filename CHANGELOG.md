@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.847...v0.2.848)
+
+## ✨ Features
+
+- **native**: add FloatingActions for Maps-style glass controls ([b266690](https://github.com/stacksjs/stx/commit/b266690)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.848 ([f53cff3](https://github.com/stacksjs/stx/commit/f53cff3)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.846...v0.2.847)
 
 ## 🐛 Bug Fixes
