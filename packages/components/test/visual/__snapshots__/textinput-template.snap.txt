@@ -177,6 +177,12 @@ const isError = useReactiveProp('error', {{ error }})
 // Keep the physical control and its affordances live on both web and native.
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
 const isReadonly = useReactiveProp('readonly', {{ readonly }})
+// The hint is words, and words change after the first render: a translated
+// placeholder follows the language, and one naming a loaded value follows the
+// load. Read once on the server it could do neither, and on a native host a
+// bound placeholder never reached the field at all, because a prop this
+// component reads is not one the host forwards for it.
+const placeholderText = useReactiveProp('placeholder', {{ placeholder }})
 // v-model:value supports modifiers; @input remains available to existing callers.
 const inputValue = useModel('value', { default: {{ value }}, parse: (v) => v == null ? '' : String(v) })
 let lastNativeCommit = String(inputValue() ?? '')
@@ -291,6 +297,7 @@ defineExpose({ value: inputValue, clear: onClear })
       value="{{ value }}"
       :value="inputValue()"
       placeholder="{{ placeholder }}"
+      :placeholder="String(placeholderText() ?? '')"
       @if(disabled)disabled@endif
       :disabled="isDisabled()"
       @if(readonly)readonly@endif
@@ -379,6 +386,7 @@ defineExpose({ value: inputValue, clear: onClear })
       value="{{ value }}"
       :value="inputValue()"
       placeholder="{{ placeholder }}"
+      :placeholder="String(placeholderText() ?? '')"
       @if(disabled)disabled@endif
       :disabled="isDisabled()"
       @if(readonly)readonly@endif
@@ -560,6 +568,7 @@ own
 padding
 pl-10
 pl-3
+placeholder
 placeholder-danger
 placeholder-fg-soft
 pointer-events-none

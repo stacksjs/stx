@@ -1452,15 +1452,31 @@ export function clientPayloadDeclarations(serverCode: string, clientCode = ''): 
  *
  * Nested braces are blanked first, so only depth-zero declarations survive to
  * be matched by the shared patterns.
+ *
+ * A destructuring pattern is brackets too, and its names ARE top-level:
+ * `const { say, email } = setup()` declares two. Blanking it with everything
+ * else declared none, so a screen that builds its state in one function and
+ * destructures the result had no names of its own, and an app-wide global
+ * called `say` then claimed every prop bound to `say(...)` for the build. The
+ * pattern is read before it is blanked.
  */
 export function collectTopLevelDeclarations(code: string): string[] {
   const source = stripCommentsAndLiterals(code)
   const chars = source.split('')
+  const destructured: string[] = []
   let depth = 0
+  let lineStart = 0
 
   for (let i = 0; i < chars.length; i++) {
     const c = chars[i]
+    if (c === '\n')
+      lineStart = i + 1
     if (c === '{' || c === '(' || c === '[') {
+      if (depth === 0 && c !== '(' && DESTRUCTURING_HEAD_RE.test(source.slice(lineStart, i))) {
+        const end = matchingBracket(source, i)
+        if (end !== -1)
+          destructured.push(...bindingPatternNames(source.slice(i, end + 1)))
+      }
       depth++
       continue
     }
@@ -1473,7 +1489,100 @@ export function collectTopLevelDeclarations(code: string): string[] {
       chars[i] = ' '
   }
 
-  return collectBlockDeclarations(chars.join(''))
+  const names = collectBlockDeclarations(chars.join(''))
+  return destructured.length === 0
+    ? names
+    : [...new Set([...names, ...destructured])].sort()
+}
+
+/** What stands between a line's start and a top-level destructuring pattern. */
+const DESTRUCTURING_HEAD_RE = /^\s*(?:export\s+)?(?:const|let|var)\s*$/
+
+/** Index of the bracket closing the one at `open`, or -1 when it never closes. */
+function matchingBracket(source: string, open: number): number {
+  let depth = 0
+  for (let i = open; i < source.length; i++) {
+    const c = source[i]
+    if (c === '{' || c === '(' || c === '[')
+      depth++
+    else if (c === '}' || c === ')' || c === ']')
+      depth--
+    if (depth === 0)
+      return i
+  }
+  return -1
+}
+
+/** Split on the commas that belong to this bracket level, not a nested one. */
+function splitAtTopLevelCommas(text: string): string[] {
+  const parts: string[] = []
+  let depth = 0
+  let start = 0
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]
+    if (c === '{' || c === '(' || c === '[')
+      depth++
+    else if (c === '}' || c === ')' || c === ']')
+      depth--
+    else if (c === ',' && depth === 0) {
+      parts.push(text.slice(start, i))
+      start = i + 1
+    }
+  }
+  parts.push(text.slice(start))
+  return parts
+}
+
+/** First `:` or `=` at this bracket level: which one decides what an entry is. */
+function firstTopLevelSeparator(text: string): { index: number, char: string } | null {
+  let depth = 0
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]
+    if (c === '{' || c === '(' || c === '[')
+      depth++
+    else if (c === '}' || c === ')' || c === ']')
+      depth--
+    else if (depth === 0 && (c === ':' || c === '='))
+      return { index: i, char: c }
+  }
+  return null
+}
+
+/**
+ * The names a destructuring pattern binds: `{ a, b: c, d = 1, ...rest }` binds
+ * a, c, d and rest. A renamed key is not a binding, a default value is not
+ * part of the pattern, and a nested pattern binds what it names in turn.
+ */
+function bindingPatternNames(pattern: string): string[] {
+  const names: string[] = []
+  const target = (text: string): void => {
+    let entry = text.trim().replace(/^\.\.\./, '').trim()
+    if (entry.startsWith('{') || entry.startsWith('[')) {
+      const end = matchingBracket(entry, 0)
+      if (end !== -1)
+        names.push(...bindingPatternNames(entry.slice(0, end + 1)))
+      return
+    }
+    const separator = firstTopLevelSeparator(entry)
+    if (separator)
+      entry = entry.slice(0, separator.index).trim()
+    if (/^[A-Z_$][\w$]*$/i.test(entry))
+      names.push(entry)
+  }
+
+  const inner = pattern.slice(1, -1)
+  for (const part of splitAtTopLevelCommas(inner)) {
+    if (!part.trim())
+      continue
+    if (pattern[0] === '[') {
+      target(part)
+      continue
+    }
+    // `key: target` binds the target; `key = fallback` and `key` bind the key.
+    const separator = firstTopLevelSeparator(part)
+    target(separator?.char === ':' ? part.slice(separator.index + 1) : part)
+  }
+  return names
 }
 
 /**
