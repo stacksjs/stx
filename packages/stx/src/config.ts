@@ -675,6 +675,31 @@ export async function discoverConfig<T>(
   }
 }
 
+/** A path inside Bun's global install cache: `…/install/cache/@scope/name@1.2.3@@@1/…`. */
+const BUN_INSTALL_CACHE_RE = /[\\/]install[\\/]cache[\\/](?:@[^\\/]+[\\/])?[^\\/]+@[^\\/]*@@@\d+[\\/]/
+
+/**
+ * Resolve a package the PROJECT has installed, or throw.
+ *
+ * `require.resolve` with `paths` is not that question under Bun. When no
+ * `node_modules` is found from the project upwards, Bun's auto-install answers
+ * from its global install cache instead: whatever copy of the package some
+ * earlier install on this machine left there. A project with no install of
+ * `@stacksjs/components` therefore got one anyway, at a version nobody chose
+ * (0.2.849 on a machine whose apps were all on 0.2.851), and got none at all
+ * on a machine with an empty cache -- the same source rendering differently
+ * by machine. The native test kit compiles inline screens in a temp folder,
+ * so every such test ran against that stale copy.
+ *
+ * A package in the cache is not installed in the project.
+ */
+export function resolveInstalledPackage(specifier: string, projectDir: string): string {
+  const resolved = require.resolve(specifier, { paths: [projectDir] })
+  if (BUN_INSTALL_CACHE_RE.test(resolved))
+    throw new Error(`${specifier} is not installed in ${projectDir} (found only in Bun's install cache)`)
+  return resolved
+}
+
 /**
  * Load the stx config for a project.
  *
@@ -817,7 +842,7 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
         // Resolved against the project, not against stx: whether the app has
         // the package is the whole question, and stx's own node_modules would
         // answer it wrongly in a monorepo.
-        require.resolve(entry, { paths: [effectiveCwd] })
+        resolveInstalledPackage(entry, effectiveCwd)
         autoPlugins.push(entry)
       }
       catch {
@@ -851,7 +876,7 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
           try {
             // `paths` so a project's own install wins over stx's, which is what
             // makes an auto-registered package resolve at all in a monorepo.
-            const entry = require.resolve(pluginPath, { paths: [effectiveCwd] })
+            const entry = resolveInstalledPackage(pluginPath, effectiveCwd)
             pluginModule = await import(entry)
             pluginDir = path.dirname(entry)
           }

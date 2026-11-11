@@ -33,6 +33,7 @@
  * snapshots, a signed-in token) through `snapshots`, `secureStorage` and
  * `storage`.
  */
+import { existsSync, symlinkSync } from 'node:fs'
 import path from 'node:path'
 import vm from 'node:vm'
 import { compileSharedScreenBundle } from './compiler/bundle'
@@ -85,11 +86,44 @@ export async function waitFor(check: () => boolean, description: string, timeout
 }
 
 /**
- * Compile one screen from its source, as the single-screen native compiler
- * does: for a test that writes the template inline.
+ * Give a scratch screen the packages of the project that is testing it.
+ *
+ * An inline screen is written to a temp folder, which has no `node_modules`,
+ * so the component library an app installed was not the one its inline tests
+ * compiled: the tag resolved to nothing, or under Bun to whichever copy of the
+ * package sat in the machine's install cache. The nearest `node_modules` at or
+ * above the project is linked in, so the screen sees what the app's own
+ * screens see. A link, removed with the folder; the packages are not copied.
  */
-export async function compileNativeScreen(source: string, options: { name?: string, minify?: boolean } = {}): Promise<{ code: string, diagnostics: Array<{ message: string }> }> {
+function linkProjectPackages(root: string, project: string): void {
+  let dir = path.resolve(project)
+  for (;;) {
+    const modules = path.join(dir, 'node_modules')
+    if (existsSync(modules)) {
+      try {
+        symlinkSync(modules, path.join(root, 'node_modules'), 'dir')
+      }
+      catch {
+        // No link (a filesystem that refuses them): the screen compiles
+        // without the project's packages, as it did before.
+      }
+      return
+    }
+    const parent = path.dirname(dir)
+    if (parent === dir)
+      return
+    dir = parent
+  }
+}
+
+/**
+ * Compile one screen from its source, as the single-screen native compiler
+ * does: for a test that writes the template inline. The screen may use the
+ * packages installed in `project` (default: where the test process runs).
+ */
+export async function compileNativeScreen(source: string, options: { name?: string, minify?: boolean, project?: string } = {}): Promise<{ code: string, diagnostics: Array<{ message: string }> }> {
   const root = createTempDir('stx-native-testing-')
+  linkProjectPackages(root, options.project ?? process.cwd())
   const file = path.join(root, `${options.name || 'Screen'}.stx`)
   await Bun.write(file, source)
   const result = await compileSharedScreenBundle(file, { root, minify: options.minify })
