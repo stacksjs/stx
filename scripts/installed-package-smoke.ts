@@ -24,8 +24,8 @@ mkdirSync(join(smokeRoot, 'node_modules'), { recursive: true })
 
 const dependencies: Record<string, string> = {}
 const publicTypeArchives: Array<{ name: string; archive: string }> = []
-const archives = join(smokeRoot, 'archives')
-mkdirSync(archives)
+const archives = join(process.env.STX_TYPE_SDK_EVIDENCE ?? smokeRoot, 'archives')
+mkdirSync(archives, { recursive: true })
 for (const directory of ['desktop', 'sanitizer', 'router', 'bun-plugin', 'stx', 'components']) {
   const packageDir = join(root, 'packages', directory)
   const manifest = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8'))

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 export interface PublicTypeArchive {
@@ -15,7 +15,8 @@ export async function verifyPublicTypes(consumer: string, archives: PublicTypeAr
   const archiveReceipts: Array<{ name: string; archive: string; sha256: string; files: number }> = []
   const checks: Array<{ args: string[]; code: number; log: string; diagnostics: number[] }> = []
   const publicSubpaths: Array<{ specifier: string; types: string }> = []
-  const receipt: Record<string, unknown> = { phase, consumer, status: 'FAIL', archives: archiveReceipts, checks, publicSubpaths, registryProvider }
+  const explicitModuleImports: string[] = []
+  const receipt: Record<string, unknown> = { phase, consumer, runtime: { version: Bun.version, executable: process.execPath, platform: process.platform, arch: process.arch }, status: 'FAIL', archives: archiveReceipts, checks, publicSubpaths, explicitModuleImports, registryProvider }
   const hash = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex')
   try {
     receipt.lockSHA256 = hash(readFileSync(join(consumer, 'bun.lock')))
@@ -26,8 +27,23 @@ export async function verifyPublicTypes(consumer: string, archives: PublicTypeAr
       assert.equal(manifest.name, owner.name)
       if (owner.name === '@stacksjs/stx') {
         for (const [subpath, target] of Object.entries(manifest.exports as Record<string, unknown>)) {
-          if (subpath.includes('*') || !target || typeof target !== 'object' || !('types' in target) || typeof target.types !== 'string') continue
-          publicSubpaths.push({ specifier: owner.name + (subpath === '.' ? '' : subpath.slice(1)), types: target.types })
+          if (!target || typeof target !== 'object' || !('types' in target) || typeof target.types !== 'string') continue
+          if (subpath.includes('*')) {
+            const [before, after] = target.types.replace(/^\.\//, 'package/').split('*')
+            assert(before && after && !after.includes('*'), `Unsupported wildcard type target: ${target.types}`)
+            for (const member of files.keys()) {
+              if (!member.startsWith(before) || !member.endsWith(after)) continue
+              const matched = member.slice(before.length, -after.length)
+              const specifier = owner.name + subpath.slice(1).replace('*', matched)
+              if (!publicSubpaths.some(entry => entry.specifier === specifier))
+                publicSubpaths.push({ specifier, types: target.types.replace('*', matched) })
+            }
+          }
+          else {
+            const specifier = owner.name + (subpath === '.' ? '' : subpath.slice(1))
+            publicSubpaths.push({ specifier, types: target.types })
+            explicitModuleImports.push(specifier)
+          }
         }
       }
       for (const [name, file] of files) {
@@ -51,8 +67,12 @@ export async function verifyPublicTypes(consumer: string, archives: PublicTypeAr
     receipt.toolVersions = toolVersions
     const compilerOptions = { target: 'ESNext', module: 'ESNext', moduleResolution: 'Bundler', strict: true, skipLibCheck: false, paths: {}, types: ['bun'], noEmit: true }
     receipt.compilerOptions = compilerOptions
-    writeFileSync(join(consumer, 'strict-public-types.json'), JSON.stringify({ compilerOptions, files: ['strict-public-types.ts'] }))
-    const imports = publicSubpaths.map((entry, index) => `import type * as PublicEntry${index} from ${JSON.stringify(entry.specifier)};`).join('\n')
+    const publicDeclarations = [...new Set(publicSubpaths.map(entry => join(realpathSync(join(consumer, 'node_modules/@stacksjs/stx')), entry.types)))]
+    writeFileSync(join(consumer, 'strict-public-types.json'), JSON.stringify({ compilerOptions, files: ['strict-public-types.ts', ...publicDeclarations] }))
+    // Check every wildcard declaration as a compiler input, including ambient
+    // scripts that intentionally have no module namespace. Literal module
+    // entrypoints also exercise the installed package's export resolution.
+    const imports = explicitModuleImports.map((specifier, index) => `import type * as PublicEntry${index} from ${JSON.stringify(specifier)};`).join('\n')
     const prefix = `${imports}\nimport * as stx from '@stacksjs/stx';
 import type { ResolvedProps, RenderContext } from '@stacksjs/stx/component-registry';
 import { StxToastBuiltin } from '@stacksjs/stx/builtins/toast';
@@ -71,8 +91,16 @@ const safeProp: false = null as unknown as IsAny<ResolvedProps['static'][string]
 const grammar = grammars.item(0);
 const src: string = grammar.src;
 const weight: number = grammar.weight;
-const safeGrammar: false = null as unknown as IsAny<typeof grammar.src>;` },
+const safeGrammar: false = null as unknown as IsAny<typeof grammar.src>;
+const debounceAlias: typeof useDebounce = globalThis.useDebounceFn;
+const refAlias: typeof useDebouncedValue = globalThis.refDebounced;
+const throttleAlias: typeof useThrottle = globalThis.useThrottleFn;
+const timeoutAlias: typeof useTimeout = globalThis.useTimeoutFn;
+const broadcastAlias: typeof stx.useBroadcastStream = globalThis.useBroadcastStream;
+const safeAlias: false = null as unknown as IsAny<typeof globalThis.useBroadcastStream>;` },
       { code: 2339, source: 'const phantom = props.notAResolvedProp' },
+      { code: 2345, source: "globalThis.useDebounceFn(() => {}, 'wrong')" },
+      { code: 2322, source: 'globalThis.useBroadcastStream({ endpoint: 42, request: fetch, onMessage() {} })' },
       { code: 2345, source: 'grammars.addFromString(42)' },
       { code: 2339, source: 'const missingGrammarMember = grammars.item(0).notAGrammarProperty' },
       { code: 2322, source: 'props.static.title = 42' },

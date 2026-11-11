@@ -1,11 +1,14 @@
 import path, { join } from 'node:path'
 import process from 'node:process'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { Glob } from 'bun'
 import { dts } from 'bun-plugin-dtsx'
 import { createTempDir, removeTempDir } from '../stx/src/temp-dir'
 
 console.log('Building @stacksjs/components...')
+
+// Stage the canonical notice before packing or publication qualification.
+copyFileSync(new URL('../../LICENSE.md', import.meta.url), new URL('./LICENSE.md', import.meta.url))
 
 // Ensure dist directory exists
 if (!existsSync('./dist')) {

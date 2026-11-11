@@ -64,6 +64,7 @@
   },
   "types": "./dist/index.d.ts",
   "files": [
+    "LICENSE.md",
     "README.md",
     "dist",
     "src",
