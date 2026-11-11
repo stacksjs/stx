@@ -83,6 +83,9 @@ export const enterKeyHint = $props.enterKeyHint || $props.enterkeyhint || ''
 </script>
 
 <script client>
+// A bound placeholder follows its source (a translation, a loaded value)
+// instead of being read once on the server; see TextInput.
+const placeholderText = useReactiveProp('placeholder', {{ placeholder }})
 // Reserve input before the first edit so blocked/lazy edits cannot leak a
 // bubbling event object to callers expecting the component's string payload.
 const emit = defineEmits(['input'])
@@ -171,6 +174,7 @@ defineExpose({ value: inputValue })
     class="{{ textareaClasses }}"
     rows="{{ rows }}"
     placeholder="{{ placeholder }}"
+    :placeholder="String(placeholderText() ?? '')"
     @if(disabled)disabled@endif
     :disabled="isDisabled()"
     @if(readonly)readonly@endif

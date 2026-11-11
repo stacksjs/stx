@@ -136,3 +136,32 @@ const hint = state('Search')
     expect(html.match(/<input\b[^>]*id="bound"[^>]*>/)![0]).toContain(':placeholder=')
   }, 30_000)
 })
+
+describe.each(['ios', 'android'] as const)('a bound placeholder on the other shared fields on %s', (platform) => {
+  it('reaches the field and follows its signal', async () => {
+    const kit = join(ui, '..')
+    const { code } = await compileNativeScreen(`@import('PasswordInput', '${kit}/input/PasswordInput.stx')
+@import('NumberInput', '${kit}/input/NumberInput.stx')
+@import('Textarea', '${kit}/textarea/Textarea.stx')
+<script client>
+const hint = state('first')
+window.probe = { hint }
+</script>
+<section>
+  <PasswordInput :placeholder="hint()" />
+  <NumberInput :placeholder="hint()" />
+  <Textarea :placeholder="hint()" />
+</section>`)
+    const phone = mountNativeScreen(code, 'Screen', { platform })
+    await phone.settle()
+    // By type, not testID: the number field and the text area have no native
+    // drawing of their own yet, so a testID lands on the box around the field.
+    const hints = () => phone.ofType('TextInput').map(field => field.props.placeholder)
+    expect(hints()).toEqual(['first', 'first', 'first'])
+
+    phone.context.probe.hint.set('second')
+    await phone.settle()
+    expect(hints()).toEqual(['second', 'second', 'second'])
+  }, 30_000)
+})
+

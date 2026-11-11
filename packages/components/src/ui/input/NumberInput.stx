@@ -92,6 +92,9 @@ export const enterKeyHint = $props.enterKeyHint || $props.enterkeyhint || ''
 </script>
 
 <script client>
+// A bound placeholder follows its source (a translation, a loaded value)
+// instead of being read once on the server; see TextInput.
+const placeholderText = useReactiveProp('placeholder', {{ placeholder }})
 const emit = defineEmits()
 const stepSize = {{ step }}
 const minVal = {{ min === undefined ? 'undefined' : min }}
@@ -166,6 +169,7 @@ defineExpose({ value: inputValue, increment, decrement })
       value="{{ value }}"
       :value="inputValue()"
       placeholder="{{ placeholder }}"
+      :placeholder="String(placeholderText() ?? '')"
       @if(disabled)disabled@endif
       @if(readonly)readonly@endif
       @if(required)required@endif

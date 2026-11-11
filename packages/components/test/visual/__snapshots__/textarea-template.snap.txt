@@ -90,7 +90,10 @@ export const inputMode = $props.inputMode || $props.inputmode || ''
 export const enterKeyHint = $props.enterKeyHint || $props.enterkeyhint || ''
   </script>
   <script client>
-    // Reserve input before the first edit so blocked/lazy edits cannot leak a
+    // A bound placeholder follows its source (a translation, a loaded value)
+// instead of being read once on the server; see TextInput.
+const placeholderText = useReactiveProp('placeholder', {{ placeholder }})
+// Reserve input before the first edit so blocked/lazy edits cannot leak a
 // bubbling event object to callers expecting the component's string payload.
 const emit = defineEmits(['input'])
 // Validity is live, for the same reason `disabled` is: a form posted with
@@ -178,6 +181,7 @@ defineExpose({ value: inputValue })
     class="{{ textareaClasses }}"
     rows="{{ rows }}"
     placeholder="{{ placeholder }}"
+    :placeholder="String(placeholderText() ?? '')"
     @if(disabled)disabled@endif
     :disabled="isDisabled()"
     @if(readonly)readonly@endif
@@ -281,6 +285,7 @@ on
 opacity-50
 own
 padding
+placeholder
 placeholder-danger
 placeholder-fg-soft
 px-4
