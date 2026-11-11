@@ -1,5 +1,44 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.844...v0.2.850)
+
+## ✨ Features
+
+- say when a component in a space-y stack will get no gap (#2178) ([d985eeb](https://github.com/stacksjs/stx/commit/d985eeb)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2178](https://github.com/stacksjs/stx/issues/2178))
+- **native**: add FloatingActions for Maps-style glass controls ([b266690](https://github.com/stacksjs/stx/commit/b266690)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **native**: group floating actions in material capsules ([50a51f8](https://github.com/stacksjs/stx/commit/50a51f8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **evaluator**: prove a compiled expression is the one asked for ([819a87a](https://github.com/stacksjs/stx/commit/819a87a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2176](https://github.com/stacksjs/stx/issues/2176))
+- **typecheck**: type a prop read through {{ }} in a client script (#2180) ([cae8b2d](https://github.com/stacksjs/stx/commit/cae8b2d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2180](https://github.com/stacksjs/stx/issues/2180), [#2150](https://github.com/stacksjs/stx/issues/2150))
+- **router**: add the destination page's stylesheets on a fragment navigation ([1291574](https://github.com/stacksjs/stx/commit/1291574)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_ ([#2121](https://github.com/stacksjs/stx/issues/2121), [#1777](https://github.com/stacksjs/stx/issues/1777))
+- **render**: resolve composables from the production install ([e575617](https://github.com/stacksjs/stx/commit/e575617)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 📝 Documentation
+
+- **native**: use a valid SF Symbol for messaging ([ec76ec5](https://github.com/stacksjs/stx/commit/ec76ec5)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **expressions**: report where two renders part ways (#2176) ([7c385b3](https://github.com/stacksjs/stx/commit/7c385b3)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2176](https://github.com/stacksjs/stx/issues/2176))
+- **expressions**: pin the chunked document pass (#2176) ([26d3ae4](https://github.com/stacksjs/stx/commit/26d3ae4)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2176](https://github.com/stacksjs/stx/issues/2176))
+- **native**: match the floating actions module key from any cwd ([6b86d2d](https://github.com/stacksjs/stx/commit/6b86d2d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.850 ([8d73c06](https://github.com/stacksjs/stx/commit/8d73c06)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- release v0.2.849 ([0e44cc2](https://github.com/stacksjs/stx/commit/0e44cc2)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- release v0.2.848 ([e26b05c](https://github.com/stacksjs/stx/commit/e26b05c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- release v0.2.847 ([4c2f537](https://github.com/stacksjs/stx/commit/4c2f537)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- release v0.2.846 ([05f9623](https://github.com/stacksjs/stx/commit/05f9623)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- release v0.2.845 ([843930f](https://github.com/stacksjs/stx/commit/843930f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.848...v0.2.849)
 
 ## ✅ Tests
