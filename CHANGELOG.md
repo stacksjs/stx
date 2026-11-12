@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.859...v0.2.860)
+
+## 🐛 Bug Fixes
+
+- **stx**: inject before the last closing body tag, never the first ([27624a9](https://github.com/stacksjs/stx/commit/27624a9)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.860 ([c458d61](https://github.com/stacksjs/stx/commit/c458d61)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.858...v0.2.859)
 
 ## 🐛 Bug Fixes
