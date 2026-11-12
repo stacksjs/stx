@@ -10,7 +10,7 @@
  * stops existing when it scrolls away.
  */
 import type { TreeNode, TreeOpenKind, TreePath, TreeRow } from './core'
-import { formatPath, previewOf, nodeToJson, TreeModel } from './core'
+import { formatPath, nodeToJson, previewOf, TreeModel } from './core'
 
 export interface JsonTreeOptions {
   value?: TreeNode | TreeNode[] | null

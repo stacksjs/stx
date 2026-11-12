@@ -204,16 +204,16 @@ export function fromValue(value: unknown, label?: string, options: FromValueOpti
 
     switch (typeof current) {
       case 'undefined':
-        return named({ kind: 'undefined', value: undefined, preview: 'undefined' }, name)
+      return named({ kind: 'undefined', value: undefined, preview: 'undefined' }, name)
       case 'string':
       case 'number':
       case 'boolean':
       case 'bigint':
-        return named({ kind: typeof current, value: current }, name)
+      return named({ kind: typeof current, value: current }, name)
       case 'symbol':
-        return named({ kind: 'symbol', preview: current.toString() }, name)
+      return named({ kind: 'symbol', preview: current.toString() }, name)
       case 'function':
-        return named({ kind: 'function', preview: `ƒ ${current.name || '(anonymous)'}()` }, name)
+      return named({ kind: 'function', preview: `ƒ ${current.name || '(anonymous)'}()` }, name)
     }
 
     const object = current as object
@@ -453,27 +453,27 @@ export class TreeModel {
 
     switch (key) {
       case 'ArrowDown':
-        return still(index < 0 ? 0 : at + 1)
+      return still(index < 0 ? 0 : at + 1)
       case 'ArrowUp':
-        return still(at - 1)
+      return still(at - 1)
       case 'Home':
-        return still(0)
+      return still(0)
       case 'End':
-        return still(last)
+      return still(last)
       case 'PageDown':
-        return still(at + pageSize)
+      return still(at + pageSize)
       case 'PageUp':
-        return still(at - pageSize)
+      return still(at - pageSize)
       case 'ArrowRight':
-        if (!row.expandable || row.isMore)
-          return still(at)
-        if (!row.expanded)
-          return { index: at, changed: this.expand(row.id) }
-        return still(at + 1)
+      if (!row.expandable || row.isMore)
+        return still(at)
+      if (!row.expanded)
+        return { index: at, changed: this.expand(row.id) }
+      return still(at + 1)
       case 'ArrowLeft':
-        if (row.expanded && !row.isMore)
-          return { index: at, changed: this.collapse(row.id) }
-        return still(row.parent === -1 ? at : row.parent)
+      if (row.expanded && !row.isMore)
+        return { index: at, changed: this.collapse(row.id) }
+      return still(row.parent === -1 ? at : row.parent)
       case '*': {
         // Every sibling at once, the row itself included.
         let changed = false

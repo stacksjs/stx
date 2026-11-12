@@ -307,14 +307,14 @@ export class PreviewFrameView {
 
     switch (target.getAttribute('data-pf-action')) {
       case 'scheme':
-        this.setScheme(this.effectiveScheme() === 'dark' ? 'light' : 'dark')
-        break
+      this.setScheme(this.effectiveScheme() === 'dark' ? 'light' : 'dark')
+      break
       case 'rotate':
-        this.setViewport(this.viewportName, { landscape: !this.landscape })
-        break
+      this.setViewport(this.viewportName, { landscape: !this.landscape })
+      break
       case 'reload':
-        this.reload()
-        break
+      this.reload()
+      break
     }
   }
 

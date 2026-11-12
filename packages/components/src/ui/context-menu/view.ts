@@ -463,46 +463,46 @@ export class ContextMenuView {
 
     switch (event.key) {
       case 'ArrowDown':
-        this.focusItem(menu, stepIndex(menu.items, index, 1))
-        break
+      this.focusItem(menu, stepIndex(menu.items, index, 1))
+      break
       case 'ArrowUp':
-        this.focusItem(menu, stepIndex(menu.items, index, -1))
-        break
+      this.focusItem(menu, stepIndex(menu.items, index, -1))
+      break
       case 'Home':
       case 'PageUp':
-        this.focusItem(menu, firstIndex(menu.items))
-        break
+      this.focusItem(menu, firstIndex(menu.items))
+      break
       case 'End':
       case 'PageDown':
-        this.focusItem(menu, lastIndex(menu.items))
-        break
+      this.focusItem(menu, lastIndex(menu.items))
+      break
       case 'ArrowRight':
-        if (hasSubmenu(menu.items[index]))
-          this.openSubmenu(menu, index, true)
-        break
+      if (hasSubmenu(menu.items[index]))
+        this.openSubmenu(menu, index, true)
+      break
       case 'ArrowLeft':
-        if (depth > 0)
-          this.closeSubmenu(menu)
-        break
+      if (depth > 0)
+        this.closeSubmenu(menu)
+      break
       case 'Escape':
-        if (depth > 0)
-          this.closeSubmenu(menu)
-        else
-          this.close('escape')
-        break
+      if (depth > 0)
+        this.closeSubmenu(menu)
+      else
+        this.close('escape')
+      break
       case 'Enter':
       case ' ':
-        if (index >= 0)
-          this.choose(menu, index)
-        break
+      if (index >= 0)
+        this.choose(menu, index)
+      break
       case 'Tab':
-        // Tab leaves a menu. Focus goes back to where it was, and the browser
-        // moves on from there.
-        this.close('tab')
-        handled = false
-        break
+      // Tab leaves a menu. Focus goes back to where it was, and the browser
+      // moves on from there.
+      this.close('tab')
+      handled = false
+      break
       default:
-        handled = this.typeAhead(menu, index, event)
+      handled = this.typeAhead(menu, index, event)
     }
 
     if (handled) {

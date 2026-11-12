@@ -16,7 +16,8 @@ export interface PaneLimit {
   max: number
 }
 
-const EPSILON = 1e-9
+// Written out: the formatter splits a negative exponent (1e-9) into a subtraction.
+const EPSILON = 0.000000001
 
 /** Equal shares for `count` panes. */
 export function equalSizes(count: number): number[] {

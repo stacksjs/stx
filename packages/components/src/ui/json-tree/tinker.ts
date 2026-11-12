@@ -50,28 +50,28 @@ export interface TinkerHtmlValue {
 }
 
 export type TinkerValue =
-  | { t: 'undefined' }
-  | { t: 'null' }
-  | { t: 'boolean', v: boolean }
-  | { t: 'number', v: number | 'NaN' | 'Infinity' | '-Infinity' | '-0' }
-  | { t: 'bigint', v: string }
-  | { t: 'string', v: string, truncated?: number }
-  | { t: 'symbol', v: string }
-  | { t: 'function', name: string, kind: 'function' | 'async' | 'class' | 'generator' }
-  | { t: 'date', v: string | null }
-  | { t: 'regexp', v: string }
-  | { t: 'url', v: string }
-  | { t: 'promise' }
-  | { t: 'bytes', ctor: string, length: number, hex: string }
-  | { t: 'array', id: number, ctor?: string, length: number, items: TinkerValue[], more?: number }
-  | { t: 'object', id: number, ctor?: string, entries: Array<[string, TinkerValue]>, more?: number }
-  | { t: 'map', id: number, size: number, entries: Array<[TinkerValue, TinkerValue]>, more?: number }
-  | { t: 'set', id: number, size: number, items: TinkerValue[], more?: number }
-  | TinkerModelValue
-  | TinkerHtmlValue
-  | { t: 'ref', id: number }
-  | { t: 'cut', reason: 'depth' | 'nodes', ctor?: string }
-  | TinkerErrorValue
+| { t: 'undefined' }
+| { t: 'null' }
+| { t: 'boolean', v: boolean }
+| { t: 'number', v: number | 'NaN' | 'Infinity' | '-Infinity' | '-0' }
+| { t: 'bigint', v: string }
+| { t: 'string', v: string, truncated?: number }
+| { t: 'symbol', v: string }
+| { t: 'function', name: string, kind: 'function' | 'async' | 'class' | 'generator' }
+| { t: 'date', v: string | null }
+| { t: 'regexp', v: string }
+| { t: 'url', v: string }
+| { t: 'promise' }
+| { t: 'bytes', ctor: string, length: number, hex: string }
+| { t: 'array', id: number, ctor?: string, length: number, items: TinkerValue[], more?: number }
+| { t: 'object', id: number, ctor?: string, entries: Array<[string, TinkerValue]>, more?: number }
+| { t: 'map', id: number, size: number, entries: Array<[TinkerValue, TinkerValue]>, more?: number }
+| { t: 'set', id: number, size: number, items: TinkerValue[], more?: number }
+| TinkerModelValue
+| TinkerHtmlValue
+| { t: 'ref', id: number }
+| { t: 'cut', reason: 'depth' | 'nodes', ctor?: string }
+| TinkerErrorValue
 
 export interface FromTinkerOptions {
   /**
@@ -154,21 +154,21 @@ export function fromTinkerValue(value: TinkerValue, label?: string, options: Fro
   function walk(current: TinkerValue, name: string | undefined): TreeNode {
     switch (current.t) {
       case 'undefined':
-        return named({ kind: 'undefined', value: undefined, preview: 'undefined' }, name)
+      return named({ kind: 'undefined', value: undefined, preview: 'undefined' }, name)
       case 'null':
-        return named({ kind: 'null', value: null, preview: 'null' }, name)
+      return named({ kind: 'null', value: null, preview: 'null' }, name)
       case 'boolean':
-        return named({ kind: 'boolean', value: current.v, preview: String(current.v) }, name)
+      return named({ kind: 'boolean', value: current.v, preview: String(current.v) }, name)
       case 'number': {
         const number = typeof current.v === 'number' ? current.v : (current.v === '-0' ? -0 : Number(current.v))
         return named({ kind: 'number', value: number, preview: String(current.v) }, name)
       }
       case 'bigint':
-        return named({ kind: 'bigint', value: current.v, preview: `${current.v}n` }, name)
+      return named({ kind: 'bigint', value: current.v, preview: `${current.v}n` }, name)
       case 'string':
-        return named({ kind: 'string', value: current.v, preview: quoted(current.v, current.truncated) }, name)
+      return named({ kind: 'string', value: current.v, preview: quoted(current.v, current.truncated) }, name)
       case 'symbol':
-        return named({ kind: 'symbol', preview: `Symbol(${current.v})` }, name)
+      return named({ kind: 'symbol', preview: `Symbol(${current.v})` }, name)
       case 'function': {
         const preview = current.kind === 'class'
           ? `class ${current.name}`
@@ -176,21 +176,21 @@ export function fromTinkerValue(value: TinkerValue, label?: string, options: Fro
         return named({ kind: 'function', preview }, name)
       }
       case 'date':
-        return named({ kind: 'date', value: current.v, preview: current.v ?? 'Invalid Date' }, name)
+      return named({ kind: 'date', value: current.v, preview: current.v ?? 'Invalid Date' }, name)
       case 'regexp':
-        return named({ kind: 'regexp', value: current.v, preview: current.v }, name)
+      return named({ kind: 'regexp', value: current.v, preview: current.v }, name)
       case 'url':
-        return named({ kind: 'url', value: current.v, preview: current.v }, name)
+      return named({ kind: 'url', value: current.v, preview: current.v }, name)
       case 'promise':
-        return named({ kind: 'promise', preview: 'Promise' }, name)
+      return named({ kind: 'promise', preview: 'Promise' }, name)
       case 'bytes': {
         const cut = current.length * 2 > current.hex.length
         return named({ kind: 'bytes', value: current.hex, preview: `${current.ctor}(${current.length}) <${current.hex}${cut ? '…' : ''}>` }, name)
       }
       case 'ref':
-        return named({ kind: 'ref', ref: idOf(current.id), preview: '[Circular]' }, name)
+      return named({ kind: 'ref', ref: idOf(current.id), preview: '[Circular]' }, name)
       case 'cut':
-        return named({ kind: 'cut', preview: `${current.ctor ?? 'Object'} … (${current.reason === 'depth' ? 'too deep to show' : 'result too large to show'})` }, name)
+      return named({ kind: 'cut', preview: `${current.ctor ?? 'Object'} … (${current.reason === 'depth' ? 'too deep to show' : 'result too large to show'})` }, name)
 
       case 'array': {
         const node: TreeNode = {

@@ -317,15 +317,15 @@ export function moveCell(cell: GridCell, key: string, bounds: { rows: number, co
     case 'PageUp': row = row <= 0 ? row : Math.max(0, row - page); break
     case 'PageDown': row = Math.min(lastRow, Math.max(0, row) + (row < 0 ? 0 : page)); break
     case 'Home':
-      column = 0
-      if (bounds.mod)
-        row = Math.min(0, lastRow)
-      break
+    column = 0
+    if (bounds.mod)
+      row = Math.min(0, lastRow)
+    break
     case 'End':
-      column = lastColumn
-      if (bounds.mod)
-        row = lastRow
-      break
+    column = lastColumn
+    if (bounds.mod)
+      row = lastRow
+    break
     default: return cell
   }
 

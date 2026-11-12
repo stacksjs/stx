@@ -7,8 +7,8 @@
  * a headless engine. WebKit where there is one, since a Craft window is a
  * WKWebView.
  */
-import { WebView } from 'bun'
 import { resolve } from 'node:path'
+import { WebView } from 'bun'
 import { generateCss } from '../../../stx/src/dev-server/ts-css'
 import { processDirectives } from '../../../stx/src/process'
 
