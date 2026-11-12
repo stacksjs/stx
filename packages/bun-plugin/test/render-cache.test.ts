@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { access, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { fillRouteParams, isRenderableCacheCandidate, ROUTE_PARAMS_PLACEHOLDER, serverScriptsReadParams } from '../src/serve'
@@ -29,7 +29,10 @@ async function waitForContent(expected: string): Promise<string> {
   throw new Error(`render cache did not invalidate for ${expected}`)
 }
 
-beforeAll(async () => {
+// Source edits intentionally invalidate the entire render cache. A filesystem
+// event from one case must not land between cache reads in another (#2183).
+// Each case starts a real server only after its own source fixture is written.
+beforeEach(async () => {
   fixtureDir = createTempDir('stx-render-cache-')
   await Bun.write(path.join(fixtureDir, 'data', 'manifest.json'), 'alpha')
   await Bun.write(path.join(fixtureDir, 'views', 'index.stx'), `<script server>
@@ -124,8 +127,10 @@ serve({
   throw new Error('render-cache fixture server did not start')
 })
 
-afterAll(async () => {
+afterEach(async () => {
   server?.kill()
+  await server?.exited
+  server = null
   await rm(fixtureDir, { recursive: true, force: true })
 })
 
@@ -187,6 +192,8 @@ describe('opt-in rendered HTML cache', () => {
   })
 
   test('invalidates when the route source changes', async () => {
+    await Bun.write(path.join(fixtureDir, 'data', 'manifest.json'), 'bravo')
+    await waitForContent('data:bravo')
     await Bun.write(path.join(fixtureDir, 'views', 'index.stx'), `<script server>
 const marker = crypto.randomUUID()
 const manifest = await Bun.file('data/manifest.json').text()
