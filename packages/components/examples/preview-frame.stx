@@ -1,0 +1,11 @@
+{{-- The PreviewFrame playground.
+
+     Run it from this package:
+
+       bun ../stx/bin/cli.ts dev examples/preview-frame.stx
+
+     The page is one component on purpose. A page's own client script is served
+     untouched by the single-file dev server, as a plain script whose state the
+     template cannot see, while a component's is compiled. So everything with
+     state lives in components/PreviewFrameDemo.stx. --}}
+<PreviewFrameDemo />

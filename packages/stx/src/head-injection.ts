@@ -1,3 +1,4 @@
+import { headCloseIndex } from './document-tags'
 /**
  * One splice into `<head>` instead of one per thing being injected
  * (stacksjs/stx#1945).
@@ -59,7 +60,7 @@ export function applyHeadInjections(html: string, injections: HeadInjections): s
   // Resolved together, because both offsets index into the SAME string. Doing
   // one splice and then looking for the second anchor would search a document
   // whose offsets had already shifted.
-  const headCloseIdx = html.lastIndexOf('</head>')
+  const headCloseIdx = headCloseIndex(html)
   const openAt = afterOpen ? headInsertionPoint(html) : null
   const closeAt = beforeClose && headCloseIdx !== -1 ? headCloseIdx : null
 

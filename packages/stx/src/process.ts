@@ -8,6 +8,7 @@
  * @module process
  */
 
+import { bodyCloseIndex, headCloseIndex, insertBeforeHeadClose } from './document-tags'
 import type { StxOptions } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -1616,6 +1617,30 @@ async function processDirectivesInternal(
       // content is moved.
       layoutContent = absolutizeTemplateImports(layoutContent, layoutFullPath)
 
+      // Comments go before anything reads the layout for directives. The
+      // nested-layout check below used to run on the raw source, so a layout
+      // whose comment explained how pages use it (`{{-- a page opens with
+      // @extends('default') --}}`) "extended" the layout that comment named.
+      // When that was itself, the render recursed without end.
+      layoutContent = layoutContent.replace(/\{\{--[\s\S]*?--\}\}/g, '')
+
+      // A layout that does extend itself, directly or through another, is an
+      // authoring mistake with no render to fall back on. Say which files form
+      // the cycle rather than recursing until the process is killed.
+      const layoutChain: string[] = Array.isArray(context.__layoutChain) ? context.__layoutChain : []
+      if (layoutChain.includes(layoutFullPath)) {
+        const cycle = [...layoutChain.slice(layoutChain.indexOf(layoutFullPath)), layoutFullPath]
+        throw new StxRuntimeError(
+          cycle.length === 2
+            ? `Circular layout: ${layoutFullPath} extends itself`
+            : `Circular layout: ${cycle.join(' -> ')}`,
+          filePath,
+          undefined,
+          undefined,
+          'Remove the @extends or @layout line that points back at a layout already in use',
+        )
+      }
+
       // Check if the layout itself extends another layout (@layout or @extends)
       const nestedLayoutMatch = layoutContent.match(/@(?:layout|extends)\(\s*['"]([^'"]+)['"]\s*\)/)
       if (nestedLayoutMatch) {
@@ -1644,7 +1669,7 @@ async function processDirectivesInternal(
         }
 
         // Create a new context with merged sections for the nested layout
-        const nestedContext = { ...context, __sections: sections }
+        const nestedContext = { ...context, __sections: sections, __layoutChain: [...layoutChain, layoutFullPath] }
 
         // Process the nested layout by recursively calling processDirectives
         // with the modified template that includes the @layout directive
@@ -2366,7 +2391,7 @@ async function processOtherDirectives(
     }
 
     if (/<\/head>/i.test(html))
-      return html.replace(/<\/head>/i, `${snippet}\n</head>`)
+      return insertBeforeHeadClose(html, snippet)
     if (/<head\b[^>]*>/i.test(html))
       return html.replace(/(<head\b[^>]*>)/i, `$1\n${snippet}`)
     // Full HTML document with no <head> — e.g. a named layout that emitted
@@ -2437,7 +2462,7 @@ async function processOtherDirectives(
     // Inject in head before other scripts, or at start of body
     if (output.includes('</head>')) {
       // Find the first <script in the head section and insert runtime before it
-      const headEndPos = output.indexOf('</head>')
+      const headEndPos = headCloseIndex(output)
       const headSection = output.slice(0, headEndPos)
       const firstScriptPos = headSection.indexOf('<script')
 
@@ -2449,7 +2474,7 @@ async function processOtherDirectives(
       }
 else {
         // No scripts in head, insert before </head>
-        output = output.replace('</head>', `${runtimeScript}\n</head>`)
+        output = insertBeforeHeadClose(output, runtimeScript)
       }
     }
 else if (output.includes('<body')) {
@@ -2588,7 +2613,7 @@ else {
       if (script) {
         // lastIndexOf, never replace: an earlier `</body>` can sit inside a
         // script's string content (CLAUDE.md item 24).
-        const bodyIdx = output.lastIndexOf('</body>')
+        const bodyIdx = bodyCloseIndex(output)
         output = bodyIdx === -1 ? output + script : output.slice(0, bodyIdx) + script + '\n' + output.slice(bodyIdx)
       }
       context.__stx_event_bindings = []

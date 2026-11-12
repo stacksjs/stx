@@ -1,5 +1,170 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.861...v0.2.862)
+
+## 🐛 Bug Fixes
+
+- **stx**: find the document's own head and body close tags, skipping script content ([171b09d](https://github.com/stacksjs/stx/commit/171b09d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.862 ([0607291](https://github.com/stacksjs/stx/commit/0607291)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.860...v0.2.861)
+
+## 💄 Styles
+
+- **bun-plugin**: sort the stx import ([243a70e](https://github.com/stacksjs/stx/commit/243a70e)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.861 ([f9e976a](https://github.com/stacksjs/stx/commit/f9e976a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.859...v0.2.860)
+
+## 🐛 Bug Fixes
+
+- **stx**: inject before the last closing body tag, never the first ([27624a9](https://github.com/stacksjs/stx/commit/27624a9)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.860 ([c458d61](https://github.com/stacksjs/stx/commit/c458d61)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.858...v0.2.859)
+
+## 🐛 Bug Fixes
+
+- **native**: recognize component package roots contributed by wrapper plugins ([4042681](https://github.com/stacksjs/stx/commit/4042681)) _(by Chris <chris@stacksjs.com>)_ ([#2182](https://github.com/stacksjs/stx/issues/2182))
+
+## ✅ Tests
+
+- **bun-plugin**: isolate render-cache cases from delayed edit events ([57fc6ac](https://github.com/stacksjs/stx/commit/57fc6ac)) _(by Chris <chris@stacksjs.com>)_ ([#2183](https://github.com/stacksjs/stx/issues/2183), [#2182](https://github.com/stacksjs/stx/issues/2182))
+
+## 🔧 Chores
+
+- release v0.2.859 ([4c490f3](https://github.com/stacksjs/stx/commit/4c490f3)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.857...v0.2.858)
+
+## 🐛 Bug Fixes
+
+- **bun-plugin**: render entrypoints before the bundler starts, so a cold client bundle cannot deadlock the build ([e9b37d7](https://github.com/stacksjs/stx/commit/e9b37d7)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.858 ([f00c752](https://github.com/stacksjs/stx/commit/f00c752)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.856...v0.2.857)
+
+## 💄 Styles
+
+- **components**: format the result-panel components ([3a7a0ac](https://github.com/stacksjs/stx/commit/3a7a0ac)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **components**: ask a previewed page what it sees after it has loaded ([3c1d9b0](https://github.com/stacksjs/stx/commit/3c1d9b0)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.857 ([be6de18](https://github.com/stacksjs/stx/commit/be6de18)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.855...v0.2.856)
+
+## ✨ Features
+
+- **components**: add JsonTree, DataGrid, SplitPane, ContextMenu, GraphView and PreviewFrame ([4092104](https://github.com/stacksjs/stx/commit/4092104)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **components**: add componentApi, a way to a component's exposed methods ([6f40cd0](https://github.com/stacksjs/stx/commit/6f40cd0)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **stx**: keep a closing script tag in a prop from ending a component's script ([ba05bf7](https://github.com/stacksjs/stx/commit/ba05bf7)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.856 ([a57472e](https://github.com/stacksjs/stx/commit/a57472e)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.854...v0.2.855)
+
+## ✨ Features
+
+- **components**: add CodeEditor ([4e39c4f](https://github.com/stacksjs/stx/commit/4e39c4f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **components**: colour CodeBlock with classes, and ship its stylesheet ([f706a8d](https://github.com/stacksjs/stx/commit/f706a8d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **components**: type into CodeEditor the same way in every engine ([f49af35](https://github.com/stacksjs/stx/commit/f49af35)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.855 ([ffd938a](https://github.com/stacksjs/stx/commit/ffd938a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- update ts-syntax-highlighter to 0.2.20 ([bcc5f6c](https://github.com/stacksjs/stx/commit/bcc5f6c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.853...v0.2.854)
+
+## 🐛 Bug Fixes
+
+- **stx**: a directive named in a layout comment no longer nests or loops the layout ([3b69bd2](https://github.com/stacksjs/stx/commit/3b69bd2)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.854 ([a905212](https://github.com/stacksjs/stx/commit/a905212)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.852...v0.2.853)
+
+## 🐛 Bug Fixes
+
+- qualify public STX declarations and immutable release archives ([7c1a229](https://github.com/stacksjs/stx/commit/7c1a229)) _(by Chris <chris@stacksjs.com>)_ ([#2181](https://github.com/stacksjs/stx/issues/2181))
+- enforce strict public STX declarations before publication ([06ca449](https://github.com/stacksjs/stx/commit/06ca449)) _(by Chris <chris@stacksjs.com>)_
+- **native**: compile an inline test screen against the project's packages ([ecf47bc](https://github.com/stacksjs/stx/commit/ecf47bc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.853 ([7274ddc](https://github.com/stacksjs/stx/commit/7274ddc)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.851...v0.2.852)
 
 ## ✨ Features

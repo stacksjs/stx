@@ -1,23 +1,21 @@
 import assert from 'node:assert/strict'
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createTempDir, removeTempDir } from '../packages/stx/src/temp-dir'
+import { verifyPublicTypes } from './public-types-consumer'
+import { packageCandidateRegistry } from './package-candidate-registry'
 
 const root = process.cwd()
 // Removed when the smoke passes, and on exit or interrupt when it does not.
 const smokeRoot = createTempDir('installed-smoke')
 
-function run(cmd: string[], cwd = smokeRoot): void {
-  const result = Bun.spawnSync(cmd, {
-    cwd,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  })
-
-  if (result.exitCode !== 0) {
-    console.error(result.stdout.toString())
-    console.error(result.stderr.toString())
-    throw new Error(`${cmd.join(' ')} failed with exit code ${result.exitCode}`)
+async function run(cmd: string[], cwd = smokeRoot): Promise<void> {
+  const child = Bun.spawn(cmd, { cwd, stdout: 'pipe', stderr: 'pipe', timeout: 120_000 })
+  const [code, stdout, stderr] = await Promise.all([child.exited, new Response(child.stdout).text(), new Response(child.stderr).text()])
+  if (code !== 0) {
+    console.error(stdout)
+    console.error(stderr)
+    throw new Error(`${cmd.join(' ')} failed with exit code ${code}`)
   }
 }
 
@@ -25,42 +23,52 @@ mkdirSync(join(smokeRoot, 'pages'), { recursive: true })
 mkdirSync(join(smokeRoot, 'node_modules'), { recursive: true })
 
 const dependencies: Record<string, string> = {}
-const archives = join(smokeRoot, 'archives')
-mkdirSync(archives)
+const publicTypeArchives: Array<{ name: string; archive: string }> = []
+const archives = join(process.env.STX_TYPE_SDK_EVIDENCE ?? smokeRoot, 'archives')
+mkdirSync(archives, { recursive: true })
 for (const directory of ['desktop', 'sanitizer', 'router', 'bun-plugin', 'stx', 'components']) {
   const packageDir = join(root, 'packages', directory)
   const manifest = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8'))
   const archive = join(archives, `${directory}.tgz`)
-  run([process.execPath, 'pm', 'pack', '--ignore-scripts', '--filename', archive], packageDir)
-  // Keep each archive's bytes unchanged. Normal Bun workspaces resolve this
-  // unpublished cohort together, without reaching for its not-yet-public
-  // transitive versions or linking any file from the original checkout.
-  await new Bun.Archive(await Bun.file(archive).bytes()).extract(join(smokeRoot, 'packages', directory))
+  publicTypeArchives.push({ name: manifest.name, archive })
+  await run([process.execPath, 'pm', 'pack', '--ignore-scripts', '--filename', archive], packageDir)
+  const archiveFiles = await new Bun.Archive(await Bun.file(archive).bytes()).files()
   // The MIT notice must travel with the actual archive. Bun's pack command
   // silently omits a missing files entry; Pantry's publisher correctly rejects it.
   if (manifest.files?.includes('LICENSE.md')) {
     assert.equal(
-      readFileSync(join(smokeRoot, 'packages', directory, 'package', 'LICENSE.md'), 'utf8'),
+      await archiveFiles.get('package/LICENSE.md')!.text(),
       readFileSync(join(root, 'LICENSE.md'), 'utf8'),
       `${manifest.name} must ship the repository license`,
     )
   }
-  dependencies[manifest.name] = 'workspace:*'
+  const packedManifest = await archiveFiles.get('package/package.json')!.json()
+  assert.equal(packedManifest.name, manifest.name)
+  assert.equal(packedManifest.version, manifest.version)
+  dependencies[manifest.name] = packedManifest.version
 }
-const workspace = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
 writeFileSync(join(smokeRoot, 'package.json'), JSON.stringify({
   name: 'stx-installed-smoke',
   type: 'module',
   private: true,
-  workspaces: ['packages/*/package'],
   dependencies,
-  devDependencies: { 'better-dx': workspace.devDependencies['better-dx'] },
+  devDependencies: { typescript: '7.0.2', '@types/bun': '1.4.4' },
 }, null, 2))
 writeFileSync(join(smokeRoot, 'bunfig.toml'), '[install]\nlinker = "hoisted"\n')
 // Install the actual publishable archives. Checkout symlinks accidentally make
 // unshipped source files visible and cannot prove a published consumer works.
-run([process.execPath, 'install'])
-run([process.execPath, 'install', '--frozen-lockfile'])
+await using registry = await packageCandidateRegistry(publicTypeArchives)
+const scopes = [...new Set(publicTypeArchives.map(owner => owner.name.startsWith('@') ? owner.name.split('/')[0] : '').filter(Boolean))]
+writeFileSync(join(smokeRoot, '.npmrc'), [`registry=${registry.url}`, 'always-auth=false', ...scopes.map(scope => `${scope}:registry=${registry.url}`), ''].join('\n'))
+let normalLock: string | undefined
+for (const flags of [[], ['--frozen-lockfile']]) {
+  await run([process.execPath, '--no-env-file', 'install', `--registry=${registry.url}`, ...flags])
+  assert.equal(existsSync(join(smokeRoot, 'node_modules/@dtsx/bun')), false, 'Published SDK consumers must not install the declaration producer as a workspace development dependency')
+  const lock = new Bun.CryptoHasher('sha256').update(readFileSync(join(smokeRoot, 'bun.lock'))).digest('hex')
+  if (normalLock) assert.equal(lock, normalLock, 'Frozen install changed the qualified lockfile')
+  else normalLock = lock
+  await verifyPublicTypes(smokeRoot, publicTypeArchives, flags.length ? 'frozen' : 'normal', { kind: 'prepublication-original-archives', url: registry.url, requests: registry.requests })
+}
 
 // #2109: public native exports and shared imports must work from the archives,
 // not only from the source tree. Only test fixtures/assertions are copied;
@@ -69,7 +77,7 @@ mkdirSync(join(smokeRoot, 'fixtures'))
 for (const file of ['native-hud-device.stx', 'NativeHudPanel.stx', 'native-hud-model.ts'])
   copyFileSync(join(root, 'packages/stx/test/native/fixtures', file), join(smokeRoot, 'fixtures', file))
 copyFileSync(join(root, 'scripts/native-hud-package-probe.ts'), join(smokeRoot, 'native-hud-package-probe.ts'))
-run([process.execPath, 'native-hud-package-probe.ts'])
+await run([process.execPath, 'native-hud-package-probe.ts'])
 
 // #2155: run maintained parser and reactive-bundle contracts against the
 // untouched package archives. Only test imports change to public entry points.
@@ -81,7 +89,7 @@ for (const [fixture, sourceImport, installedImport] of [
   if (!source.includes(sourceImport)) throw new Error(`Missing native fixture import: ${fixture}`)
   writeFileSync(join(smokeRoot, fixture), source.replace(sourceImport, installedImport))
 }
-run([process.execPath, 'test', './inline-style-cache.test.ts', './reactive-inline-style.test.ts'])
+await run([process.execPath, 'test', './inline-style-cache.test.ts', './reactive-inline-style.test.ts'])
 
 writeFileSync(join(smokeRoot, 'pages', 'index.stx'), `<script server>
 export const products = [
@@ -108,7 +116,7 @@ export const products = [
 </html>`)
 
 
-run([process.execPath, '-e', `
+await run([process.execPath, '-e', `
 const stx = await import('@stacksjs/stx')
 const expressions = await import('@stacksjs/stx/expressions')
 const tokenizer = await import('@stacksjs/stx/parser/tokenizer')
@@ -129,7 +137,7 @@ if (desktop.macOSRuntimeExecutablePath('/Example.app') !== '/Example.app/Content
 
 // #2107: dist/signals.js is a server-side generator, not the browser asset.
 // Inspect what the archived package emits, not debug strings in its sources.
-run([process.execPath, '-e', `
+await run([process.execPath, '-e', `
 const { generateSignalsRuntime, generateSignalsRuntimeDev } = await import('@stacksjs/stx/signals')
 const { buildRuntimeAsset } = await import('@stacksjs/stx/build-assets')
 for (const runtime of [generateSignalsRuntime(), buildRuntimeAsset().content]) {
@@ -223,7 +231,7 @@ writeFileSync(join(smokeRoot, 'mouse-tsconfig.json'), JSON.stringify({
   },
   files: ['mouse-consumer.ts'],
 }, null, 2))
-run([process.execPath, '--bun', join(smokeRoot, 'node_modules/typescript/bin/tsc'), '--project', 'mouse-tsconfig.json'])
+await run([process.execPath, '--bun', join(smokeRoot, 'node_modules/typescript/bin/tsc'), '--project', 'mouse-tsconfig.json'])
 
 writeFileSync(join(smokeRoot, 'mouse-good.stx'), `<script client>
 const mouse = useMouse({ touch: false, resetOnLeave: true })
@@ -238,7 +246,7 @@ writeFileSync(join(smokeRoot, 'mouse-bad.stx'), `<script client>
 useMouse({ touch: 'yes' })
 useMouse().subscribe(point => console.log(point.clientX.toUpperCase(), point.nonexistent))
 </script>`)
-run([process.execPath, '-e', `
+await run([process.execPath, '-e', `
 const { typecheckStxFiles } = await import('@stacksjs/stx/typecheck')
 const { resolve } = await import('node:path')
 const good = resolve('mouse-good.stx')
@@ -252,12 +260,13 @@ if (!invalid.some(d => d.code === 2322) || invalid.filter(d => d.code === 2339).
   throw new Error('Published mouse types failed to reject invalid options/properties: ' + JSON.stringify(invalid))
 `])
 
-run([process.execPath, 'node_modules/@stacksjs/stx/dist/cli.js', 'build', '--pages', 'pages', '--out', 'dist', '--no-minify'])
-run([process.execPath, '-e', `
+await run([process.execPath, 'node_modules/@stacksjs/stx/dist/cli.js', 'build', '--pages', 'pages', '--out', 'dist', '--no-minify'])
+await run([process.execPath, '-e', `
 const html = await Bun.file('dist/index.html').text()
 if (!html.includes('Lumen & Lather')) throw new Error('missing page title')
 if (!html.includes('Cedar Wick Candle')) throw new Error('missing rendered product')
 `])
 
+await registry.stop()
 removeTempDir(smokeRoot)
 console.log('installed package smoke passed')

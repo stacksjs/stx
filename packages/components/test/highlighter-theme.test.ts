@@ -1,193 +1,196 @@
 /**
  * `highlight()` renders the theme it was asked for (stacksjs/stx#2015).
  *
- * The theme was resolved, returned in the result, and never passed to the
- * highlighter. Every render came from the shared instance's own
- * `github-light`, so every CodeBlock in every app was light whatever it asked
- * for, while the returned `theme` field reported the request. That field made
- * it worse than silent: it said `github-dark` over light CSS.
+ * The history, because the shape of this file follows from it. The theme was
+ * once resolved, returned in the result, and never passed to the highlighter,
+ * so every block was light while the returned `theme` said otherwise. Then
+ * `auto` could not work at all: the highlighter wrote each colour into a
+ * `style` attribute, where no media query can reach it, so following a
+ * dark-mode switch meant rendering twice and reading the colours back out.
  *
- * Four of GitHub Light's seven token colours sit below 0.4 luminance, so on a
- * dark code surface the result is not merely off-brand, it is unreadable, and
- * `className` cannot reach inline token colours to paper over it.
+ * And for most of that time none of it could be tested here. The highlighter's
+ * root entry imports `bunfig`, which this runner could not resolve, so
+ * `highlight()` took its plain-text floor and the palette assertions were
+ * skipped. It goes through the highlighter's browser entry now, which loads
+ * anywhere, so nothing below is conditional.
  *
- * Note what this file can and cannot check here. `ts-syntax-highlighter@0.2.17`
- * ships a bundle importing `bunfig` without declaring it, so it throws wherever
- * that is unreachable, which includes this test runner: `highlight()` takes its
- * plain-text floor and emits no CSS at all. The palette assertions are
- * therefore skipped rather than quietly passing on an empty string, and they
- * run wherever the highlighter does load. What survives in both places is the
- * metadata contract, which is where the original lie lived.
+ * What it emits changed with that: a class on each token and no colour, with
+ * the palettes as custom properties. Light and dark are the same markup.
  */
 import { describe, expect, it } from 'bun:test'
-import { highlight } from '../src/utils/highlighter'
+import { highlight, highlightToHtml } from '../src/utils/highlighter'
+import { SYNTAX_DARK, SYNTAX_LIGHT } from '../src/utils/syntax-theme'
 
-const CODE = 'const x: number = 1'
+const CODE = 'const x: number = 1 // note'
 
-/** The panel background, the cheapest proof of which palette shipped. */
-function background(css: string): string | undefined {
-  return /background-color:\s*(#[0-9a-f]{3,8})/i.exec(css)?.[1]?.toLowerCase()
-}
+describe('highlight() colours with classes, not inline styles', () => {
+  it('loads, which it could not in this runner before', async () => {
+    const result = await highlight(CODE, { language: 'typescript' })
 
-// Decided once, by asking rather than assuming: a highlighter that loaded
-// returns CSS, and one that did not returns none.
-const probe = await highlight(CODE, { language: 'typescript', theme: 'light' })
-const highlighterLoaded = probe.css.length > 0
-
-describe('highlight() reports the theme it was asked for', () => {
-  it('reports the resolved theme even when highlighting is unavailable', async () => {
-    // The second untruth in #2015, and the one reachable from here. This path
-    // returned a hardcoded `github-light`, so a caller asking for dark and
-    // getting the plain-text floor was told it got light.
-    const result = await highlight(CODE, { language: 'typescript', theme: 'dark' })
-
-    expect(result.theme).toBe('github-dark')
+    expect(result.css.length).toBeGreaterThan(0)
+    expect(result.html).toContain('<span class="tok-keyword">const</span>')
   })
 
-  it('names one palette when it could only ship one', async () => {
-    /*
-     * This asserted `auto` resolved to `github-light`, and its own comment said
-     * to delete it once both palettes could be emitted. They can be now, so
-     * what it asserts has changed rather than gone: the returned `theme` is
-     * `'auto'` when BOTH palettes shipped, and a concrete name when only one
-     * did - which is the case here, because the highlighter cannot load in this
-     * runner and there is no CSS to choose between.
-     *
-     * Reporting `auto` on the plain-text floor would be the same class of
-     * untruth this issue is about, so the field tracks what was emitted rather
-     * than what was asked for.
-     */
-    expect(globalThis.matchMedia).toBeUndefined()
+  it('writes no colour into the markup, for any theme', async () => {
+    for (const theme of ['light', 'dark', 'auto'] as const) {
+      const result = await highlight(CODE, { language: 'typescript', theme })
 
-    const result = await highlight(CODE, { language: 'typescript', theme: 'auto' })
+      // The whole reason a media query could not work.
+      expect(result.html, theme).not.toContain('style=')
+      expect(result.html, theme).toContain('class="tok-comment"')
+    }
+  })
 
-    expect(result.theme).toBe(result.css ? 'auto' : 'github-light')
+  it('gives back exactly the code, escaped', async () => {
+    const source = 'if (a < b && c > "d") {\n  return `<${tag}>`\n}'
+    const result = await highlight(source, { language: 'typescript' })
+    const text = result.html
+      .replace(/<[^>]+>/g, '')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+
+    expect(text).toBe(source)
+    expect(result.html).toContain('&lt;')
+    expect(result.html).toContain('&amp;&amp;')
+    expect(result.html).not.toMatch(/<(?!\/?(?:pre|code|span)\b)/)
+  })
+
+  it('one span per run of a colour, one line per line', async () => {
+    const html = (await highlightToHtml('a b c\nd', { language: 'typescript' }))!
+
+    expect(html).toBe('<pre class="syntax"><code><span class="line">a b c</span>\n<span class="line">d</span></code></pre>')
   })
 })
 
-describe.skipIf(!highlighterLoaded)('highlight() emits the palette it reports', () => {
-  it('emits the dark palette for theme: dark', async () => {
-    const result = await highlight(CODE, { language: 'typescript', theme: 'dark' })
-
-    expect(result.theme).toBe('github-dark')
-    expect(background(result.css)).toBe('#0d1117')
+describe('highlight() reports the theme it was asked for', () => {
+  it('names the palette for an explicit theme', async () => {
+    expect((await highlight(CODE, { language: 'typescript', theme: 'dark' })).theme).toBe('github-dark')
+    expect((await highlight(CODE, { language: 'typescript', theme: 'light' })).theme).toBe('github-light')
   })
 
-  it('emits the light palette for theme: light', async () => {
-    const result = await highlight(CODE, { language: 'typescript', theme: 'light' })
-
-    expect(result.theme).toBe('github-light')
-    expect(background(result.css)).toBe('#ffffff')
+  it('reports auto when both palettes shipped', async () => {
+    expect((await highlight(CODE, { language: 'typescript', theme: 'auto' })).theme).toBe('auto')
   })
 
-  it('does not ship one palette for both', async () => {
-    // The regression in one assertion: the two were byte identical, 2777
-    // characters of GitHub Light, and only the metadata differed.
+  it('names one palette on the plain-text floor, where neither shipped', async () => {
+    // Reporting `auto` over no CSS at all would be the same untruth this issue
+    // is about: the field says what was emitted, not what was asked for.
+    const auto = await highlight(CODE, { language: 'no-such-language', theme: 'auto' })
+    const dark = await highlight(CODE, { language: 'no-such-language', theme: 'dark' })
+
+    expect(auto.css).toBe('')
+    expect(auto.theme).toBe('github-light')
+    expect(dark.theme).toBe('github-dark')
+    // The code is the content. It is still there.
+    expect(auto.html).toBe('<pre class="syntax"><code>const x: number = 1 // note</code></pre>')
+  })
+})
+
+describe('an explicit theme is pinned on the element', () => {
+  it('marks the block, so the palette holds whatever the page is doing', async () => {
     const dark = await highlight(CODE, { language: 'typescript', theme: 'dark' })
     const light = await highlight(CODE, { language: 'typescript', theme: 'light' })
 
+    expect(dark.html).toStartWith('<pre class="syntax" data-syntax-theme="dark">')
+    expect(light.html).toStartWith('<pre class="syntax" data-syntax-theme="light">')
+  })
+
+  it('ships that palette and not the other', async () => {
+    const dark = await highlight(CODE, { language: 'typescript', theme: 'dark' })
+    const light = await highlight(CODE, { language: 'typescript', theme: 'light' })
+
+    expect(dark.css).toContain(`--stx-syntax-background: ${SYNTAX_DARK.background};`)
+    expect(dark.css).not.toContain(SYNTAX_LIGHT.keyword!)
+    expect(light.css).toContain(`--stx-syntax-background: ${SYNTAX_LIGHT.background};`)
+    expect(light.css).not.toContain(SYNTAX_DARK.keyword!)
     expect(dark.css).not.toBe(light.css)
-    expect(background(dark.css)).not.toBe(background(light.css))
+    expect(dark.css).not.toContain('prefers-color-scheme')
   })
 })
 
-/**
- * `auto` emits BOTH palettes and lets CSS choose (stacksjs/stx#2015, item 2).
- *
- * The first half of this issue was the theme never reaching the highlighter.
- * The second is that `auto` could not work at all: `highlight()` runs in
- * `<script server>`, `globalThis.matchMedia` does not exist there, and a
- * viewer's preference is not knowable at render time — so branching in JS
- * always answered light.
- *
- * The engine's own `renderDualTheme` does not solve it. Its CSS styles the
- * `.syntax` container for both modes and leaves every token colour inline,
- * where no stylesheet rule can reach it, so it yields a dark panel with
- * light-theme token colours — the unreadable half, kept. There are no
- * per-token-type rules in its output, single or dual, to override instead.
- *
- * So the colours are read back out of two renders and re-emitted as rules on
- * the token classes the spans already carry, with the inline styles stripped.
- */
-/*
- * Skipped in this runner for the reason at the top of the file, so verified
- * out-of-band while developing. From the repo root, where the highlighter does
- * load:
- *
- *   bun -e "import { highlight } from './packages/components/src/utils/highlighter'
- *   const r = await highlight('const a = 1 // n', { language: 'typescript', theme: 'auto' })
- *   console.log(/style=\"color/.test(r.html), /prefers-color-scheme/.test(r.css), r.css.includes('#0d1117'))"
- *
- *   -> false true true
- *
- * The first must be false (inline colours stripped) and the other two true.
- */
-describe.skipIf(!highlighterLoaded)('auto ships both palettes', () => {
+describe('auto ships both palettes and lets CSS choose', () => {
   const auto = () => highlight(CODE, { language: 'typescript', theme: 'auto' })
 
-  it('reports itself as auto, because both palettes are present', async () => {
-    const result = await auto()
-
-    expect(result.theme).toBe('auto')
-  })
-
-  it('strips the inline colours that no media query could override', async () => {
-    const result = await auto()
-
-    // The whole reason a media query could not work.
-    expect(result.html).not.toMatch(/style="color/)
-    // …while the classes the rules key on survive.
-    expect(result.html).toMatch(/class="token [\w-]+"/)
+  it('leaves the block unpinned', async () => {
+    expect((await auto()).html).toStartWith('<pre class="syntax">')
   })
 
   it('carries both switches, matching how the library does dark mode', async () => {
-    const result = await auto()
+    const { css } = await auto()
 
     // A viewer following their OS…
-    expect(result.css).toContain('@media (prefers-color-scheme: dark)')
+    expect(css).toContain('@media (prefers-color-scheme: dark)')
+    // …guarded, or a page pinned to light on a dark OS would still get dark code…
+    expect(css).toContain(':root:not(.light)')
     // …and an app with a manual toggle.
-    expect(result.css).toMatch(/\.dark \.syntax/)
-    // The media query is guarded, or a page pinned to light on a dark OS would
-    // still get dark code.
-    expect(result.css).toContain(':root:not(.light)')
+    expect(css).toMatch(/:where\(\.dark\) \{/)
   })
 
   it('puts the dark panel in the dark block, not just the tokens', async () => {
-    const result = await auto()
+    const { css } = await auto()
+    const darkBlock = /:where\(\.dark\) \{([^}]*)\}/.exec(css)![1]!
 
-    // `.syntax` carries `background-color: #ffffff` from the light stylesheet,
-    // which the issue names: dark tokens on a white panel is the same bug in
-    // reverse, and the half a reader notices first.
-    expect(result.css).toMatch(/\.dark \.syntax \{[^}]*background-color:\s*#0d1117/i)
-    expect(result.css).toContain('#0d1117')
+    // Dark tokens on a white panel is the same bug in reverse, and the half a
+    // reader notices first.
+    expect(darkBlock).toContain(`--stx-syntax-background: ${SYNTAX_DARK.background};`)
+    expect(darkBlock).toContain(`--stx-syntax-keyword: ${SYNTAX_DARK.keyword};`)
+    expect(css).toMatch(/\.syntax \{[^}]*background-color: var\(--stx-syntax-background\)/)
   })
 
-  it('emits a dark colour for a token it also emits a light colour for', async () => {
-    const result = await auto()
-    const classes = [...result.css.matchAll(/\.syntax \.token\.([\w-]+) \{/g)].map(m => m[1])
+  it('has a light and a dark value for every token it colours', async () => {
+    const { css, html } = await auto()
+    const used = new Set([...html.matchAll(/class="tok-([\w-]+)"/g)].map(match => match[1]!))
 
-    expect(classes.length).toBeGreaterThan(0)
-    // Every token rule appears in both halves: once plain, once under dark.
-    for (const cls of new Set(classes)) {
-      const plain = new RegExp(`(?:^|\\n)\\.syntax \\.token\\.${cls} \\{`, 'm')
-      const dark = new RegExp(`\\.dark \\.syntax \\.token\\.${cls} \\{`)
-
-      expect(plain.test(result.css), `${cls} has no light rule`).toBe(true)
-      expect(dark.test(result.css), `${cls} has no dark rule`).toBe(true)
+    expect(used.size).toBeGreaterThan(2)
+    for (const name of used) {
+      expect(css, name).toContain(`.tok-${name} { color: var(--stx-syntax-${name}); }`)
+      expect(css.split(`--stx-syntax-${name}: ${SYNTAX_LIGHT[name]};`).length - 1, `${name} light`).toBeGreaterThanOrEqual(1)
+      expect(css.split(`--stx-syntax-${name}: ${SYNTAX_DARK[name]};`).length - 1, `${name} dark`).toBeGreaterThanOrEqual(2)
     }
   })
+})
 
+describe('line numbers', () => {
+  it('are a marker for CSS, never text that a copy would pick up', async () => {
+    const numbered = await highlight('a\nb', { language: 'typescript', lineNumbers: true })
+
+    expect(numbered.html).toContain('data-line-numbers')
+    expect(numbered.html.replace(/<[^>]+>/g, '')).toBe('a\nb')
+    expect(numbered.css).toContain('counter-increment: stx-syntax-line')
+  })
+})
+
+describe('in a browser bundle', () => {
   /*
-   * The explicit modes are deliberately unchanged: one palette, inline colours,
-   * which is correct when the caller has already decided and is the cheaper
-   * output. Only `auto` pays for both.
+   * `highlightToHtml` is what a page passes to `<CodeBlock :highlighter>`, so
+   * this module has to survive being bundled for a browser. It could not
+   * before: the only highlighter it knew was the package root, which the
+   * `browser` field in package.json maps to an empty module.
    */
-  it('leaves an explicitly chosen theme on the single-palette path', async () => {
-    for (const theme of ['light', 'dark'] as const) {
-      const result = await highlight(CODE, { language: 'typescript', theme })
+  it('reaches the highlighter through its browser entry, and nothing a browser lacks', async () => {
+    const reached: string[] = []
+    const result = await Bun.build({
+      entrypoints: [new URL('../src/utils/highlighter.ts', import.meta.url).pathname],
+      target: 'browser',
+      format: 'esm',
+      plugins: [{
+        name: 'record-imports',
+        setup(build) {
+          build.onResolve({ filter: /.*/ }, (args) => {
+            reached.push(args.path)
+            return undefined
+          })
+        },
+      }],
+    })
 
-      expect(result.html, theme).toMatch(/style="color/)
-      expect(result.css, theme).not.toContain('prefers-color-scheme')
-    }
+    expect(result.success).toBe(true)
+    expect(reached).toContain('ts-syntax-highlighter/browser')
+    expect(reached.filter(specifier => specifier === 'bunfig' || specifier.startsWith('node:'))).toEqual([])
+
+    const output = (await Promise.all(result.outputs.map(artifact => artifact.text()))).join('\n')
+    expect(output).not.toMatch(/["']node:[a-z_/]+["']/)
+    expect(output).not.toContain('import.meta')
   })
 })

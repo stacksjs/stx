@@ -1,0 +1,188 @@
+<script server>
+/*
+ * The items, when they arrive as a plain prop. A bound list (`:items="list()"`)
+ * or a function that builds one for the element clicked on (`:items="menuFor"`)
+ * is read live by the client script.
+ */
+export const items = Array.isArray($props.items) ? $props.items : []
+export const label = $props.label || 'Context menu'
+export const disabled = $bool($props.disabled)
+export const className = $props.className || ''
+export const menuId = $props.id || `context-menu-${$uid}`
+</script>
+
+<script client>
+/*
+ * <ContextMenu>: wraps the content it is the menu for. A right click inside,
+ * the menu key or Shift+F10 opens it; `open()` opens it from anywhere.
+ *
+ * What a menu is and how it is moved through is in ./core, the DOM in ./view.
+ */
+import { ContextMenuView } from './view'
+
+const emit = defineEmits(['select', 'open', 'close'])
+
+function asBoolean(value) {
+  if (value == null) return false
+  if (typeof value === 'string') return !['false', '0', 'off', 'no'].includes(value.trim().toLowerCase())
+  return Boolean(value)
+}
+// An array, a function that returns one, or JSON from a plain attribute.
+function asItems(value) {
+  if (Array.isArray(value) || typeof value === 'function') return value
+  if (typeof value === 'string' && value.charAt(0) === '[') {
+    try { return JSON.parse(value) }
+    catch (e) { return [] }
+  }
+  return []
+}
+
+const liveItems = useReactiveProp('items', {{ items }}, { parse: asItems })
+const liveDisabled = useReactiveProp('disabled', {{ disabled }}, { parse: asBoolean })
+
+const rootRef = useRef('context-menu')
+let menu = null
+
+onMount(() => {
+  const root = rootRef()
+  if (!root) return
+
+  menu = new ContextMenuView(root, {
+    items: asItems(liveItems()),
+    label: {{ label }},
+    disabled: asBoolean(liveDisabled()),
+  }, {
+    onSelect(detail) { emit('select', detail) },
+    onOpen(detail) { emit('open', detail) },
+    onClose(detail) { emit('close', detail) },
+  })
+
+  effect(() => menu.setItems(asItems(liveItems())))
+  effect(() => menu.setDisabled(asBoolean(liveDisabled())))
+})
+
+onDestroy(() => {
+  if (menu) menu.destroy()
+  menu = null
+})
+
+defineExpose({
+  open: (at, items, options) => (menu ? menu.open(at, items || null, options || {}) : false),
+  close: () => { if (menu) menu.close('api') },
+  isOpen: () => (menu ? menu.isOpen : false),
+})
+</script>
+
+{{-- The wrapper takes no box of its own: the content lays out as if the menu
+     were not there. --}}
+<div ref="context-menu" id="{{ menuId }}" data-stx-context-menu class="{{ className }}" style="display: contents">
+  <slot />
+</div>
+
+<style>
+/*
+ * The menus live in one layer. Where the browser has a top layer the layer is
+ * a popover, and its own box must not paint or catch the pointer.
+ */
+:where([data-stx-context-menu]) {
+  --stx-menu-bg: var(--stx-panel, #ffffff);
+  --stx-menu-fg: var(--stx-fg, #171717);
+  --stx-menu-fg-soft: var(--stx-fg-soft, #737373);
+  --stx-menu-line: var(--stx-line, #e5e5e5);
+  --stx-menu-active: var(--stx-accent-solid, #2563eb);
+  --stx-menu-active-fg: var(--stx-accent-ink, #ffffff);
+  --stx-menu-danger: var(--stx-danger, #dc2626);
+  --stx-menu-radius: 8px;
+  --stx-menu-item-radius: 5px;
+  --stx-menu-font-size: 13px;
+  --stx-menu-min-width: 11rem;
+}
+
+[data-stx-context-menu] > .stx-menu-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: visible;
+  background: transparent;
+  color: inherit;
+  pointer-events: none;
+}
+[data-stx-context-menu] > .stx-menu-layer:where([hidden]) { display: none; }
+
+.stx-menu-layer > .stx-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  min-width: var(--stx-menu-min-width);
+  max-width: min(24rem, calc(100vw - 16px));
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--stx-menu-line);
+  border-radius: var(--stx-menu-radius);
+  background: var(--stx-menu-bg);
+  color: var(--stx-menu-fg);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.16), 0 2px 6px rgb(0 0 0 / 0.08);
+  font-size: var(--stx-menu-font-size);
+  line-height: 1.35;
+  outline: none;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.stx-menu > .stx-menu-item {
+  display: grid;
+  grid-template-columns: 1rem 1fr auto;
+  align-items: center;
+  column-gap: 6px;
+  padding: 4px 8px 4px 4px;
+  border-radius: var(--stx-menu-item-radius);
+  cursor: default;
+  outline: none;
+  white-space: nowrap;
+}
+.stx-menu > .stx-menu-item:focus {
+  background: var(--stx-menu-active);
+  color: var(--stx-menu-active-fg);
+}
+.stx-menu > .stx-menu-item[aria-expanded="true"]:not(:focus) {
+  background: color-mix(in srgb, var(--stx-menu-fg) 10%, transparent);
+}
+.stx-menu > .stx-menu-item[data-danger]:not(:focus) { color: var(--stx-menu-danger); }
+.stx-menu > .stx-menu-item[data-danger]:focus { background: var(--stx-menu-danger); color: #ffffff; }
+
+/* A disabled item can still be reached and read, so it shows where focus is without looking available. */
+.stx-menu > .stx-menu-item[aria-disabled="true"] { color: var(--stx-menu-fg-soft); opacity: 0.6; }
+.stx-menu > .stx-menu-item[aria-disabled="true"]:focus {
+  background: color-mix(in srgb, var(--stx-menu-fg) 8%, transparent);
+  color: var(--stx-menu-fg-soft);
+}
+
+.stx-menu .stx-menu-check { text-align: center; font-size: 0.85em; }
+.stx-menu .stx-menu-label { overflow: hidden; text-overflow: ellipsis; }
+.stx-menu :is(.stx-menu-shortcut, .stx-menu-arrow) {
+  margin-left: 1.5rem;
+  color: var(--stx-menu-fg-soft);
+  font-variant-numeric: tabular-nums;
+}
+.stx-menu > .stx-menu-item:focus:not([aria-disabled="true"]) :is(.stx-menu-shortcut, .stx-menu-arrow) { color: inherit; opacity: 0.85; }
+
+.stx-menu > .stx-menu-separator {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--stx-menu-line);
+}
+
+@media (forced-colors: active) {
+  .stx-menu > .stx-menu-item:focus { outline: 2px solid Highlight; outline-offset: -2px; }
+}
+</style>

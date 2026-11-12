@@ -1,4 +1,5 @@
 /* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
+import { bodyCloseIndex, insertBeforeHeadClose } from './document-tags'
 import type { AnalyticsConfig, CustomDirective, StxOptions } from './types'
 
 /**
@@ -260,7 +261,7 @@ export function injectAnalytics(html: string, options: StxOptions): string {
   // Check if document has a head tag
   if (!html.includes('</head>')) {
     // Try to inject before the LAST </body> as fallback
-    const anBodyIdx = html.lastIndexOf('</body>')
+    const anBodyIdx = bodyCloseIndex(html)
     if (anBodyIdx !== -1) {
       return html.slice(0, anBodyIdx) + analyticsScript + html.slice(anBodyIdx)
     }
@@ -269,7 +270,7 @@ export function injectAnalytics(html: string, options: StxOptions): string {
   }
 
   // Inject just before closing </head> tag
-  return html.replace('</head>', `${analyticsScript}</head>`)
+  return insertBeforeHeadClose(html, analyticsScript, '')
 }
 
 /**

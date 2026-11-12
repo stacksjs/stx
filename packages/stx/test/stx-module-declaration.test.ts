@@ -50,13 +50,13 @@ describe('stx-module.d.ts', () => {
   })
 
   it('types each value by the stx.d.ts global of the same name, not by a second copy', () => {
-    const globals = new Set([...runtimeDeclaration.matchAll(/^declare (?:function|const)\s+([\w$]+)/gm)].map(m => m[1]))
+    const globals = new Set([...runtimeDeclaration.matchAll(/^declare (?:function|const|var)\s+([\w$]+)/gm)].map(m => m[1]))
     for (const [name, type] of exportedValues()) {
       const global = /^typeof globalThis\.([\w$]+)$/.exec(type)?.[1]
       if (global) {
         expect(global).toBe(name)
         // `typeof globalThis.x` must point at a declared runtime global. The
-        // timer compatibility aliases are `const` bindings, while the older
+        // timer compatibility aliases are `var` bindings, while the older
         // API surface is mostly declared as functions.
         expect(globals.has(name)).toBe(true)
       }

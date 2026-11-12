@@ -7,6 +7,7 @@
  * @module runtime-injection
  */
 
+import { bodyCloseIndex, headCloseIndex, insertBeforeHeadClose } from './document-tags'
 import { headInsertionPoint } from './head-injection'
 import type { StxOptions } from './types'
 import { BROWSER_CORE_IMPORTS } from './browser-core-imports'
@@ -124,14 +125,14 @@ import '@stacksjs/browser'
 
   // Inject before other scripts in <head>, or before </head>
   if (template.includes('</head>')) {
-    const headEndPos = template.indexOf('</head>')
+    const headEndPos = headCloseIndex(template)
     const headSection = template.slice(0, headEndPos)
     const firstScriptPos = headSection.indexOf('<script')
 
     if (firstScriptPos !== -1) {
       return template.slice(0, firstScriptPos) + browserScript + '\n' + template.slice(firstScriptPos)
     }
-    return template.replace('</head>', `${browserScript}\n</head>`)
+    return insertBeforeHeadClose(template, browserScript)
   }
 
   // Same reason as the setup wiring in process.ts: the first `<body` in the
@@ -258,7 +259,7 @@ function placeRuntimeTag(template: string, runtimeScript: string): string {
     return `${template.slice(0, headAt)}\n${runtimeScript}${template.slice(headAt)}`
 
   if (template.includes('</head>')) {
-    const idx = template.indexOf('</head>')
+    const idx = headCloseIndex(template)
     return template.slice(0, idx) + runtimeScript + '\n' + template.slice(idx)
   }
 
@@ -359,7 +360,7 @@ export function injectTooltipRuntime(html: string): string {
    * and replacing that occurrence injects this script into the middle of
    * another one, breaking the page. See CLAUDE.md item 24.
    */
-  const bodyIdx = html.lastIndexOf('</body>')
+  const bodyIdx = bodyCloseIndex(html)
   if (bodyIdx === -1)
     return `${html}\n${tag}`
 
@@ -494,6 +495,6 @@ export async function injectRouterScript(template: string, options?: StxOptions)
       : `<script data-stx-router>${await getCachedRouterScript()}</script>`
 
   // Use string concatenation to avoid $-interpretation in .replace()
-  const bodyCloseIdx = template.lastIndexOf('</body>')
+  const bodyCloseIdx = bodyCloseIndex(template)
   return template.slice(0, bodyCloseIdx) + configScript + ownedRoutesScript + routerScript + '\n</body>' + template.slice(bodyCloseIdx + 7)
 }

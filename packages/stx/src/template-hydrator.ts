@@ -8,6 +8,7 @@
  * @module template-hydrator
  */
 
+import { headCloseIndex } from './document-tags'
 import type { CompiledTemplate } from './template-compiler'
 import { extractVariables } from './variable-extractor'
 import { evaluateExpression, escapeHtmlValue } from './expressions'
@@ -148,7 +149,7 @@ async function runHydration(
     const clean = html.replace(/<script\b[^>]*\bdata-stx-server-data\b[^>]*>[\s\S]*?<\/script>/gi, '')
     const tag = serverDataTag(context)
     if (!tag) return clean
-    const head = clean.indexOf('</head>')
+    const head = headCloseIndex(clean)
     return head < 0 ? tag + clean : clean.slice(0, head) + tag + clean.slice(head)
   }
 

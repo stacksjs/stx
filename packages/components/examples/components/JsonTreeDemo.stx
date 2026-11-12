@@ -1,0 +1,116 @@
+<script client>
+import { fromValue } from '../../src/ui/json-tree/core'
+
+// A thousand records of five rows each: five thousand and one rows once every
+// one is open. Enough that drawing them all, or walking them all on a key,
+// would be felt.
+function records(count) {
+  const cities = ['Lisbon', 'Osaka', 'Lagos', 'Lima', 'Oslo']
+  return Array.from({ length: count }, (_, index) => ({
+    id: index + 1,
+    name: 'Customer ' + (index + 1),
+    address: { city: cities[index % cities.length] },
+  }))
+}
+
+const big = state(fromValue(records(1000), 'customers', { maxItems: 5000 }))
+const bigDepth = state(1)
+const log = state([])
+
+// What @stacksjs/tinker sends for a result: a model with a loaded relation, a
+// cycle back to it, rendered markup, and an error with a cause.
+const result = state({ t: 'object', id: 1, entries: [
+  ['user', { t: 'model', id: 2, model: 'User', table: 'users', primaryKey: 'id', key: { t: 'number', v: 7 },
+    attributes: [
+      ['id', { t: 'number', v: 7 }],
+      ['name', { t: 'string', v: 'Ada Lovelace' }],
+      ['email', { t: 'string', v: 'ada@example.com' }],
+      ['created_at', { t: 'date', v: '2026-03-01T09:30:00.000Z' }],
+      ['balance', { t: 'bigint', v: '9007199254740993' }],
+    ],
+    hidden: ['password', 'remember_token'],
+    loaded: [['posts', { t: 'array', id: 3, length: 240, more: 238, items: [
+      { t: 'model', id: 4, model: 'Post', key: { t: 'number', v: 1 }, attributes: [['id', { t: 'number', v: 1 }], ['title', { t: 'string', v: 'Notes on the engine' }]], loaded: [['author', { t: 'ref', id: 2 }]] },
+      { t: 'model', id: 5, model: 'Post', key: { t: 'number', v: 2 }, attributes: [['id', { t: 'number', v: 2 }], ['title', { t: 'string', v: 'A second note' }]] },
+    ] }]],
+    relations: [{ kind: 'hasMany', model: 'Post', name: 'posts' }, { kind: 'belongsTo', model: 'Team', name: 'team' }],
+  }],
+  ['welcome', { t: 'html', kind: 'mail', title: 'Welcome aboard', html: '<h1>Welcome, Ada</h1><p>Your account is ready.</p>' }],
+  ['settings', { t: 'map', id: 6, size: 2, entries: [[{ t: 'string', v: 'theme' }, { t: 'string', v: 'dark' }], [{ t: 'string', v: 'beta' }, { t: 'boolean', v: true }]] }],
+  ['failed', { t: 'error', name: 'QueryError', message: 'no such table: teams', frames: [{ function: 'run', file: '/app/database/query.ts', line: 88, column: 11 }, { function: 'Team.find', file: '/app/Models/Team.ts', line: 14, column: 5 }], cause: { t: 'error', name: 'Error', message: 'SQLITE_ERROR' }, entries: [['code', { t: 'string', v: 'E_NO_TABLE' }]] }],
+  ['deep', { t: 'cut', reason: 'depth', ctor: 'Object' }],
+  ['self', { t: 'ref', id: 1 }],
+] })
+
+function note(text) {
+  log.set([text, ...log()].slice(0, 8))
+}
+
+function onOpen(detail) { note('open as ' + detail.as + ': ' + detail.pathText) }
+function onCopy(detail) { note('copied ' + detail.what + ': ' + detail.text.slice(0, 60)) }
+function onSelect(detail) { note('selected ' + detail.pathText) }
+function onLoadMore(detail) { note('asked for more of ' + detail.pathText + ' (' + detail.node.more + ' missing)') }
+function onContext(detail) { note('context menu on ' + detail.pathText + ' at ' + Math.round(detail.x) + ', ' + Math.round(detail.y)) }
+</script>
+
+<main class="flex flex-col gap-4 max-w-6xl mx-auto px-4 py-6">
+  <header class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-semibold text-fg">JsonTree</h1>
+      <p class="text-sm text-fg-muted">Arrow keys move and open, typing jumps to a label, Cmd/Ctrl+C copies the value and with Shift the path. Only the rows on screen are drawn.</p>
+    </div>
+    <dl class="flex gap-6 text-sm text-fg-muted">
+      <div><dt class="inline">Slowest frame, last second </dt><dd class="inline"><FrameMeter /></dd></div>
+    </dl>
+  </header>
+
+  <div class="grid gap-4 md:grid-cols-2">
+    <section class="flex flex-col gap-2">
+      <div class="flex items-center gap-2 text-sm">
+        <h2 class="font-medium text-fg">A thousand records, 5,001 rows</h2>
+        <span class="ml-auto"></span>
+        <Button size="sm" variant="outline" @click="bigDepth.set(99)">Expand all</Button>
+        <Button size="sm" variant="ghost" @click="bigDepth.set(1)">Collapse</Button>
+      </div>
+      <div class="border border-line rounded-panel overflow-hidden">
+        <JsonTree
+          id="demo-big"
+          label="Customers"
+          height="60vh"
+          :value="big()"
+          :depth="bigDepth()"
+          @copy="onCopy($event)"
+          @open="onOpen($event)"
+        />
+      </div>
+    </section>
+
+    <section class="flex flex-col gap-2">
+      <div class="flex items-center gap-2 text-sm">
+        <h2 class="font-medium text-fg">A tinker result</h2>
+        <span class="ml-auto text-fg-muted">A model, a cycle, markup and an error</span>
+      </div>
+      <div class="border border-line rounded-panel overflow-hidden">
+        <JsonTree
+          id="demo-tinker"
+          label="Result"
+          height="60vh"
+          depth="2"
+          :tinker="result()"
+          @select="onSelect($event)"
+          @copy="onCopy($event)"
+          @open="onOpen($event)"
+          @load-more="onLoadMore($event)"
+          @context="onContext($event)"
+        />
+      </div>
+    </section>
+  </div>
+
+  <section aria-label="Events" class="p-3 text-sm bg-surface border border-line rounded-panel">
+    <p class="text-fg-muted" :show="log().length === 0">Select, copy or open something to see the events the tree sends.</p>
+    <ul class="font-mono text-fg">
+      <li :for="entry in log()" x-text="entry"></li>
+    </ul>
+  </section>
+</main>

@@ -19,6 +19,7 @@
  * in-page links so SPA navigation stays inside the current locale.
  */
 
+import { insertBeforeHeadClose } from '../document-tags'
 import { existsSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
@@ -285,7 +286,7 @@ export function stampLocaleLayoutGroup(html: string, locale: string): string {
   if (/<meta name="stx-layout-group"[^>]*>/i.test(html))
     return html.replace(/<meta name="stx-layout-group"[^>]*>/i, groupMeta)
   if (/<\/head>/i.test(html))
-    return html.replace(/<\/head>/i, `${groupMeta}\n</head>`)
+    return insertBeforeHeadClose(html, groupMeta)
   return `${groupMeta}\n${html}`
 }
 

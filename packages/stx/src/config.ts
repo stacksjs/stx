@@ -6,6 +6,7 @@ import { loadConfigWithResult } from 'bunfig'
 import { a11yDirective, screenReaderDirective } from './a11y'
 import { animationGroupDirective, motionDirective, scrollAnimateDirective, transitionDirective } from './animation'
 import { stxRouterDirective } from './client/directive'
+import { owningPackageRoot } from './component-resolution'
 // Note: componentDirective is NOT included here because @component is handled
 // by the built-in processComponentDirectives function in process.ts
 import { heatmapDirective } from './heatmap'
@@ -923,7 +924,26 @@ export async function loadStxConfig(cwd?: string): Promise<StxConfig> {
             for (const entry of dirs) {
               const resolved = path.resolve(pluginDir, entry)
               pluginComponentDirs.push(resolved)
-              if (isComponentPackage)
+              // A framework wrapper can contribute the library's installed
+              // root without loading the library plugin itself. The compiler
+              // may be compiling a scratch project, so auto-registration from
+              // effectiveCwd cannot find that install. Identify each root by
+              // its owning package rather than treating all wrapper roots as
+              // the library (which would also promote its web-only defaults).
+              let belongsToComponentPackage = isComponentPackage
+              if (!belongsToComponentPackage) {
+                const owner = owningPackageRoot(path.join(resolved, 'package.json'))
+                if (owner) {
+                  try {
+                    const manifest: { name?: unknown } = JSON.parse(fs.readFileSync(path.join(owner, 'package.json'), 'utf8'))
+                    belongsToComponentPackage = typeof manifest.name === 'string' && componentPackageNames.has(manifest.name)
+                  }
+                  catch {
+                    // An unreadable manifest cannot establish package ownership.
+                  }
+                }
+              }
+              if (belongsToComponentPackage)
                 componentPackageDirs.push(resolved)
             }
           }

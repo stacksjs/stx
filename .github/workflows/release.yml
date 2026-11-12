@@ -14,9 +14,9 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
-      - uses: pantry-pm/pantry/packages/action@c1ef80f71239e7f3626e3ed0ef3eb960d61ae5b5 # v0.11.169
+      - uses: pantry-pm/pantry/packages/action@362da3ef0602f51232ab9431da8d05c84c5f49ba # v0.11.197
         with:
-          version: '0.11.169'
+          version: '0.11.197'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
       - run: bun install --frozen-lockfile
@@ -39,9 +39,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@c1ef80f71239e7f3626e3ed0ef3eb960d61ae5b5 # v0.11.169
+        uses: pantry-pm/pantry/packages/action@362da3ef0602f51232ab9431da8d05c84c5f49ba # v0.11.197
         with:
-          version: '0.11.169'
+          version: '0.11.197'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
       - run: bun install --frozen-lockfile
@@ -74,15 +74,32 @@ jobs:
           fetch-depth: 0
 
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@c1ef80f71239e7f3626e3ed0ef3eb960d61ae5b5 # v0.11.169
+        uses: pantry-pm/pantry/packages/action@362da3ef0602f51232ab9431da8d05c84c5f49ba # v0.11.197
         with:
-          version: '0.11.169'
+          version: '0.11.197'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
 
       - name: Install Dependencies
         run: bun install --frozen-lockfile --force --no-cache
 
+
+      - name: Build the exact SDK publication payloads
+        run: bun run build && bun run validate:exports
+
+      - name: Qualify the original SDK archives before upload
+        id: public-sdk
+        run: bun run smoke:install
+        env:
+          STX_TYPE_SDK_EVIDENCE: ${{ runner.temp }}/stx-public-sdk
+
+      - name: Retain installed SDK evidence
+        if: always() && steps.public-sdk.outcome != 'skipped'
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: stx-public-sdk-release
+          path: ${{ runner.temp }}/stx-public-sdk
+          if-no-files-found: error
 
       # Every publish goes through scripts/publish-npm.sh: npm can take longer
       # to make an accepted upload readable than pantry waits, and pantry then
@@ -95,7 +112,7 @@ jobs:
       # stx package is uploaded, so publishing stx alongside them is a race:
       # the first registry edge to see stx may not see its dependencies yet.
       - name: Publish stx runtime dependencies
-        run: bash scripts/publish-npm.sh --npm --access public packages/router packages/sanitizer packages/desktop packages/bun-plugin
+        run: bash scripts/publish-npm.sh --npm --access public --ignore-scripts packages/router packages/sanitizer packages/desktop packages/bun-plugin
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -103,12 +120,17 @@ jobs:
       # registered. The retry-safe dispatch path can then finish a partially
       # propagated release without creating another version.
       - name: Publish stx
-        run: bash scripts/publish-npm.sh --npm --access public packages/stx
+        run: bash scripts/publish-npm.sh --npm --access public --ignore-scripts packages/stx
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish the qualified components SDK
+        run: bash scripts/publish-npm.sh --npm --access public --ignore-scripts packages/components
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # Stage 3: everything else — iconify-core, iconify-generator,
-      # create-stx, components, and other peripheral packages. Runs after stx
+      # create-stx, and other peripheral packages. Runs after stx
       # so a hiccup in one of these cannot block the critical package.
       #
       # The stages are a strict PARTITION. This stage used to re-attempt core
@@ -123,7 +145,7 @@ jobs:
       # (v0.2.235, v0.2.236) before it was diagnosed, because the first one
       # happened to survive it.
       - name: Publish remaining core packages
-        run: bash scripts/publish-npm.sh --npm --access public --skip collections,stx,bun-plugin,router,sanitizer,desktop
+        run: bash scripts/publish-npm.sh --npm --access public --skip collections,stx,bun-plugin,router,sanitizer,desktop,components
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -140,9 +162,9 @@ jobs:
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: pantry-pm/pantry/packages/action@c1ef80f71239e7f3626e3ed0ef3eb960d61ae5b5 # v0.11.169
+        uses: pantry-pm/pantry/packages/action@362da3ef0602f51232ab9431da8d05c84c5f49ba # v0.11.197
         with:
-          version: '0.11.169'
+          version: '0.11.197'
           install: 'false'
           release: true
           release-changelog: CHANGELOG.md
@@ -176,9 +198,9 @@ jobs:
           fetch-depth: 0
 
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@c1ef80f71239e7f3626e3ed0ef3eb960d61ae5b5 # v0.11.169
+        uses: pantry-pm/pantry/packages/action@362da3ef0602f51232ab9431da8d05c84c5f49ba # v0.11.197
         with:
-          version: '0.11.169'
+          version: '0.11.197'
           install: 'false'
           packages: bun.com@1.4.2 git-scm.org@2.53.0
 

@@ -37,8 +37,9 @@
  */
 import type { StxOptions } from '@stacksjs/stx'
 import type { BunPlugin } from 'bun'
+import fs from 'node:fs'
 import path from 'node:path'
-import { buildWebComponents, cacheTemplate, checkCache, classifyAllScripts, defaultConfig, extractVariables, loadStxConfig, processClientScript, processDirectives, readMarkdownFile } from '@stacksjs/stx'
+import { buildWebComponents, cacheTemplate, checkCache, classifyAllScripts, defaultConfig, extractVariables, insertBeforeBodyClose, loadStxConfig, processClientScript, processDirectives, readMarkdownFile, withinBundlerCallback } from '@stacksjs/stx'
 
 // Export watch functionality
 export { createWatcher, startWatchMode, watchAndBuild } from './watch'
@@ -275,7 +276,7 @@ export { content as default };
         }
       })
 
-      build.onLoad({ filter: /\.stx$/ }, async ({ path: filePath }) => {
+      const renderStxFile = async (filePath: string): Promise<{ contents: string, loader: 'html' }> => {
         try {
           // Track dependencies for caching
           const dependencies = new Set<string>()
@@ -370,13 +371,7 @@ export { content as default };
               return processClientScript(contentMatch[1], { eventBindings, templateContent: output })
             }))
             const scriptsHtml = transformedScripts.join('\n')
-            const bodyEndMatch = output.match(/(<\/body>)/i)
-            if (bodyEndMatch) {
-              output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)
-            }
-            else {
-              output += `\n${scriptsHtml}`
-            }
+            output = insertBeforeBodyClose(output, scriptsHtml)
             // Clear event bindings after use
             context.__stx_event_bindings = []
           }
@@ -408,6 +403,57 @@ export { content as default };
             loader: 'html',
           }
         }
+      }
+
+      // Render the `.stx` entrypoints before the bundler starts loading files.
+      //
+      // Rendering a page can itself need a build: a client script that
+      // imports a module is bundled with `Bun.build`. Bun never settles a
+      // build started from a plugin's `onLoad` or `onResolve` callback, so
+      // rendering inside the loader below deadlocked the whole build the
+      // first time a page needed a bundle that was not cached yet: the outer
+      // build waited on its loader, the loader on the inner build, and the
+      // process sat idle with nothing printed. A build started from
+      // `onStart` (or `setup`) does settle, so the entrypoints, which are
+      // known up front, are rendered here and the loader hands the result
+      // over.
+      //
+      // One at a time: cold client bundles are queued behind each other
+      // anyway (`queueClientBundleBuild`), and a page's render reads state the
+      // previous page's render may still be writing (the bundle cache).
+      const prerendered = new Map<string, { contents: string, loader: 'html' }>()
+      const entryKey = (file: string): string => {
+        const absolute = path.resolve(file)
+        try {
+          return fs.realpathSync(absolute)
+        }
+        catch {
+          return absolute
+        }
+      }
+      build.onStart(async () => {
+        prerendered.clear()
+        for (const entry of build.config.entrypoints ?? []) {
+          if (typeof entry !== 'string' || !entry.endsWith('.stx')) continue
+          const file = path.resolve(entry)
+          if (!fs.existsSync(file)) continue
+          prerendered.set(entryKey(file), await renderStxFile(file))
+        }
+      })
+
+      build.onLoad({ filter: /\.stx$/ }, async ({ path: filePath }) => {
+        const key = entryKey(filePath)
+        const ready = prerendered.get(key)
+        if (ready) {
+          // Each entrypoint is loaded once; the rendered page is not kept for the life of the build.
+          prerendered.delete(key)
+          return ready
+        }
+        // A `.stx` file that is not an entrypoint (one imported by another
+        // module) is only known here, inside the loader. It renders fine
+        // unless it needs a client bundle that is not cached, and then the
+        // bundler refuses instead of starting a build that would never end.
+        return withinBundlerCallback(() => renderStxFile(filePath))
       })
     },
   }

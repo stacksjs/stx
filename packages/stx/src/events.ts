@@ -48,6 +48,7 @@
  * @module events
  */
 
+import { bodyCloseIndex } from './document-tags'
 import { templateHasReactiveContext } from './runtime-globals'
 
 // =============================================================================
@@ -759,7 +760,7 @@ export function processEventDirectives(
   const script = generateRuntimeScript(elements.flatMap(el => el.events))
 
   // Inject before the LAST </body> (earlier ones may be inside script strings)
-  const bodyIdx = output.lastIndexOf('</body>')
+  const bodyIdx = bodyCloseIndex(output)
   if (bodyIdx !== -1) {
     output = output.slice(0, bodyIdx) + script + '\n' + output.slice(bodyIdx)
   }

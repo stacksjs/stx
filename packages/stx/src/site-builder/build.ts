@@ -1,4 +1,5 @@
 import { Glob } from 'bun'
+import { insertBeforeBodyClose } from '../document-tags'
 import {
   cpSync,
   existsSync,
@@ -168,7 +169,7 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
       html = autoWrapContent(html)
 
       if (i18n)
-        html = html.replace(/<\/body>/i, `${buildLangPickerScript(i18n, locale)}\n</body>`)
+        html = insertBeforeBodyClose(html, buildLangPickerScript(i18n, locale))
 
       if (options.spa !== false)
         html = await injectRouterScript(html, options.router)

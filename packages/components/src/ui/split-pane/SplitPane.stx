@@ -1,0 +1,159 @@
+<script server>
+export const direction = $props.direction === 'vertical' ? 'vertical' : 'horizontal'
+/*
+ * Shares, one per pane: `[30, 70]`, `[1, 2, 1]`, or the text `30,70`. Left
+ * out, each pane's own `data-size` is used, and equal shares after that.
+ */
+export const sizes = Array.isArray($props.sizes)
+  ? $props.sizes
+  : (typeof $props.sizes === 'string' && $props.sizes.trim() !== '' ? $props.sizes : null)
+export const minSize = $num($props.minSize, 48)
+export const step = $num($props.step, 16)
+export const storageKey = $props.storageKey || ''
+export const label = $props.label || 'Resize panes'
+/* A CSS length. A split fills the box it is given, so the box needs a height. */
+export const height = $props.height || '100%'
+export const className = $props.className || ''
+export const splitId = $props.id || `split-pane-${$uid}`
+</script>
+
+<script client>
+/*
+ * <SplitPane>: panes side by side, or stacked, with a separator to drag
+ * between each pair. The children of the tag are the panes.
+ *
+ * The arithmetic is in ./core and the DOM in ./view; this is the wiring.
+ */
+import { parseSizes } from './core'
+import { SplitPaneView } from './view'
+
+const emit = defineEmits(['resize', 'resize-end'])
+
+const asDirection = value => (value === 'vertical' ? 'vertical' : 'horizontal')
+const liveDirection = useReactiveProp('direction', {{ direction }}, { parse: asDirection })
+const liveSizes = useReactiveProp('sizes', {{ sizes }}, { parse: parseSizes })
+
+const rootRef = useRef('split-pane')
+let split = null
+
+onMount(() => {
+  const root = rootRef()
+  if (!root) return
+
+  split = new SplitPaneView(root, {
+    direction: asDirection(liveDirection()),
+    sizes: parseSizes(liveSizes()),
+    minSize: {{ minSize }},
+    step: {{ step }},
+    storageKey: {{ storageKey }},
+    label: {{ label }},
+  }, {
+    onResize(detail) { emit('resize', detail) },
+    onResizeEnd(detail) { emit('resize-end', detail) },
+  })
+
+  // The first run of each finds the layout the view was just built with, and
+  // must leave a stored layout alone; only a later change is a new instruction.
+  let sizesSeen = false
+  effect(() => {
+    const next = parseSizes(liveSizes())
+    if (sizesSeen && next) split.setSizes(next)
+    sizesSeen = true
+  })
+  effect(() => split.setDirection(asDirection(liveDirection())))
+})
+
+onDestroy(() => {
+  if (split) split.destroy()
+  split = null
+})
+
+defineExpose({
+  getSizes: () => (split ? split.getSizes() : []),
+  setSizes: (next) => { if (split) split.setSizes(parseSizes(next)) },
+  reset: () => { if (split) split.reset() },
+})
+</script>
+
+<div
+  ref="split-pane"
+  id="{{ splitId }}"
+  data-stx-split-pane
+  data-direction="{{ direction }}"
+  class="stx-split {{ className }}"
+  style="height: {{ height }}"
+>
+  <slot />
+</div>
+
+<style>
+/*
+ * A separator is drawn as a hairline and grabbed by a wider strip around it,
+ * so it does not have to be thick to be easy to hit. Every colour falls back
+ * to a role token.
+ */
+:where([data-stx-split-pane]) {
+  --stx-split-line: var(--stx-line, #e5e5e5);
+  --stx-split-line-active: var(--stx-accent, #2563eb);
+  --stx-split-line-size: 1px;
+  --stx-split-grab: 9px;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+:where([data-stx-split-pane][data-direction="vertical"]) { flex-direction: column; }
+
+:where([data-stx-split-pane]) > :where([data-split-pane]) {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+/* Before the view has run, the panes still share the space rather than stack. */
+:where([data-stx-split-pane]:not([data-split-ready])) > * { flex: 1 1 0px; min-width: 0; min-height: 0; }
+
+[data-stx-split-pane] > .stx-split-separator {
+  position: relative;
+  flex: 0 0 var(--stx-split-line-size);
+  background: var(--stx-split-line);
+  cursor: col-resize;
+  touch-action: none;
+  outline: none;
+  transition: background-color 120ms ease;
+}
+[data-stx-split-pane][data-direction="vertical"] > .stx-split-separator { cursor: row-resize; }
+
+[data-stx-split-pane] > .stx-split-separator::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  left: calc((var(--stx-split-grab) - var(--stx-split-line-size)) / -2);
+  width: var(--stx-split-grab);
+}
+[data-stx-split-pane][data-direction="vertical"] > .stx-split-separator::after {
+  left: 0;
+  right: 0;
+  top: calc((var(--stx-split-grab) - var(--stx-split-line-size)) / -2);
+  bottom: auto;
+  width: auto;
+  height: var(--stx-split-grab);
+}
+
+[data-stx-split-pane] > .stx-split-separator:is(:hover, [data-active]) { background: var(--stx-split-line-active); }
+[data-stx-split-pane] > .stx-split-separator:focus-visible {
+  background: var(--stx-split-line-active);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--stx-split-line-active) 40%, transparent);
+}
+
+/* A drag must not select the text it passes over, or lose the pointer to a frame. */
+[data-stx-split-pane][data-dragging] { user-select: none; -webkit-user-select: none; cursor: col-resize; }
+[data-stx-split-pane][data-dragging][data-direction="vertical"] { cursor: row-resize; }
+[data-stx-split-pane][data-dragging] iframe { pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-stx-split-pane] > .stx-split-separator { transition: none; }
+}
+</style>

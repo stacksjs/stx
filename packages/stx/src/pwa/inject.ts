@@ -9,6 +9,7 @@
  * - Service worker registration script
  */
 
+import { bodyCloseIndex, insertBeforeHeadClose } from '../document-tags'
 import type { StxOptions } from '../types'
 import { getServiceWorkerFileName } from './service-worker'
 
@@ -104,7 +105,7 @@ export function injectPwaTags(html: string, options: StxOptions): string {
   // Check if document has a head tag
   if (!html.includes('</head>')) {
     // No head tag, try body
-    const pwaBodyIdx = html.lastIndexOf('</body>')
+    const pwaBodyIdx = bodyCloseIndex(html)
     if (pwaBodyIdx !== -1) {
       const pwaTags = generatePwaTags(options)
       return html.slice(0, pwaBodyIdx) + pwaTags + '\n' + html.slice(pwaBodyIdx)
@@ -116,7 +117,7 @@ export function injectPwaTags(html: string, options: StxOptions): string {
   const pwaTags = generatePwaTags(options)
 
   // Inject before closing head tag
-  return html.replace('</head>', `${pwaTags}\n</head>`)
+  return insertBeforeHeadClose(html, pwaTags)
 }
 
 /**

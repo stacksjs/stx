@@ -1,0 +1,106 @@
+<script server>
+// Drawn on the server: the list is there before any script runs.
+export const rows = [
+  { id: 1, name: 'Ada Lovelace', email: 'ada@example.com' },
+  { id: 2, name: 'Grace Hopper', email: 'grace@example.com' },
+  { id: 3, name: 'Margaret Hamilton', email: 'margaret@example.com' },
+]
+</script>
+
+<script client>
+import { componentApi } from '../../src/utils/component-api'
+
+const wrap = state(true)
+const log = state([])
+
+function note(text) {
+  log.set([text, ...log()].slice(0, 6))
+}
+
+// The same menu for the whole panel, with one item that reflects state.
+const panelItems = derived(() => [
+  { label: 'Copy value', id: 'copy', shortcut: 'Mod+C' },
+  { label: 'Copy path', id: 'copy-path', shortcut: 'Shift+Mod+C' },
+  { separator: true },
+  { label: 'Open in', children: [
+    { label: 'Table', id: 'open-table' },
+    { label: 'Graph', id: 'open-graph' },
+    { label: 'Preview', id: 'open-preview', disabled: true },
+    { separator: true },
+    { label: 'More', children: [{ label: 'New window', id: 'open-window', shortcut: 'Mod+Enter' }] },
+  ] },
+  { label: 'Wrap long lines', id: 'wrap', checked: wrap() },
+  { label: 'Paste', id: 'paste', shortcut: 'Mod+V', disabled: true },
+  { separator: true },
+  { label: 'Clear results', id: 'clear', shortcut: 'Mod+K', danger: true },
+])
+
+// A menu built for whatever was clicked on. An empty list leaves the
+// browser's own menu alone, which is what the gaps between rows get.
+function rowItems(target) {
+  const row = target && target.closest('[data-user]')
+  if (!row) return []
+  const name = row.getAttribute('data-name')
+  return [
+    { label: 'Open ' + name, id: 'open' },
+    { label: 'Copy email', id: 'email', shortcut: 'Mod+E' },
+    { separator: true },
+    { label: 'Delete ' + name, id: 'delete', danger: true },
+  ]
+}
+
+function onPanel(detail) {
+  if (detail.id === 'wrap') wrap.set(!wrap())
+  note('panel: ' + detail.id)
+}
+
+function onRow(detail) {
+  const row = detail.target && detail.target.closest('[data-user]')
+  note('row ' + (row ? row.getAttribute('data-user') : '?') + ': ' + detail.id)
+}
+
+// Opened from the page rather than by a right click: under the button, with
+// items of its own for this one opening.
+function openFromButton(event) {
+  const menu = componentApi('demo-panel-menu')
+  if (menu) menu.open(event.currentTarget, [{ label: 'Export as CSV', id: 'csv' }, { label: 'Export as JSON', id: 'json' }])
+}
+</script>
+
+<main class="flex flex-col gap-4 p-6 max-w-4xl mx-auto">
+  <header class="flex flex-col gap-1">
+    <h1 class="text-xl font-semibold text-fg">ContextMenu</h1>
+    <p class="text-sm text-fg-muted">Right click, or focus something and press the menu key or Shift+F10. Arrows move, Right opens a submenu, a letter jumps to an item, Escape closes.</p>
+  </header>
+
+  <ContextMenu id="demo-panel-menu" label="Result actions" :items="panelItems()" @select="onPanel($event)">
+    <section class="flex flex-col gap-2 p-4 border border-line rounded-panel bg-surface" style="min-height: 9rem">
+      <p class="text-sm font-semibold text-fg">One menu for a whole panel</p>
+      <p class="text-sm text-fg-muted">Submenus two levels deep, a checked item, a disabled one, shortcuts, and an item in the danger colour.</p>
+      <div>
+        <Button size="sm" variant="outline" @click="openFromButton($event)">Export</Button>
+      </div>
+    </section>
+  </ContextMenu>
+
+  <ContextMenu id="demo-row-menu" label="User actions" :items="rowItems" @select="onRow($event)">
+    <section class="flex flex-col gap-2 p-4 border border-line rounded-panel">
+      <p class="text-sm font-semibold text-fg">A menu built for the row that was clicked</p>
+      <ul class="flex flex-col text-sm">
+        @foreach(row in rows)
+          <li tabindex="0" data-user="{{ row.id }}" data-name="{{ row.name }}" class="flex gap-4 px-2 py-1 rounded-control text-fg">
+            <span class="font-medium">{{ row.name }}</span>
+            <span class="text-fg-muted">{{ row.email }}</span>
+          </li>
+        @endforeach
+      </ul>
+    </section>
+  </ContextMenu>
+
+  <section aria-label="Events" class="p-3 text-sm bg-surface border border-line rounded-panel">
+    <p class="text-fg-muted" :show="log().length === 0">Choose an item to see the event the menu sends.</p>
+    <ul class="font-mono text-fg">
+      <li :for="entry in log()" x-text="entry"></li>
+    </ul>
+  </section>
+</main>

@@ -30,6 +30,17 @@ A comprehensive demo showcasing all available components:
 - Installation instructions
 - Hero and Footer components
 
+### code-editor.stx
+
+The `<CodeEditor>` playground: a 2,000-line TypeScript file with highlighting,
+completions, diagnostics, inline results and ghost text, and a readout of the
+slowest frame while you type.
+
+```bash
+cd packages/components
+bun ../stx/bin/cli.ts dev examples/code-editor.stx
+```
+
 ## Creating Your Own Examples
 
 To create a new example:

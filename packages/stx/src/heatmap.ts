@@ -1,4 +1,5 @@
 /* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
+import { bodyCloseIndex } from './document-tags'
 import type { CustomDirective, StxOptions } from './types'
 
 /**
@@ -576,7 +577,7 @@ export function injectHeatmap(html: string, options: StxOptions): string {
   }
 
   // Inject before the LAST </body>
-  const hmBodyIdx = html.lastIndexOf('</body>')
+  const hmBodyIdx = bodyCloseIndex(html)
   if (hmBodyIdx !== -1) {
     return html.slice(0, hmBodyIdx) + heatmapScript + html.slice(hmBodyIdx)
   }

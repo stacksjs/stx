@@ -25,6 +25,7 @@
  * ```
  */
 
+import { insertBeforeBodyClose } from './document-tags'
 import { dirname, resolve } from 'node:path'
 import { defaultConfig } from './config'
 import { extractVariables } from './variable-extractor'
@@ -472,13 +473,7 @@ export async function renderTemplateString(
       // before executing their scoped scripts (native builds have no server).
       const modules = await buildModulesTag(transformedScripts, { ...options, buildMode: 'compile' })
       const scriptsHtml = [modules, ...transformedScripts].filter(Boolean).join('\n')
-      const bodyEndMatch = output.match(/(<\/body>)/i)
-      if (bodyEndMatch) {
-        output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)
-      }
-      else {
-        output += `\n${scriptsHtml}`
-      }
+      output = insertBeforeBodyClose(output, scriptsHtml)
     }
 
     // Inject SPA router script for client-side navigation

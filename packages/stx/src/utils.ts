@@ -46,6 +46,7 @@ import { CLIENT_LOOP_NAMES_KEY, inheritedClientLoopNames } from './loop-binding'
 import { isFallthroughAttribute } from './builtins/attrs'
 import { StxValidationError } from './errors/types'
 import { validateClientScript } from './script-validation'
+import { escapeScriptBody } from './script-emit'
 
 /** Resolve external resource attributes after every server block has run. */
 function renderExternalComponentScript(script: string, context: Record<string, unknown>, filePath: string): string | null {
@@ -2649,7 +2650,7 @@ export async function renderComponentWithSlot(
           // data-stx-owner as on the eager form below (#1958): outside the
           // container this is the layout's island, which a same-layout
           // navigation leaves in place, so fragments leave it out.
-          return `${vendorStyleTags}<script type="stx/island" data-stx-island="${scopeId}" data-stx-scoped data-stx-owner="${scopeId}"${attrs}>${wrappedContent}</script>`
+          return `${vendorStyleTags}<script type="stx/island" data-stx-island="${scopeId}" data-stx-scoped data-stx-owner="${scopeId}"${attrs}>${escapeScriptBody(wrappedContent)}</script>`
         }
         // run="always": this CALL is what registers window.stx._scopes[scopeId],
         // and disposeSubtreeScopes deletes that on the way out of every SPA
@@ -2675,7 +2676,7 @@ export async function renderComponentWithSlot(
         // page-keyed on purpose) or is still here and already bound. Running
         // it anyway built a second instance: setup and its side effects on
         // every navigation, for markup still bound to the first.
-        return `${vendorStyleTags}<script data-stx-scoped data-stx-run="always" data-stx-owner="${scopeId}"${attrs}>${wrappedContent}</script>`
+        return `${vendorStyleTags}<script data-stx-scoped data-stx-run="always" data-stx-owner="${scopeId}"${attrs}>${escapeScriptBody(wrappedContent)}</script>`
       }))
 
       // Emit setup immediately after its root. The browser still executes it

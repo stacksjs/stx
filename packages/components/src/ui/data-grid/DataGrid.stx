@@ -1,0 +1,376 @@
+<script server>
+/*
+ * Rows written into the page as a plain prop. A bound one (`:rows="rows()"`)
+ * is read live by the client script; this is what it starts from.
+ */
+export const rows = Array.isArray($props.rows) ? $props.rows : []
+export const columns = Array.isArray($props.columns) ? $props.columns : []
+export const rowHeight = $num($props.rowHeight) || 28
+export const headerHeight = $num($props.headerHeight) || 32
+/* A CSS length. `100%` fills a sized parent, which is what a pane wants. */
+export const height = $props.height || '24rem'
+export const filterable = $bool($props.filterable, true)
+export const exportable = $bool($props.exportable, true)
+export const selectable = $bool($props.selectable, true)
+export const contextMenu = $bool($props.contextMenu)
+export const filter = typeof $props.filter === 'string' ? $props.filter : ''
+export const label = $props.label || 'Data'
+export const fileName = $props.fileName || 'data'
+export const className = $props.className || ''
+/*
+ * Ids unique to this instance: the grid, its filter and its status line all
+ * have to be findable when two grids share a page.
+ */
+export const gridId = $props.id || `data-grid-${$uid}`
+export const filterId = `${gridId}-filter`
+export const statusId = `${gridId}-status`
+export const hasToolbar = filterable || exportable
+</script>
+
+<script client>
+/*
+ * <DataGrid>: rows and columns, sorted, filtered, selected and exported.
+ *
+ * This script is the wiring: props in, events out. What a sort or a filter
+ * does is in ./core, and what is drawn is in ./view.
+ */
+import { DataGridView } from './view'
+
+const emit = defineEmits(['sort', 'filter', 'select', 'cell', 'activate', 'copy', 'export', 'context'])
+
+function asList(value) {
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string' && value.charAt(0) === '[') {
+    try { return JSON.parse(value) }
+    catch (e) { return [] }
+  }
+  return []
+}
+function asText(value) { return value == null ? '' : String(value) }
+
+const liveRows = useReactiveProp('rows', {{ rows }}, { parse: asList })
+const liveColumns = useReactiveProp('columns', {{ columns }}, { parse: asList })
+const liveFilter = useReactiveProp('filter', {{ filter }}, { parse: asText })
+const liveFileName = useReactiveProp('fileName', {{ fileName }}, { parse: asText })
+
+const rootRef = useRef('data-grid')
+let grid = null
+
+onMount(() => {
+  const root = rootRef()
+  if (!root) return
+
+  const firstColumns = asList(liveColumns())
+  grid = new DataGridView(root, {
+    rows: asList(liveRows()),
+    columns: firstColumns.length ? firstColumns : null,
+    rowHeight: {{ rowHeight }},
+    headerHeight: {{ headerHeight }},
+    selectable: {{ selectable }},
+    contextMenu: {{ contextMenu }},
+    filter: asText(liveFilter()),
+    fileName: asText(liveFileName()),
+  }, {
+    onSort(sort) { emit('sort', sort) },
+    onFilter(detail) { emit('filter', detail) },
+    onSelect(detail) { emit('select', detail) },
+    onCell(detail) { emit('cell', detail) },
+    onActivate(detail) { emit('activate', detail) },
+    onCopy(detail) { emit('copy', detail) },
+    onExport(detail) { emit('export', detail) },
+    onContext(detail) { emit('context', detail) },
+  })
+
+  // The first run of each finds what the view was just built with. Only a
+  // later change is news, and rows handed over with setRows() must not be
+  // replaced by a prop that has not changed.
+  let rowsSeen = false
+  effect(() => {
+    const next = asList(liveRows())
+    if (rowsSeen) grid.setRows(next)
+    rowsSeen = true
+  })
+  let columnsSeen = false
+  effect(() => {
+    const next = asList(liveColumns())
+    if (columnsSeen) grid.setColumns(next.length ? next : null)
+    columnsSeen = true
+  })
+  let filterSeen = false
+  effect(() => {
+    const next = asText(liveFilter())
+    if (filterSeen) grid.setFilter(next)
+    filterSeen = true
+  })
+  effect(() => grid.setFileName(asText(liveFileName())))
+})
+
+onDestroy(() => {
+  if (grid) grid.destroy()
+  grid = null
+})
+
+defineExpose({
+  setRows: (next) => { if (grid) grid.setRows(asList(next)) },
+  setColumns: (next) => { if (grid) grid.setColumns(Array.isArray(next) && next.length ? next : null) },
+  getView: () => (grid ? grid.getView() : []),
+  getSelection: () => (grid ? grid.getSelection() : { rows: [], indices: [] }),
+  clearSelection: () => { if (grid) grid.clearSelection() },
+  setFilter: (text) => { if (grid) grid.setFilter(asText(text)) },
+  setSort: (sort) => { if (grid) grid.setSort(asList(sort)) },
+  exportCsv: () => (grid ? grid.exportCsv() : ''),
+  exportJson: () => (grid ? grid.exportJson() : '[]'),
+  download: format => (grid ? grid.download(format === 'json' ? 'json' : 'csv') : ''),
+  scrollToRow: (index) => { if (grid) grid.scrollToRow(index) },
+  focus: () => { if (grid) grid.focus() },
+  grid: () => grid,
+})
+</script>
+
+<div
+  ref="data-grid"
+  data-stx-data-grid
+  class="stx-dg {{ className }}"
+  style="height: {{ height }}"
+  @if(selectable)data-selectable@endif
+>
+  @if(hasToolbar)
+    <div data-dg="toolbar" class="stx-dg-toolbar">
+      @if(filterable)
+        <label for="{{ filterId }}" class="sr-only">Filter {{ label }}</label>
+        <input
+          data-dg="filter"
+          id="{{ filterId }}"
+          type="search"
+          class="stx-dg-filter"
+          placeholder="Filter rows"
+          autocomplete="off"
+          spellcheck="false"
+          aria-controls="{{ gridId }}"
+          value="{{ filter }}"
+        >
+      @endif
+      <span data-dg="status" id="{{ statusId }}" role="status" aria-live="polite" class="stx-dg-status"></span>
+      @if(exportable)
+        <button type="button" data-dg="export-csv" class="stx-dg-button" aria-label="Export {{ label }} as CSV">CSV</button>
+        <button type="button" data-dg="export-json" class="stx-dg-button" aria-label="Export {{ label }} as JSON">JSON</button>
+      @endif
+    </div>
+  @else
+    <span data-dg="status" id="{{ statusId }}" role="status" aria-live="polite" class="sr-only"></span>
+  @endif
+
+  {{-- The one scroll container, and the grid itself: focus stays here and the
+       active cell is named, since the cells under it come and go. --}}
+  <div
+    data-dg="scroller"
+    id="{{ gridId }}"
+    role="grid"
+    tabindex="0"
+    aria-label="{{ label }}"
+    aria-describedby="{{ statusId }}"
+    @if(selectable)aria-multiselectable="true"@endif
+    class="stx-dg-scroller"
+  >
+    <div data-dg="content" role="presentation" class="stx-dg-content">
+      <div data-dg="header" role="row" aria-rowindex="1" class="stx-dg-header"></div>
+      <div data-dg="body" role="rowgroup" class="stx-dg-body"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+/*
+ * Everything the grid is drawn with is a custom property, each falling back to
+ * one of the library's role tokens, so an app that has themed its roles has a
+ * matching grid, in light and in dark.
+ *
+ * The row and header heights are set by the view, in pixels: the arithmetic
+ * that decides which rows exist depends on every row being exactly that tall.
+ */
+:where([data-stx-data-grid]) {
+  --stx-grid-font: inherit;
+  --stx-grid-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  --stx-grid-font-size: 13px;
+  --stx-grid-row-height: 28px;
+  --stx-grid-header-height: 32px;
+  --stx-grid-cell-padding: 12px;
+  --stx-grid-bg: var(--stx-panel, #ffffff);
+  --stx-grid-fg: var(--stx-fg, #171717);
+  --stx-grid-header-bg: var(--stx-surface, #fafafa);
+  --stx-grid-header-fg: var(--stx-fg-muted, #525252);
+  --stx-grid-line: var(--stx-line, #e5e5e5);
+  --stx-grid-empty-fg: var(--stx-fg-subtle, #a3a3a3);
+  --stx-grid-hover: color-mix(in srgb, var(--stx-fg, #171717) 4%, transparent);
+  --stx-grid-selected: color-mix(in srgb, var(--stx-accent, #2563eb) 14%, transparent);
+  --stx-grid-accent: var(--stx-accent, #2563eb);
+  --stx-grid-number: var(--stx-grid-fg);
+  --stx-grid-boolean: var(--stx-info, #0891b2);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--stx-grid-line);
+  border-radius: var(--stx-radius-panel, 8px);
+  background: var(--stx-grid-bg);
+  color: var(--stx-grid-fg);
+  font-family: var(--stx-grid-font);
+  font-size: var(--stx-grid-font-size);
+}
+
+[data-stx-data-grid] .stx-dg-toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--stx-grid-line);
+  background: var(--stx-grid-header-bg);
+}
+[data-stx-data-grid] .stx-dg-filter {
+  flex: 0 1 16rem;
+  min-width: 6rem;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--stx-grid-line);
+  border-radius: var(--stx-radius-control, 6px);
+  background: var(--stx-field, var(--stx-grid-bg));
+  color: inherit;
+  font: inherit;
+}
+[data-stx-data-grid] .stx-dg-filter:focus-visible,
+[data-stx-data-grid] .stx-dg-button:focus-visible {
+  outline: 2px solid var(--stx-grid-accent);
+  outline-offset: 1px;
+}
+[data-stx-data-grid] .stx-dg-status {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--stx-grid-header-fg);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+[data-stx-data-grid] .stx-dg-button {
+  flex: 0 0 auto;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--stx-grid-line);
+  border-radius: var(--stx-radius-control, 6px);
+  background: var(--stx-grid-bg);
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+[data-stx-data-grid] .stx-dg-button:hover { background: var(--stx-grid-hover); }
+
+[data-stx-data-grid] .stx-dg-scroller {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  outline: none;
+  /* The scroller is its own layer, so a scroll repaints nothing outside it. */
+  contain: strict;
+}
+[data-stx-data-grid] .stx-dg-scroller:focus-visible { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--stx-grid-accent) 55%, transparent); }
+[data-stx-data-grid] .stx-dg-content { position: relative; min-width: 100%; }
+
+[data-stx-data-grid] .stx-dg-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  min-width: 100%;
+  height: var(--stx-grid-header-height);
+  border-bottom: 1px solid var(--stx-grid-line);
+  background: var(--stx-grid-header-bg);
+  color: var(--stx-grid-header-fg);
+  box-sizing: border-box;
+}
+[data-stx-data-grid] .stx-dg-head {
+  position: absolute;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  padding: 0 var(--stx-grid-cell-padding);
+  box-sizing: border-box;
+  border-right: 1px solid var(--stx-grid-line);
+  font-weight: 600;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+}
+[data-stx-data-grid] .stx-dg-head[data-sortable] { cursor: pointer; }
+[data-stx-data-grid] .stx-dg-head[data-align="right"] { flex-direction: row-reverse; }
+[data-stx-data-grid] .stx-dg-head[data-align="center"] { justify-content: center; }
+[data-stx-data-grid] .stx-dg-head-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+[data-stx-data-grid] .stx-dg-sort { flex: 0 0 auto; color: var(--stx-grid-accent); font-size: 9px; font-variant-numeric: tabular-nums; }
+[data-stx-data-grid] .stx-dg-resize {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  z-index: 1;
+  width: 9px;
+  height: 100%;
+  cursor: col-resize;
+  touch-action: none;
+}
+[data-stx-data-grid] .stx-dg-resize:hover,
+[data-stx-data-grid][data-resizing] .stx-dg-resize:hover { background: linear-gradient(to right, transparent 3px, var(--stx-grid-accent) 3px, var(--stx-grid-accent) 5px, transparent 5px); }
+[data-stx-data-grid][data-resizing] { cursor: col-resize; user-select: none; -webkit-user-select: none; }
+
+[data-stx-data-grid] .stx-dg-body { position: relative; min-width: 100%; }
+[data-stx-data-grid] .stx-dg-row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--stx-grid-row-height);
+  border-bottom: 1px solid var(--stx-grid-line);
+  box-sizing: border-box;
+  contain: layout style;
+}
+[data-stx-data-grid] .stx-dg-row:hover { background: var(--stx-grid-hover); }
+[data-stx-data-grid] .stx-dg-row[aria-selected="true"] { background: var(--stx-grid-selected); }
+
+[data-stx-data-grid] .stx-dg-cell {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  padding: 0 var(--stx-grid-cell-padding);
+  box-sizing: border-box;
+  overflow: hidden;
+  line-height: calc(var(--stx-grid-row-height) - 1px);
+  text-overflow: ellipsis;
+  white-space: pre;
+  cursor: default;
+}
+[data-stx-data-grid] .stx-dg-cell[data-align="right"] { text-align: right; }
+[data-stx-data-grid] .stx-dg-cell[data-align="center"] { text-align: center; }
+/* Figures in one column line up digit under digit. */
+[data-stx-data-grid] .stx-dg-cell[data-type="number"] { color: var(--stx-grid-number); font-variant-numeric: tabular-nums; }
+[data-stx-data-grid] .stx-dg-cell[data-type="date"] { font-variant-numeric: tabular-nums; }
+[data-stx-data-grid] .stx-dg-cell[data-type="boolean"] { color: var(--stx-grid-boolean); }
+[data-stx-data-grid] .stx-dg-cell[data-type="json"] { font-family: var(--stx-grid-mono); font-size: 12px; }
+[data-stx-data-grid] .stx-dg-cell[data-empty] { color: var(--stx-grid-empty-fg); font-style: italic; }
+
+/* The active cell is only marked while the grid has the keyboard. */
+[data-stx-data-grid] .stx-dg-scroller:focus :is(.stx-dg-cell, .stx-dg-head)[data-active] {
+  outline: 2px solid var(--stx-grid-accent);
+  outline-offset: -2px;
+}
+
+[data-stx-data-grid][data-empty] .stx-dg-body::after {
+  content: 'No rows';
+  position: sticky;
+  left: 0;
+  display: block;
+  padding: 16px var(--stx-grid-cell-padding);
+  color: var(--stx-grid-empty-fg);
+}
+</style>

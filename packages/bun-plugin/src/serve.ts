@@ -21,12 +21,12 @@ import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
-import { BUILD_ID_HEADER, decodeTitleEntities, externalScriptsOutsideContainer, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, mergeCssConfig, pageCssFragment, pageHeadFragment, readResponseHeaders, readResponseStatus, renderFontCSS, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
+import { bodyCloseIndex, BUILD_ID_HEADER, decodeTitleEntities, externalScriptsOutsideContainer, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, insertBeforeHeadClose, mergeCssConfig, pageCssFragment, pageHeadFragment, readResponseHeaders, readResponseStatus, renderFontCSS, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
 import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { extractLayoutMetadata } from 'stx-router/layout-metadata'
 import { FILE_SEGMENT_GUARD, isFileRequestPath } from 'stx-router/file-requests'
-import { actionRedirectResponse, compressResponse, runPageAction as sharedRunPageAction } from '@stacksjs/stx'
+import { insertBeforeBodyClose, actionRedirectResponse, compressResponse, runPageAction as sharedRunPageAction } from '@stacksjs/stx'
 import { compileDomainRoutes, describeDomainRoutes, requestHost, resolveDomainElsewhere, resolveDomainRoute } from './domain-routes'
 import type { DomainRoutesOption } from './domain-routes'
 import { IMAGE_BUILTIN_PATTERN, servedTemplatesUseImageBuiltins } from './image-warmup-scope'
@@ -2031,7 +2031,7 @@ function __stxOverlay(errs){
     // The version this document was rendered at, so the client can tell on
     // connect whether a change landed before its stream opened.
     const client = HMR_CLIENT_SCRIPT.replace('__STX_HMR_VERSION__', String(hmrVersion))
-    const closeBody = html.lastIndexOf('</body>')
+    const closeBody = bodyCloseIndex(html)
     if (closeBody === -1) {
       // No `</body>` (fragment / non-document response). Append.
       return html + client
@@ -3757,7 +3757,7 @@ function __stxOverlay(errs){
         const serializedParams = cacheShell ? ROUTE_PARAMS_PLACEHOLDER : serializeRouteParams(paramsObj)
         const paramsScript = `<script data-stx-route-params>(function(){var p=${serializedParams};window.__stx_rp=p;if(window.stx){window.stx._rp=p;if(window.stx.setRouteParams)window.stx.setRouteParams(p)}})()</script>`
         if (output.includes('</head>')) {
-          output = output.replace('</head>', `${paramsScript}\n</head>`)
+          output = insertBeforeHeadClose(output, paramsScript)
         }
         else {
           output = `${paramsScript}\n${output}`
@@ -3878,9 +3878,7 @@ function __stxOverlay(errs){
     const configTagRe = /<script>window\.__stxRouterConfig=\{[^<]*\}<\/script>\s*/i
     if (configTagRe.test(html))
       return html.replace(configTagRe, block)
-    if (/<\/body>/i.test(html))
-      return html.replace(/<\/body>/i, `${block}</body>`)
-    return `${html}\n${block}`
+    return insertBeforeBodyClose(html, block)
   }
 
   async function applyI18nToResponse(res: Response, locale: string, normalizedPath: string): Promise<Response> {
@@ -3927,9 +3925,7 @@ function __stxOverlay(errs){
     // exists when the script runs.
     if (i18nConfig && stx.buildLangPickerScript) {
       const pickerScript = stx.buildLangPickerScript(i18nConfig, locale)
-      html = /<\/body>/i.test(html)
-        ? html.replace(/<\/body>/i, `${pickerScript}\n</body>`)
-        : html + pickerScript
+      html = insertBeforeBodyClose(html, pickerScript)
     }
 
     // Tag each rendered page with its locale via the SPA router's

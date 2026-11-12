@@ -1,6 +1,6 @@
 # Using @stacksjs/components
 
-React has MUI. Vue has Vuetify. stx has `@stacksjs/components` — **102 components that ship with every stx app**, written in stx, server-rendered, wired to the signals runtime.
+React has MUI. Vue has Vuetify. stx has `@stacksjs/components` — **103 components that ship with every stx app**, written in stx, server-rendered, wired to the signals runtime.
 
 This page is written for whoever is building the UI, agent or human. The short version: **look here before you write a component.** A Toast, a Modal, a Tabs strip, a Pagination bar, a Combobox with keyboard nav — they exist, they are accessible, and they are used in production across several Stacks apps. Reinventing one produces more code that does less.
 
@@ -206,7 +206,7 @@ Two commands catch most mistakes before a browser does:
 bun test packages/components/test/renders-under-current-stx.test.ts
 ```
 
-That renders all 102 components with no props and parses every script they emit — the check that catches a mustache leaking into JavaScript. For your own page, the same shape of assertion works: render it, then `new Function()` each emitted script. A component whose script does not parse is dead in the browser, and it fails silently, so nothing else will tell you.
+That renders all 103 components with no props and parses every script they emit — the check that catches a mustache leaking into JavaScript. For your own page, the same shape of assertion works: render it, then `new Function()` each emitted script. A component whose script does not parse is dead in the browser, and it fails silently, so nothing else will tell you.
 
 When you hit something that looks like a framework bug — a binding that never fires, a directive that does not propagate — it probably is one. Fix it in stx (`~/Documents/Projects/stx`) rather than working around it with `querySelector` in a component.
 
@@ -214,7 +214,7 @@ When you hit something that looks like a framework bug — a binding that never 
 
 Generated from component source. `Props` lists each prop with its default; `Emits` lists events to listen for with `@event`; `Slots` names the slots each component fills.
 
-<!-- generated from source: 102 components — 46 emit events, 53 take slots, 60 ship client behaviour -->
+<!-- generated from source: 103 components — 47 emit events, 53 take slots, 61 ship client behaviour -->
 
 ### Forms
 
@@ -246,6 +246,7 @@ Generated from component source. `Props` lists each prop with its default; `Emit
 | `<Switch>` | `checked` (`false`), `disabled` (`false`), `size` (`'md'`), `className` (`''`), `label` (`''`) | `@change` | — |
 | `<TextInput>` | `value` (`''`), `placeholder` (`''`), `disabled` (`false`), `readonly` (`false`), `size` (`'md'`), `error` (`false`), `label` (`''`), `helperText` (`''`), +17 more | `@input`, `@clear` | — |
 | `<Textarea>` | `value` (`''`), `placeholder` (`''`), `disabled` (`false`), `readonly` (`false`), `rows` (`4`), `autoResize` (`false`), `maxRows` (`10`), `error` (`false`), +7 more | `@input` | — |
+| `<CodeEditor>` | `value` (`''`), `language` (`'typescript'`), `readonly` (`false`), `disabled` (`false`), `lineNumbers` (`true`), `highlight` (`true`), `tabSize` (`2`), `insertSpaces` (`true`), +16 more | `@input`, `@change`, `@selection`, `@run`, `@run-selection`, `@complete`, `@completion-accept`, `@ghost`, `@focus`, `@blur` | — |
 
 ### Buttons & actions
 
@@ -357,7 +358,7 @@ Generated from component source. `Props` lists each prop with its default; `Emit
 
 | Tag | Props (default) | Emits | Slots |
 |---|---|---|---|
-| `<CodeBlock>` | `code` (`''`), `language` (`'typescript'`), `theme` (`'auto'`), `lineNumbers` (`true`), `copyable` (`true`), `className` (`''`) | — | — |
+| `<CodeBlock>` | `code` (`''`), `language` (`'typescript'`), `theme` (`'auto'`), `lineNumbers` (`true`), `copyable` (`true`), `highlighter` (`null`), `className` (`''`) | — | — |
 | `<Footer>` | `author` (`'@chrisbbreuer'`), `authorUrl` (`'https://github.com/chrisbbreuer'`), `project` (`'@stacksjs'`), `projectUrl` (`'https://github.com/stacksjs/stacks'`), `twitterUrl` (`'https://twitter.com/chrisbbreuer'`), `sponsorUrl` (`'https://github.com/sponsors/chrisbbreuer'`), `coffeeUrl` (`'https://www.buymeacoffee.com/xlbd'`) | — | — |
 | `<Hero>` | `title` (`'Component'`), `description` (`'A modern component built with STX'`), `githubUrl` (`'#'`) | — | `demo` |
 | `<Installation>` | `packageName` (`'@stacksjs/component'`) | — | — |

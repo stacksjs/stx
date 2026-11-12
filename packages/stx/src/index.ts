@@ -6,6 +6,7 @@
 
 // Explicit re-exports to resolve wildcard ambiguities
 export { type BuildResult } from './build-optimizer'
+export { bodyCloseIndex, headCloseIndex, insertBeforeBodyClose, insertBeforeHeadClose } from './document-tags'
 export { useServerData } from './server-data'
 export { useRuntimeConfig, useServerRuntimeConfig } from './runtime-config-server'
 export type { RuntimeConfigDefaults, PublicRuntimeConfig } from './runtime-config-types'
@@ -240,6 +241,8 @@ export * from './loading-indicator'
 export * from './reactive-bindings'
 export * from './client-helpers'
 export * from './client-script'
+// The guard a bundler plugin puts around a render it has to do inside a loader.
+export { isWithinBundlerCallback, withinBundlerCallback } from './client-script-bundler'
 /*
  * The authoring surface, as data.
  *

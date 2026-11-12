@@ -1,7 +1,7 @@
 {
   "name": "stx",
   "type": "module",
-  "version": "0.2.852",
+  "version": "0.2.862",
   "private": true,
   "description": "A fast & powerful UI / templating engine. Laravel Blade & Vue-inspired. Powered by Bun.",
   "author": "Chris Breuer <chris@stacksjs.org>",
@@ -45,7 +45,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "cd packages/router && bun --bun build.ts && cd ../bun-plugin && bun --bun build.ts && cd ../desktop && bun --bun build.ts && cd ../stx && bun --bun build.ts && cd ../components && bun --bun build.ts && cd ../.. && bun run compile",
+    "build": "cd packages/sanitizer && bun --bun build.ts && cd ../router && bun --bun build.ts && cd ../bun-plugin && bun --bun build.ts && cd ../desktop && bun --bun build.ts && cd ../stx && bun --bun build.ts && cd ../components && bun --bun build.ts && cd ../.. && bun run compile",
     "build:css": "cd packages/stx && bun run build:css && cd ../..",
     "css:watch": "cd packages/stx && bun run css:watch && cd ../..",
     "compile": "bun build ./packages/stx/bin/cli.ts --compile --minify --outfile bin/stx",
@@ -74,9 +74,9 @@
     "changelog": "bun x @stacksjs/logsmith --verbose",
     "changelog:generate": "bun x @stacksjs/logsmith --output CHANGELOG.md",
     "release": "bun x --bun @stacksjs/bumpx prompt --recursive",
-    "release:patch": "bun x --bun @stacksjs/bumpx patch --recursive --yes",
-    "release:changed": "bun x --bun @stacksjs/bumpx patch --recursive --yes --only-changed-since",
-    "release:all": "bun x --bun @stacksjs/bumpx patch --recursive --yes",
+    "release:patch": "bun x --bun @stacksjs/bumpx patch --recursive --commit --tag --push --yes",
+    "release:changed": "bun x --bun @stacksjs/bumpx patch --recursive --commit --tag --push --yes --only-changed-since",
+    "release:all": "bun x --bun @stacksjs/bumpx patch --recursive --commit --tag --push --yes",
     "dev:docs": "bun --bun bunpress dev docs",
     "build:docs": "bun --bun bunpress build docs",
     "preview:docs": "bun --bun bunpress preview docs",

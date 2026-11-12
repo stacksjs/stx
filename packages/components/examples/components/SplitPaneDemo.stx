@@ -1,0 +1,72 @@
+<script client>
+import { componentApi } from '../../src/utils/component-api'
+
+const layout = state('Drag a separator, or focus one and use the arrow keys.')
+const log = state([])
+
+function percent(sizes) {
+  return sizes.map(size => Math.round(size * 100) + '%').join(' / ')
+}
+
+// A component's event hands its payload straight to the handler as $event.
+function onResize(name, detail) {
+  layout.set(name + ': ' + percent(detail.sizes) + ' (' + detail.pixels.join(' / ') + ' px)')
+}
+
+function onResizeEnd(name, detail) {
+  log.set([name + ' settled at ' + percent(detail.sizes) + ' by ' + detail.source, ...log()].slice(0, 6))
+}
+
+function resetAll() {
+  for (const id of ['demo-outer', 'demo-inner']) {
+    const split = componentApi(id)
+    if (split) split.reset()
+  }
+}
+
+function thirds() {
+  const split = componentApi('demo-outer')
+  if (split) split.setSizes([1, 2])
+}
+</script>
+
+<main class="flex flex-col gap-4 p-6 max-w-6xl mx-auto">
+  <header class="flex flex-col gap-1">
+    <h1 class="text-xl font-semibold text-fg">SplitPane</h1>
+    <p class="text-sm text-fg-muted">A sidebar beside a stack of two panes: one split inside a pane of another. The layout is kept in local storage, so a reload brings it back.</p>
+  </header>
+
+  <div class="flex flex-wrap items-center gap-2 text-sm">
+    <Button size="sm" variant="outline" @click="thirds()">One third, two thirds</Button>
+    <Button size="sm" variant="ghost" @click="resetAll()">Reset both</Button>
+    <span class="ml-auto font-mono text-fg-muted" x-text="layout()"></span>
+  </div>
+
+  <div class="border border-line rounded-panel overflow-hidden" style="height: 60vh">
+    <SplitPane id="demo-outer" storageKey="demo-outer" sizes="28,72" minSize="160" label="Resize sidebar and workspace" @resize="onResize('Outer', $event)" @resize-end="onResizeEnd('Outer', $event)">
+      <div class="p-4 text-sm text-fg-muted bg-surface">
+        <p class="font-semibold text-fg">Sidebar</p>
+        <p>Never narrower than 160 pixels. Double click the separator to go back to the starting layout.</p>
+      </div>
+      <div>
+        <SplitPane id="demo-inner" direction="vertical" storageKey="demo-inner" sizes="60,40" minSize="80" label="Resize editor and output" @resize="onResize('Inner', $event)" @resize-end="onResizeEnd('Inner', $event)">
+          <div class="p-4 text-sm text-fg-muted">
+            <p class="font-semibold text-fg">Editor</p>
+            <p>Home and End send the separator as far as it goes. Shift with an arrow key moves five steps.</p>
+          </div>
+          <div class="p-4 text-sm text-fg-muted bg-surface" data-min-size="120">
+            <p class="font-semibold text-fg">Output</p>
+            <p>This pane sets its own minimum of 120 pixels.</p>
+          </div>
+        </SplitPane>
+      </div>
+    </SplitPane>
+  </div>
+
+  <section aria-label="Events" class="p-3 text-sm bg-surface border border-line rounded-panel">
+    <p class="text-fg-muted" :show="log().length === 0">Finish a resize to see the event it sends.</p>
+    <ul class="font-mono text-fg">
+      <li :for="entry in log()" x-text="entry"></li>
+    </ul>
+  </section>
+</main>

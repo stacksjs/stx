@@ -18,6 +18,7 @@
  * the inline scripts survive into the final HTML.
  */
 
+import { insertBeforeBodyClose } from '../document-tags'
 import type { SiteConfig } from './types'
 import { COLOR_MODE_BOOT_MARKER } from '../color-mode-boot'
 
@@ -170,7 +171,7 @@ export function injectThemeBootstrap(html: string, site: SiteConfig): string {
   // 4) Toggle click handler before </body>
   if (!colorModeOwnsTheme && !html.includes('__stxThemeToggle') && /<\/body>/i.test(html)) {
     const handler = `<script data-stx-theme-toggle="1">${TOGGLE_HANDLER(storageKey, lightColor, darkColor)};window.__stxThemeToggle=1;</script>`
-    html = html.replace(/<\/body>/i, `${handler}\n</body>`)
+    html = insertBeforeBodyClose(html, handler)
   }
 
   return html

@@ -1,4 +1,5 @@
 /* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
+import { bodyCloseIndex } from './document-tags'
 import { evaluateExpression } from './expressions'
 import { scanAtElementPosition } from './html-masking'
 
@@ -1063,7 +1064,7 @@ export function processReactiveDirectives(
   const script = generateScopeInitializers(scopes, context as Record<string, any>, deferInit)
 
   // Inject before the LAST </body> — earlier occurrences may be inside <script> tags
-  const bodyCloseIdx = output.lastIndexOf('</body>')
+  const bodyCloseIdx = bodyCloseIndex(output)
   if (bodyCloseIdx !== -1) {
     output = output.slice(0, bodyCloseIdx) + script + '\n' + output.slice(bodyCloseIdx)
   }

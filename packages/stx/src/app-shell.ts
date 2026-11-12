@@ -11,6 +11,7 @@
  * @module app-shell
  */
 
+import { bodyCloseIndex } from './document-tags'
 import type { StxOptions } from './types'
 import path from 'node:path'
 import { classifyAllScripts } from './script-classifier'
@@ -330,7 +331,7 @@ export function stripDocumentWrapper(html: string, options: { preserveHead?: boo
   // Use index-based extraction for <body> — more robust than regex with [\s\S]*?
   // which can match the wrong </body> if one appears in a string literal
   const bodyOpenMatch = trimmed.match(/<body\b[^>]*>/i)
-  const bodyCloseIdx = trimmed.lastIndexOf('</body>')
+  const bodyCloseIdx = bodyCloseIndex(trimmed)
   if (bodyOpenMatch && bodyCloseIdx !== -1) {
     const bodyStart = bodyOpenMatch.index! + bodyOpenMatch[0].length
     const bodyContent = trimmed.slice(bodyStart, bodyCloseIdx).trim()
@@ -509,7 +510,7 @@ export function extractContainerContent(html: string, containerSelector: string 
   // check, so a form that lands on another layout is not covered here.
   const bodyScripts: string[] = []
   const bodyOpenMatch = trimmed.match(/<body\b[^>]*>/i)
-  const bodyCloseIdx = trimmed.lastIndexOf('</body>')
+  const bodyCloseIdx = bodyCloseIndex(trimmed)
   if (bodyOpenMatch && bodyOpenMatch.index !== undefined && bodyCloseIdx !== -1) {
     const bodyStart = bodyOpenMatch.index + bodyOpenMatch[0].length
     // Only scan body regions OUTSIDE the container: [bodyStart, openMatch.index) and (closeIdx + closeTagLength, bodyCloseIdx)

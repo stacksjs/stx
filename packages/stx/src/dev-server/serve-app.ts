@@ -1,4 +1,5 @@
 // @ts-nocheck - Skip type checking due to HeadersInit type constraints
+import { insertBeforeHeadClose } from '../document-tags'
 import type { DevServerOptions } from './types'
 import type { ProcessedShell } from '../app-shell'
 import type { Route, RouteMatch } from '../router'
@@ -633,7 +634,7 @@ catch {
     const paramsScript = `<script data-stx-route-params>(function(){var p=${serializedParams};window.__stx_rp=p;if(window.stx){window.stx._rp=p;if(window.stx.setRouteParams)window.stx.setRouteParams(p)}})()</script>`
     // Insert before closing </head> or at start of <body>
     if (content.includes('</head>')) {
-      return content.replace('</head>', `${paramsScript}</head>`)
+      return insertBeforeHeadClose(content, paramsScript, '')
     }
     if (content.includes('<body')) {
       return content.replace(/<body([^>]*)>/, `<body$1>${paramsScript}`)
@@ -840,7 +841,7 @@ catch {
             // Inject middleware state into page via stx runtime
             if (Object.keys(middlewareResult.state).length > 0) {
               const stateScript = `<script>(function(){var s=typeof stx!=='undefined'?stx:{};s._ms=${JSON.stringify(middlewareResult.state)};if(s.setMiddlewareState)s.setMiddlewareState(s._ms);})()</script>`
-              builtPage.content = builtPage.content.replace('</head>', `${stateScript}</head>`)
+              builtPage.content = insertBeforeHeadClose(builtPage.content, stateScript, '')
             }
           }
 

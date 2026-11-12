@@ -13,6 +13,7 @@
  * ```
  */
 
+import { insertBeforeHeadClose } from './document-tags'
 import { existsSync, mkdirSync, copyFileSync, chmodSync, rmSync } from 'node:fs'
 import { join, dirname, basename, resolve } from 'node:path'
 import { spawn } from 'node:child_process'
@@ -251,7 +252,7 @@ export async function buildNative(config: NativeBuildConfig): Promise<NativeBuil
     // Inject component styles if not present
     if (!html.includes('craft-component-styles')) {
       if (html.includes('</head>')) {
-        html = html.replace('</head>', `${CRAFT_COMPONENT_STYLES}\n</head>`)
+        html = insertBeforeHeadClose(html, CRAFT_COMPONENT_STYLES)
       }
     }
 

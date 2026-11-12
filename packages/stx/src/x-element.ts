@@ -1,3 +1,4 @@
+import { bodyCloseIndex } from './document-tags'
 /* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * x-element: Lightweight two-way binding for STX
@@ -357,7 +358,7 @@ export function processXElementDirectives(template: string): string {
   const runtime = existingRuntimes[0]?.trim() || generateXElementRuntime()
 
   // Use lastIndexOf to find the real </body> — earlier ones may be inside <script> strings
-  const bodyCloseIdx = withoutRuntimes.lastIndexOf('</body>')
+  const bodyCloseIdx = bodyCloseIndex(withoutRuntimes)
   if (bodyCloseIdx !== -1) {
     return withoutRuntimes.slice(0, bodyCloseIdx) + runtime + '\n' + withoutRuntimes.slice(bodyCloseIdx)
   }
