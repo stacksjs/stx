@@ -1,0 +1,351 @@
+<script server>
+/*
+ * <AppearancePicker>: light, dark, or whatever the system is, picked from
+ * three small pictures of a desktop, as System Settings offers it.
+ *
+ *   <AppearancePicker v-model:value="appearance" label="Appearance" />
+ *
+ * It reports the choice (`light`, `dark` or `auto`) and does nothing else:
+ * putting the choice into effect is the page's business, usually stx's
+ * `useColorMode()`. `options` renames a choice or leaves one out:
+ *
+ *   :options="[{ value: 'light', label: 'Hell' }, { value: 'dark', label: 'Dunkel' }]"
+ *
+ * A radio group: one tab stop, arrow keys move the choice. The pictures are
+ * drawn in CSS and say nothing to a screen reader; the captions do.
+ */
+const MODES = ['light', 'dark', 'auto']
+export const value = MODES.includes($props.value) ? $props.value : 'auto'
+export const options = Array.isArray($props.options) && $props.options.length > 0 ? $props.options : MODES
+export const label = $props.label || ''
+export const disabled = $bool($props.disabled)
+export const pickerId = $props.id || `appearance-picker-${$uid}`
+export const className = $props.className || ''
+</script>
+
+<script client>
+const emit = defineEmits(['change'])
+const MODES = ['light', 'dark', 'auto']
+const NAMES = { light: 'Light', dark: 'Dark', auto: 'Auto' }
+const asMode = value => (MODES.includes(value) ? value : 'auto')
+
+const chosen = useModel('value', { default: {{ value }}, parse: asMode })
+const choices = useReactiveProp('options', {{ options }})
+const groupLabel = useReactiveProp('label', {{ label }})
+const isDisabled = useReactiveProp('disabled', {{ disabled }})
+
+/** The choices as `{ value, label }`, in the order given, without anything that is not a mode. */
+function modes() {
+  const list = Array.isArray(choices()) && choices().length > 0 ? choices() : MODES
+  const seen = []
+  for (const choice of list) {
+    const value = choice !== null && typeof choice === 'object' ? choice.value : choice
+    if (!MODES.includes(value) || seen.some(mode => mode.value === value)) continue
+    const label = choice !== null && typeof choice === 'object' && choice.label != null ? String(choice.label) : NAMES[value]
+    seen.push({ value, label })
+  }
+  return seen
+}
+
+const isOn = mode => mode.value === chosen()
+
+/** The one picture Tab lands on: the chosen one, or the first when the choice is not offered. */
+function isTabStop(mode) {
+  const list = modes()
+  const current = list.find(isOn) || list[0]
+  return Boolean(current) && current.value === mode.value
+}
+
+function choose(mode) {
+  if (isDisabled() || isOn(mode)) return
+  chosen.set(mode.value)
+  emit('change', mode.value)
+}
+
+function onKey(event, mode) {
+  if (isDisabled() || event.metaKey || event.ctrlKey || event.altKey) return
+  if (event.key === ' ' || event.key === 'Enter') {
+    event.preventDefault()
+    choose(mode)
+    return
+  }
+  const list = modes()
+  const at = list.findIndex(item => item.value === mode.value)
+  if (at === -1) return
+
+  let next = -1
+  if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (at + 1) % list.length
+  else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (at - 1 + list.length) % list.length
+  else if (event.key === 'Home') next = 0
+  else if (event.key === 'End') next = list.length - 1
+  if (next === -1) return
+
+  event.preventDefault()
+  const target = list[next]
+  choose(target)
+  const group = event.currentTarget.parentElement
+  const pictures = group ? Array.from(group.querySelectorAll('[role="radio"]')) : []
+  const picture = pictures.find(item => item.getAttribute('data-mode') === target.value)
+  if (picture) picture.focus()
+}
+
+defineExpose({ value: chosen })
+</script>
+
+<div
+  id="{{ pickerId }}"
+  role="radiogroup"
+  data-stx-appearance-picker
+  @if(label)aria-label="{{ label }}"@endif
+  :aria-label="groupLabel() || null"
+  @if(disabled)aria-disabled="true"@endif
+  :aria-disabled="isDisabled() ? 'true' : null"
+  class="stx-appearance-picker {{ className }}"
+>
+  <button
+    :for="mode in modes()"
+    :key="mode.value"
+    type="button"
+    role="radio"
+    class="stx-appearance-option"
+    :data-mode="mode.value"
+    :aria-checked="isOn(mode) ? 'true' : 'false'"
+    :tabindex="isTabStop(mode) ? 0 : -1"
+    :disabled="isDisabled()"
+    @click="choose(mode)"
+    @keydown="onKey($event, mode)"
+  ><span class="stx-appearance-frame" aria-hidden="true"><span class="stx-appearance-thumb"><span class="stx-appearance-scene" data-scheme="light"></span><span class="stx-appearance-scene" data-scheme="dark"></span></span></span><span class="stx-appearance-caption" :text="mode.label"></span></button>
+</div>
+
+<style>
+:where(:root) {
+  --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
+  --stx-mac-font-size: 13px;
+  --stx-mac-font-size-small: 11px;
+  --stx-mac-hairline: 0.5px;
+  --stx-mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--stx-mac-accent) 35%, transparent);
+  --stx-mac-card-radius: 12px;
+  --stx-mac-control-radius: 6px;
+  --stx-mac-row-height: 38px;
+  --stx-mac-row-inset: 10px;
+  --stx-mac-sidebar-width: 226px;
+  --stx-mac-accent: var(--stx-accent, #007aff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(0, 0, 0, 0.85);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-tertiary: rgba(0, 0, 0, 0.26);
+  --stx-mac-window: #ffffff;
+  --stx-mac-sidebar: #f2f1f0;
+  --stx-mac-card: rgba(0, 0, 0, 0.04);
+  --stx-mac-separator: rgba(0, 0, 0, 0.1);
+  --stx-mac-hover: rgba(0, 0, 0, 0.05);
+  --stx-mac-selection-inactive: rgba(0, 0, 0, 0.08);
+  --stx-mac-well: rgba(0, 0, 0, 0.07);
+  --stx-mac-control: #ffffff;
+  --stx-mac-control-line: rgba(0, 0, 0, 0.12);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --stx-mac-switch-on: #34c759;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff3b30;
+}
+:where(.dark) {
+  --stx-mac-accent: var(--stx-accent, #0a84ff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(255, 255, 255, 0.85);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.55);
+  --stx-mac-ink-tertiary: rgba(255, 255, 255, 0.25);
+  --stx-mac-window: #1e1e1e;
+  --stx-mac-sidebar: #2a2a2a;
+  --stx-mac-card: rgba(255, 255, 255, 0.05);
+  --stx-mac-separator: rgba(255, 255, 255, 0.1);
+  --stx-mac-hover: rgba(255, 255, 255, 0.06);
+  --stx-mac-selection-inactive: rgba(255, 255, 255, 0.1);
+  --stx-mac-well: rgba(255, 255, 255, 0.1);
+  --stx-mac-control: rgba(255, 255, 255, 0.14);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.06);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+  --stx-mac-switch-on: #30d158;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff453a;
+}
+@media (max-resolution: 1.5dppx) {
+:where(:root) {
+  --stx-mac-hairline: 1px;
+}
+}
+@media (prefers-contrast: more) {
+:where(:root) {
+  --stx-mac-separator: rgba(0, 0, 0, 0.4);
+  --stx-mac-control-line: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.75);
+  --stx-mac-hairline: 1px;
+}
+:where(.dark) {
+  --stx-mac-separator: rgba(255, 255, 255, 0.45);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.5);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.8);
+}
+}
+
+:where([data-stx-appearance-picker]) {
+  --stx-appearance-width: 67px;
+  --stx-appearance-height: 44px;
+  --stx-appearance-radius: 7px;
+  --stx-appearance-gap: 16px;
+  --stx-appearance-ring: 2.5px;
+  --stx-appearance-ring-gap: 2px;
+  --stx-appearance-ring-color: var(--stx-mac-accent);
+  --stx-appearance-caption-gap: 5px;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--stx-appearance-gap);
+  box-sizing: border-box;
+  font-family: var(--stx-mac-font);
+  -webkit-font-smoothing: antialiased;
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+:where([data-stx-appearance-picker]) > .stx-appearance-option {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  width: var(--stx-appearance-width);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: default;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+:where([data-stx-appearance-picker]) .stx-appearance-frame {
+  position: relative;
+  display: block;
+  width: var(--stx-appearance-width);
+  height: var(--stx-appearance-height);
+}
+/* The ring, a gap away from the picture. */
+:where([data-stx-appearance-picker]) .stx-appearance-frame::after {
+  content: '';
+  position: absolute;
+  inset: calc((var(--stx-appearance-ring) + var(--stx-appearance-ring-gap)) * -1);
+  box-sizing: border-box;
+  border: var(--stx-appearance-ring) solid transparent;
+  border-radius: calc(var(--stx-appearance-radius) + var(--stx-appearance-ring) + var(--stx-appearance-ring-gap));
+  pointer-events: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+:where([data-stx-appearance-picker]) > .stx-appearance-option[aria-checked="true"] .stx-appearance-frame::after { border-color: var(--stx-appearance-ring-color); }
+:where([data-stx-appearance-picker]) > .stx-appearance-option:focus-visible .stx-appearance-frame::after { box-shadow: var(--stx-mac-focus-ring); }
+:where([data-stx-appearance-picker]) > .stx-appearance-option:active:not(:disabled) .stx-appearance-thumb { filter: brightness(0.94); }
+:where([data-stx-appearance-picker]) > .stx-appearance-option:disabled { opacity: 0.45; }
+
+:where([data-stx-appearance-picker]) .stx-appearance-thumb {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--stx-appearance-radius);
+  box-shadow: 0 0 0 var(--stx-mac-hairline) rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+/*
+ * A desktop in miniature: wallpaper under a menu bar, a small window with a
+ * selected row, and the corner of a larger one with its three buttons. One
+ * element and its two pseudo-elements a scheme; `auto` shows the left half of
+ * each side by side.
+ */
+:where([data-stx-appearance-picker]) .stx-appearance-scene {
+  --stx-appearance-bar: rgba(255, 255, 255, 0.55);
+  --stx-appearance-pane: rgba(255, 255, 255, 0.6);
+  --stx-appearance-window: #f5f5f5;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none;
+  width: var(--stx-appearance-width);
+  height: var(--stx-appearance-height);
+  overflow: hidden;
+  background:
+    linear-gradient(var(--stx-appearance-bar), var(--stx-appearance-bar)) top left / 100% 4px no-repeat,
+    linear-gradient(128deg, rgba(255, 255, 255, 0.8) 0 24%, rgba(255, 255, 255, 0) 24.5%),
+    radial-gradient(120% 90% at 20% 100%, #2a63d8 0 40%, rgba(42, 99, 216, 0) 70%),
+    linear-gradient(160deg, #cfe3f8 0%, #86b9ee 40%, #3d74d9 75%, #2148b0 100%);
+}
+:where([data-stx-appearance-picker]) .stx-appearance-scene[data-scheme="dark"] {
+  --stx-appearance-bar: rgba(0, 0, 0, 0.38);
+  --stx-appearance-pane: rgba(20, 20, 40, 0.55);
+  --stx-appearance-window: #1c1c1e;
+  background:
+    linear-gradient(var(--stx-appearance-bar), var(--stx-appearance-bar)) top left / 100% 4px no-repeat,
+    linear-gradient(128deg, rgba(120, 110, 230, 0.55) 0 24%, rgba(120, 110, 230, 0) 24.5%),
+    radial-gradient(120% 90% at 20% 100%, #0c0f52 0 40%, rgba(12, 15, 82, 0) 70%),
+    linear-gradient(160deg, #4b47c9 0%, #2c2aa0 40%, #17176b 75%, #0a0b3a 100%);
+}
+:where([data-stx-appearance-picker]) .stx-appearance-scene::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 3px;
+  width: 38px;
+  height: 12px;
+  border-radius: 2.5px;
+  background:
+    linear-gradient(#2f6bf0, #2f6bf0) 3px 3.5px / 31px 5px no-repeat,
+    var(--stx-appearance-pane);
+}
+:where([data-stx-appearance-picker]) .stx-appearance-scene::after {
+  content: '';
+  position: absolute;
+  top: 25px;
+  left: 19px;
+  width: 60px;
+  height: 30px;
+  border-radius: 5px;
+  background:
+    radial-gradient(circle at 9px 9.5px, #ff5f57 0 2.4px, rgba(255, 95, 87, 0) 2.9px),
+    radial-gradient(circle at 17px 9.5px, #febc2e 0 2.4px, rgba(254, 188, 46, 0) 2.9px),
+    radial-gradient(circle at 25px 9.5px, #28c840 0 2.4px, rgba(40, 200, 64, 0) 2.9px),
+    var(--stx-appearance-window);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.35);
+}
+
+:where([data-stx-appearance-picker]) [data-mode="light"] .stx-appearance-scene[data-scheme="light"],
+:where([data-stx-appearance-picker]) [data-mode="dark"] .stx-appearance-scene[data-scheme="dark"],
+:where([data-stx-appearance-picker]) [data-mode="auto"] .stx-appearance-scene { display: block; }
+:where([data-stx-appearance-picker]) [data-mode="auto"] .stx-appearance-scene { width: 50%; }
+:where([data-stx-appearance-picker]) [data-mode="auto"] .stx-appearance-scene[data-scheme="dark"] { left: 50%; }
+
+:where([data-stx-appearance-picker]) .stx-appearance-caption {
+  display: block;
+  max-width: calc(var(--stx-appearance-width) + var(--stx-appearance-gap) - 4px);
+  margin-top: var(--stx-appearance-caption-gap);
+  overflow: hidden;
+  font-size: var(--stx-mac-font-size-small);
+  line-height: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--stx-mac-ink-secondary);
+}
+:where([data-stx-appearance-picker]) > .stx-appearance-option[aria-checked="true"] .stx-appearance-caption {
+  font-weight: 600;
+  color: var(--stx-mac-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where([data-stx-appearance-picker]) .stx-appearance-frame::after { transition: none; }
+}
+
+@media (prefers-contrast: more) {
+  :where([data-stx-appearance-picker]) { --stx-appearance-ring: 3px; }
+  :where([data-stx-appearance-picker]) .stx-appearance-thumb { box-shadow: 0 0 0 1px var(--stx-mac-ink-secondary); }
+}
+</style>

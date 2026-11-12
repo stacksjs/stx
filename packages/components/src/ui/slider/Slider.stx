@@ -1,0 +1,377 @@
+<script server>
+/*
+ * <Slider>: a value picked along a track, drawn as a Mac draws it. A thin
+ * track, a white pill for a knob, optional tick marks under the track and an
+ * icon at either end.
+ *
+ *   <Slider v-model:value="size" min="0" max="2" step="1" ticks
+ *     minIcon="i-f7-textformat-size" maxIcon="i-f7-textformat-size" label="Text size" />
+ *
+ * Under the drawing is a real `<input type="range">`, stretched over the
+ * track and transparent, so the pointer, the keyboard, a screen reader and a
+ * form all get the browser's own slider. The arithmetic is in ./core.
+ *
+ * `input` is emitted with the value while it moves and `change` when it is
+ * let go; `v-model:value` follows it as it moves.
+ */
+const number = (value, fallback) => {
+  const parsed = typeof value === 'number' ? value : Number.parseFloat(String(value))
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+const low = $num($props.min, 0)
+const high = $num($props.max, 100)
+export const min = Math.min(low, high)
+export const max = Math.max(low, high)
+export const step = Math.max(0, $num($props.step, 1))
+export const value = Math.min(max, Math.max(min, $num($props.value, min)))
+export const fraction = max > min ? (value - min) / (max - min) : 0
+/* A count of marks, or true for one a step. */
+const rawTicks = $props.ticks
+export const ticks = rawTicks === true || rawTicks === '' || rawTicks === 'true'
+  ? true
+  : (rawTicks === undefined || rawTicks === null || rawTicks === false || rawTicks === 'false' ? false : number(rawTicks, 0))
+export const disabled = $bool($props.disabled)
+export const label = $props.label || ''
+export const minIcon = $props.minIcon || ''
+export const maxIcon = $props.maxIcon || ''
+export const tint = $props.tint === 'accent' ? 'accent' : 'neutral'
+export const name = $props.name || ''
+/* A CSS length. Left out, the slider is as wide as it is allowed to be. */
+export const width = $props.width || ''
+export const sliderId = $props.id || `slider-${$uid}`
+export const className = $props.className || ''
+</script>
+
+<script client>
+import { sliderFraction, sliderKeyValue, sliderRange, sliderSnap, sliderTicks } from './core'
+
+const emit = defineEmits(['input', 'change'])
+
+const liveMin = useReactiveProp('min', {{ min }})
+const liveMax = useReactiveProp('max', {{ max }})
+const liveStep = useReactiveProp('step', {{ step }})
+const liveTicks = useReactiveProp('ticks', {{ ticks }})
+const isDisabled = useReactiveProp('disabled', {{ disabled }})
+const spoken = useReactiveProp('label', {{ label }})
+const held = useModel('value', { default: {{ value }} })
+
+const range = () => sliderRange(liveMin(), liveMax(), liveStep())
+const current = () => sliderSnap(held(), range())
+const tickMarks = () => sliderTicks(liveTicks(), range())
+const place = fraction => `calc(var(--stx-slider-knob-width) / 2 + ${fraction} * (100% - var(--stx-slider-knob-width)))`
+
+function bodyStyle() {
+  return `--stx-slider-fraction: ${sliderFraction(current(), range())}`
+}
+
+function tickStyle(tick) {
+  return `left: ${place(tick)}`
+}
+
+function move(next, settled) {
+  const value = sliderSnap(next, range())
+  const changed = value !== current()
+  if (changed) held.set(value)
+  if (changed || !settled) emit('input', value)
+  if (settled) emit('change', value)
+}
+
+/*
+ * The browser's own events stop here and the component's go out in their
+ * place, carrying the value, so a page that listens for `input` hears one
+ * thing and not two.
+ */
+function onInput(event) {
+  event.stopPropagation()
+  if (isDisabled()) return
+  move(event.target.value, false)
+}
+
+function onChange(event) {
+  event.stopPropagation()
+  if (isDisabled()) return
+  const value = sliderSnap(event.target.value, range())
+  if (value !== current()) held.set(value)
+  emit('change', value)
+}
+
+function onKey(event) {
+  if (isDisabled() || event.metaKey || event.ctrlKey || event.altKey) return
+  const next = sliderKeyValue(event.key, current(), range())
+  if (next === null) return
+  event.preventDefault()
+  if (next !== current()) move(next, true)
+}
+
+defineExpose({
+  value: held,
+  setValue: (next) => { held.set(sliderSnap(next, range())) },
+})
+</script>
+
+<div
+  id="{{ sliderId }}"
+  data-stx-slider
+  data-tint="{{ tint }}"
+  @if(disabled)data-disabled@endif
+  :data-disabled="isDisabled() ? '' : null"
+  class="stx-slider {{ className }}"
+  @if(width)style="--stx-slider-width: {{ width }}"@endif
+>
+  @if(minIcon)
+    <i class="stx-slider-icon {{ minIcon }}" aria-hidden="true"></i>
+  @endif
+  <span class="stx-slider-body" style="--stx-slider-fraction: {{ fraction }}" :style="bodyStyle()">
+    <input
+      type="range"
+      class="stx-slider-input"
+      @if(name)name="{{ name }}"@endif
+      min="{{ min }}"
+      :min="range().min"
+      max="{{ max }}"
+      :max="range().max"
+      step="{{ step > 0 ? step : 'any' }}"
+      :step="range().step > 0 ? range().step : 'any'"
+      value="{{ value }}"
+      :value="current()"
+      @if(label)aria-label="{{ label }}"@endif
+      :aria-label="spoken() || null"
+      @if(disabled)disabled@endif
+      :disabled="isDisabled()"
+      @input="onInput($event)"
+      @change="onChange($event)"
+      @keydown="onKey($event)"
+    />
+    <span class="stx-slider-track" aria-hidden="true"><span class="stx-slider-fill"></span></span>
+    <span class="stx-slider-ticks" aria-hidden="true"><span :for="tick in tickMarks()" class="stx-slider-tick" :style="tickStyle(tick)"></span></span>
+    <span class="stx-slider-knob" aria-hidden="true"></span>
+  </span>
+  @if(maxIcon)
+    <i class="stx-slider-icon {{ maxIcon }}" aria-hidden="true"></i>
+  @endif
+</div>
+
+<style>
+:where(:root) {
+  --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
+  --stx-mac-font-size: 13px;
+  --stx-mac-font-size-small: 11px;
+  --stx-mac-hairline: 0.5px;
+  --stx-mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--stx-mac-accent) 35%, transparent);
+  --stx-mac-card-radius: 12px;
+  --stx-mac-control-radius: 6px;
+  --stx-mac-row-height: 38px;
+  --stx-mac-row-inset: 10px;
+  --stx-mac-sidebar-width: 226px;
+  --stx-mac-accent: var(--stx-accent, #007aff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(0, 0, 0, 0.85);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-tertiary: rgba(0, 0, 0, 0.26);
+  --stx-mac-window: #ffffff;
+  --stx-mac-sidebar: #f2f1f0;
+  --stx-mac-card: rgba(0, 0, 0, 0.04);
+  --stx-mac-separator: rgba(0, 0, 0, 0.1);
+  --stx-mac-hover: rgba(0, 0, 0, 0.05);
+  --stx-mac-selection-inactive: rgba(0, 0, 0, 0.08);
+  --stx-mac-well: rgba(0, 0, 0, 0.07);
+  --stx-mac-control: #ffffff;
+  --stx-mac-control-line: rgba(0, 0, 0, 0.12);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --stx-mac-switch-on: #34c759;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff3b30;
+}
+:where(.dark) {
+  --stx-mac-accent: var(--stx-accent, #0a84ff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(255, 255, 255, 0.85);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.55);
+  --stx-mac-ink-tertiary: rgba(255, 255, 255, 0.25);
+  --stx-mac-window: #1e1e1e;
+  --stx-mac-sidebar: #2a2a2a;
+  --stx-mac-card: rgba(255, 255, 255, 0.05);
+  --stx-mac-separator: rgba(255, 255, 255, 0.1);
+  --stx-mac-hover: rgba(255, 255, 255, 0.06);
+  --stx-mac-selection-inactive: rgba(255, 255, 255, 0.1);
+  --stx-mac-well: rgba(255, 255, 255, 0.1);
+  --stx-mac-control: rgba(255, 255, 255, 0.14);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.06);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+  --stx-mac-switch-on: #30d158;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff453a;
+}
+@media (max-resolution: 1.5dppx) {
+:where(:root) {
+  --stx-mac-hairline: 1px;
+}
+}
+@media (prefers-contrast: more) {
+:where(:root) {
+  --stx-mac-separator: rgba(0, 0, 0, 0.4);
+  --stx-mac-control-line: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.75);
+  --stx-mac-hairline: 1px;
+}
+:where(.dark) {
+  --stx-mac-separator: rgba(255, 255, 255, 0.45);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.5);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.8);
+}
+}
+
+:where([data-stx-slider]) {
+  --stx-slider-track-height: 4px;
+  --stx-slider-knob-width: 20px;
+  --stx-slider-knob-height: 16px;
+  --stx-slider-track: var(--stx-mac-well);
+  --stx-slider-fill: var(--stx-mac-ink-tertiary);
+  --stx-slider-tick: var(--stx-mac-ink-tertiary);
+  --stx-slider-tick-size: 2px;
+  --stx-slider-tick-offset: 6px;
+  --stx-slider-icon-size: 15px;
+  --stx-slider-knob-shadow: 0 0.5px 2.5px rgba(0, 0, 0, 0.28), 0 0 0 0.5px rgba(0, 0, 0, 0.1);
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: var(--stx-slider-width, 100%);
+  max-width: 100%;
+  min-width: 0;
+  font-family: var(--stx-mac-font);
+  color: var(--stx-mac-ink-secondary);
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+}
+:where([data-stx-slider][data-tint="accent"]) { --stx-slider-fill: var(--stx-mac-accent); }
+:where(.dark) :where([data-stx-slider]) { --stx-slider-knob-shadow: 0 0.5px 2.5px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(0, 0, 0, 0.3); }
+
+/* A window that is not the key window draws no accent. */
+:where([data-stx-window-active="false"]) :where([data-stx-slider][data-tint="accent"]),
+:root[data-craft-window-active='false'] :where([data-stx-slider][data-tint="accent"]) {
+  --stx-slider-fill: var(--stx-mac-ink-tertiary);
+}
+
+:where([data-stx-slider]) > .stx-slider-icon {
+  display: block;
+  flex: 0 0 auto;
+  width: var(--stx-slider-icon-size);
+  height: var(--stx-slider-icon-size);
+  font-size: var(--stx-slider-icon-size);
+}
+
+:where([data-stx-slider]) > .stx-slider-body {
+  position: relative;
+  display: block;
+  flex: 1 1 auto;
+  min-width: 48px;
+  height: var(--stx-slider-knob-height);
+}
+
+/*
+ * The browser's slider, over everything and invisible. Its thumb is given
+ * the knob's width, so a place on it and a place on the drawing agree.
+ */
+:where([data-stx-slider]) .stx-slider-input {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  opacity: 0;
+  cursor: default;
+  -webkit-appearance: none;
+  appearance: none;
+}
+[data-stx-slider] .stx-slider-input::-webkit-slider-runnable-track { height: 100%; background: transparent; }
+[data-stx-slider] .stx-slider-input::-webkit-slider-thumb {
+  width: var(--stx-slider-knob-width);
+  height: var(--stx-slider-knob-height);
+  -webkit-appearance: none;
+  appearance: none;
+}
+[data-stx-slider] .stx-slider-input::-moz-range-thumb {
+  width: var(--stx-slider-knob-width);
+  height: var(--stx-slider-knob-height);
+  border: 0;
+}
+
+:where([data-stx-slider]) .stx-slider-track {
+  position: absolute;
+  top: calc(50% - var(--stx-slider-track-height) / 2);
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  height: var(--stx-slider-track-height);
+  border-radius: calc(var(--stx-slider-track-height) / 2);
+  background: var(--stx-slider-track);
+}
+:where([data-stx-slider]) .stx-slider-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(var(--stx-slider-knob-width) / 2 + var(--stx-slider-fraction, 0) * (100% - var(--stx-slider-knob-width)));
+  background: var(--stx-slider-fill);
+  transition: background-color 150ms ease;
+}
+
+/* The marks, under the track, where the middle of the knob stops. */
+:where([data-stx-slider]) .stx-slider-ticks {
+  position: absolute;
+  top: calc(50% + var(--stx-slider-tick-offset));
+  left: 0;
+  right: 0;
+  height: var(--stx-slider-tick-size);
+}
+:where([data-stx-slider]) .stx-slider-tick {
+  position: absolute;
+  top: 0;
+  width: var(--stx-slider-tick-size);
+  height: var(--stx-slider-tick-size);
+  margin-left: calc(var(--stx-slider-tick-size) / -2);
+  border-radius: 50%;
+  background: var(--stx-slider-tick);
+}
+
+:where([data-stx-slider]) .stx-slider-knob {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: calc(var(--stx-slider-fraction, 0) * (100% - var(--stx-slider-knob-width)));
+  box-sizing: border-box;
+  width: var(--stx-slider-knob-width);
+  height: var(--stx-slider-knob-height);
+  border-radius: calc(var(--stx-slider-knob-height) / 2);
+  background: var(--stx-mac-knob);
+  box-shadow: var(--stx-slider-knob-shadow);
+  transition: background-color 150ms ease, box-shadow 150ms ease;
+}
+:where([data-stx-slider]) .stx-slider-input:active ~ .stx-slider-knob { background: color-mix(in srgb, var(--stx-mac-knob) 92%, #000000); }
+:where([data-stx-slider]) .stx-slider-input:focus-visible ~ .stx-slider-knob { box-shadow: var(--stx-slider-knob-shadow), var(--stx-mac-focus-ring); }
+
+:where([data-stx-slider][data-disabled]) { opacity: 0.45; }
+:where([data-stx-slider][data-disabled]) .stx-slider-input { pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  :where([data-stx-slider]) :is(.stx-slider-fill, .stx-slider-knob) { transition: none; }
+}
+
+@media (prefers-contrast: more) {
+  :where([data-stx-slider]) {
+    --stx-slider-track: var(--stx-mac-ink-tertiary);
+    --stx-slider-fill: var(--stx-mac-ink);
+    --stx-slider-tick: var(--stx-mac-ink-secondary);
+    --stx-slider-knob-shadow: 0 0 0 1px var(--stx-mac-ink);
+  }
+  :where([data-stx-slider][data-tint="accent"]) { --stx-slider-fill: var(--stx-mac-accent); }
+}
+</style>

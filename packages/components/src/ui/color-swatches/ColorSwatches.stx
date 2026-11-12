@@ -1,0 +1,287 @@
+<script server>
+/*
+ * <ColorSwatches>: a row of colour dots to pick one from, as System Settings
+ * draws its accent colours. The chosen dot has a ring around it and its name
+ * written underneath.
+ *
+ *   <ColorSwatches v-model:value="accent" label="Accent colour" :options="[
+ *     { value: 'multi', label: 'Multicolour', color: 'conic-gradient(red, orange, yellow, green, blue, purple, red)' },
+ *     { value: 'blue', label: 'Blue', color: '#007aff' },
+ *   ]" />
+ *
+ * `color` is any CSS colour or gradient. The dots are a radio group: one tab
+ * stop, the arrow keys move the choice, Home and End go to the ends.
+ * `change` is emitted with the new value.
+ */
+export const value = $props.value == null ? '' : String($props.value)
+export const options = Array.isArray($props.options) ? $props.options : []
+export const label = $props.label || ''
+export const disabled = $bool($props.disabled)
+/* The chosen dot's name under it. Without it the row is only as tall as a dot. */
+export const caption = $bool($props.caption, true)
+export const swatchesId = $props.id || `color-swatches-${$uid}`
+export const className = $props.className || ''
+</script>
+
+<script client>
+const emit = defineEmits(['change'])
+const chosen = useModel('value', { default: {{ value }}, parse: value => (value == null ? '' : String(value)) })
+const choices = useReactiveProp('options', {{ options }})
+const groupLabel = useReactiveProp('label', {{ label }})
+const isDisabled = useReactiveProp('disabled', {{ disabled }})
+
+/** A choice as `{ value, color, label, disabled }`. A bare string is a colour named after itself. */
+function normalise(choice) {
+  if (choice !== null && typeof choice === 'object') {
+    const value = choice.value == null ? '' : String(choice.value)
+    return {
+      value,
+      color: String(choice.color ?? choice.colour ?? value),
+      label: choice.label == null ? value : String(choice.label),
+      disabled: choice.disabled === true,
+    }
+  }
+  const value = choice == null ? '' : String(choice)
+  return { value, color: value, label: value, disabled: false }
+}
+
+function swatches() {
+  const list = choices()
+  return Array.isArray(list) ? list.map(normalise) : []
+}
+
+const isOn = swatch => swatch.value === chosen()
+const isOff = swatch => isDisabled() || swatch.disabled
+
+/** The one dot Tab lands on: the chosen one, or the first that can be chosen. */
+function isTabStop(swatch) {
+  const list = swatches()
+  const current = list.find(item => isOn(item) && !isOff(item)) || list.find(item => !isOff(item))
+  return Boolean(current) && current.value === swatch.value
+}
+
+function choose(swatch) {
+  if (isOff(swatch) || isOn(swatch)) return
+  chosen.set(swatch.value)
+  emit('change', swatch.value)
+}
+
+function onKey(event, swatch) {
+  if (event.metaKey || event.ctrlKey || event.altKey) return
+  if (event.key === ' ' || event.key === 'Enter') {
+    event.preventDefault()
+    choose(swatch)
+    return
+  }
+  const list = swatches()
+  const open = list.filter(item => !isOff(item))
+  const at = open.findIndex(item => item.value === swatch.value)
+  if (open.length === 0 || at === -1) return
+
+  let next = -1
+  if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (at + 1) % open.length
+  else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (at - 1 + open.length) % open.length
+  else if (event.key === 'Home') next = 0
+  else if (event.key === 'End') next = open.length - 1
+  if (next === -1) return
+
+  event.preventDefault()
+  const target = open[next]
+  choose(target)
+  const group = event.currentTarget.parentElement
+  const dots = group ? Array.from(group.querySelectorAll('[role="radio"]')) : []
+  const dot = dots.find(item => item.getAttribute('data-value') === target.value)
+  if (dot) dot.focus()
+}
+
+defineExpose({ value: chosen })
+</script>
+
+<div
+  id="{{ swatchesId }}"
+  role="radiogroup"
+  data-stx-color-swatches
+  @if(caption)data-caption@endif
+  @if(label)aria-label="{{ label }}"@endif
+  :aria-label="groupLabel() || null"
+  :aria-disabled="isDisabled() ? 'true' : null"
+  class="stx-color-swatches {{ className }}"
+>
+  <button
+    :for="swatch in swatches()"
+    :key="swatch.value"
+    type="button"
+    role="radio"
+    class="stx-color-swatch"
+    :data-value="swatch.value"
+    :aria-checked="isOn(swatch) ? 'true' : 'false'"
+    :aria-label="swatch.label"
+    :tabindex="isTabStop(swatch) ? 0 : -1"
+    :disabled="isOff(swatch)"
+    :style="'--stx-swatch-color: ' + swatch.color"
+    @click="choose(swatch)"
+    @keydown="onKey($event, swatch)"
+  ><span class="stx-color-swatch-dot"></span><span class="stx-color-swatch-caption" aria-hidden="true" :text="swatch.label"></span></button>
+</div>
+
+<style>
+:where(:root) {
+  --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
+  --stx-mac-font-size: 13px;
+  --stx-mac-font-size-small: 11px;
+  --stx-mac-hairline: 0.5px;
+  --stx-mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--stx-mac-accent) 35%, transparent);
+  --stx-mac-card-radius: 12px;
+  --stx-mac-control-radius: 6px;
+  --stx-mac-row-height: 38px;
+  --stx-mac-row-inset: 10px;
+  --stx-mac-sidebar-width: 226px;
+  --stx-mac-accent: var(--stx-accent, #007aff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(0, 0, 0, 0.85);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-tertiary: rgba(0, 0, 0, 0.26);
+  --stx-mac-window: #ffffff;
+  --stx-mac-sidebar: #f2f1f0;
+  --stx-mac-card: rgba(0, 0, 0, 0.04);
+  --stx-mac-separator: rgba(0, 0, 0, 0.1);
+  --stx-mac-hover: rgba(0, 0, 0, 0.05);
+  --stx-mac-selection-inactive: rgba(0, 0, 0, 0.08);
+  --stx-mac-well: rgba(0, 0, 0, 0.07);
+  --stx-mac-control: #ffffff;
+  --stx-mac-control-line: rgba(0, 0, 0, 0.12);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --stx-mac-switch-on: #34c759;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff3b30;
+}
+:where(.dark) {
+  --stx-mac-accent: var(--stx-accent, #0a84ff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(255, 255, 255, 0.85);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.55);
+  --stx-mac-ink-tertiary: rgba(255, 255, 255, 0.25);
+  --stx-mac-window: #1e1e1e;
+  --stx-mac-sidebar: #2a2a2a;
+  --stx-mac-card: rgba(255, 255, 255, 0.05);
+  --stx-mac-separator: rgba(255, 255, 255, 0.1);
+  --stx-mac-hover: rgba(255, 255, 255, 0.06);
+  --stx-mac-selection-inactive: rgba(255, 255, 255, 0.1);
+  --stx-mac-well: rgba(255, 255, 255, 0.1);
+  --stx-mac-control: rgba(255, 255, 255, 0.14);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.06);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+  --stx-mac-switch-on: #30d158;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff453a;
+}
+@media (max-resolution: 1.5dppx) {
+:where(:root) {
+  --stx-mac-hairline: 1px;
+}
+}
+@media (prefers-contrast: more) {
+:where(:root) {
+  --stx-mac-separator: rgba(0, 0, 0, 0.4);
+  --stx-mac-control-line: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.75);
+  --stx-mac-hairline: 1px;
+}
+:where(.dark) {
+  --stx-mac-separator: rgba(255, 255, 255, 0.45);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.5);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.8);
+}
+}
+
+:where([data-stx-color-swatches]) {
+  --stx-swatch-size: 24px;
+  --stx-swatch-gap: 12px;
+  --stx-swatch-ring: 2px;
+  --stx-swatch-ring-gap: 2px;
+  --stx-swatch-ring-color: var(--stx-mac-accent);
+  --stx-swatch-caption-gap: 4px;
+  --stx-swatch-caption-height: 13px;
+  display: inline-flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--stx-swatch-gap);
+  box-sizing: border-box;
+  font-family: var(--stx-mac-font);
+  -webkit-font-smoothing: antialiased;
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+}
+/* Room for the name of whichever dot is chosen, so choosing one moves nothing. */
+:where([data-stx-color-swatches][data-caption]) { padding-bottom: calc(var(--stx-swatch-caption-gap) + var(--stx-swatch-caption-height)); }
+
+:where([data-stx-color-swatches]) > .stx-color-swatch {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: var(--stx-swatch-size);
+  height: var(--stx-swatch-size);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: default;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+:where([data-stx-color-swatches]) .stx-color-swatch-dot {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--stx-swatch-color, var(--stx-mac-ink-tertiary));
+  box-shadow: inset 0 0 0 var(--stx-mac-hairline) rgba(0, 0, 0, 0.14);
+}
+:where(.dark) :where([data-stx-color-swatches]) .stx-color-swatch-dot { box-shadow: inset 0 0 0 var(--stx-mac-hairline) rgba(255, 255, 255, 0.16); }
+
+/* The ring, a gap away from the dot, showing whatever the row is drawn on. */
+:where([data-stx-color-swatches]) > .stx-color-swatch::before {
+  content: '';
+  position: absolute;
+  inset: calc((var(--stx-swatch-ring) + var(--stx-swatch-ring-gap)) * -1);
+  box-sizing: border-box;
+  border: var(--stx-swatch-ring) solid transparent;
+  border-radius: 50%;
+  pointer-events: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+:where([data-stx-color-swatches]) > .stx-color-swatch[aria-checked="true"]::before { border-color: var(--stx-swatch-ring-color); }
+:where([data-stx-color-swatches]) > .stx-color-swatch:focus-visible::before { box-shadow: var(--stx-mac-focus-ring); }
+:where([data-stx-color-swatches]) > .stx-color-swatch:active:not(:disabled) .stx-color-swatch-dot { filter: brightness(0.92); }
+:where([data-stx-color-swatches]) > .stx-color-swatch:disabled { opacity: 0.4; }
+
+:where([data-stx-color-swatches]) .stx-color-swatch-caption {
+  position: absolute;
+  top: calc(100% + var(--stx-swatch-caption-gap));
+  left: 50%;
+  display: none;
+  transform: translateX(-50%);
+  font-size: var(--stx-mac-font-size-small);
+  line-height: var(--stx-swatch-caption-height);
+  white-space: nowrap;
+  color: var(--stx-mac-ink-secondary);
+  pointer-events: none;
+}
+:where([data-stx-color-swatches][data-caption]) > .stx-color-swatch[aria-checked="true"] .stx-color-swatch-caption { display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  :where([data-stx-color-swatches]) > .stx-color-swatch::before { transition: none; }
+}
+
+@media (prefers-contrast: more) {
+  :where([data-stx-color-swatches]) { --stx-swatch-ring: 3px; }
+  :where([data-stx-color-swatches]) .stx-color-swatch-dot { box-shadow: inset 0 0 0 1px var(--stx-mac-ink-secondary); }
+}
+</style>
