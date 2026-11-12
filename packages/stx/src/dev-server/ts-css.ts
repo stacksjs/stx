@@ -4,6 +4,7 @@
  * Provides on-the-fly Tailwind CSS generation using Css
  */
 
+import { headCloseIndex, insertBeforeHeadClose } from '../document-tags'
 import fs from 'node:fs'
 import path from 'node:path'
 import { hasLocalConfig } from 'bunfig'
@@ -955,7 +956,7 @@ export async function injectCss(
 
   // Try to inject before </head>
   if (htmlContent.includes('</head>')) {
-    return htmlContent.replace('</head>', `${assetTag}\n</head>`)
+    return insertBeforeHeadClose(htmlContent, assetTag)
   }
 
   // Fallback: inject at the beginning of <body> or at the start
@@ -997,7 +998,7 @@ function injectCssAndDedupeScopedStyles(html: string, assetTag: string): string 
     }
   }
   else {
-    const headClose = html.indexOf('</head>')
+    const headClose = headCloseIndex(html)
     if (headClose !== -1) {
       edits.push({ start: headClose, end: headClose, replacement: `${assetTag}\n` })
     }
@@ -1051,7 +1052,7 @@ function injectCssIntoHtml(htmlContent: string, assetTag: string): string {
   }
 
   if (htmlContent.includes('</head>'))
-    return htmlContent.replace('</head>', `${assetTag}\n</head>`)
+    return insertBeforeHeadClose(htmlContent, assetTag)
 
   if (htmlContent.includes('<body'))
     return htmlContent.replace(/<body([^>]*)>/, `<body$1>\n${assetTag}`)

@@ -1,3 +1,4 @@
+import { bodyCloseIndex, insertBeforeHeadClose } from '../document-tags'
 /**
  * CSS Scoping for Web Components
  *
@@ -400,7 +401,7 @@ export function injectScopedCss(
   switch (position) {
     case 'head':
       if (template.includes('</head>')) {
-        return template.replace('</head>', `${styleTag}\n</head>`)
+        return insertBeforeHeadClose(template, styleTag)
       }
       return styleTag + template
 
@@ -411,7 +412,7 @@ export function injectScopedCss(
       return styleTag + template
 
     case 'body-end': {
-      const csBodyIdx = template.lastIndexOf('</body>')
+      const csBodyIdx = bodyCloseIndex(template)
       if (csBodyIdx !== -1) {
         return template.slice(0, csBodyIdx) + styleTag + '\n' + template.slice(csBodyIdx)
       }

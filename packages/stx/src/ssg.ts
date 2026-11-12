@@ -45,6 +45,7 @@
  * @module ssg
  */
 
+import { insertBeforeHeadClose } from './document-tags'
 import type { StxOptions } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -862,7 +863,7 @@ async function renderPage(
   if (Object.keys(params).length > 0) {
     const paramsScript = `<script>if(window.stx)window.stx._rp=${JSON.stringify(params)};else window.__stx_rp=${JSON.stringify(params)};</script>`
     if (html.includes('</head>')) {
-      html = html.replace('</head>', `${paramsScript}\n</head>`)
+      html = insertBeforeHeadClose(html, paramsScript)
     }
     else {
       html = `${paramsScript}\n${html}`

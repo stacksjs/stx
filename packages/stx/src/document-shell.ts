@@ -9,6 +9,7 @@
  * @module document-shell
  */
 
+import { headCloseIndex } from './document-tags'
 import type { ColorModeBootConfig } from './color-mode-boot'
 import type { AppHeadConfig } from './types/config-types'
 import { generateColorModeBootScript } from './color-mode-boot'
@@ -332,7 +333,7 @@ export function injectCloakStyle(html: string): string {
   const fragment = cloakStyleFragment(html)
   if (fragment === null)
     return html
-  const headCloseIdx = html.lastIndexOf('</head>')
+  const headCloseIdx = headCloseIndex(html)
   return `${html.slice(0, headCloseIdx)}${fragment}${html.slice(headCloseIdx)}`
 }
 
@@ -348,7 +349,7 @@ export function injectCloakStyle(html: string): string {
 export function cloakStyleFragment(html: string): string | null {
   if (html.includes('data-stx-cloak'))
     return null
-  if (html.lastIndexOf('</head>') === -1)
+  if (headCloseIndex(html) === -1)
     return null
   return `${CLOAK_STYLE}\n`
 }
@@ -721,7 +722,7 @@ export function hasDocumentShell(html: string): boolean {
  * `title` is intentionally excluded — the page/layout owns its own title.
  */
 export function injectConfigHeadTags(html: string, headConfig: AppHeadConfig = {}): string {
-  const headCloseIdx = html.lastIndexOf('</head>')
+  const headCloseIdx = headCloseIndex(html)
   if (headCloseIdx === -1)
     return html
 

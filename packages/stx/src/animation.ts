@@ -1,5 +1,6 @@
 // @ts-nocheck - Skip type checking due to animation option type defaults
 /* eslint-disable no-case-declarations -- const declarations in case blocks are intentional, each case returns immediately, prefer-const, style/max-statements-per-line */
+import { bodyCloseIndex, insertBeforeHeadClose } from './document-tags'
 import type { CustomDirective, StxOptions } from './types'
 
 /**
@@ -615,7 +616,7 @@ export function processAnimationDirectives(
 
   if (!hasBaseStyles) {
     const baseStyles = generateBaseAnimationStyles()
-    output = output.replace('</head>', `${baseStyles}\n</head>`)
+    output = insertBeforeHeadClose(output, baseStyles)
   }
 
   // Process animation directives
@@ -626,7 +627,7 @@ export function processAnimationDirectives(
     const hasObserverScript = output.includes('Intersection Observer for scroll animations')
     if (!hasObserverScript) {
       const observerScript = generateIntersectionObserverScript()
-      const aniBodyIdx = output.lastIndexOf('</body>')
+      const aniBodyIdx = bodyCloseIndex(output)
       if (aniBodyIdx !== -1) { output = output.slice(0, aniBodyIdx) + observerScript + '\n' + output.slice(aniBodyIdx) }
     }
   }

@@ -1,3 +1,4 @@
+import { bodyCloseIndex } from './document-tags'
 /* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Hot Reload Module
@@ -491,7 +492,7 @@ export function injectHotReload(html: string, wsPort: number, options: HotReload
   const script = generateHotReloadScript(wsPort, options)
 
   // Inject before the LAST </body>
-  const bodyIdx = html.lastIndexOf('</body>')
+  const bodyIdx = bodyCloseIndex(html)
   if (bodyIdx !== -1) {
     return html.slice(0, bodyIdx) + script + html.slice(bodyIdx)
   }

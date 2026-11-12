@@ -13,6 +13,7 @@
  * @module production-build
  */
 
+import { bodyCloseIndex, insertBeforeHeadClose } from './document-tags'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs'
 import { basename, dirname, extname, join, relative, resolve } from 'node:path'
@@ -579,7 +580,7 @@ export class ProductionBuild {
         sources: [filePath],
       })
 
-      const pbBodyIdx = output.lastIndexOf('</body>')
+      const pbBodyIdx = bodyCloseIndex(output)
       if (pbBodyIdx !== -1) { output = output.slice(0, pbBodyIdx) + `<script src="${this.config.publicPath}${scriptFile}"></script>\n` + output.slice(pbBodyIdx) }
     }
 
@@ -601,7 +602,7 @@ export class ProductionBuild {
         sources: [filePath],
       })
 
-      output = output.replace('</head>', `<link rel="stylesheet" href="${this.config.publicPath}${styleFile}">\n</head>`)
+      output = insertBeforeHeadClose(output, `<link rel="stylesheet" href="${this.config.publicPath}${styleFile}">`)
     }
 
     return output

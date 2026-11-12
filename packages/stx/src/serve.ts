@@ -5,7 +5,7 @@
  * Designed to be used by documentation systems like BunPress
  */
 
-import { insertBeforeBodyClose } from './body-close'
+import { insertBeforeBodyClose } from './document-tags'
 import type { Server } from 'bun'
 import type { StxOptions } from './types'
 import { serve as bunServe } from 'bun'

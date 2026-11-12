@@ -22,6 +22,7 @@
  * </button>
  */
 
+import { bodyCloseIndex } from './document-tags'
 import * as crypto from 'node:crypto'
 
 interface BindingInfo {
@@ -440,7 +441,7 @@ export function processTemplateBindings(html: string): string {
   const runtime = generateBindingsRuntime(bindings, stores)
 
   // Insert runtime before the LAST </body> tag (earlier ones may be inside scripts)
-  const bodyIdx = processedHtml.lastIndexOf('</body>')
+  const bodyIdx = bodyCloseIndex(processedHtml)
   if (bodyIdx !== -1) {
     return processedHtml.slice(0, bodyIdx) + runtime + processedHtml.slice(bodyIdx)
   }

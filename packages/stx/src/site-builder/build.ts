@@ -1,5 +1,5 @@
 import { Glob } from 'bun'
-import { insertBeforeBodyClose } from '../body-close'
+import { insertBeforeBodyClose } from '../document-tags'
 import {
   cpSync,
   existsSync,

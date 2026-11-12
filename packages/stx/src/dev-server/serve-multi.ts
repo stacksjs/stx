@@ -1,4 +1,5 @@
 // @ts-nocheck - Skip type checking due to HeadersInit type constraints
+import { insertBeforeHeadClose } from '../document-tags'
 import type { BunPlugin } from 'bun'
 import type { SyntaxHighlightTheme } from '../types'
 import type { DevServerOptions } from './types'
@@ -563,7 +564,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
               // Inject params as a global variable before </head> or at start of <body>
               const paramScript = `<script>window.__routeParams = ${JSON.stringify(params)};</script>`
               if (content.includes('</head>')) {
-                content = content.replace('</head>', `${paramScript}\n</head>`)
+                content = insertBeforeHeadClose(content, paramScript)
               }
               else {
                 content = paramScript + content
@@ -583,7 +584,7 @@ export async function serveMultipleStxFiles(filePaths: string[], options: DevSer
         return injectCss(routeMatched.content).then(content => {
           // Inject stx client helpers (formatters, badge system, detail panel builder, etc.)
           if (content.includes('</head>')) {
-            content = content.replace('</head>', `${stxClientHelpers}\n</head>`)
+            content = insertBeforeHeadClose(content, stxClientHelpers)
           }
           return new Response(content, {
             headers: {

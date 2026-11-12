@@ -6,7 +6,7 @@
 
 // Explicit re-exports to resolve wildcard ambiguities
 export { type BuildResult } from './build-optimizer'
-export { insertBeforeBodyClose } from './body-close'
+export { bodyCloseIndex, headCloseIndex, insertBeforeBodyClose, insertBeforeHeadClose } from './document-tags'
 export { useServerData } from './server-data'
 export { useRuntimeConfig, useServerRuntimeConfig } from './runtime-config-server'
 export type { RuntimeConfigDefaults, PublicRuntimeConfig } from './runtime-config-types'

@@ -25,7 +25,7 @@
  * ```
  */
 
-import { insertBeforeBodyClose } from './body-close'
+import { insertBeforeBodyClose } from './document-tags'
 import { dirname, resolve } from 'node:path'
 import { defaultConfig } from './config'
 import { extractVariables } from './variable-extractor'

@@ -18,7 +18,7 @@
  * the inline scripts survive into the final HTML.
  */
 
-import { insertBeforeBodyClose } from '../body-close'
+import { insertBeforeBodyClose } from '../document-tags'
 import type { SiteConfig } from './types'
 import { COLOR_MODE_BOOT_MARKER } from '../color-mode-boot'
 

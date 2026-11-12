@@ -8,6 +8,7 @@
  * @module process
  */
 
+import { bodyCloseIndex, headCloseIndex, insertBeforeHeadClose } from './document-tags'
 import type { StxOptions } from './types'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -2390,7 +2391,7 @@ async function processOtherDirectives(
     }
 
     if (/<\/head>/i.test(html))
-      return html.replace(/<\/head>/i, `${snippet}\n</head>`)
+      return insertBeforeHeadClose(html, snippet)
     if (/<head\b[^>]*>/i.test(html))
       return html.replace(/(<head\b[^>]*>)/i, `$1\n${snippet}`)
     // Full HTML document with no <head> — e.g. a named layout that emitted
@@ -2461,7 +2462,7 @@ async function processOtherDirectives(
     // Inject in head before other scripts, or at start of body
     if (output.includes('</head>')) {
       // Find the first <script in the head section and insert runtime before it
-      const headEndPos = output.indexOf('</head>')
+      const headEndPos = headCloseIndex(output)
       const headSection = output.slice(0, headEndPos)
       const firstScriptPos = headSection.indexOf('<script')
 
@@ -2473,7 +2474,7 @@ async function processOtherDirectives(
       }
 else {
         // No scripts in head, insert before </head>
-        output = output.replace('</head>', `${runtimeScript}\n</head>`)
+        output = insertBeforeHeadClose(output, runtimeScript)
       }
     }
 else if (output.includes('<body')) {
@@ -2612,7 +2613,7 @@ else {
       if (script) {
         // lastIndexOf, never replace: an earlier `</body>` can sit inside a
         // script's string content (CLAUDE.md item 24).
-        const bodyIdx = output.lastIndexOf('</body>')
+        const bodyIdx = bodyCloseIndex(output)
         output = bodyIdx === -1 ? output + script : output.slice(0, bodyIdx) + script + '\n' + output.slice(bodyIdx)
       }
       context.__stx_event_bindings = []

@@ -10,7 +10,7 @@
  * site-builder doesn't pull it in for non-SPA builds.
  */
 
-import { insertBeforeBodyClose } from '../body-close'
+import { insertBeforeBodyClose } from '../document-tags'
 import type { SiteRouterOptions } from './types'
 
 export type RouterOptions = SiteRouterOptions
