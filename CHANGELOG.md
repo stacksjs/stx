@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.865...v0.2.866)
+
+## ✨ Features
+
+- **native**: open a floating column's menu beside it, and give the action that is on a class ([59751e5](https://github.com/stacksjs/stx/commit/59751e5)) _(by Chris)_
+
+## 🐛 Bug Fixes
+
+- **serve**: resolve the native primitives on a served page, and name a floating group for all it holds ([3cf71ba](https://github.com/stacksjs/stx/commit/3cf71ba)) _(by Chris)_
+- **components**: make PreviewFrame's scheme reach the page in WebKit (#2186) ([6751442](https://github.com/stacksjs/stx/commit/6751442)) _(by glennmichael123)_ ([#2186](https://github.com/stacksjs/stx/issues/2186))
+
+## Contributors
+
+- _Chris_
+- _glennmichael123_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.864...v0.2.865)
 
 ## 🔧 Chores
