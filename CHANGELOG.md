@@ -1,5 +1,15 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.864...v0.2.865)
+
+## 🔧 Chores
+
+- release v0.2.865 ([4ecdf53](https://github.com/stacksjs/stx/commit/4ecdf53)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.863...v0.2.864)
 
 ## ✨ Features
