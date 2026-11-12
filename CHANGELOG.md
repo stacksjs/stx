@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.857...v0.2.858)
+
+## 🐛 Bug Fixes
+
+- **bun-plugin**: render entrypoints before the bundler starts, so a cold client bundle cannot deadlock the build ([e9b37d7](https://github.com/stacksjs/stx/commit/e9b37d7)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.858 ([f00c752](https://github.com/stacksjs/stx/commit/f00c752)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.856...v0.2.857)
 
 ## 💄 Styles
