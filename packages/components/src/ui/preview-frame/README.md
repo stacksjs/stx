@@ -23,10 +23,12 @@ The markup goes into an `<iframe srcdoc>` with a `sandbox` attribute.
   navigation and popups are never granted. Links are sent to a new window,
   which the sandbox refuses, so a click cannot navigate the preview away.
 - **Colour scheme.** The scheme is set on the frame element, as its
-  `color-scheme`, on the host's side. An engine that hands a frame's
-  `color-scheme` to the page inside gives that page its
-  `prefers-color-scheme` from it, with no script and no cooperation, and a
-  change does not reload it. Chromium does. WebKit does not: see Limits.
+  `color-scheme`, on the host's side. Chromium hands a frame's `color-scheme`
+  to the page inside as its `prefers-color-scheme`, so there the page follows
+  with no script and no cooperation, and a change does not reload it. WebKit
+  (Safari, and a Craft window, which is a WKWebView) does not, so there the
+  scheme is written into the document instead: see Limits. Which of the two
+  an engine does is asked of it once, with a frame of the host's own.
 - **Viewport.** The frame is laid out at the device's real size and drawn
   smaller to fit, so the page's own media queries see 390 pixels for a phone
   whatever the box is. It is never enlarged.
@@ -103,13 +105,13 @@ the ground a device sits on), `--stx-preview-line` (`line`),
   its title or its errors. With `scripts` on, a page can `postMessage` its
   parent and the host can listen for it.
 - **No device chrome, pixel ratio or touch emulation.** A viewport is a size.
-- **The scheme reaches the page only where the engine passes it on.** In
-  Chromium the page's `prefers-color-scheme` follows the frame, and a change
-  fires the page's `change` listeners. In WebKit (Safari, and a Craft window,
-  which is a WKWebView) the page always sees the system scheme: measured on
-  macOS 26.3.1, a frame drawn `light` on a dark system reported dark at load
-  and 1.5 seconds later, and a page that declares both schemes was still drawn
-  dark. There the `scheme` prop, the toolbar button and the `@scheme` event
-  change the frame element and nothing inside it. A preview that has to show
-  one scheme on every engine needs markup that does not depend on the media
-  query (stacksjs/stx#2186).
+- **In WebKit the scheme is written into the page, with what that costs.**
+  Every `(prefers-color-scheme: …)` in the markup's style sheets, `media`
+  attributes and scripts is settled to the scheme asked for, and the root is
+  given that `color-scheme`. So: a change of scheme loads the page again
+  (its scroll position and anything typed into it are lost, and `@load` fires
+  again); a style sheet the page fetches from elsewhere is not rewritten and
+  still follows the system; and a script sees a `matchMedia` that never
+  changes. A preview left on `auto` under a host with no `dark` or `light`
+  class is not touched: its page follows the system by itself. Chromium needs
+  none of this and gets none of it (stacksjs/stx#2186).

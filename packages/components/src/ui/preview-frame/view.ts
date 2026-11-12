@@ -45,6 +45,41 @@ export interface PreviewFrameCallbacks {
 
 const STAGE_PADDING = 16
 
+const PREFERS_DARK = '(prefers-color-scheme: dark)'
+let framesFollow: boolean | undefined
+
+/**
+ * Whether this engine hands a frame's `color-scheme` to the page inside it.
+ *
+ * Asked of the engine once, with a frame of this page's own origin drawn in
+ * the scheme the system does not prefer: its page either reports that scheme
+ * (Chromium) or the system's (WebKit). An environment with no layout to ask,
+ * a DOM emulator, is taken at its word and left alone.
+ */
+export function framePassesColorScheme(): boolean {
+  if (framesFollow !== undefined)
+    return framesFollow
+  try {
+    if (typeof matchMedia !== 'function' || !document.body)
+      return true
+    const systemDark = matchMedia(PREFERS_DARK).matches
+    const probe = document.createElement('iframe')
+    probe.setAttribute('aria-hidden', 'true')
+    probe.tabIndex = -1
+    probe.style.cssText = `position:absolute;width:1px;height:1px;border:0;opacity:0;pointer-events:none;color-scheme:${systemDark ? 'light' : 'dark'}`
+    document.body.appendChild(probe)
+    // Read after a layout, which is when the frame's style is settled.
+    void probe.offsetWidth
+    const seen = probe.contentWindow?.matchMedia?.(PREFERS_DARK).matches
+    probe.remove()
+    framesFollow = typeof seen === 'boolean' ? seen !== systemDark : true
+  }
+  catch {
+    framesFollow = true
+  }
+  return framesFollow
+}
+
 export class PreviewFrameView {
   private html: string
   private viewportName: string
@@ -58,6 +93,8 @@ export class PreviewFrameView {
   private viewport: ResolvedViewport
   private scale = 1
   private frame: HTMLIFrameElement | null = null
+  /** The scheme written into the document on show, where the engine needs it written. */
+  private written: 'light' | 'dark' | undefined
   private readonly stage: HTMLElement
   private readonly device: HTMLElement
   private observer: ResizeObserver | null = null
@@ -142,7 +179,12 @@ export class PreviewFrameView {
     if (next === this.scheme)
       return
     this.scheme = next
-    this.applyScheme()
+    // Where the scheme is written into the page, a different one is a
+    // different page: it is loaded again. Elsewhere the page is told in place.
+    if (this.schemeToWrite() !== this.written)
+      this.load()
+    else
+      this.applyScheme()
     this.reflect()
     this.callbacks.onScheme?.(this.getState())
   }
@@ -199,6 +241,19 @@ export class PreviewFrameView {
     return typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   }
 
+  /**
+   * The scheme the document has to carry itself, or nothing when the engine
+   * carries it or the page already has it: a preview left on `auto` under a
+   * host with no scheme of its own follows the system, as its page does anyway.
+   */
+  private schemeToWrite(): 'light' | 'dark' | undefined {
+    if (framePassesColorScheme())
+      return undefined
+    if (this.scheme === 'auto' && !this.root.closest('.dark, .light'))
+      return undefined
+    return this.effectiveScheme()
+  }
+
   private load(): void {
     const frame = document.createElement('iframe')
     // Written before the frame is in the document and before it has content:
@@ -212,7 +267,8 @@ export class PreviewFrameView {
       if (frame === this.frame)
         this.callbacks.onLoad?.(this.getState())
     })
-    frame.srcdoc = buildDocument(this.html, { title: this.title })
+    this.written = this.schemeToWrite()
+    frame.srcdoc = buildDocument(this.html, { title: this.title, forceScheme: this.written })
 
     this.frame?.remove()
     this.frame = frame
@@ -225,8 +281,9 @@ export class PreviewFrameView {
    * The scheme is set here, on the host's side, as the frame element's
    * `color-scheme`. Chromium hands that to the page as its
    * `prefers-color-scheme`, so the page follows with no script and no
-   * cooperation. WebKit does not hand it over: there the page keeps the
-   * system's scheme whatever is set here (stacksjs/stx#2186).
+   * cooperation. WebKit does not hand it over, so there the scheme is also
+   * written into the document when it is loaded (`schemeToWrite`,
+   * stacksjs/stx#2186).
    */
   private applyScheme(): void {
     const scheme = this.effectiveScheme()

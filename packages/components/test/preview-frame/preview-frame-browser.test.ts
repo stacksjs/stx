@@ -24,7 +24,7 @@ let page: BrowserPage
  */
 const REPORT = `<p id="p">hello</p><script>
   const attempt = fn => { try { return String(fn()) } catch (e) { return 'blocked' } }
-  addEventListener('load', () => setTimeout(() => parent.postMessage({
+  const say = () => parent.postMessage({
     from: NAME,
     dark: matchMedia('(prefers-color-scheme: dark)').matches,
     width: innerWidth,
@@ -34,9 +34,13 @@ const REPORT = `<p id="p">hello</p><script>
     ownStorage: attempt(() => localStorage.length),
     hostSecret: attempt(() => parent.secret),
     cookie: attempt(() => document.cookie),
-  }, '*'), 60))
+  }, '*')
+  addEventListener('load', () => setTimeout(say, 60))
+  // And a word of its own when the scheme changes under it, where an engine
+  // does that: not a second report, which the loading cases count.
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => parent.postMessage({ from: NAME + ':scheme', dark: event.matches }, '*'))
 </script>`
-const report = (name: string): string => REPORT.replace('NAME', JSON.stringify(name))
+const report = (name: string): string => REPORT.replaceAll('NAME', JSON.stringify(name))
 
 const HELPERS = `
   ${EVENTS}
@@ -123,43 +127,39 @@ describe('isolation', () => {
 
 describe('the colour scheme', () => {
   /*
-   * What the page inside reports is the engine's doing, and the two engines
-   * this suite runs in do different things (stacksjs/stx#2186).
+   * A frame asked for one scheme holds a page that sees that scheme, on a
+   * machine set to either (stacksjs/stx#2186).
    *
-   * Chromium hands a frame's `color-scheme` to its page, so a frame drawn dark
-   * holds a page that prefers dark. WebKit does not: the page keeps the
-   * system's scheme whatever its frame is drawn with. Written as one
-   * expectation, this case passed or failed by the appearance of the machine
-   * it ran on (a Mac set to dark agreed with the dark frame and not the light
-   * one) and never ran in WebKit on CI at all.
-   *
-   * So each engine is held to what it does. If WebKit starts passing the
-   * scheme on, its half fails, and the README's limit can come out.
+   * Chromium hands a frame's `color-scheme` to its page. WebKit does not, so
+   * there the scheme is written into the document. This suite runs WebKit on a
+   * Mac and Chromium on CI, and the two frames are asked for opposite schemes,
+   * so on any machine one of them disagrees with the system: the case fails in
+   * an engine where the scheme does not arrive, whichever way the machine is
+   * set. It used to pass or fail by that setting.
    */
-  const pageSees = async (forced: boolean): Promise<boolean> =>
-    page.apple ? page.json<boolean>(`return matchMedia('(prefers-color-scheme: dark)').matches`) : forced
-
-  it('is drawn on the frame, and reaches the page where the engine passes it on', async () => {
+  it('reaches the page as prefers-color-scheme', async () => {
     const result = await page.json(on(`return { scripted: last('scripted').dark, phone: last('phone').dark, style: frame('scripted').style.colorScheme, phoneStyle: frame('phone').style.colorScheme, attr: host('scripted').getAttribute('data-scheme'), phoneAttr: host('phone').getAttribute('data-scheme') }`))
 
-    // The host's side is the component's own, and the same in every engine.
-    expect(result).toMatchObject({ style: 'dark', attr: 'dark', phoneStyle: 'light', phoneAttr: 'light' })
-    // The page's side: forced where the engine allows it, the system's where not.
-    expect({ scripted: result.scripted, phone: result.phone }).toEqual({ scripted: await pageSees(true), phone: await pageSees(false) })
+    expect(result).toEqual({ scripted: true, phone: false, style: 'dark', phoneStyle: 'light', attr: 'dark', phoneAttr: 'light' })
   })
 
-  it('changes without reloading the page when the prop changes', async () => {
+  it('changes when the prop changes, without reloading the page where the engine allows it', async () => {
     const result = await page.json(on(`
       const before = frame('scripted')
-      window.schemeChanges = []
-      // The page itself is told: its media query changes under it.
+      const loads = probe.events.load.length
       probe.scheme.set('light')
-      return later(() => ({ same: frame('scripted') === before, style: frame('scripted').style.colorScheme, event: probe.events.scheme.slice(-1)[0] }), 80)
+      // Whichever the page said last: that its scheme changed, or, loaded again, what it sees.
+      const sees = () => window.messages.filter(m => m.from === 'scripted' || m.from === 'scripted:scheme').slice(-1)[0].dark
+      return later(() => ({ same: frame('scripted') === before, loaded: probe.events.load.length - loads, page: sees(), style: frame('scripted').style.colorScheme, event: probe.events.scheme.slice(-1)[0] }), 400)
     `))
 
-    expect(result.same).toBe(true)
+    // The page sees the new scheme, in every engine.
+    expect(result.page).toBe(false)
     expect(result.style).toBe('light')
     expect(result.event).toMatchObject({ scheme: 'light', effectiveScheme: 'light' })
+    // Chromium tells the page in place: the same frame, its media query
+    // changed under it. WebKit has to be given the page again.
+    expect({ same: result.same, loaded: result.loaded }).toEqual(page.apple ? { same: false, loaded: 1 } : { same: true, loaded: 0 })
   })
 
   it('toggles from the toolbar, and says which it is', async () => {
@@ -174,7 +174,7 @@ describe('the colour scheme', () => {
 
     expect(result.before).toEqual({ pressed: 'false', text: 'Light' })
     expect(result.after).toEqual({ pressed: 'true', text: 'Dark', style: 'dark', label: 'Dark colour scheme' })
-    expect(result.page).toBe(await pageSees(true))
+    expect(result.page).toBe(true)
   })
 
   it('follows a dark host page when left on auto', async () => {

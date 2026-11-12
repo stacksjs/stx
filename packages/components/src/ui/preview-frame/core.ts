@@ -146,6 +146,51 @@ const HAS_COLOR_SCHEME = /<meta[^>]+name\s*=\s*["']?color-scheme/i
 export interface DocumentOptions {
   /** The title of a document built around a fragment. */
   title?: string
+  /**
+   * Write this scheme into the document, for an engine that does not hand a
+   * frame's `color-scheme` to the page inside it. See `forceColorScheme`.
+   */
+  forceScheme?: 'light' | 'dark'
+}
+
+const SCHEME_FEATURE = /\(\s*prefers-color-scheme\s*:\s*(light|dark)\s*\)/gi
+const STYLE_OR_SCRIPT = /(<(style|script)\b[^>]*>)([\s\S]*?)(<\/\2\s*>)/gi
+const MEDIA_ATTRIBUTE = /(\smedia\s*=\s*)("[^"]*"|'[^']*')/gi
+/** Always true, and always false in any frame wide enough to show a page. */
+const ALWAYS = '(min-width: 0px)'
+const NEVER = '(max-width: 0px)'
+
+/**
+ * A document that answers for one colour scheme whatever the system prefers.
+ *
+ * Chromium hands a frame's `color-scheme` to its page; WebKit does not, so in
+ * Safari and in a Craft window the page keeps the system's scheme and a
+ * preview asked for `light` on a dark Mac was drawn dark (stacksjs/stx#2186).
+ * Nothing set on the frame from outside reaches a sandboxed page there, so the
+ * scheme is written into the page instead:
+ *
+ * - every `(prefers-color-scheme: …)` in a style sheet, a `media` attribute or
+ *   a script is replaced by a condition that is always true or always false,
+ *   so the page's own rules, and a `matchMedia` it calls, answer for the
+ *   scheme asked for;
+ * - the root is given that `color-scheme`, so the canvas, form controls,
+ *   system colours and `light-dark()` follow it too.
+ *
+ * Text is left alone: a page that shows the words "prefers-color-scheme" to
+ * its reader keeps them. A style sheet the page loads from elsewhere is not
+ * rewritten, since only the markup is in hand.
+ */
+export function forceColorScheme(html: string, scheme: 'light' | 'dark'): string {
+  const settle = (text: string): string => text.replace(SCHEME_FEATURE, (_, asked: string) => asked.toLowerCase() === scheme ? ALWAYS : NEVER)
+  const rewritten = html
+    .replace(STYLE_OR_SCRIPT, (_, open: string, _tag: string, body: string, close: string) => open + settle(body) + close)
+    .replace(MEDIA_ATTRIBUTE, (_, name: string, value: string) => name + settle(value))
+  const rule = `<style data-stx-preview-scheme>:root{color-scheme:${scheme} !important}</style>`
+  if (HEAD_OPEN.test(rewritten))
+    return rewritten.replace(HEAD_OPEN, match => match + rule)
+  if (HTML_OPEN.test(rewritten))
+    return rewritten.replace(HTML_OPEN, match => `${match}<head>${rule}</head>`)
+  return rule + rewritten
 }
 
 function escapeHtml(text: string): string {
@@ -165,6 +210,11 @@ function escapeHtml(text: string): string {
  * click cannot navigate the preview away from what is being previewed.
  */
 export function buildDocument(html: string | null | undefined, options: DocumentOptions = {}): string {
+  const built = wrapDocument(html, options)
+  return options.forceScheme ? forceColorScheme(built, options.forceScheme) : built
+}
+
+function wrapDocument(html: string | null | undefined, options: DocumentOptions): string {
   const source = html == null ? '' : String(html)
   const base = '<base target="_blank">'
 

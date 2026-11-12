@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { buildDocument, declaresColorScheme, describeViewport, fitScale, FORBIDDEN_SANDBOX_TOKENS, isIsolatingSandbox, normalizeScheme, resolveViewport, sandboxValue, stepViewport, VIEWPORT_PRESETS } from '../../src/ui/preview-frame/core'
+import { buildDocument, declaresColorScheme, describeViewport, fitScale, forceColorScheme, FORBIDDEN_SANDBOX_TOKENS, isIsolatingSandbox, normalizeScheme, resolveViewport, sandboxValue, stepViewport, VIEWPORT_PRESETS } from '../../src/ui/preview-frame/core'
 
 describe('viewports', () => {
   it('knows a phone, a tablet and a desktop', () => {
@@ -136,5 +136,62 @@ describe('the colour scheme', () => {
     expect(normalizeScheme('dark')).toBe('dark')
     for (const value of ['auto', '', 'sepia', null, undefined, true])
       expect(normalizeScheme(value)).toBe('auto')
+  })
+})
+
+/*
+ * For an engine that does not hand a frame's colour scheme to its page
+ * (WebKit, stacksjs/stx#2186): the scheme is written into the document.
+ */
+describe('a scheme written into the document', () => {
+  const page = `<!doctype html><html><head><title>Mail</title><style>
+body { color: black }
+@media (prefers-color-scheme: dark) { body { color: white } }
+@media screen and (Prefers-Color-Scheme:light) { a { color: blue } }
+@media not (prefers-color-scheme: dark) { p { margin: 0 } }
+</style><link rel="stylesheet" href="dark.css" media="(prefers-color-scheme: dark)"></head><body>
+<p>Styles under (prefers-color-scheme: dark) apply at night.</p>
+<picture><source srcset="night.png" media='(prefers-color-scheme: dark)'><img src="day.png" alt=""></picture>
+<script>const night = matchMedia('(prefers-color-scheme: dark)').matches</script>
+</body></html>`
+
+  it('settles every scheme condition in styles, media attributes and scripts', () => {
+    const dark = forceColorScheme(page, 'dark')
+    expect(dark).toContain('@media (min-width: 0px) { body { color: white } }')
+    expect(dark).toContain('@media screen and (max-width: 0px) { a { color: blue } }')
+    expect(dark).toContain('@media not (min-width: 0px) { p { margin: 0 } }')
+    expect(dark).toContain('href="dark.css" media="(min-width: 0px)"')
+    expect(dark).toContain(`media='(min-width: 0px)'`)
+    expect(dark).toContain(`matchMedia('(min-width: 0px)').matches`)
+
+    const light = forceColorScheme(page, 'light')
+    expect(light).toContain('@media (max-width: 0px) { body { color: white } }')
+    expect(light).toContain('@media screen and (min-width: 0px) { a { color: blue } }')
+    expect(light).toContain('@media not (max-width: 0px) { p { margin: 0 } }')
+    expect(light).toContain(`matchMedia('(max-width: 0px)').matches`)
+  })
+
+  it('leaves what the reader is shown as it was written', () => {
+    expect(forceColorScheme(page, 'dark')).toContain('<p>Styles under (prefers-color-scheme: dark) apply at night.</p>')
+  })
+
+  it('gives the root that scheme, ahead of anything the page says', () => {
+    const rule = '<style data-stx-preview-scheme>:root{color-scheme:dark !important}</style>'
+    expect(forceColorScheme(page, 'dark')).toContain(`<head>${rule}<title>Mail</title>`)
+    expect(forceColorScheme('<html><body>x</body></html>', 'dark')).toBe(`<html><head>${rule}</head><body>x</body></html>`)
+    expect(forceColorScheme('<p>x</p>', 'light')).toBe('<style data-stx-preview-scheme>:root{color-scheme:light !important}</style><p>x</p>')
+  })
+
+  it('is what buildDocument does when asked, and only then', () => {
+    const fragment = '<style>@media (prefers-color-scheme: dark) { p { color: white } }</style><p>Hi</p>'
+    expect(buildDocument(fragment)).toContain('(prefers-color-scheme: dark)')
+    expect(buildDocument(fragment)).not.toContain('data-stx-preview-scheme')
+
+    const forced = buildDocument(fragment, { forceScheme: 'light' })
+    expect(forced).toContain('@media (max-width: 0px) { p { color: white } }')
+    expect(forced).toContain(':root{color-scheme:light !important}')
+    // The wrapper's own declaration stays; the forced rule outranks it.
+    expect(forced).toContain('<meta name="color-scheme" content="light dark">')
+    expect(forced).toContain('<base target="_blank">')
   })
 })
