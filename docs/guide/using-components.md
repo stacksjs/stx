@@ -246,7 +246,7 @@ Generated from component source. `Props` lists each prop with its default; `Emit
 | `<Switch>` | `checked` (`false`), `disabled` (`false`), `size` (`'md'`), `className` (`''`), `label` (`''`) | `@change` | — |
 | `<TextInput>` | `value` (`''`), `placeholder` (`''`), `disabled` (`false`), `readonly` (`false`), `size` (`'md'`), `error` (`false`), `label` (`''`), `helperText` (`''`), +17 more | `@input`, `@clear` | — |
 | `<Textarea>` | `value` (`''`), `placeholder` (`''`), `disabled` (`false`), `readonly` (`false`), `rows` (`4`), `autoResize` (`false`), `maxRows` (`10`), `error` (`false`), +7 more | `@input` | — |
-| `<CodeEditor>` | `value` (`''`), `language` (`'typescript'`), `readonly` (`false`), `disabled` (`false`), `lineNumbers` (`true`), `highlight` (`true`), `tabSize` (`2`), `insertSpaces` (`true`), +16 more | `@input`, `@change`, `@selection`, `@run`, `@run-selection`, `@complete`, `@completion-accept`, `@ghost`, `@focus`, `@blur` | — |
+| `<CodeEditor>` | `value` (`''`), `language` (`'typescript'`), `readonly` (`false`), `disabled` (`false`), `lineNumbers` (`true`), `highlight` (`true`), `tabSize` (`2`), `insertSpaces` (`true`), +19 more | `@input`, `@change`, `@selection`, `@run`, `@run-selection`, `@complete`, `@completion-accept`, `@hover`, `@signature`, `@ghost`, `@focus`, `@blur` | — |
 
 ### Buttons & actions
 

@@ -56,7 +56,10 @@ mounts an editor itself.
 | `tabSize` | `2` | |
 | `insertSpaces` | `true` | Indent with spaces rather than tab characters. |
 | `autoComplete` | `true` | Offer completions while typing, not only on Ctrl+Space. |
-| `completions` | `[]` | Names always on offer: `{ label, insert?, detail?, kind?, filterText?, boost? }`. |
+| `completions` | `[]` | Names always on offer: `{ label, insert?, detail?, documentation?, kind?, filterText?, boost? }`. The selected row's `detail` and `documentation` are shown in full under the list. |
+| `hover` | `true` | Ask for a hover (`@hover`) when the pointer rests on a word. |
+| `hoverDelay` | `300` | Milliseconds the pointer has to be still first. |
+| `signatureHelp` | `true` | Ask for signature help (`@signature`) after `(` and `,` inside a call. |
 | `widgets` | `[]` | Shown beside lines: `{ line, column?, text, kind?, className? }`. `column` defaults to the end of the line. |
 | `diagnostics` | `[]` | `{ from: { line, column }, to: { line, column }, message, severity? }`. Drawn as a squiggle, marked in the gutter, and said after the line. |
 | `inlineDiagnostics` | `true` | Show each diagnostic's message after its line. |
@@ -78,6 +81,8 @@ Lines and columns are zero-based everywhere, as a language server counts them.
 | `@run-selection` | `{ text, from, to, line, selected }`. With Shift. The caret's line when nothing is selected. |
 | `@complete` | `{ query, from, to, line, column, textBefore, explicit, trigger }`. Answer by calling `showCompletions(items, { from })`. |
 | `@completion-accept` | The item taken. |
+| `@hover` | `{ line, column, from, to, word, explicit }`. The pointer rested on a word, or Cmd/Ctrl+I was pressed (`explicit`). `line` and `column` are where it points; `from` and `to` are the word's offsets. Answer by calling `showHover(content, { line, column })`. |
+| `@signature` | `{ line, column, offset, start, active, trigger, explicit }`. A `(` or a `,` was typed inside a call, or Shift+Cmd/Ctrl+Space was pressed. `start` is the offset just inside the call's parenthesis and `active` the argument index counted from the text. Answer by calling `showSignature(help)`. |
 | `@ghost` | `{ outcome: 'accept' \| 'dismiss', text }` |
 | `@focus`, `@blur` | |
 
@@ -87,7 +92,54 @@ From `componentApi(target)` (`@stacksjs/components/component-api`), where
 `target` is the component's element, its id or a selector: `getValue`, `setValue`, `getSelection`,
 `setSelection(anchor, head)`, `focus`, `undo`, `redo`, `exec(command)`,
 `setWidgets`, `setDiagnostics`, `setGhostText`, `showCompletions(items, { from })`,
-`closeCompletions`, and `editor()` for the controller itself.
+`closeCompletions`, `showHover(content, { line, column })`, `closeHover`,
+`showSignature(help)`, `closeSignature`, and `editor()` for the controller itself.
+
+## Type hints
+
+The editor asks; the host answers. It knows nothing about a language server,
+only when a question is worth asking and how to draw the answer.
+
+```html
+<CodeEditor @ref="editor" @hover="onHover($event)" @signature="onSignature($event)" />
+```
+
+```ts
+async function onHover(request) {
+  const hover = await language.hover(code(), request.line, request.column)
+  // Pass the position back. An answer for a word the pointer has since left
+  // is dropped, so a slow answer never lands on the wrong word.
+  api().showHover(hover, { line: request.line, column: request.column })
+}
+
+async function onSignature(request) {
+  const help = await language.signature(code(), request.line, request.column)
+  api().showSignature(help) // { label, parameters, active, documentation } or null
+}
+```
+
+**Hover.** `content` is Markdown or plain text, as a language server gives it. A
+fenced block is drawn as code, coloured in the fence's language (the editor's
+when it names none); everything else is drawn as text, as written. The hint
+sits above its word, or below when there is no room. It closes on typing, on
+scrolling, on Escape, and when the pointer rests somewhere else or leaves the
+editor; the pointer can move onto the hint to scroll it. Empty content shows
+nothing. Moving the mouse costs nothing: a position is only worked out once the
+pointer has been still for `hoverDelay`.
+
+**Signature help.** `help` is `{ label, parameters?, active?, documentation? }`.
+A parameter is its text in the label (`'id: string'`), a pair of offsets into
+the label, or `{ label, documentation? }`, which is the shape a language server
+uses. The active one is emphasised. Leave `active` out and it is counted from
+the commas typed so far; give it and it still moves on at the next comma,
+before the next answer arrives. It closes when the caret leaves the call, on
+Escape, or on `showSignature(null)`.
+
+**Keyboard.** Cmd/Ctrl+I asks for the hover at the caret, and the answer is
+also sent to the editor's status line, so a screen reader reads it. Neither
+hint takes focus, so neither can trap it. Escape closes one thing at a time:
+the completion list, then the hover, then the signature, and only then does it
+free Tab.
 
 ## Keys
 
@@ -100,6 +152,8 @@ From `componentApi(target)` (`@stacksjs/components/component-api`), where
 | Cmd/Ctrl+Enter | Run. |
 | Shift+Cmd/Ctrl+Enter | Run the selection. |
 | Ctrl+Space | Completions. |
+| Cmd/Ctrl+I | Describe the word at the caret (`showHover`). |
+| Shift+Cmd/Ctrl+Space | Signature help for the call the caret is in (`triggerSignature`). |
 | Escape, then Tab | Leave the editor. Tab indents, so this is the way out by keyboard. |
 
 In a binding, `Mod` is Command on a Mac and Control elsewhere:

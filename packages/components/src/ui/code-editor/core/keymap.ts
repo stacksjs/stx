@@ -33,6 +33,8 @@ export const defaultKeymap: Keymap = {
   'Mod-Enter': 'run',
   'Mod-Shift-Enter': 'runSelection',
   'Ctrl-Space': 'triggerCompletion',
+  'Mod-i': 'showHover',
+  'Mod-Shift-Space': 'triggerSignature',
 }
 
 const MODIFIER_ORDER = ['Ctrl', 'Alt', 'Shift', 'Meta'] as const

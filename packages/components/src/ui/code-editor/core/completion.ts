@@ -19,6 +19,8 @@ export interface CompletionItem {
   insert?: string
   /** A short note beside the label, such as a type. */
   detail?: string
+  /** A longer note, shown under the list while the item is selected. */
+  documentation?: string
   /** What sort of thing it is (`function`, `property`), for an icon or a tint. */
   kind?: string
   /** Matched instead of the label when set. */

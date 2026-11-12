@@ -1,6 +1,6 @@
-export type { CodeEditorConfig, CodeEditorHooks, CompletionRequest, PopupItem, PopupState, RunDetail, RunSelectionDetail, SelectionDetail } from './controller'
-export type { CompletionItem, Keymap, Position } from './core'
-export type { CaretAnchor, DiagnosticSeverity, EditorDiagnostic, EditorViewOptions, EditorWidget } from './view'
+export type { CodeEditorConfig, CodeEditorHooks, CompletionRequest, HoverRequest, PopupItem, PopupState, RunDetail, RunSelectionDetail, SelectionDetail, SignatureRequest } from './controller'
+export type { CompletionItem, Keymap, Position, SignatureHelp, SignatureParameter } from './core'
+export type { CaretAnchor, DiagnosticSeverity, EditorDiagnostic, EditorViewOptions, EditorWidget, HintBlock, SignatureDisplay } from './view'
 export { default as CodeEditor } from './CodeEditor.stx'
 
 export interface CodeEditorProps {
@@ -30,6 +30,12 @@ export interface CodeEditorProps {
   inlineDiagnostics?: boolean
   /** A suggestion shown at the caret. Tab takes it, Escape lets it go. */
   ghostText?: string
+  /** Ask for a hover (`@hover`) when the pointer rests on a word. Default true. */
+  hover?: boolean
+  /** Milliseconds the pointer rests before a hover is asked for. Default 300. */
+  hoverDelay?: number
+  /** Ask for signature help (`@signature`) after `(` and `,`. Default true. */
+  signatureHelp?: boolean
   /** Bindings laid over the defaults, such as `{ 'Mod-s': 'run' }`. */
   keymap?: import('./core').Keymap
   /** Pin the code colours to `light` or `dark`. Follows the page otherwise. */

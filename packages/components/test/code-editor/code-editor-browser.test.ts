@@ -109,8 +109,10 @@ const marks = state([])
 const notes = state([])
 const hint = state('')
 const names = [{ label: 'getUser' }, { label: 'getUserByEmail', detail: '(email)' }, { label: 'forget' }, { label: 'where', insert: 'where()' }]
-const events = { run: [], runSelection: [], selection: [], complete: [], ghost: [] }
-window.probe = { big, small, marks, notes, hint, events }
+const typed = state('const total = add(1, 2)\\nfunction add(a: number, b: number) {\\n  return a + b\\n}\\n')
+const documented = [{ label: 'addAll', detail: '(values: readonly number[], start?: number) => number', documentation: 'Adds every value.\\nStarts from start.' }, { label: 'addOne' }]
+const events = { run: [], runSelection: [], selection: [], complete: [], ghost: [], hover: [], signature: [] }
+window.probe = { big, small, marks, notes, hint, typed, events }
 </script>
 <div style="width: 720px; padding: 16px">
   <CodeEditor id="big" label="Big file" height="400px" v-model:value="big" />
@@ -122,6 +124,10 @@ window.probe = { big, small, marks, notes, hint, events }
 </div>
 <div style="width: 720px; padding: 16px">
   <CodeEditor id="locked" height="120px" value="const fixed = true" readonly lineNumbers="false" language="no-such-language" placeholder="Nothing here" />
+</div>
+<div style="width: 720px; padding: 16px">
+  <CodeEditor id="hints" height="200px" hoverDelay="40" v-model:value="typed" :completions="documented"
+    @hover="events.hover.push($event)" @signature="events.signature.push($event)" />
 </div>
 </body></html>`, { sample: SAMPLE }, resolve(ROOT, 'code-editor-browser.stx'), { componentsDir: resolve(ROOT, 'src/ui'), root: ROOT, cache: false, debug: false } as any, new Set())
 
@@ -136,7 +142,7 @@ window.probe = { big, small, marks, notes, hint, events }
   await view.navigate(server.url.href)
 
   for (let attempt = 0; attempt < 200; attempt++) {
-    if (await view.evaluate(`document.querySelectorAll('[data-ce-ready]').length === 3 && document.querySelectorAll('[data-ce="rows"] span').length > 0`))
+    if (await view.evaluate(`document.querySelectorAll('[data-ce-ready]').length === 4 && document.querySelectorAll('[data-ce="rows"] span').length > 0`))
       break
     await Bun.sleep(25)
   }
@@ -153,7 +159,7 @@ describe('what is drawn', () => {
   })
 
   it('mounts every editor on the page with its text in the field', async () => {
-    expect(await view.evaluate(`document.querySelectorAll('[data-ce-ready]').length`)).toBe(3)
+    expect(await view.evaluate(`document.querySelectorAll('[data-ce-ready]').length`)).toBe(4)
     expect(await value('big')).toBe(SAMPLE)
     expect(await value('locked')).toBe('const fixed = true')
   })
@@ -371,15 +377,15 @@ describe('running', () => {
 
 describe('the completion popup', () => {
   const popup = (): Promise<any> => json(on(`
-    const list = document.getElementById(field('small').getAttribute('aria-controls'))
+    const list = document.getElementById(field('small').getAttribute('aria-controls')), box = list.closest('.stx-ce-popup')
     return {
-      shown: getComputedStyle(list).display !== 'none',
+      shown: getComputedStyle(box).display !== 'none',
       labels: [...list.querySelectorAll('[role=option]')].map(o => o.querySelector('.stx-ce-option-label').textContent),
       selected: [...list.querySelectorAll('[role=option]')].findIndex(o => o.getAttribute('aria-selected') === 'true'),
       expanded: field('small').getAttribute('aria-expanded'),
       active: field('small').getAttribute('aria-activedescendant'),
-      top: list.getBoundingClientRect().top - part('small', 'region').getBoundingClientRect().top,
-      left: list.getBoundingClientRect().left - part('small', 'region').getBoundingClientRect().left,
+      top: box.getBoundingClientRect().top - part('small', 'region').getBoundingClientRect().top,
+      left: box.getBoundingClientRect().left - part('small', 'region').getBoundingClientRect().left,
     }
   `))
 
@@ -647,5 +653,345 @@ describe('two thousand lines', () => {
     expect(result.first).toContain('tok-comment')
     expect(result.first).not.toContain('tok-keyword')
     expect(result.took).toBeLessThan(100)
+  })
+})
+
+describe('type hints', () => {
+  const HOVER = '```ts\nconst total: number\n```\nThe sum of both.'
+  /** The editor's own methods, as a parent reaches them. */
+  const api = (call: string): Promise<unknown> => run(on(`
+    let host = field('hints')
+    while (host && !host.__stx_exposed) host = host.parentElement
+    host.__stx_exposed.${call}
+    return true
+  `))
+  const asked = (kind: 'hover' | 'signature'): Promise<any[]> => json(`return window.probe.events.${kind}`)
+  const wait = (): Promise<void> => Bun.sleep(140)
+
+  /** Move the pointer to a character, as the field receives it. Several at once is one sweep. */
+  const pointAt = (...points: Array<[number, number]>): Promise<unknown> => run(on(`
+    const region = part('hints', 'region').getBoundingClientRect(), m = part('hints', 'measure')
+    m.textContent = 'x'.repeat(20); const w = m.getBoundingClientRect().width / 20
+    for (const [line, column] of ${JSON.stringify(points)})
+      field('hints').dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: region.left + 12 + (column + 0.5) * w, clientY: region.top + 8 + line * 20 + 10 }))
+    return true
+  `))
+
+  const hint = (name: 'hover' | 'signature'): Promise<any> => json(on(`
+    const box = part('hints', '${name}'), region = part('hints', 'region').getBoundingClientRect(), r = box.getBoundingClientRect()
+    const m = part('hints', 'measure'); m.textContent = 'x'.repeat(20); const w = m.getBoundingClientRect().width / 20
+    const code = box.querySelector('.stx-ce-hint-code'), text = box.querySelector('.stx-ce-hint-text'), active = box.querySelector('.stx-ce-signature-active')
+    return {
+      shown: getComputedStyle(box).display !== 'none', role: box.getAttribute('role'), placement: box.dataset.placement || '',
+      code: code ? code.textContent : '', html: code ? code.innerHTML : '', text: text ? text.textContent : '',
+      label: box.querySelector('.stx-ce-signature-label') ? box.querySelector('.stx-ce-signature-label').textContent : '', active: active ? active.textContent : '',
+      top: r.top - region.top, bottom: r.bottom - region.top, column: (r.left - region.left - 12) / w,
+      focusable: box.matches('[tabindex], a, button, input, textarea') || box.querySelector('[tabindex], a, button, input, textarea') !== null,
+      status: part('hints', 'status').textContent,
+      background: getComputedStyle(box).backgroundColor, family: getComputedStyle(box).fontFamily === getComputedStyle(field('hints')).fontFamily,
+    }
+  `))
+
+  describe('hover', () => {
+    it('asks about the word the pointer has come to rest on', async () => {
+      await pointAt([0, 8])
+      await wait()
+
+      expect(await asked('hover')).toEqual([{ line: 0, column: 8, from: 6, to: 11, word: 'total', explicit: false }])
+    })
+
+    it('does not ask again while the pointer stays on that word', async () => {
+      await pointAt([0, 9])
+      await wait()
+      await pointAt([0, 7])
+      await wait()
+
+      expect(await asked('hover')).toHaveLength(1)
+    })
+
+    it('draws the answer under its word: the fence as coloured code, the rest as text', async () => {
+      await api(`showHover(${JSON.stringify(HOVER)}, { line: 0, column: 8 })`)
+      await settle()
+      const shown = await hint('hover')
+
+      expect(shown.shown).toBe(true)
+      expect(shown.role).toBe('tooltip')
+      expect(shown.code).toBe('const total: number')
+      expect(shown.html).toContain('<span class="tok-keyword">const</span>')
+      expect(shown.text).toBe('The sum of both.')
+      // The first line has no room above it, so the hint hangs below, starting
+      // at the word's first character.
+      expect(shown.placement).toBe('below')
+      expect(shown.top).toBe(8 + 20)
+      expect(shown.column).toBeCloseTo(6, 1)
+      expect(shown.family).toBe(true)
+    })
+
+    it('takes its surface from the theme, and cannot take the focus', async () => {
+      const shown = await hint('hover')
+
+      expect(shown.background).not.toMatch(/rgba\(0, 0, 0, 0\)|transparent/)
+      expect(shown.focusable).toBe(false)
+    })
+
+    it('a sweep across the line asks once, where it stopped', async () => {
+      await pointAt([0, 1], [0, 8], [1, 2], [1, 10], [0, 15])
+      await wait()
+      const requests = await asked('hover')
+
+      expect(requests).toHaveLength(2)
+      expect(requests[1]).toEqual({ line: 0, column: 15, from: 14, to: 17, word: 'add', explicit: false })
+      // The hint for the word it left is gone while the new one is asked for.
+      expect((await hint('hover')).shown).toBe(false)
+    })
+
+    it('drops an answer for a word the pointer has left', async () => {
+      await api(`showHover(${JSON.stringify(HOVER)}, { line: 0, column: 8 })`)
+      await settle()
+      expect((await hint('hover')).shown).toBe(false)
+
+      await api(`showHover('function add(a: number, b: number): number', { line: 0, column: 15 })`)
+      await settle()
+      const shown = await hint('hover')
+
+      expect(shown.shown).toBe(true)
+      expect(shown.text).toBe('function add(a: number, b: number): number')
+      expect(shown.column).toBeCloseTo(14, 1)
+    })
+
+    it('closes when the pointer rests on nothing, and asks nothing', async () => {
+      await pointAt([0, 40])
+      await wait()
+
+      expect((await hint('hover')).shown).toBe(false)
+      expect(await asked('hover')).toHaveLength(2)
+    })
+
+    it('closes when the pointer leaves the editor', async () => {
+      await pointAt([1, 10])
+      await wait()
+      await api(`showHover('function add', { line: 1, column: 10 })`)
+      await settle()
+      expect((await hint('hover')).shown).toBe(true)
+
+      await run(on(`root('hints').dispatchEvent(new MouseEvent('mouseleave')); return true`))
+      expect((await hint('hover')).shown).toBe(false)
+    })
+
+    it('stays while the pointer is over the hint itself, reading it', async () => {
+      await pointAt([0, 8])
+      await wait()
+      await api(`showHover(${JSON.stringify(HOVER)}, { line: 0, column: 8 })`)
+      await settle()
+      // On its way down the pointer crosses other text, then stops on the hint.
+      await pointAt([0, 12])
+      await run(on(`part('hints', 'hover').dispatchEvent(new MouseEvent('mouseenter')); return true`))
+      await wait()
+
+      expect((await hint('hover')).shown).toBe(true)
+      await run(on(`part('hints', 'hover').dispatchEvent(new MouseEvent('mouseleave')); return true`))
+    })
+
+    it('closes when the text is scrolled', async () => {
+      await run(on(`part('hints', 'scroller').dispatchEvent(new Event('scroll')); return true`))
+
+      expect((await hint('hover')).shown).toBe(false)
+    })
+
+    it('the keyboard asks about the word at the caret, and the answer is also read out', async () => {
+      await caretAt('hints', '9')
+      const before = (await asked('hover')).length
+      expect(await key('hints', 'i', { mod: true })).toBe(false)
+      const requests = await asked('hover')
+
+      expect(requests).toHaveLength(before + 1)
+      expect(requests.at(-1)).toEqual({ line: 0, column: 9, from: 6, to: 11, word: 'total', explicit: true })
+
+      await api(`showHover(${JSON.stringify(HOVER)})`)
+      await settle()
+      const shown = await hint('hover')
+
+      expect(shown.shown).toBe(true)
+      expect(shown.status).toBe('const total: number. The sum of both.')
+      expect(await view.evaluate(`document.activeElement.id`)).toBe('hints')
+    })
+
+    it('Escape closes it, and only it', async () => {
+      // Handled: the key does not go on to free Tab.
+      expect(await key('hints', 'Escape')).toBe(false)
+      expect((await hint('hover')).shown).toBe(false)
+      expect(await key('hints', 'Escape')).toBe(true)
+    })
+
+    it('closes as soon as something is typed', async () => {
+      await key('hints', 'i', { mod: true })
+      await api(`showHover(${JSON.stringify(HOVER)})`)
+      await settle()
+      expect((await hint('hover')).shown).toBe(true)
+      await type('s')
+      await settle()
+
+      expect((await hint('hover')).shown).toBe(false)
+      expect(await value('hints')).toStartWith('const tots')
+    })
+
+    it('an empty answer shows nothing', async () => {
+      await key('hints', 'i', { mod: true })
+      await api(`showHover('')`)
+      await settle()
+
+      expect((await hint('hover')).shown).toBe(false)
+    })
+  })
+
+  describe('signature help', () => {
+    const HELP = { label: 'add(a: number, b: number): number', parameters: [{ label: 'a: number', documentation: 'The first number.' }, 'b: number'], documentation: 'Adds two numbers.' }
+
+    it('asks when a call is opened', async () => {
+      await run(`window.probe.typed.set('const total = add(1, 2)\\nfunction add(a: number, b: number) {\\n  return a + b\\n}\\n\\n'); return true`)
+      await settle()
+      await caretAt('hints', `field('hints').value.length`)
+      await type('add(')
+      await settle()
+
+      expect(await value('hints')).toEndWith('\nadd()')
+      expect((await asked('signature')).at(-1)).toEqual({ line: 5, column: 4, offset: 83, start: 83, active: 0, trigger: '(', explicit: false })
+    })
+
+    it('draws the answer above the caret with the first parameter marked', async () => {
+      await api(`showSignature(${JSON.stringify(HELP)})`)
+      await settle()
+      const shown = await hint('signature')
+
+      expect(shown.shown).toBe(true)
+      expect(shown.label).toBe(HELP.label)
+      expect(shown.active).toBe('a: number')
+      expect(shown.text).toBe('The first number.')
+      expect(shown.placement).toBe('above')
+      // Its bottom edge is the top of line 5.
+      expect(shown.bottom).toBeCloseTo(8 + 5 * 20, 0)
+      expect(shown.column).toBeCloseTo(4, 1)
+      expect(shown.focusable).toBe(false)
+    })
+
+    it('moves the mark on at a comma without waiting for an answer, and asks again', async () => {
+      await type('1,')
+      await settle()
+      const shown = await hint('signature')
+
+      expect(shown.shown).toBe(true)
+      expect(shown.active).toBe('b: number')
+      // The second parameter says nothing of its own, so the signature's note shows.
+      expect(shown.text).toBe('Adds two numbers.')
+      expect((await asked('signature')).at(-1)).toMatchObject({ active: 1, trigger: ',', explicit: false })
+    })
+
+    it('marks nothing past the last parameter', async () => {
+      await type(' 2,')
+      await settle()
+
+      expect((await hint('signature')).active).toBe('')
+      expect((await hint('signature')).shown).toBe(true)
+    })
+
+    it('closes when the caret leaves the call', async () => {
+      await caretAt('hints', `field('hints').value.length`)
+      await settle()
+
+      expect((await hint('signature')).shown).toBe(false)
+    })
+
+    it('Escape closes it, and the completion list still gets Escape first', async () => {
+      await type('\n')
+      await type('add(')
+      await api(`showSignature(${JSON.stringify(HELP)})`)
+      await settle()
+      expect((await hint('signature')).shown).toBe(true)
+
+      expect(await key('hints', 'Escape')).toBe(false)
+      expect((await hint('signature')).shown).toBe(false)
+    })
+
+    it('a null answer closes it', async () => {
+      await type('1,')
+      await api(`showSignature(${JSON.stringify(HELP)})`)
+      await settle()
+      expect((await hint('signature')).shown).toBe(true)
+      await api(`showSignature(null)`)
+
+      expect((await hint('signature')).shown).toBe(false)
+    })
+  })
+
+  it('the signature gives way when the completion list takes its side of the line', async () => {
+    await run(`window.probe.typed.set('const a = 1\\n\\n\\n\\n\\n\\n'); return true`)
+    await settle()
+    await caretAt('hints', `field('hints').value.length`)
+    await type('add(')
+    await api(`showSignature({ label: 'add(a: number, b: number): number', parameters: ['a: number', 'b: number'] })`)
+    await settle()
+    expect((await hint('signature')).placement).toBe('above')
+
+    // Near the bottom of the editor the list has no room below, so it opens above.
+    await type('add')
+    await settle()
+    const boxes = await json(on(`
+      const list = document.getElementById(field('hints').getAttribute('aria-controls')).closest('.stx-ce-popup').getBoundingClientRect(), signature = part('hints', 'signature').getBoundingClientRect()
+      return { listShown: list.height > 0, listBottom: list.bottom, signatureTop: signature.top }
+    `))
+
+    expect(boxes.listShown).toBe(true)
+    expect((await hint('signature')).placement).toBe('below')
+    expect(boxes.signatureTop).toBeGreaterThanOrEqual(boxes.listBottom)
+
+    await key('hints', 'Escape')
+    await settle()
+    expect((await hint('signature')).placement).toBe('above')
+    await key('hints', 'Escape')
+    expect((await hint('signature')).shown).toBe(false)
+  })
+
+  describe('what the selected completion says in full', () => {
+    const strip = (): Promise<any> => json(on(`
+      const box = document.getElementById(field('hints').getAttribute('aria-controls')).closest('.stx-ce-popup'), detail = box.querySelector('.stx-ce-popup-detail')
+      const shown = el => getComputedStyle(el).display !== 'none'
+      return {
+        open: shown(box), detail: shown(detail),
+        type: detail.querySelector('.stx-ce-popup-detail-type').textContent, typeShown: shown(detail.querySelector('.stx-ce-popup-detail-type')),
+        doc: detail.querySelector('.stx-ce-popup-detail-doc').textContent,
+        wraps: getComputedStyle(detail.querySelector('.stx-ce-popup-detail-type')).whiteSpace,
+        inside: detail.getBoundingClientRect().bottom <= box.getBoundingClientRect().bottom + 1 && detail.getBoundingClientRect().top >= box.querySelector('[role=listbox]').getBoundingClientRect().bottom - 1,
+      }
+    `))
+
+    it('shows under the list, whole, where the row cuts it short', async () => {
+      await run(`window.probe.typed.set('const a = 1\\n'); return true`)
+      await settle()
+      await caretAt('hints', `field('hints').value.length`)
+      await type('add')
+      await settle()
+      const shown = await strip()
+
+      expect(shown.open).toBe(true)
+      expect(shown.detail).toBe(true)
+      expect(shown.type).toBe('(values: readonly number[], start?: number) => number')
+      expect(shown.doc).toBe('Adds every value.\nStarts from start.')
+      expect(shown.wraps).toBe('pre-wrap')
+      expect(shown.inside).toBe(true)
+    })
+
+    it('goes away for an item that has nothing more to say', async () => {
+      await key('hints', 'ArrowDown')
+      await settle()
+      const shown = await strip()
+
+      expect(shown.open).toBe(true)
+      expect(shown.detail).toBe(false)
+      await key('hints', 'Escape')
+    })
+  })
+
+  it('raised no script errors', async () => {
+    expect(await json(`return window.__errors`)).toEqual([])
   })
 })

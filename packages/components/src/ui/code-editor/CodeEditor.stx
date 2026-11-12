@@ -9,6 +9,9 @@ export const autoComplete = $bool($props.autoComplete, true)
 export const inlineDiagnostics = $bool($props.inlineDiagnostics, true)
 export const insertSpaces = $bool($props.insertSpaces, true)
 export const autofocus = $bool($props.autofocus)
+export const hover = $bool($props.hover, true)
+export const signatureHelp = $bool($props.signatureHelp, true)
+export const hoverDelay = $num($props.hoverDelay) || 300
 export const tabSize = $num($props.tabSize) || 2
 export const placeholder = $props.placeholder || ''
 export const label = $props.label || 'Code editor'
@@ -32,6 +35,8 @@ export const theme = ['light', 'dark'].includes($props.theme) ? $props.theme : '
 export const inputId = $props.id || `code-editor-${$uid}`
 export const popupId = `${inputId}-completions`
 export const statusId = `${inputId}-status`
+export const hoverId = `${inputId}-hover`
+export const signatureId = `${inputId}-signature`
 export const editorClasses = `relative flex flex-col overflow-hidden rounded-panel border border-line ${className}`.trim()
 /*
  * Arrays that arrive as plain props. A bound one (`:completions="names()"`)
@@ -54,7 +59,7 @@ export const ghostText = typeof $props.ghostText === 'string' ? $props.ghostText
  */
 import { CodeEditorController } from './controller'
 
-const emit = defineEmits(['input', 'change', 'selection', 'run', 'run-selection', 'complete', 'completion-accept', 'ghost', 'focus', 'blur'])
+const emit = defineEmits(['input', 'change', 'selection', 'run', 'run-selection', 'complete', 'completion-accept', 'hover', 'signature', 'ghost', 'focus', 'blur'])
 
 function asBoolean(value) {
   if (value == null) return false
@@ -86,7 +91,9 @@ const liveKeymap = useReactiveProp('keymap', null, { parse: v => v })
 
 const locked = derived(() => asBoolean(liveReadonly()) || asBoolean(liveDisabled()))
 const isEmpty = state({{ value }} === '')
-const popup = state({ open: false, items: [], activeId: '', left: 0, top: 0, placement: 'below' })
+const liveHover = useReactiveProp('hover', {{ hover }}, { parse: asBoolean })
+const liveSignatureHelp = useReactiveProp('signatureHelp', {{ signatureHelp }}, { parse: asBoolean })
+const popup = state({ open: false, items: [], activeId: '', left: 0, top: 0, placement: 'below', detail: '', documentation: '' })
 const popupStyle = derived(() => {
   const current = popup()
   const lift = current.placement === 'above' ? ' translateY(-100%)' : ''
@@ -112,6 +119,9 @@ onMount(() => {
     inlineDiagnostics: {{ inlineDiagnostics }},
     completions: asList(liveCompletions()),
     keymap: liveKeymap() || {},
+    hover: asBoolean(liveHover()),
+    hoverDelay: {{ hoverDelay }},
+    signatureHelp: asBoolean(liveSignatureHelp()),
   }, {
     onChange(value) {
       isEmpty.set(value === '')
@@ -124,6 +134,8 @@ onMount(() => {
     onRunSelection(detail) { emit('run-selection', detail) },
     onCompleteRequest(request) { emit('complete', request) },
     onCompletionAccept(item) { emit('completion-accept', item) },
+    onHoverRequest(request) { emit('hover', request) },
+    onSignatureRequest(request) { emit('signature', request) },
     onGhost(outcome, text) { emit('ghost', { outcome, text }) },
     onPopup(next) { popup.set(next) },
     onFocus() { emit('focus') },
@@ -146,6 +158,8 @@ onMount(() => {
   effect(() => editor.setDiagnostics(asList(liveDiagnostics())))
   effect(() => editor.setGhostText(liveGhostText() || null))
   effect(() => editor.setKeymap(liveKeymap() || {}))
+  effect(() => editor.setHover(asBoolean(liveHover())))
+  effect(() => editor.setSignatureHelp(asBoolean(liveSignatureHelp())))
 
   if ({{ autofocus }}) editor.focus()
 })
@@ -174,6 +188,10 @@ defineExpose({
   setGhostText: (text) => { if (editor) editor.setGhostText(text || null) },
   showCompletions: (items, options) => { if (editor) editor.showCompletions(asList(items), options || {}) },
   closeCompletions: () => { if (editor) editor.closeCompletions() },
+  showHover: (content, position) => { if (editor) editor.showHover(content, position) },
+  closeHover: () => { if (editor) editor.closeHover() },
+  showSignature: (help) => { if (editor) editor.showSignature(help) },
+  closeSignature: () => { if (editor) editor.closeSignature() },
   editor: () => editor,
 })
 </script>
@@ -234,29 +252,60 @@ defineExpose({
 
         {{-- The completion list. It stays in the document while closed so the
              field's aria-controls always has something to point at. --}}
-        <ul
-          id="{{ popupId }}"
-          role="listbox"
-          aria-label="Completions"
-          class="stx-ce-popup absolute top-0 left-0 z-40 m-0 p-1 list-none overflow-y-auto rounded-control border border-line bg-panel shadow-lg"
+        <div
+          class="stx-ce-popup absolute top-0 left-0 z-40 flex flex-col overflow-hidden rounded-control border border-line bg-panel shadow-lg"
           :show="popup().open"
           :style="popupStyle()"
         >
-          <li
-            :for="entry in popup().items"
-            :key="entry.id"
-            :id="entry.id"
-            role="option"
-            :aria-selected="entry.selected ? 'true' : 'false'"
-            :data-selected="entry.selected ? '' : null"
-            :data-kind="entry.kind || null"
-            class="stx-ce-option flex items-baseline gap-3 px-2 py-0.5 rounded-control cursor-default whitespace-nowrap"
-            @mousedown.prevent="acceptCompletion(entry.index)"
+          <ul
+            id="{{ popupId }}"
+            role="listbox"
+            aria-label="Completions"
+            class="stx-ce-popup-list m-0 p-1 list-none overflow-y-auto"
           >
-            <span class="stx-ce-option-label" x-text="entry.label"></span>
-            <span class="stx-ce-option-detail ml-auto text-fg-soft" x-text="entry.detail"></span>
-          </li>
-        </ul>
+            <li
+              :for="entry in popup().items"
+              :key="entry.id"
+              :id="entry.id"
+              role="option"
+              :aria-selected="entry.selected ? 'true' : 'false'"
+              :data-selected="entry.selected ? '' : null"
+              :data-kind="entry.kind || null"
+              class="stx-ce-option flex items-baseline gap-3 px-2 py-0.5 rounded-control cursor-default whitespace-nowrap"
+              @mousedown.prevent="acceptCompletion(entry.index)"
+            >
+              <span class="stx-ce-option-label" x-text="entry.label"></span>
+              <span class="stx-ce-option-detail ml-auto text-fg-soft" x-text="entry.detail"></span>
+            </li>
+          </ul>
+          {{-- What the selected row has to say in full. The row shows one
+               line of it and cuts the rest; a type rarely fits. --}}
+          <div
+            class="stx-ce-popup-detail shrink-0 overflow-y-auto border-t border-line px-2 py-1"
+            :show="popup().detail !== '' || popup().documentation !== ''"
+          >
+            <div class="stx-ce-popup-detail-type" :show="popup().detail !== ''" x-text="popup().detail"></div>
+            <div class="stx-ce-popup-detail-doc text-fg-soft" :show="popup().documentation !== ''" x-text="popup().documentation"></div>
+          </div>
+        </div>
+
+        {{-- Type hints. Filled and placed by the view; neither takes focus,
+             so neither can trap it. What a hover says is also sent to the
+             status line when it was asked for from the keyboard. --}}
+        <div
+          data-ce="hover"
+          id="{{ hoverId }}"
+          role="tooltip"
+          class="stx-ce-hint stx-ce-hover absolute top-0 left-0 z-50 overflow-auto rounded-control border border-line bg-panel shadow-lg"
+          style="display: none"
+        ></div>
+        <div
+          data-ce="signature"
+          id="{{ signatureId }}"
+          role="tooltip"
+          class="stx-ce-hint stx-ce-signature absolute top-0 left-0 z-40 overflow-auto rounded-control border border-line bg-panel shadow-lg pointer-events-none"
+          style="display: none"
+        ></div>
       </div>
     </div>
   </div>
@@ -296,7 +345,7 @@ defineExpose({
   color: var(--stx-code-fg);
 }
 
-[data-stx-code-editor] :is(.stx-ce-rows, .stx-ce-input, .stx-ce-gutter, .stx-ce-layer, .stx-ce-measure, .stx-ce-placeholder, .stx-ce-popup) {
+[data-stx-code-editor] :is(.stx-ce-rows, .stx-ce-input, .stx-ce-gutter, .stx-ce-layer, .stx-ce-measure, .stx-ce-placeholder, .stx-ce-popup, .stx-ce-hint) {
   font-family: var(--stx-code-font);
   font-size: var(--stx-code-font-size);
   line-height: var(--stx-code-line-height);
@@ -388,10 +437,49 @@ defineExpose({
 [data-stx-code-editor] :is(.stx-ce-ghost--block) { background: var(--stx-code-bg); }
 
 [data-stx-code-editor] :is(.stx-ce-popup) {
-  max-height: 14rem;
   min-width: 12rem;
   max-width: 32rem;
   color: var(--stx-code-fg);
+}
+[data-stx-code-editor] :is(.stx-ce-popup-list) { max-height: 14rem; }
+[data-stx-code-editor] :is(.stx-ce-popup-detail) { max-height: 7rem; }
+[data-stx-code-editor] :is(.stx-ce-popup-detail-type, .stx-ce-popup-detail-doc) {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+[data-stx-code-editor] :is(.stx-ce-popup-detail-doc) { font-family: inherit; }
+
+/* Type hints: a hover on a word, a signature above the caret. The same
+   surface as the completion list, so all three read as one family. */
+[data-stx-code-editor] :is(.stx-ce-hint) {
+  box-sizing: border-box;
+  max-width: min(36rem, 90%);
+  max-height: 16rem;
+  padding: 4px 8px;
+  color: var(--stx-code-fg);
+}
+[data-stx-code-editor] :is(.stx-ce-hint-code, .stx-ce-signature-label) {
+  margin: 0;
+  font: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+[data-stx-code-editor] :is(.stx-ce-hint-text) {
+  margin: 0;
+  color: var(--stx-code-result);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+[data-stx-code-editor] :is(.stx-ce-hint) > * + * {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid color-mix(in srgb, var(--stx-code-fg) 12%, transparent);
+}
+[data-stx-code-editor] :is(.stx-ce-signature-active) {
+  font-weight: 700;
+  color: var(--stx-code-caret);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 [data-stx-code-editor] :is(.stx-ce-option[data-selected]) {
   background: color-mix(in srgb, var(--stx-accent, #2563eb) 18%, transparent);

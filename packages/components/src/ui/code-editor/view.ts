@@ -23,7 +23,7 @@
  * the elements; this fills and positions them. The model, in `./core`, knows
  * nothing about any of it.
  */
-import type { EditorCore, HighlightedLine, LineTokenizer, Position, ResolvedKeymap, Transaction } from './core'
+import type { EditorCore, HighlightedLine, HighlightToken, LineTokenizer, Position, ResolvedKeymap, Transaction } from './core'
 import { handleTextInput, LineHighlighter, mapOffset, rangeEmpty, rangeFrom, rangeTo } from './core'
 
 /** Something shown beside or after a line: a result, a note, an error. */
@@ -73,8 +73,35 @@ export interface EditorViewOptions {
   onBlur?: () => void
   /** Ghost text was taken or let go. */
   onGhost?: (outcome: 'accept' | 'dismiss', text: string) => void
+  /**
+   * The pointer has rested over the text: at this offset, or `null` when it is
+   * not over a character. Called once per rest, not once per move.
+   */
+  onPointerRest?: (offset: number | null) => void
+  /** The pointer left the editor, or a button went down. */
+  onPointerLeave?: () => void
+  /** The text was scrolled. */
+  onScroll?: () => void
+  /** How long the pointer has to be still before it counts as resting. Default 300 ms. */
+  hoverDelay?: number
   /** Show each diagnostic's message after its line. Default true. */
   inlineDiagnostics?: boolean
+}
+
+/** One piece of a hint: a block of code, already coloured, or a paragraph. */
+export interface HintBlock {
+  kind: 'code' | 'text'
+  /** Markup, for a code block that has been coloured. Trusted: the view's own. */
+  html?: string
+  text: string
+}
+
+/** A signature, cut around the parameter being written. */
+export interface SignatureDisplay {
+  before: string
+  active: string
+  after: string
+  documentation?: string
 }
 
 interface StoredDiagnostic {
@@ -105,6 +132,10 @@ interface Metrics {
 const OVERSCAN = 12
 /** Lines tokenized past the screen in the pass that follows a change. */
 const SYNC_BUDGET = 200
+/** How long the pointer rests before a hover is asked for. */
+const HOVER_DELAY = 300
+/** Room a hint wants above its line before it goes below instead. */
+const HINT_ROOM = 120
 /** Lines tokenized per idle pass while a long cascade or a first load finishes. */
 const IDLE_BUDGET = 600
 const SEVERITY_RANK: Record<DiagnosticSeverity, number> = { error: 3, warning: 2, info: 1, hint: 0 }
@@ -118,16 +149,34 @@ function escapeHtml(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
+/** Coloured runs as HTML: a span per run, plain text left unwrapped. */
+export function renderTokensHtml(tokens: readonly HighlightToken[]): string {
+  let html = ''
+  for (const token of tokens)
+    html += token.type === '' ? escapeHtml(token.content) : `<span class="tok-${token.type}">${escapeHtml(token.content)}</span>`
+
+  return html
+}
+
 /** One line as HTML: a span per coloured run, plain text left unwrapped. */
 export function renderLineHtml(line: HighlightedLine | null, text: string): string {
   if (!line || line.text !== text)
     return escapeHtml(text)
 
-  let html = ''
-  for (const token of line.tokens)
-    html += token.type === '' ? escapeHtml(token.content) : `<span class="tok-${token.type}">${escapeHtml(token.content)}</span>`
+  return renderTokensHtml(line.tokens)
+}
 
-  return html
+/** A piece of code as HTML, coloured by a line tokenizer from its first line. */
+export function renderCodeHtml<State>(tokenizer: LineTokenizer<State>, code: string): string {
+  let state = tokenizer.initialState()
+  const lines: string[] = []
+  for (const text of code.split('\n')) {
+    const result = tokenizer.tokenizeLine(text, state)
+    state = result.endState
+    lines.push(renderTokensHtml(result.tokens))
+  }
+
+  return lines.join('\n')
 }
 
 function part(root: HTMLElement, name: string): HTMLElement {
@@ -154,6 +203,8 @@ export class EditorView {
   private readonly widgetLayer: HTMLElement
   private readonly measure: HTMLElement
   private readonly status: HTMLElement | null
+  private readonly hover: HTMLElement | null
+  private readonly signature: HTMLElement | null
 
   private keymap: ResolvedKeymap
   private highlighter: LineHighlighter | null = null
@@ -174,6 +225,13 @@ export class EditorView {
   private diagnostics: StoredDiagnostic[] = []
   private ghost: { offset: number, text: string } | null = null
   private announced = ''
+
+  private hoverOffset = -1
+  private signatureOffset = -1
+  private pointerX = 0
+  private pointerY = 0
+  private pointerTimer: ReturnType<typeof setTimeout> | undefined
+  private pointerInHint = false
 
   private composing = false
   private focused = false
@@ -201,6 +259,9 @@ export class EditorView {
     this.widgetLayer = part(root, 'widgets')
     this.measure = part(root, 'measure')
     this.status = root.querySelector<HTMLElement>('[data-ce="status"]')
+    // Optional: a host with its own template may not want hints at all.
+    this.hover = root.querySelector<HTMLElement>('[data-ce="hover"]')
+    this.signature = root.querySelector<HTMLElement>('[data-ce="signature"]')
 
     // The field may already hold text the server rendered into it. The model is
     // the authority from here on, so whichever differs is brought into line.
@@ -248,7 +309,38 @@ export class EditorView {
       if (root.ownerDocument.activeElement === this.textarea)
         this.syncSelection()
     })
-    this.listen(this.scroller, 'scroll', () => this.scheduleRender(), { passive: true })
+    this.listen(this.scroller, 'scroll', () => {
+      this.scheduleRender()
+      this.options.onScroll?.()
+    }, { passive: true })
+
+    // Hover. A move only remembers where the pointer is and restarts a timer:
+    // nothing is measured until the pointer has stopped, so moving the mouse
+    // across the editor costs no layout at all.
+    this.listen(this.textarea, 'mousemove', (event) => {
+      const move = event as MouseEvent
+      // A drag is a selection being made, not a question being asked.
+      if (move.buttons !== 0)
+        return
+      if (move.clientX === this.pointerX && move.clientY === this.pointerY)
+        return
+
+      this.pointerX = move.clientX
+      this.pointerY = move.clientY
+      this.schedulePointerRest()
+    }, { passive: true })
+    this.listen(this.textarea, 'mousedown', () => this.pointerGone())
+    this.listen(this.root, 'mouseleave', () => this.pointerGone())
+    if (this.hover) {
+      // Over the hint itself the pointer is reading it, not leaving the word.
+      this.listen(this.hover, 'mouseenter', () => {
+        this.pointerInHint = true
+        this.cancelPointerRest()
+      })
+      this.listen(this.hover, 'mouseleave', () => {
+        this.pointerInHint = false
+      })
+    }
     this.listen(this.gutter, 'mousedown', event => this.onGutterMouseDown(event as MouseEvent))
 
     if (typeof ResizeObserver !== 'undefined') {
@@ -874,6 +966,177 @@ export class EditorView {
     }, 0)
   }
 
+  // ------------------------------------------------------------------ pointer
+
+  private schedulePointerRest(): void {
+    this.cancelPointerRest()
+    this.pointerTimer = setTimeout(() => {
+      this.pointerTimer = undefined
+      if (!this.destroyed && !this.pointerInHint)
+        this.options.onPointerRest?.(this.offsetAtPoint(this.pointerX, this.pointerY))
+    }, this.options.hoverDelay ?? HOVER_DELAY)
+  }
+
+  private cancelPointerRest(): void {
+    if (this.pointerTimer !== undefined) {
+      clearTimeout(this.pointerTimer)
+      this.pointerTimer = undefined
+    }
+  }
+
+  private pointerGone(): void {
+    this.cancelPointerRest()
+    this.pointerInHint = false
+    this.options.onPointerLeave?.()
+  }
+
+  /**
+   * The offset of the character under a point on screen, or null when the
+   * point is not over one: past the end of its line, or below the last line.
+   *
+   * The field covers the painted text, so the browser cannot be asked which
+   * element is there. The answer comes from the same numbers the text is
+   * drawn with: one rectangle read, then arithmetic.
+   */
+  offsetAtPoint(clientX: number, clientY: number): number | null {
+    const { lineHeight, padTop, padLeft, charWidth } = this.metrics
+    const bounds = this.region.getBoundingClientRect()
+    const x = clientX - bounds.left - padLeft
+    const y = clientY - bounds.top - padTop
+    if (x < 0 || y < 0)
+      return null
+
+    const doc = this.core.doc
+    const line = Math.floor(y / lineHeight)
+    if (line >= doc.lineCount)
+      return null
+
+    const text = doc.line(line)
+    let column: number
+    if (PRINTABLE_ASCII.test(text)) {
+      column = Math.floor(x / charWidth)
+    }
+    else {
+      // Widths differ, so find the last column that starts at or before x.
+      let low = 0
+      let high = text.length
+      while (low < high) {
+        const middle = (low + high + 1) >> 1
+        if (this.widthOf(text, middle) <= x)
+          low = middle
+        else
+          high = middle - 1
+      }
+      column = low
+    }
+
+    return column >= text.length ? null : doc.lineInfo(line).from + column
+  }
+
+  // ------------------------------------------------------------------- hints
+
+  /**
+   * Put a hint beside an offset: above its line when there is room, below it
+   * otherwise, and never hanging off the right edge of what is visible.
+   */
+  private placeHint(element: HTMLElement, offset: number, side?: 'above' | 'below'): void {
+    const anchor = this.caretAnchor(offset)
+    const above = side ? side === 'above' : anchor.spaceAbove >= HINT_ROOM || anchor.spaceAbove > anchor.spaceBelow
+    element.style.display = ''
+    element.dataset.placement = above ? 'above' : 'below'
+
+    const visibleRight = this.scroller.scrollLeft + this.scroller.clientWidth - this.gutterWidth
+    const left = Math.max(this.scroller.scrollLeft, Math.min(anchor.left, visibleRight - element.offsetWidth - this.metrics.charWidth))
+    element.style.transform = `translate(${Math.max(0, left)}px, ${above ? anchor.top : anchor.bottom}px)${above ? ' translateY(-100%)' : ''}`
+  }
+
+  private hintBlock(block: HintBlock): HTMLElement {
+    const element = this.root.ownerDocument.createElement(block.kind === 'code' ? 'pre' : 'p')
+    element.className = block.kind === 'code' ? 'stx-ce-hint-code' : 'stx-ce-hint-text'
+    if (block.kind === 'code' && block.html !== undefined)
+      element.innerHTML = block.html
+    else
+      element.textContent = block.text
+
+    return element
+  }
+
+  /** Show a hint anchored to an offset, replacing whatever hint was showing. */
+  showHover(blocks: readonly HintBlock[], offset: number): void {
+    if (!this.hover || this.destroyed)
+      return
+
+    if (blocks.length === 0) {
+      this.hideHover()
+      return
+    }
+
+    this.hoverOffset = Math.max(0, Math.min(this.core.doc.length, offset))
+    this.hover.replaceChildren(...blocks.map(block => this.hintBlock(block)))
+    this.hover.scrollTop = 0
+    this.placeHint(this.hover, this.hoverOffset)
+  }
+
+  hideHover(): void {
+    this.pointerInHint = false
+    if (!this.hover || this.hoverOffset < 0)
+      return
+
+    this.hoverOffset = -1
+    this.hover.style.display = 'none'
+    this.hover.replaceChildren()
+  }
+
+  get hoverOpen(): boolean {
+    return this.hoverOffset >= 0
+  }
+
+  /**
+   * Show a signature beside an offset, with one parameter marked. `side` puts
+   * it there whatever the room, for when the other side is taken.
+   */
+  showSignature(display: SignatureDisplay, offset: number, side?: 'above' | 'below'): void {
+    if (!this.signature || this.destroyed)
+      return
+
+    const document = this.root.ownerDocument
+    const label = document.createElement('div')
+    label.className = 'stx-ce-signature-label'
+    label.append(display.before)
+    if (display.active !== '') {
+      const active = document.createElement('strong')
+      active.className = 'stx-ce-signature-active'
+      active.textContent = display.active
+      label.append(active)
+    }
+    label.append(display.after)
+
+    const children: HTMLElement[] = [label]
+    if (display.documentation) {
+      const note = document.createElement('p')
+      note.className = 'stx-ce-hint-text'
+      note.textContent = display.documentation
+      children.push(note)
+    }
+
+    this.signatureOffset = Math.max(0, Math.min(this.core.doc.length, offset))
+    this.signature.replaceChildren(...children)
+    this.placeHint(this.signature, this.signatureOffset, side)
+  }
+
+  hideSignature(): void {
+    if (!this.signature || this.signatureOffset < 0)
+      return
+
+    this.signatureOffset = -1
+    this.signature.style.display = 'none'
+    this.signature.replaceChildren()
+  }
+
+  get signatureOpen(): boolean {
+    return this.signatureOffset >= 0
+  }
+
   // ------------------------------------------------------------------- caret
 
   /** Where the caret is, in the coordinates of the text area. */
@@ -1022,7 +1285,8 @@ export class EditorView {
 
   // ----------------------------------------------------------- announcements
 
-  private announce(message: string): void {
+  /** Say something through the editor's live region. */
+  announce(message: string): void {
     if (this.status && this.status.textContent !== message)
       this.status.textContent = message
   }
@@ -1057,6 +1321,7 @@ export class EditorView {
     this.resizeObserver?.disconnect()
     if (this.idle !== undefined)
       clearTimeout(this.idle)
+    this.cancelPointerRest()
 
     const view = this.root.ownerDocument.defaultView
     if (this.frame !== 0 && view?.cancelAnimationFrame)
