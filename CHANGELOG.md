@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.858...v0.2.859)
+
+## 🐛 Bug Fixes
+
+- **native**: recognize component package roots contributed by wrapper plugins ([4042681](https://github.com/stacksjs/stx/commit/4042681)) _(by Chris <chris@stacksjs.com>)_ ([#2182](https://github.com/stacksjs/stx/issues/2182))
+
+## ✅ Tests
+
+- **bun-plugin**: isolate render-cache cases from delayed edit events ([57fc6ac](https://github.com/stacksjs/stx/commit/57fc6ac)) _(by Chris <chris@stacksjs.com>)_ ([#2183](https://github.com/stacksjs/stx/issues/2183), [#2182](https://github.com/stacksjs/stx/issues/2182))
+
+## 🔧 Chores
+
+- release v0.2.859 ([4c490f3](https://github.com/stacksjs/stx/commit/4c490f3)) _(by Chris <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.857...v0.2.858)
 
 ## 🐛 Bug Fixes
