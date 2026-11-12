@@ -1,0 +1,200 @@
+<script server>
+/*
+ * <SettingsGroup>: the rounded inset card a Settings pane is made of, with an
+ * optional heading above it and a footnote below.
+ *
+ *   <SettingsGroup header="Windows" footer="Applies to new windows.">
+ *     <SettingsRow label="Sidebar icon size">...</SettingsRow>
+ *     <SettingsRow label="Tint window background">...</SettingsRow>
+ *   </SettingsGroup>
+ *
+ * The rows are whatever is inside. Each `[data-settings-row]` after the first
+ * draws a hairline above itself, inset on both sides, so the card has rules
+ * between rows and none at its edges. The rule is found with a sibling
+ * selector that looks through the `display: contents` wrapper stx puts
+ * around every component, which is why the card does not need to know how
+ * many rows it has or which is last.
+ *
+ * `footer` is text, or a named slot when the footnote carries a link:
+ *
+ *   <template #footer>Read the <a href="/privacy">privacy notes</a>.</template>
+ */
+export const header = $props.header || ''
+export const footer = $props.footer || ''
+export const hasFooterSlot = Boolean($slots && $slots.footer)
+export const groupId = $props.id || `settings-section-${$uid}`
+export const headerId = `${groupId}-header`
+export const className = $props.className || ''
+</script>
+
+<script client>
+const heading = useReactiveProp('header', {{ header }})
+const note = useReactiveProp('footer', {{ footer }})
+const headerId = {{ headerId }}
+</script>
+
+<section id="{{ groupId }}" data-settings-section class="stx-settings-section {{ className }}">
+  <h3 id="{{ headerId }}" :show="heading()" :text="heading()" class="stx-settings-section-header">{{ header }}</h3>
+  <div class="stx-settings-card" role="group" @if(header)aria-labelledby="{{ headerId }}"@endif :aria-labelledby="heading() ? headerId : null">
+    <slot />
+  </div>
+  @if(hasFooterSlot)
+    <p class="stx-settings-section-footer"><slot name="footer" /></p>
+  @else
+    <p :show="note()" :text="note()" class="stx-settings-section-footer">{{ footer }}</p>
+  @endif
+</section>
+
+<style>
+:where(:root) {
+  --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
+  --stx-mac-font-size: 13px;
+  --stx-mac-font-size-small: 11px;
+  --stx-mac-hairline: 0.5px;
+  --stx-mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--stx-mac-accent) 35%, transparent);
+  --stx-mac-card-radius: 12px;
+  --stx-mac-control-radius: 6px;
+  --stx-mac-row-height: 38px;
+  --stx-mac-row-inset: 10px;
+  --stx-mac-sidebar-width: 226px;
+  --stx-mac-accent: var(--stx-accent, #007aff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(0, 0, 0, 0.85);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-tertiary: rgba(0, 0, 0, 0.26);
+  --stx-mac-window: #ffffff;
+  --stx-mac-sidebar: #f2f1f0;
+  --stx-mac-card: rgba(0, 0, 0, 0.04);
+  --stx-mac-separator: rgba(0, 0, 0, 0.1);
+  --stx-mac-hover: rgba(0, 0, 0, 0.05);
+  --stx-mac-selection-inactive: rgba(0, 0, 0, 0.08);
+  --stx-mac-well: rgba(0, 0, 0, 0.07);
+  --stx-mac-control: #ffffff;
+  --stx-mac-control-line: rgba(0, 0, 0, 0.12);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --stx-mac-switch-on: #34c759;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff3b30;
+}
+:where(.dark) {
+  --stx-mac-accent: var(--stx-accent, #0a84ff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(255, 255, 255, 0.85);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.55);
+  --stx-mac-ink-tertiary: rgba(255, 255, 255, 0.25);
+  --stx-mac-window: #1e1e1e;
+  --stx-mac-sidebar: #2a2a2a;
+  --stx-mac-card: rgba(255, 255, 255, 0.05);
+  --stx-mac-separator: rgba(255, 255, 255, 0.1);
+  --stx-mac-hover: rgba(255, 255, 255, 0.06);
+  --stx-mac-selection-inactive: rgba(255, 255, 255, 0.1);
+  --stx-mac-well: rgba(255, 255, 255, 0.1);
+  --stx-mac-control: rgba(255, 255, 255, 0.14);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.06);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+  --stx-mac-switch-on: #30d158;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff453a;
+}
+@media (max-resolution: 1.5dppx) {
+:where(:root) {
+  --stx-mac-hairline: 1px;
+}
+}
+@media (prefers-contrast: more) {
+:where(:root) {
+  --stx-mac-separator: rgba(0, 0, 0, 0.4);
+  --stx-mac-control-line: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.75);
+  --stx-mac-hairline: 1px;
+}
+:where(.dark) {
+  --stx-mac-separator: rgba(255, 255, 255, 0.45);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.5);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.8);
+}
+}
+
+/*
+ * The card. No border and no clipping: a pop-up menu or a focus ring inside a
+ * row has to be able to leave it.
+ */
+:where([data-settings-section]) {
+  --stx-settings-section-gap: 10px;
+  --stx-settings-header-above: 18px;
+  --stx-settings-header-below: 8px;
+  --stx-settings-footer-above: 6px;
+  display: block;
+  margin: 0 0 var(--stx-settings-section-gap);
+  padding: 0;
+  font-family: var(--stx-mac-font);
+  font-size: var(--stx-mac-font-size);
+  letter-spacing: -0.08px;
+  color: var(--stx-mac-ink);
+  -webkit-font-smoothing: antialiased;
+  cursor: default;
+}
+
+/* Ten of the 28 above a heading are the gap the card before it left. */
+:where([data-settings-section]) > .stx-settings-section-header {
+  margin: 0;
+  padding: var(--stx-settings-header-above) var(--stx-mac-row-inset) var(--stx-settings-header-below);
+  font-size: var(--stx-mac-font-size);
+  font-weight: 700;
+  line-height: 16px;
+  color: var(--stx-mac-ink);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+:where([data-settings-section]) > .stx-settings-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-radius: var(--stx-mac-card-radius);
+  background: var(--stx-mac-card);
+}
+
+:where([data-settings-section]) > .stx-settings-section-footer {
+  margin: 0;
+  padding: var(--stx-settings-footer-above) var(--stx-mac-row-inset) 0;
+  font-size: var(--stx-mac-font-size-small);
+  line-height: 14px;
+  letter-spacing: 0;
+  color: var(--stx-mac-ink-secondary);
+}
+:where([data-settings-section]) > .stx-settings-section-footer a {
+  color: var(--stx-mac-accent);
+  text-decoration: none;
+  cursor: default;
+}
+:where([data-settings-section]) > .stx-settings-section-footer a:hover { text-decoration: underline; }
+:where([data-settings-section]) > .stx-settings-section-footer a:focus-visible {
+  outline: none;
+  border-radius: 3px;
+  box-shadow: var(--stx-mac-focus-ring);
+}
+
+/* Nothing to say, nothing drawn: an empty heading or footnote takes no room. */
+:where([data-settings-section]) > :is(.stx-settings-section-header, .stx-settings-section-footer):empty { display: none; }
+
+/*
+ * The rule between rows. A row draws it above itself when a row comes before
+ * it in the card, whether the two are siblings or each sits in a component
+ * wrapper (`[data-stx-scope]`, `display: contents`). A row that is hidden
+ * does not count as coming before anything.
+ */
+.stx-settings-card [data-settings-row]:not([hidden]) ~ [data-settings-row]::before,
+.stx-settings-card [data-settings-row]:not([hidden]) ~ [data-stx-scope] [data-settings-row]::before,
+.stx-settings-card [data-stx-scope]:has([data-settings-row]:not([hidden])) ~ [data-settings-row]::before,
+.stx-settings-card [data-stx-scope]:has([data-settings-row]:not([hidden])) ~ [data-stx-scope] [data-settings-row]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--stx-mac-row-inset);
+  right: var(--stx-mac-row-inset);
+  height: var(--stx-mac-hairline);
+  background: var(--stx-mac-separator);
+  pointer-events: none;
+}
+</style>

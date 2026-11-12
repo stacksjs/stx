@@ -131,7 +131,7 @@ if (!editorResult.success) {
 // framework-free core and the view that draws it. Browser code with no
 // imports outside its own folder, so a host can mount one itself, or use a
 // core (a tree model, a grid model, a graph layout) with no DOM at all.
-const headless = ['context-menu', 'data-grid', 'graph-view', 'json-tree', 'preview-frame', 'split-pane']
+const headless = ['context-menu', 'data-grid', 'graph-view', 'json-tree', 'preview-frame', 'settings', 'split-pane']
 for (const name of headless) {
   const headlessResult = await Bun.build({
     entrypoints: [`./src/ui/${name}/${name}.ts`],

@@ -1,0 +1,188 @@
+<script server>
+/*
+ * <SettingsPaneHeader>: the card at the top of a pane that says what the pane
+ * is. A large icon tile, the pane's name, and a sentence about it.
+ *
+ *   <SettingsPaneHeader icon="i-f7-gear-alt-fill" tone="grey" title="General"
+ *     description="Manage your overall setup and preferences." />
+ *
+ * Anything in the slot goes under the description: a link, a button.
+ */
+const TONES = ['grey', 'blue', 'red', 'orange', 'yellow', 'green', 'indigo', 'purple', 'pink', 'ink']
+export const icon = $props.icon || ''
+export const tone = TONES.includes($props.tone) ? $props.tone : 'grey'
+export const title = $props.title || ''
+export const description = $props.description || ''
+export const className = $props.className || ''
+</script>
+
+<script client>
+const heading = useReactiveProp('title', {{ title }})
+const detail = useReactiveProp('description', {{ description }})
+</script>
+
+<header data-settings-pane-header class="stx-settings-hero {{ className }}">
+  @if(icon)
+    <span class="stx-settings-hero-tile" data-tone="{{ tone }}" aria-hidden="true"><i class="{{ icon }}"></i></span>
+  @endif
+  <h2 :text="heading()" class="stx-settings-hero-title">{{ title }}</h2>
+  <p :show="detail()" :text="detail()" class="stx-settings-hero-description">{{ description }}</p>
+  <div class="stx-settings-hero-extra"><slot /></div>
+</header>
+
+<style>
+:where(:root) {
+  --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
+  --stx-mac-font-size: 13px;
+  --stx-mac-font-size-small: 11px;
+  --stx-mac-hairline: 0.5px;
+  --stx-mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--stx-mac-accent) 35%, transparent);
+  --stx-mac-card-radius: 12px;
+  --stx-mac-control-radius: 6px;
+  --stx-mac-row-height: 38px;
+  --stx-mac-row-inset: 10px;
+  --stx-mac-sidebar-width: 226px;
+  --stx-mac-accent: var(--stx-accent, #007aff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(0, 0, 0, 0.85);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-tertiary: rgba(0, 0, 0, 0.26);
+  --stx-mac-window: #ffffff;
+  --stx-mac-sidebar: #f2f1f0;
+  --stx-mac-card: rgba(0, 0, 0, 0.04);
+  --stx-mac-separator: rgba(0, 0, 0, 0.1);
+  --stx-mac-hover: rgba(0, 0, 0, 0.05);
+  --stx-mac-selection-inactive: rgba(0, 0, 0, 0.08);
+  --stx-mac-well: rgba(0, 0, 0, 0.07);
+  --stx-mac-control: #ffffff;
+  --stx-mac-control-line: rgba(0, 0, 0, 0.12);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --stx-mac-switch-on: #34c759;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff3b30;
+}
+:where(.dark) {
+  --stx-mac-accent: var(--stx-accent, #0a84ff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(255, 255, 255, 0.85);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.55);
+  --stx-mac-ink-tertiary: rgba(255, 255, 255, 0.25);
+  --stx-mac-window: #1e1e1e;
+  --stx-mac-sidebar: #2a2a2a;
+  --stx-mac-card: rgba(255, 255, 255, 0.05);
+  --stx-mac-separator: rgba(255, 255, 255, 0.1);
+  --stx-mac-hover: rgba(255, 255, 255, 0.06);
+  --stx-mac-selection-inactive: rgba(255, 255, 255, 0.1);
+  --stx-mac-well: rgba(255, 255, 255, 0.1);
+  --stx-mac-control: rgba(255, 255, 255, 0.14);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.06);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+  --stx-mac-switch-on: #30d158;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff453a;
+}
+@media (max-resolution: 1.5dppx) {
+:where(:root) {
+  --stx-mac-hairline: 1px;
+}
+}
+@media (prefers-contrast: more) {
+:where(:root) {
+  --stx-mac-separator: rgba(0, 0, 0, 0.4);
+  --stx-mac-control-line: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.75);
+  --stx-mac-hairline: 1px;
+}
+:where(.dark) {
+  --stx-mac-separator: rgba(255, 255, 255, 0.45);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.5);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.8);
+}
+}
+
+:where([data-settings-pane-header]) {
+  --stx-settings-tone-grey: #8e8e93;
+  --stx-settings-tone-blue: #007aff;
+  --stx-settings-tone-red: #ff3b30;
+  --stx-settings-tone-orange: #ff9500;
+  --stx-settings-tone-yellow: #ffcc00;
+  --stx-settings-tone-green: #34c759;
+  --stx-settings-tone-indigo: #5856d6;
+  --stx-settings-tone-purple: #af52de;
+  --stx-settings-tone-pink: #ff2d55;
+  --stx-settings-tone-ink: #1c1c1e;
+  --stx-settings-hero-tile-size: 48px;
+  --stx-settings-hero-padding: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  margin: 0 0 10px;
+  padding: var(--stx-settings-hero-padding);
+  border-radius: var(--stx-mac-card-radius);
+  background: var(--stx-mac-card);
+  font-family: var(--stx-mac-font);
+  text-align: center;
+  color: var(--stx-mac-ink);
+  -webkit-font-smoothing: antialiased;
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+}
+:where(.dark) :where([data-settings-pane-header]) {
+  --stx-settings-tone-blue: #0a84ff;
+  --stx-settings-tone-red: #ff453a;
+  --stx-settings-tone-orange: #ff9f0a;
+  --stx-settings-tone-yellow: #ffd60a;
+  --stx-settings-tone-green: #30d158;
+  --stx-settings-tone-indigo: #5e5ce6;
+  --stx-settings-tone-purple: #bf5af2;
+  --stx-settings-tone-pink: #ff375f;
+  --stx-settings-tone-ink: #48484a;
+}
+
+:where([data-settings-pane-header]) > .stx-settings-hero-tile {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: var(--stx-settings-hero-tile-size);
+  height: var(--stx-settings-hero-tile-size);
+  margin-bottom: 12px;
+  border-radius: 11px;
+  background: var(--stx-settings-tone-grey);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
+  color: #ffffff;
+  font-size: 30px;
+  line-height: 1;
+}
+:where([data-settings-pane-header]) > .stx-settings-hero-tile > i { display: block; width: 1em; height: 1em; }
+:where([data-settings-pane-header]) > .stx-settings-hero-tile[data-tone="blue"] { background: var(--stx-settings-tone-blue); }
+:where([data-settings-pane-header]) > .stx-settings-hero-tile[data-tone="red"] { background: var(--stx-settings-tone-red); }
+:where([data-settings-pane-header]) > .stx-settings-hero-tile[data-tone="orange"] { background: var(--stx-settings-tone-orange); }
+:where([data-settings-pane-header]) > .stx-settings-hero-tile[data-tone="yellow"] { background: var(--stx-settings-tone-yellow); }
+:where([data-settings-pane-header]) > .stx-settings-hero-tile[data-tone="green"] { background: var(--stx-settings-tone-green); }
+:where([data-settings-pane-header]) > .stx-settings-hero-tile[data-tone="indigo"] { background: var(--stx-settings-tone-indigo); }
+:where([data-settings-pane-header]) > .stx-settings-hero-tile[data-tone="purple"] { background: var(--stx-settings-tone-purple); }
+:where([data-settings-pane-header]) > .stx-settings-hero-tile[data-tone="pink"] { background: var(--stx-settings-tone-pink); }
+:where([data-settings-pane-header]) > .stx-settings-hero-tile[data-tone="ink"] { background: var(--stx-settings-tone-ink); }
+
+:where([data-settings-pane-header]) > .stx-settings-hero-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 24px;
+  letter-spacing: -0.2px;
+  color: var(--stx-mac-ink);
+}
+:where([data-settings-pane-header]) > .stx-settings-hero-description {
+  max-width: 440px;
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--stx-mac-ink-secondary);
+}
+:where([data-settings-pane-header]) > .stx-settings-hero-description:empty { display: none; }
+:where([data-settings-pane-header]) > .stx-settings-hero-extra { margin-top: 10px; font-size: var(--stx-mac-font-size); }
+:where([data-settings-pane-header]) > .stx-settings-hero-extra:empty { display: none; }
+</style>

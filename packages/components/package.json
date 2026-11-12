@@ -87,6 +87,11 @@
       "bun": "./dist/preview-frame/preview-frame.js",
       "import": "./dist/preview-frame/preview-frame.js"
     },
+    "./settings": {
+      "types": "./dist/ui/settings/settings.d.ts",
+      "bun": "./dist/settings/settings.js",
+      "import": "./dist/settings/settings.js"
+    },
     "./split-pane": {
       "types": "./dist/ui/split-pane/split-pane.d.ts",
       "bun": "./dist/split-pane/split-pane.js",

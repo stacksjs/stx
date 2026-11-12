@@ -1,0 +1,537 @@
+<script server>
+export const title = $props.title || 'Settings'
+export const pane = $props.pane || ''
+export const searchable = $bool($props.searchable, true)
+export const searchPlaceholder = $props.searchPlaceholder || 'Search'
+export const storageKey = $props.storageKey || ''
+/*
+ * `window` is a window that is all Settings: it fills the viewport and leaves
+ * room for the traffic lights. `sheet` is the same two columns inside a page.
+ */
+export const presentation = $props.presentation === 'sheet' ? 'sheet' : 'window'
+/* A window that is all Settings hears its shortcuts anywhere in the document; a sheet only inside itself. */
+export const globalKeys = presentation === 'window'
+export const className = $props.className || ''
+export const settingsId = $props.id || `settings-${$uid}`
+
+/* Left out, both come from the stylesheet: the token width, and a height by presentation. */
+const sidebarWidth = $num($props.sidebarWidth, 0)
+const height = $props.height || ''
+export const rootStyle = [
+  sidebarWidth > 0 ? `--stx-settings-sidebar-width: ${sidebarWidth}px` : '',
+  height ? `--stx-settings-height: ${height}` : '',
+].filter(Boolean).join('; ')
+</script>
+
+<script client>
+/*
+ * <SettingsWindow>: the two columns of a Mac Settings window. A sidebar of
+ * items under a search field, and beside it the open pane under a toolbar
+ * with back, forward and the pane's name.
+ *
+ * What it decides is in ./core and what it does to the page in ./view; this
+ * is the wiring. The items, panes and rows are other components, found by the
+ * attributes they carry.
+ */
+import { SettingsWindowView } from './view'
+
+const emit = defineEmits(['pane', 'search', 'navigate'])
+
+const asText = value => (value == null ? '' : String(value))
+const openPane = useModel('pane', { default: {{ pane }}, parse: asText })
+
+const rootRef = useRef('settings')
+let settings = null
+
+onMount(() => {
+  const root = rootRef()
+  if (!root) return
+
+  settings = new SettingsWindowView(root, {
+    pane: asText(openPane()),
+    storageKey: {{ storageKey }},
+    globalKeys: {{ globalKeys }},
+  }, {
+    onPane(detail) {
+      openPane.set(detail.id)
+      emit('pane', detail)
+    },
+    onSearch(detail) { emit('search', detail) },
+    onNavigate(detail) { emit('navigate', detail) },
+  })
+
+  // The first run finds the pane the view just opened, which may be a stored
+  // one; only a later change of the prop is an instruction.
+  effect(() => {
+    const next = asText(openPane())
+    if (next && next !== settings.getPane()) settings.showPane(next)
+  })
+})
+
+onDestroy(() => {
+  if (settings) settings.destroy()
+  settings = null
+})
+
+defineExpose({
+  showPane: id => (settings ? settings.showPane(asText(id)) : false),
+  revealSetting: id => (settings ? settings.revealSetting(asText(id)) : false),
+  back: () => { if (settings) settings.back() },
+  forward: () => { if (settings) settings.forward() },
+  focusSearch: () => { if (settings) settings.focusSearch() },
+  getPane: () => (settings ? settings.getPane() : ''),
+})
+</script>
+
+<div
+  ref="settings"
+  id="{{ settingsId }}"
+  data-stx-settings
+  data-presentation="{{ presentation }}"
+  data-stx-window-active="true"
+  role="group"
+  aria-label="{{ title }}"
+  class="stx-settings {{ className }}"
+  style="{{ rootStyle }}"
+>
+  <div class="stx-settings-sidebar">
+    {{-- The strip the traffic lights sit over. Nothing of ours goes under
+         them, and the window is moved by it. --}}
+    <div class="stx-settings-sidebar-top" data-window-drag>
+      @if(searchable)
+        <div class="stx-settings-search" data-settings-search>
+          <span class="i-f7-search stx-settings-search-glyph" aria-hidden="true"></span>
+          <input
+            type="search"
+            class="stx-settings-search-input"
+            placeholder="{{ searchPlaceholder }}"
+            aria-label="{{ searchPlaceholder }}"
+            aria-controls="{{ settingsId }}-nav"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            data-settings-search-input
+          >
+          <button type="button" class="stx-settings-search-clear" aria-label="Clear search" tabindex="-1" data-settings-search-clear>
+            <span class="i-f7-xmark-circle-fill" aria-hidden="true"></span>
+          </button>
+        </div>
+      @endif
+    </div>
+
+    <div class="stx-settings-nav" id="{{ settingsId }}-nav" data-settings-nav>
+      <div class="stx-settings-account" data-settings-account><slot name="account" /></div>
+      <div class="stx-settings-list" role="tablist" aria-orientation="vertical" aria-label="{{ title }}" data-settings-list><slot name="sidebar" /></div>
+      <div class="stx-settings-results" role="group" aria-label="Matching settings" data-settings-results hidden></div>
+      <p class="stx-settings-empty" data-settings-empty hidden>No Results</p>
+    </div>
+    <div class="stx-settings-live" role="status" aria-live="polite" data-settings-live></div>
+  </div>
+
+  <div class="stx-settings-detail">
+    <div class="stx-settings-toolbar" data-window-drag>
+      <div class="stx-settings-history" role="group" aria-label="History">
+        <button type="button" class="stx-settings-history-button" aria-label="Back" data-settings-back disabled>
+          <span class="i-f7-chevron-left" aria-hidden="true"></span>
+        </button>
+        <span class="stx-settings-history-rule" aria-hidden="true"></span>
+        <button type="button" class="stx-settings-history-button" aria-label="Forward" data-settings-forward disabled>
+          <span class="i-f7-chevron-right" aria-hidden="true"></span>
+        </button>
+      </div>
+      <div class="stx-settings-title" id="{{ settingsId }}-title" role="heading" aria-level="{{ presentation === 'sheet' ? '2' : '1' }}" data-settings-title></div>
+    </div>
+
+    <div class="stx-settings-body" data-settings-body>
+      <div class="stx-settings-content"><slot /></div>
+    </div>
+  </div>
+</div>
+
+<style>
+:where(:root) {
+  --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
+  --stx-mac-font-size: 13px;
+  --stx-mac-font-size-small: 11px;
+  --stx-mac-hairline: 0.5px;
+  --stx-mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--stx-mac-accent) 35%, transparent);
+  --stx-mac-card-radius: 12px;
+  --stx-mac-control-radius: 6px;
+  --stx-mac-row-height: 38px;
+  --stx-mac-row-inset: 10px;
+  --stx-mac-sidebar-width: 226px;
+  --stx-mac-accent: var(--stx-accent, #007aff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(0, 0, 0, 0.85);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-tertiary: rgba(0, 0, 0, 0.26);
+  --stx-mac-window: #ffffff;
+  --stx-mac-sidebar: #f2f1f0;
+  --stx-mac-card: rgba(0, 0, 0, 0.04);
+  --stx-mac-separator: rgba(0, 0, 0, 0.1);
+  --stx-mac-hover: rgba(0, 0, 0, 0.05);
+  --stx-mac-selection-inactive: rgba(0, 0, 0, 0.08);
+  --stx-mac-well: rgba(0, 0, 0, 0.07);
+  --stx-mac-control: #ffffff;
+  --stx-mac-control-line: rgba(0, 0, 0, 0.12);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --stx-mac-switch-on: #34c759;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff3b30;
+}
+:where(.dark) {
+  --stx-mac-accent: var(--stx-accent, #0a84ff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(255, 255, 255, 0.85);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.55);
+  --stx-mac-ink-tertiary: rgba(255, 255, 255, 0.25);
+  --stx-mac-window: #1e1e1e;
+  --stx-mac-sidebar: #2a2a2a;
+  --stx-mac-card: rgba(255, 255, 255, 0.05);
+  --stx-mac-separator: rgba(255, 255, 255, 0.1);
+  --stx-mac-hover: rgba(255, 255, 255, 0.06);
+  --stx-mac-selection-inactive: rgba(255, 255, 255, 0.1);
+  --stx-mac-well: rgba(255, 255, 255, 0.1);
+  --stx-mac-control: rgba(255, 255, 255, 0.14);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.06);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+  --stx-mac-switch-on: #30d158;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff453a;
+}
+@media (max-resolution: 1.5dppx) {
+:where(:root) {
+  --stx-mac-hairline: 1px;
+}
+}
+@media (prefers-contrast: more) {
+:where(:root) {
+  --stx-mac-separator: rgba(0, 0, 0, 0.4);
+  --stx-mac-control-line: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.75);
+  --stx-mac-hairline: 1px;
+}
+:where(.dark) {
+  --stx-mac-separator: rgba(255, 255, 255, 0.45);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.5);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.8);
+}
+}
+
+/*
+ * The measurements are System Settings' own on macOS 26, in points. Each is a
+ * variable so an app can move one without restating the rest.
+ */
+:where([data-stx-settings]) {
+  --stx-settings-sidebar-width: var(--stx-mac-sidebar-width);
+  --stx-settings-height: 100vh;
+  --stx-settings-sidebar-inset: 9px;
+  --stx-settings-search-height: 28px;
+  --stx-settings-toolbar-height: 52px;
+  --stx-settings-content-width: 500px;
+  --stx-settings-content-margin: 20px;
+  --stx-settings-sheet-radius: 14px;
+  --stx-settings-sheet-width: 715px;
+  --stx-settings-scrollbar: var(--stx-mac-ink-tertiary);
+  /* How much of the sidebar's own fill covers a native material behind it. */
+  --stx-settings-material-opacity: 62%;
+  /*
+   * The band the window buttons occupy. Craft publishes where they are; the
+   * older pair of names is the room to leave, which is the same thing here.
+   * In a browser nothing is published and the band is the toolbar's height.
+   */
+  --stx-settings-chrome-band: max(
+    var(--stx-settings-toolbar-height),
+    calc(
+      var(--craft-window-buttons-y, var(--craft-window-controls-inset-y, 0px))
+      + var(--craft-window-buttons-height, var(--craft-window-controls-height, 0px))
+      + 12px
+    )
+  );
+  /* What the search field leaves above itself, under the band. */
+  --stx-settings-search-gap: 7px;
+}
+:where([data-stx-settings][data-presentation="sheet"]) {
+  --stx-settings-height: min(640px, 90vh);
+  --stx-settings-chrome-band: 0px;
+  --stx-settings-search-gap: 12px;
+}
+
+[data-stx-settings] {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--stx-settings-height);
+  min-width: 0;
+  overflow: hidden;
+  color: var(--stx-mac-ink);
+  font-family: var(--stx-mac-font);
+  font-size: var(--stx-mac-font-size);
+  line-height: 1.25;
+  letter-spacing: -0.08px;
+  text-align: left;
+  -webkit-font-smoothing: antialiased;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+}
+[data-stx-settings] *, [data-stx-settings] *::before, [data-stx-settings] *::after { box-sizing: border-box; }
+/* Parts here set their own `display`, which would outrank the browser's rule for `hidden`. */
+[data-stx-settings] [hidden] { display: none; }
+
+[data-stx-settings][data-presentation="sheet"] {
+  max-width: var(--stx-settings-sheet-width);
+  border-radius: var(--stx-settings-sheet-radius);
+  box-shadow: 0 0 0 var(--stx-mac-hairline) var(--stx-mac-separator), 0 18px 50px rgba(0, 0, 0, 0.22);
+}
+
+/* ---------- The sidebar ---------- */
+.stx-settings-sidebar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  width: var(--stx-settings-sidebar-width);
+  min-width: 0;
+  background: var(--stx-mac-sidebar);
+  box-shadow: inset calc(-1 * var(--stx-mac-hairline)) 0 0 color-mix(in srgb, var(--stx-mac-separator) 60%, transparent);
+}
+/*
+ * Craft stamps this on the root element when it has drawn a material behind
+ * the web view. Only then does the sidebar let it through; in a browser there
+ * is nothing behind and an opaque sidebar is the right answer.
+ */
+:root[data-craft-native-sidebar] [data-stx-settings][data-presentation="window"] .stx-settings-sidebar {
+  background: color-mix(in srgb, var(--stx-mac-sidebar) var(--stx-settings-material-opacity), transparent);
+}
+
+.stx-settings-sidebar-top {
+  flex: none;
+  min-height: var(--stx-settings-chrome-band);
+  padding: calc(var(--stx-settings-chrome-band) + var(--stx-settings-search-gap)) var(--stx-settings-sidebar-inset) 6px;
+}
+
+/* A drag region moves the window; what can be pressed inside one does not. */
+[data-stx-settings] [data-window-drag] { -webkit-app-region: drag; }
+[data-stx-settings] [data-window-drag] :is(button, input, a, select, textarea, [role="button"], .stx-settings-search) { -webkit-app-region: no-drag; }
+
+.stx-settings-search {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: var(--stx-settings-search-height);
+  padding: 0 8px;
+  border-radius: calc(var(--stx-settings-search-height) / 2);
+  background: var(--stx-mac-well);
+  box-shadow: inset 0 0 0 var(--stx-mac-hairline) var(--stx-mac-control-line);
+  color: var(--stx-mac-ink-secondary);
+  transition: box-shadow 150ms ease, background-color 150ms ease;
+}
+.stx-settings-search:has(.stx-settings-search-input:focus-visible) { box-shadow: var(--stx-mac-focus-ring); }
+.stx-settings-search-glyph { flex: none; width: 13px; height: 13px; }
+.stx-settings-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--stx-mac-ink);
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: text;
+  user-select: text;
+  -webkit-user-select: text;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.stx-settings-search-input::placeholder { color: var(--stx-mac-ink-secondary); opacity: 1; }
+.stx-settings-search-input::-webkit-search-decoration,
+.stx-settings-search-input::-webkit-search-cancel-button,
+.stx-settings-search-input::-webkit-search-results-button { display: none; -webkit-appearance: none; }
+.stx-settings-search-clear {
+  display: none;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--stx-mac-ink-secondary);
+  cursor: default;
+}
+.stx-settings-search-clear > span { display: block; width: 14px; height: 14px; }
+.stx-settings-search[data-filled] .stx-settings-search-clear { display: block; }
+
+.stx-settings-nav {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0 var(--stx-settings-sidebar-inset) 12px;
+}
+.stx-settings-account { margin-top: 7px; }
+/* A slot nobody filled leaves no gap behind. */
+.stx-settings-account:not(:has(*)) { display: none; }
+.stx-settings-list { display: block; padding-top: 7px; }
+
+/* ---------- What a search found ---------- */
+.stx-settings-results { display: flex; flex-direction: column; gap: 2px; padding-top: 7px; }
+.stx-settings-list:not([hidden]) + .stx-settings-results {
+  margin-top: 8px;
+  border-top: var(--stx-mac-hairline) solid var(--stx-mac-separator);
+}
+.stx-settings-result {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  width: 100%;
+  min-height: 38px;
+  margin: 0;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 8px;
+  outline: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: default;
+}
+.stx-settings-result:hover { background: var(--stx-mac-hover); }
+.stx-settings-result:focus-visible { box-shadow: var(--stx-mac-focus-ring); }
+.stx-settings-result-label,
+.stx-settings-result-pane { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stx-settings-result-pane { color: var(--stx-mac-ink-secondary); font-size: var(--stx-mac-font-size-small); letter-spacing: 0; }
+.stx-settings-empty {
+  margin: 0;
+  padding: 24px 8px;
+  color: var(--stx-mac-ink-secondary);
+  text-align: center;
+}
+/* Read out, never seen. */
+.stx-settings-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- The detail column ---------- */
+.stx-settings-detail {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  background: var(--stx-mac-window);
+}
+.stx-settings-toolbar {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 12px;
+  height: var(--stx-settings-toolbar-height);
+  padding: 0 16px 0 8px;
+  /* The line is there all along and only shown once the content has moved under it. */
+  box-shadow: 0 var(--stx-mac-hairline) 0 transparent;
+  transition: box-shadow 150ms ease;
+  z-index: 1;
+}
+[data-stx-settings][data-scrolled] .stx-settings-toolbar { box-shadow: 0 var(--stx-mac-hairline) 0 var(--stx-mac-separator); }
+
+.stx-settings-history {
+  display: flex;
+  align-items: center;
+  flex: none;
+  width: 74px;
+  height: 36px;
+  border-radius: 18px;
+  background: var(--stx-mac-well);
+  box-shadow: inset 0 0 0 var(--stx-mac-hairline) var(--stx-mac-control-line);
+}
+.stx-settings-history-button {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: var(--stx-mac-ink-secondary);
+  cursor: default;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+.stx-settings-history-button:first-child { border-radius: 18px 6px 6px 18px; padding-left: 3px; }
+.stx-settings-history-button:last-child { border-radius: 6px 18px 18px 6px; padding-right: 3px; }
+.stx-settings-history-button > span { display: block; width: 17px; height: 17px; }
+.stx-settings-history-button:hover:not(:disabled) { color: var(--stx-mac-ink); }
+.stx-settings-history-button:active:not(:disabled) { background: var(--stx-mac-hover); }
+.stx-settings-history-button:disabled { color: var(--stx-mac-ink-tertiary); }
+.stx-settings-history-button:focus-visible { box-shadow: var(--stx-mac-focus-ring); }
+.stx-settings-history-rule { flex: none; width: 1px; height: 16px; background: var(--stx-mac-separator); }
+
+.stx-settings-title {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stx-settings-body {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 11px var(--stx-settings-content-margin) 20px;
+}
+.stx-settings-content {
+  width: 100%;
+  max-width: var(--stx-settings-content-width);
+  margin: 0 auto;
+}
+/*
+ * Until the view has run, the pane the server left showing is the one shown,
+ * and the first pane when it left none: a window is never blank while it loads.
+ */
+[data-stx-settings]:not([data-settings-ready]):not(:has([data-settings-pane]:not([hidden]))) .stx-settings-content > :first-child:is([data-settings-pane], :has(> [data-settings-pane])),
+[data-stx-settings]:not([data-settings-ready]):not(:has([data-settings-pane]:not([hidden]))) .stx-settings-content > :first-child > [data-settings-pane] { display: block; }
+
+/* ---------- Scrollbars: thin, and only while the pointer is over the list ---------- */
+.stx-settings-nav,
+.stx-settings-body { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+/* Where a scrollbar takes room, it takes it in every pane, so the column does not shift between a long pane and a short one. */
+.stx-settings-body { scrollbar-gutter: stable; }
+.stx-settings-nav:hover,
+.stx-settings-body:hover { scrollbar-color: var(--stx-settings-scrollbar) transparent; }
+
+/* ---------- An inactive window ---------- */
+:where([data-stx-window-active="false"]) .stx-settings-history-button,
+:root[data-craft-window-active='false'] .stx-settings-history-button { color: var(--stx-mac-ink-tertiary); }
+
+@media (prefers-contrast: more) {
+  .stx-settings-sidebar { box-shadow: inset -1px 0 0 var(--stx-mac-separator); }
+  .stx-settings-search,
+  .stx-settings-history { box-shadow: inset 0 0 0 1px var(--stx-mac-control-line); }
+  .stx-settings-toolbar { box-shadow: 0 1px 0 var(--stx-mac-separator); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stx-settings-search,
+  .stx-settings-toolbar,
+  .stx-settings-history-button { transition: none; }
+}
+</style>

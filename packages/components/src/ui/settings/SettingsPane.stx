@@ -1,0 +1,50 @@
+<script server>
+/*
+ * <SettingsPane>: one screen of a Settings window. Its `id` is the id its
+ * sidebar item carries; a pane with a `parent` is a sub-pane, reached by a
+ * navigation row and not from the sidebar.
+ *
+ * Every pane is in the page from the start and all but one are hidden. The
+ * shell shows the open one; `active` leaves this one showing before it has.
+ */
+export const paneId = $props.id || ''
+export const title = $props.title || paneId
+export const keywords = $props.keywords || ''
+export const parent = $props.parent || ''
+export const active = $bool($props.active)
+export const role = parent ? 'region' : 'tabpanel'
+export const className = $props.className || ''
+</script>
+
+@if(active)
+  <section
+    data-settings-pane="{{ paneId }}"
+    data-title="{{ title }}"
+    data-keywords="{{ keywords }}"
+    data-parent="{{ parent }}"
+    data-active
+    role="{{ role }}"
+    aria-label="{{ title }}"
+    class="stx-settings-pane {{ className }}"
+  >
+    <slot />
+  </section>
+@else
+  <section
+    data-settings-pane="{{ paneId }}"
+    data-title="{{ title }}"
+    data-keywords="{{ keywords }}"
+    data-parent="{{ parent }}"
+    role="{{ role }}"
+    aria-label="{{ title }}"
+    class="stx-settings-pane {{ className }}"
+    hidden
+  >
+    <slot />
+  </section>
+@endif
+
+<style>
+.stx-settings-pane { display: block; min-width: 0; outline: 0; }
+.stx-settings-pane[hidden] { display: none; }
+</style>

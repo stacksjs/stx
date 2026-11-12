@@ -1,0 +1,220 @@
+<script client>
+import { componentApi } from '../../src/utils/component-api'
+
+const pane = state('general')
+const appearance = state('auto')
+const accent = state('multicolor')
+const highlight = state('automatic')
+const iconSize = state('medium')
+const tint = state(false)
+const scrollBars = state('auto')
+const glass = state(1)
+
+const openAtLogin = state(true)
+const autoUpdate = state(true)
+const betaUpdates = state(false)
+const language = state('en')
+const deviceName = state('Studio Mac')
+const recentItems = state(10)
+
+const allowNotifications = state(true)
+const previews = state('unlocked')
+const sounds = state(true)
+const badges = state(true)
+const summary = state('off')
+
+const accents = [
+  { value: 'multicolor', label: 'Multicolor', color: 'conic-gradient(from 210deg, #ff5f57, #febc2e, #28c840, #0a84ff, #bf5af2, #ff5f57)' },
+  { value: 'blue', label: 'Blue', color: '#007aff' },
+  { value: 'purple', label: 'Purple', color: '#953d96' },
+  { value: 'pink', label: 'Pink', color: '#f74f9e' },
+  { value: 'red', label: 'Red', color: '#e0383e' },
+  { value: 'orange', label: 'Orange', color: '#f7821b' },
+  { value: 'yellow', label: 'Yellow', color: '#ffc726' },
+  { value: 'green', label: 'Green', color: '#62ba46' },
+  { value: 'graphite', label: 'Graphite', color: '#989898' },
+]
+
+// The picker only reports the choice. Applying it is the page's business:
+// here the `dark` class the library's tokens follow.
+function applyAppearance(choice) {
+  appearance.set(choice)
+  const dark = choice === 'dark' || (choice === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches)
+  demoRoot().closest('html').classList.toggle('dark', dark)
+}
+
+const rootRef = useRef('settings-demo')
+function demoRoot() { return rootRef() }
+
+// From outside the window: the same calls an app's menu or a deep link makes.
+function openUpdates() {
+  const settings = componentApi('demo-settings')
+  if (settings) settings.revealSetting('auto-update')
+}
+</script>
+
+<div ref="settings-demo" class="settings-demo">
+  <SettingsWindow id="demo-settings" title="Settings" storageKey="demo-settings" v-model:pane="pane">
+    <template #account>
+      <button type="button" class="settings-demo-account">
+        <span class="settings-demo-avatar" aria-hidden="true">AL</span>
+        <span class="settings-demo-who">
+          <span class="settings-demo-name">Ada Lovelace</span>
+          <span class="settings-demo-sub">Apple Account</span>
+        </span>
+      </button>
+    </template>
+
+    <template #sidebar>
+      <SettingsSidebarGroup>
+        <SettingsSidebarItem id="general" label="General" icon="i-f7-gear-alt-fill" tone="grey" />
+        <SettingsSidebarItem id="appearance" label="Appearance" icon="i-f7-circle-lefthalf-fill" tone="ink" keywords="dark light theme accent" />
+        <SettingsSidebarItem id="notifications" label="Notifications" icon="i-f7-bell-fill" tone="red" />
+      </SettingsSidebarGroup>
+      <SettingsSidebarGroup>
+        <SettingsSidebarItem id="updates" label="Software Update" icon="i-f7-arrow-down-circle-fill" tone="grey" badge="1" />
+        <SettingsSidebarItem id="about" label="About" icon="i-f7-info-circle-fill" tone="blue" />
+      </SettingsSidebarGroup>
+    </template>
+
+    <SettingsPane id="general" title="General" active>
+      <SettingsPaneHeader icon="i-f7-gear-alt-fill" tone="grey" title="General" description="Manage your overall setup and preferences, such as software updates, language, and more." />
+      <SettingsGroup>
+        <SettingsRow label="About" to="about" icon="i-f7-desktopcomputer" tone="grey" setting="general-about" />
+        <SettingsRow label="Software Update" to="updates" icon="i-f7-arrow-down-circle-fill" tone="grey" setting="general-updates" />
+        <SettingsRow label="Language & Region" to="language" icon="i-f7-globe" tone="blue" value="English" setting="general-language" />
+      </SettingsGroup>
+      <SettingsGroup header="Startup">
+        <SettingsRow label="Open at login" description="Starts in the background when you sign in." setting="open-at-login" keywords="launch start boot">
+          <Switch variant="mac" v-model:checked="openAtLogin" />
+        </SettingsRow>
+        <SettingsRow label="Device name" setting="device-name">
+          <div style="width: 180px"><TextInput variant="mac" v-model:value="deviceName" /></div>
+        </SettingsRow>
+        <SettingsRow label="Recent items" setting="recent-items" keywords="documents apps servers">
+          <NumberInput variant="mac" v-model:value="recentItems" min="0" max="50" />
+        </SettingsRow>
+      </SettingsGroup>
+      <SettingsGroup footer="Resetting puts every setting in this window back where it started. Nothing on your disks is touched.">
+        <SettingsRow label="Restore default settings" setting="reset">
+          <Button appearance="mac">Reset...</Button>
+        </SettingsRow>
+        <SettingsRow label="Erase all content and settings" destructive setting="erase">
+          <Button appearance="mac" variant="danger">Erase...</Button>
+        </SettingsRow>
+      </SettingsGroup>
+    </SettingsPane>
+
+    <SettingsPane id="language" title="Language & Region" parent="general">
+      <SettingsGroup>
+        <SettingsRow label="Preferred language" setting="language">
+          <Select variant="mac" v-model:value="language" placeholder="" :options="[{ value: 'en', label: 'English' }, { value: 'de', label: 'Deutsch' }, { value: 'fr', label: 'Francais' }]" />
+        </SettingsRow>
+        <SettingsRow label="First day of week" setting="first-day">
+          <Select variant="mac" value="monday" placeholder="" :options="[{ value: 'sunday', label: 'Sunday' }, { value: 'monday', label: 'Monday' }]" />
+        </SettingsRow>
+      </SettingsGroup>
+    </SettingsPane>
+
+    <SettingsPane id="appearance" title="Appearance" keywords="dark light theme">
+      <SettingsGroup>
+        <SettingsRow label="Appearance" setting="appearance" multiline keywords="dark light auto mode">
+          <AppearancePicker :value="appearance()" @change="applyAppearance($event)" />
+        </SettingsRow>
+        <SettingsRow label="Liquid Glass" setting="glass" keywords="transparency clear tinted">
+          <Slider v-model:value="glass" min="0" max="2" step="1" ticks width="240px" />
+        </SettingsRow>
+      </SettingsGroup>
+      <SettingsGroup header="Theme">
+        <SettingsRow label="Color" setting="accent" multiline keywords="accent colour tint">
+          <ColorSwatches v-model:value="accent" :options="accents" />
+        </SettingsRow>
+        <SettingsRow label="Text highlight color" setting="highlight">
+          <Select variant="mac" v-model:value="highlight" placeholder="" :options="[{ value: 'automatic', label: 'Automatic' }, { value: 'blue', label: 'Blue' }, { value: 'graphite', label: 'Graphite' }]" />
+        </SettingsRow>
+      </SettingsGroup>
+      <SettingsGroup header="Windows">
+        <SettingsRow label="Sidebar icon size" setting="icon-size">
+          <Select variant="mac" v-model:value="iconSize" placeholder="" :options="[{ value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }]" />
+        </SettingsRow>
+        <SettingsRow label="Tint window background with wallpaper color" setting="tint" keywords="wallpaper">
+          <Switch variant="mac" v-model:checked="tint" />
+        </SettingsRow>
+      </SettingsGroup>
+      <SettingsGroup>
+        <SettingsRow label="Show scroll bars" layout="stacked" setting="scroll-bars">
+          <RadioGroup variant="mac" value="auto" @change="scrollBars.set($event)" :options="[{ value: 'auto', label: 'Automatically based on mouse or trackpad' }, { value: 'scrolling', label: 'When scrolling' }, { value: 'always', label: 'Always' }]" />
+        </SettingsRow>
+      </SettingsGroup>
+    </SettingsPane>
+
+    <SettingsPane id="notifications" title="Notifications" keywords="alerts banners sounds">
+      <SettingsGroup>
+        <SettingsRow label="Allow notifications" setting="allow-notifications">
+          <Switch variant="mac" v-model:checked="allowNotifications" />
+        </SettingsRow>
+        <SettingsRow label="Show previews" setting="previews">
+          <Select variant="mac" v-model:value="previews" placeholder="" :options="[{ value: 'always', label: 'Always' }, { value: 'unlocked', label: 'When Unlocked' }, { value: 'never', label: 'Never' }]" />
+        </SettingsRow>
+      </SettingsGroup>
+      <SettingsGroup header="Alerts" footer="Badges are the red counts on an app's icon.">
+        <SettingsRow label="Play sound for notifications" setting="sounds">
+          <Switch variant="mac" v-model:checked="sounds" />
+        </SettingsRow>
+        <SettingsRow label="Badge app icon" setting="badges">
+          <Switch variant="mac" v-model:checked="badges" />
+        </SettingsRow>
+        <SettingsRow label="Summary" description="Collect less urgent notifications and deliver them together." setting="summary">
+          <SegmentedControl variant="mac" v-model:value="summary" label="Summary" :options="[{ value: 'off', label: 'Off' }, { value: 'daily', label: 'Daily' }, { value: 'twice', label: 'Twice a day' }]" />
+        </SettingsRow>
+      </SettingsGroup>
+    </SettingsPane>
+
+    <SettingsPane id="updates" title="Software Update" keywords="upgrade version">
+      <SettingsGroup>
+        <SettingsRow label="Version 2.4 is available" description="Released 11 November. 48 MB." setting="update-available">
+          <Button appearance="mac" variant="primary">Update Now</Button>
+        </SettingsRow>
+      </SettingsGroup>
+      <SettingsGroup header="Automatic updates" footer="Nothing installs without asking first.">
+        <SettingsRow label="Check for updates automatically" setting="auto-update" keywords="background daily">
+          <Switch variant="mac" v-model:checked="autoUpdate" />
+        </SettingsRow>
+        <SettingsRow label="Include beta versions" setting="beta-updates">
+          <Checkbox variant="mac" v-model:checked="betaUpdates" />
+        </SettingsRow>
+      </SettingsGroup>
+    </SettingsPane>
+
+    <SettingsPane id="about" title="About" keywords="version licence serial">
+      <SettingsPaneHeader icon="i-f7-info-circle-fill" tone="blue" title="Demo App" description="Version 2.3 (build 418)" />
+      <SettingsGroup>
+        <SettingsRow label="Name" setting="about-name"><span class="settings-demo-value">Studio Mac</span></SettingsRow>
+        <SettingsRow label="Licence" setting="about-licence"><span class="settings-demo-value">Personal</span></SettingsRow>
+        <SettingsRow label="Automatic updates" setting="about-updates">
+          <Button appearance="mac" @click="openUpdates()">Show in Software Update</Button>
+        </SettingsRow>
+      </SettingsGroup>
+    </SettingsPane>
+  </SettingsWindow>
+</div>
+
+<style>
+/* The demo's own bits: an account row and a value to read. Everything else on
+   the page is the library's. */
+.settings-demo { height: 100vh; }
+.settings-demo-account {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 6px 8px; border: 0; border-radius: 8px; background: none;
+  color: inherit; font: inherit; text-align: left; cursor: default;
+}
+.settings-demo-account:hover { background: var(--stx-mac-hover); }
+.settings-demo-avatar {
+  display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%;
+  background: linear-gradient(#a5b4fc, #6366f1); color: #ffffff; font-size: 14px; font-weight: 600;
+}
+.settings-demo-who { display: flex; flex-direction: column; min-width: 0; }
+.settings-demo-name { font-size: 13px; font-weight: 600; }
+.settings-demo-sub { font-size: 11px; color: var(--stx-mac-ink-secondary); }
+.settings-demo-value { color: var(--stx-mac-ink-secondary); }
+</style>

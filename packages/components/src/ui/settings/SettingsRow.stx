@@ -1,0 +1,424 @@
+<script server>
+/*
+ * <SettingsRow>: one setting in a <SettingsGroup>. Its name at the leading
+ * edge, a description under it, and the control (whatever is in the slot) at
+ * the trailing edge.
+ *
+ *   <SettingsRow label="Tint window background" setting="tint" keywords="wallpaper colour">
+ *     <Switch variant="mac" v-model:checked="tint" />
+ *   </SettingsRow>
+ *
+ * The row is how the window's search finds a setting, so it carries
+ * `data-settings-row`, `data-setting`, `data-label` and `data-keywords`, and
+ * it draws the wash the window asks for by setting `data-highlight` on it.
+ *
+ * The label names the control. Its id is `<row id>-label` (also on the row as
+ * `data-label-id`), for a control that wants `aria-labelledby` itself, and
+ * when the first control in the slot has no accessible name the row gives it
+ * that one, with the description as `aria-describedby`.
+ *
+ * `to="<pane id>"` makes it a navigation row: a chevron, an optional `value`
+ * beside it, and `data-navigate` for the window, which is what opens the pane.
+ * The row only draws it.
+ *
+ * `multiline` lets the words wrap and puts the control at the top;
+ * `layout="stacked"` puts the control under the label at full width;
+ * `destructive` paints the label as a destructive action. `icon` is an
+ * Iconify class on a tile of `tone`.
+ */
+const TONES = ['grey', 'blue', 'red', 'orange', 'yellow', 'green', 'indigo', 'purple', 'pink', 'ink']
+export const label = $props.label || ''
+export const description = $props.description || ''
+export const icon = $props.icon || ''
+export const tone = TONES.includes($props.tone) ? $props.tone : 'grey'
+export const setting = $props.setting || ''
+export const keywords = Array.isArray($props.keywords) ? $props.keywords.join(' ') : ($props.keywords || '')
+export const to = $props.to || ''
+export const navigates = to !== ''
+export const value = $props.value || ''
+export const multiline = $bool($props.multiline)
+export const destructive = $bool($props.destructive)
+export const disabled = $bool($props.disabled)
+export const layout = $props.layout === 'stacked' ? 'stacked' : 'inline'
+const settingSlug = String(setting).replace(/[^\w-]+/g, '-')
+export const rowId = $props.id || (settingSlug ? `settings-row-${settingSlug}` : `settings-row-${$uid}`)
+export const labelId = `${rowId}-label`
+export const descriptionId = `${rowId}-description`
+export const className = $props.className || ''
+</script>
+
+<script client>
+const heading = useReactiveProp('label', {{ label }})
+const detail = useReactiveProp('description', {{ description }})
+const trailing = useReactiveProp('value', {{ value }})
+const isDisabled = useReactiveProp('disabled', {{ disabled }})
+const labelId = {{ labelId }}
+const descriptionId = {{ descriptionId }}
+const rowRef = useRef('row')
+
+// What counts as the control: a group of choices before any one choice in it.
+const CONTROLS = '[role="radiogroup"], [role="group"], input:not([type="hidden"]), select, textarea, button, [role="switch"], [role="slider"], [role="combobox"], [role="checkbox"], [role="listbox"], [role="textbox"], [role="spinbutton"], [tabindex]:not([tabindex="-1"])'
+
+/*
+ * A name a control falls back to when it was given none says what kind of
+ * thing it is, not which setting. <Switch> calls itself "Toggle switch", and a
+ * window of twenty of those tells a screen reader nothing, so the row's label
+ * is put in charge of it: `aria-labelledby` outranks `aria-label`.
+ */
+const PLACEHOLDER_NAMES = ['Toggle switch']
+
+function isNamed(control) {
+  if (PLACEHOLDER_NAMES.includes(control.getAttribute('aria-label') || '') && !control.hasAttribute('aria-labelledby')) return false
+  if ((control.getAttribute('aria-label') || '').trim() !== '') return true
+  if (control.hasAttribute('aria-labelledby')) return true
+  if (control.labels && control.labels.length > 0) return true
+  // A push button says what it does in its own words.
+  return control.tagName === 'BUTTON' && !control.hasAttribute('role') && control.textContent.trim() !== ''
+}
+
+/** Name the slot's first control after the row, unless it has a name. */
+function nameControl() {
+  const row = rowRef()
+  const slot = row ? row.querySelector('.stx-settings-row-control') : null
+  const control = slot ? slot.querySelector(CONTROLS) : null
+  if (!control) return null
+  if (!isNamed(control)) control.setAttribute('aria-labelledby', labelId)
+  if (detail() && !control.hasAttribute('aria-describedby')) control.setAttribute('aria-describedby', descriptionId)
+  return control
+}
+
+onMount(() => {
+  nameControl()
+})
+
+defineExpose({ labelId, descriptionId, nameControl })
+</script>
+
+<div
+  ref="row"
+  id="{{ rowId }}"
+  data-settings-row
+  @if(setting)data-setting="{{ setting }}"@endif
+  data-label="{{ label }}"
+  :data-label="heading()"
+  data-keywords="{{ keywords }}"
+  data-label-id="{{ labelId }}"
+  data-layout="{{ layout }}"
+  @if(multiline)data-multiline@endif
+  @if(destructive)data-destructive@endif
+  @if(icon)data-tile@endif
+  @if(navigates)data-navigate="{{ to }}" role="button" tabindex="0"@endif
+  @if(disabled)aria-disabled="true"@endif
+  :aria-disabled="isDisabled() ? 'true' : null"
+  class="stx-settings-row {{ className }}"
+>
+  @if(icon)
+    <span class="stx-settings-row-tile" data-tone="{{ tone }}" aria-hidden="true"><i class="{{ icon }}"></i></span>
+  @endif
+  <span class="stx-settings-row-text">
+    <span id="{{ labelId }}" :text="heading()" class="stx-settings-row-label">{{ label }}</span>
+    <span id="{{ descriptionId }}" :show="detail()" :text="detail()" class="stx-settings-row-description">{{ description }}</span>
+  </span>
+  <span class="stx-settings-row-control"><slot /></span>
+  @if(navigates)
+    <span :show="trailing()" :text="trailing()" class="stx-settings-row-value">{{ value }}</span>
+    <span class="stx-settings-row-chevron" aria-hidden="true"></span>
+  @endif
+</div>
+
+<style>
+:where(:root) {
+  --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
+  --stx-mac-font-size: 13px;
+  --stx-mac-font-size-small: 11px;
+  --stx-mac-hairline: 0.5px;
+  --stx-mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--stx-mac-accent) 35%, transparent);
+  --stx-mac-card-radius: 12px;
+  --stx-mac-control-radius: 6px;
+  --stx-mac-row-height: 38px;
+  --stx-mac-row-inset: 10px;
+  --stx-mac-sidebar-width: 226px;
+  --stx-mac-accent: var(--stx-accent, #007aff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(0, 0, 0, 0.85);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-tertiary: rgba(0, 0, 0, 0.26);
+  --stx-mac-window: #ffffff;
+  --stx-mac-sidebar: #f2f1f0;
+  --stx-mac-card: rgba(0, 0, 0, 0.04);
+  --stx-mac-separator: rgba(0, 0, 0, 0.1);
+  --stx-mac-hover: rgba(0, 0, 0, 0.05);
+  --stx-mac-selection-inactive: rgba(0, 0, 0, 0.08);
+  --stx-mac-well: rgba(0, 0, 0, 0.07);
+  --stx-mac-control: #ffffff;
+  --stx-mac-control-line: rgba(0, 0, 0, 0.12);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --stx-mac-switch-on: #34c759;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff3b30;
+}
+:where(.dark) {
+  --stx-mac-accent: var(--stx-accent, #0a84ff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(255, 255, 255, 0.85);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.55);
+  --stx-mac-ink-tertiary: rgba(255, 255, 255, 0.25);
+  --stx-mac-window: #1e1e1e;
+  --stx-mac-sidebar: #2a2a2a;
+  --stx-mac-card: rgba(255, 255, 255, 0.05);
+  --stx-mac-separator: rgba(255, 255, 255, 0.1);
+  --stx-mac-hover: rgba(255, 255, 255, 0.06);
+  --stx-mac-selection-inactive: rgba(255, 255, 255, 0.1);
+  --stx-mac-well: rgba(255, 255, 255, 0.1);
+  --stx-mac-control: rgba(255, 255, 255, 0.14);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.06);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+  --stx-mac-switch-on: #30d158;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff453a;
+}
+@media (max-resolution: 1.5dppx) {
+:where(:root) {
+  --stx-mac-hairline: 1px;
+}
+}
+@media (prefers-contrast: more) {
+:where(:root) {
+  --stx-mac-separator: rgba(0, 0, 0, 0.4);
+  --stx-mac-control-line: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.75);
+  --stx-mac-hairline: 1px;
+}
+:where(.dark) {
+  --stx-mac-separator: rgba(255, 255, 255, 0.45);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.5);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.8);
+}
+}
+
+:where([data-settings-row]) {
+  /* The tile colours a Settings icon is drawn on. */
+  --stx-settings-tone-grey: #8e8e93;
+  --stx-settings-tone-blue: #007aff;
+  --stx-settings-tone-red: #ff3b30;
+  --stx-settings-tone-orange: #ff9500;
+  --stx-settings-tone-yellow: #ffcc00;
+  --stx-settings-tone-green: #34c759;
+  --stx-settings-tone-indigo: #5856d6;
+  --stx-settings-tone-purple: #af52de;
+  --stx-settings-tone-pink: #ff2d55;
+  --stx-settings-tone-ink: #1c1c1e;
+  --stx-settings-tile-size: 24px;
+  --stx-settings-tile-radius: 6px;
+  --stx-settings-tile-glyph: 15px;
+  --stx-settings-row-gap: 10px;
+  --stx-settings-row-wash: color-mix(in srgb, var(--stx-mac-accent) 20%, transparent);
+  /* A slider in a row is a control at the trailing edge, not the row's width. */
+  --stx-slider-width: 220px;
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--stx-settings-row-gap);
+  box-sizing: border-box;
+  min-height: var(--stx-mac-row-height);
+  min-width: 0;
+  padding: 0 var(--stx-mac-row-inset);
+  font-family: var(--stx-mac-font);
+  font-size: var(--stx-mac-font-size);
+  letter-spacing: -0.08px;
+  color: var(--stx-mac-ink);
+  -webkit-font-smoothing: antialiased;
+  cursor: default;
+  outline: none;
+}
+:where(.dark) :where([data-settings-row]) {
+  --stx-settings-tone-grey: #8e8e93;
+  --stx-settings-tone-blue: #0a84ff;
+  --stx-settings-tone-red: #ff453a;
+  --stx-settings-tone-orange: #ff9f0a;
+  --stx-settings-tone-yellow: #ffd60a;
+  --stx-settings-tone-green: #30d158;
+  --stx-settings-tone-indigo: #5e5ce6;
+  --stx-settings-tone-purple: #bf5af2;
+  --stx-settings-tone-pink: #ff375f;
+  --stx-settings-tone-ink: #48484a;
+}
+
+/* The words. The label is one line unless the row is `multiline`; the
+   description always wraps. */
+:where([data-settings-row]) > .stx-settings-row-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: 7px 0;
+  -webkit-user-select: none;
+  user-select: none;
+}
+:where([data-settings-row]) .stx-settings-row-label {
+  overflow: hidden;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--stx-mac-ink);
+}
+:where([data-settings-row]) .stx-settings-row-description {
+  overflow: hidden;
+  margin-top: 1px;
+  font-size: var(--stx-mac-font-size-small);
+  line-height: 14px;
+  letter-spacing: 0;
+  /* A description wraps, as System Settings' do: it is a sentence, and a
+     sentence cut off at the control says less than no sentence. */
+  overflow-wrap: anywhere;
+  white-space: normal;
+  color: var(--stx-mac-ink-secondary);
+}
+:where([data-settings-row]) .stx-settings-row-description:empty { display: none; }
+:where([data-settings-row][data-destructive]) .stx-settings-row-label { color: var(--stx-mac-danger); }
+
+/* The control, at the trailing edge and never squeezed by the words. */
+:where([data-settings-row]) > .stx-settings-row-control {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+}
+:where([data-settings-row]) > .stx-settings-row-control:empty { display: none; }
+
+/* Words that wrap, with the control level with the first line. */
+:where([data-settings-row][data-multiline]) { align-items: flex-start; }
+:where([data-settings-row][data-multiline]) > .stx-settings-row-text { justify-content: flex-start; padding: 10px 0; }
+:where([data-settings-row][data-multiline]) :is(.stx-settings-row-label, .stx-settings-row-description) {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+:where([data-settings-row][data-multiline]) > .stx-settings-row-control { padding: 10px 0; }
+:where([data-settings-row][data-multiline]) > :is(.stx-settings-row-tile, .stx-settings-row-chevron, .stx-settings-row-value) { margin-top: 10px; }
+
+/* The control under the label, as wide as the row: a text area, a radio group. */
+:where([data-settings-row][data-layout="stacked"]) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  --stx-slider-width: 100%;
+}
+:where([data-settings-row][data-layout="stacked"]) > .stx-settings-row-text { flex: 0 0 auto; padding: 10px 0 0; }
+:where([data-settings-row][data-layout="stacked"]) > .stx-settings-row-control {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+  padding: 0 0 7px;
+}
+
+/* The icon tile. */
+:where([data-settings-row]) > .stx-settings-row-tile {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: var(--stx-settings-tile-size);
+  height: var(--stx-settings-tile-size);
+  border-radius: var(--stx-settings-tile-radius);
+  background: var(--stx-settings-tone-grey);
+  color: #ffffff;
+  font-size: var(--stx-settings-tile-glyph);
+  line-height: 1;
+}
+:where([data-settings-row]) > .stx-settings-row-tile > i { display: block; width: 1em; height: 1em; }
+:where([data-settings-row]) > .stx-settings-row-tile[data-tone="blue"] { background: var(--stx-settings-tone-blue); }
+:where([data-settings-row]) > .stx-settings-row-tile[data-tone="red"] { background: var(--stx-settings-tone-red); }
+:where([data-settings-row]) > .stx-settings-row-tile[data-tone="orange"] { background: var(--stx-settings-tone-orange); }
+:where([data-settings-row]) > .stx-settings-row-tile[data-tone="yellow"] { background: var(--stx-settings-tone-yellow); }
+:where([data-settings-row]) > .stx-settings-row-tile[data-tone="green"] { background: var(--stx-settings-tone-green); }
+:where([data-settings-row]) > .stx-settings-row-tile[data-tone="indigo"] { background: var(--stx-settings-tone-indigo); }
+:where([data-settings-row]) > .stx-settings-row-tile[data-tone="purple"] { background: var(--stx-settings-tone-purple); }
+:where([data-settings-row]) > .stx-settings-row-tile[data-tone="pink"] { background: var(--stx-settings-tone-pink); }
+:where([data-settings-row]) > .stx-settings-row-tile[data-tone="ink"] { background: var(--stx-settings-tone-ink); }
+
+/* A navigation row: a value, a chevron, and something to press. */
+:where([data-settings-row][data-navigate][data-tile]) { min-height: 44px; }
+:where([data-settings-row]) > .stx-settings-row-value {
+  flex: 0 1 auto;
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--stx-mac-ink-secondary);
+  -webkit-user-select: none;
+  user-select: none;
+}
+:where([data-settings-row]) > .stx-settings-row-value:empty { display: none; }
+:where([data-settings-row]) > .stx-settings-row-chevron {
+  position: relative;
+  flex: 0 0 auto;
+  width: 7px;
+  height: 11px;
+  margin-left: -2px;
+}
+:where([data-settings-row]) > .stx-settings-row-chevron::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  box-sizing: border-box;
+  width: 7px;
+  height: 7px;
+  border-top: 1.5px solid var(--stx-mac-ink-tertiary);
+  border-right: 1.5px solid var(--stx-mac-ink-tertiary);
+  border-radius: 0.5px;
+  transform: translate(-2px, -50%) rotate(45deg);
+}
+
+/*
+ * What a row is washed with: hover and press on a navigation row, the focus
+ * ring, and the highlight the window's search puts on a found row. A rounded
+ * shape inside the row, concentric with the card, so the card need not clip.
+ */
+:where([data-settings-row])::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: calc(var(--stx-mac-card-radius) - 3px);
+  background: transparent;
+  pointer-events: none;
+  transition: background-color 150ms ease;
+}
+:where([data-settings-row][data-navigate]:hover)::after { background: var(--stx-mac-hover); }
+:where([data-settings-row][data-navigate]:active)::after { background: var(--stx-mac-selection-inactive); }
+:where([data-settings-row][data-navigate]:focus-visible)::after { box-shadow: var(--stx-mac-focus-ring); }
+
+:where([data-settings-row][aria-disabled="true"]) > :not(.stx-settings-row-tile) { opacity: 0.4; }
+:where([data-settings-row][aria-disabled="true"]) { pointer-events: none; }
+
+[data-settings-row][data-highlight]::after { animation: stx-settings-row-highlight 1.6s ease-out both; }
+@keyframes stx-settings-row-highlight {
+  0%, 30% { background: var(--stx-settings-row-wash); }
+  100% { background: transparent; }
+}
+
+/* A window that is not the key window has no accent to wash with. */
+:where([data-stx-window-active="false"]) :where([data-settings-row]),
+:root[data-craft-window-active='false'] :where([data-settings-row]) {
+  --stx-settings-row-wash: var(--stx-mac-selection-inactive);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where([data-settings-row])::after { transition: none; }
+  /* The found row is still marked, for as long as the window marks it. It does not move. */
+  [data-settings-row][data-highlight]::after { animation: none; background: var(--stx-settings-row-wash); }
+}
+
+@media (prefers-contrast: more) {
+  :where([data-settings-row]) > .stx-settings-row-chevron::before { border-color: var(--stx-mac-ink-secondary); }
+  :where([data-settings-row][data-navigate]:focus-visible)::after { box-shadow: 0 0 0 2px var(--stx-mac-accent); }
+}
+</style>

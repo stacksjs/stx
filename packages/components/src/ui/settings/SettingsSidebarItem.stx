@@ -1,0 +1,228 @@
+<script server>
+/*
+ * <SettingsSidebarItem>: one row of the sidebar, opening the pane whose id it
+ * carries. The icon is an Iconify class, drawn white on a rounded tile in one
+ * of System Settings' tile colours.
+ *
+ * It only draws. The shell selects it, gives it its place in the tab order
+ * and links it to its pane.
+ */
+const TONES = ['grey', 'blue', 'red', 'orange', 'yellow', 'green', 'indigo', 'purple', 'pink', 'ink']
+export const paneId = $props.id || ''
+export const label = $props.label || ''
+export const icon = $props.icon || ''
+export const tone = TONES.includes($props.tone) ? $props.tone : 'grey'
+export const badge = $props.badge == null || $props.badge === false ? '' : String($props.badge)
+/* Words a search should find this item by, beyond its label. */
+export const keywords = $props.keywords || ''
+export const className = $props.className || ''
+</script>
+
+<button
+  type="button"
+  role="tab"
+  aria-selected="false"
+  tabindex="-1"
+  data-settings-item="{{ paneId }}"
+  data-keywords="{{ keywords }}"
+  class="stx-settings-item {{ className }}"
+>
+  @if(icon)
+    <span class="stx-settings-tile" data-tone="{{ tone }}" aria-hidden="true"><span class="{{ icon }}"></span></span>
+  @endif
+  <span class="stx-settings-item-label">{{ label }}</span>
+  @if(badge)
+    <span class="stx-settings-item-badge">{{ badge }}</span>
+  @endif
+</button>
+
+<style>
+:where(:root) {
+  --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
+  --stx-mac-font-size: 13px;
+  --stx-mac-font-size-small: 11px;
+  --stx-mac-hairline: 0.5px;
+  --stx-mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--stx-mac-accent) 35%, transparent);
+  --stx-mac-card-radius: 12px;
+  --stx-mac-control-radius: 6px;
+  --stx-mac-row-height: 38px;
+  --stx-mac-row-inset: 10px;
+  --stx-mac-sidebar-width: 226px;
+  --stx-mac-accent: var(--stx-accent, #007aff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(0, 0, 0, 0.85);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-tertiary: rgba(0, 0, 0, 0.26);
+  --stx-mac-window: #ffffff;
+  --stx-mac-sidebar: #f2f1f0;
+  --stx-mac-card: rgba(0, 0, 0, 0.04);
+  --stx-mac-separator: rgba(0, 0, 0, 0.1);
+  --stx-mac-hover: rgba(0, 0, 0, 0.05);
+  --stx-mac-selection-inactive: rgba(0, 0, 0, 0.08);
+  --stx-mac-well: rgba(0, 0, 0, 0.07);
+  --stx-mac-control: #ffffff;
+  --stx-mac-control-line: rgba(0, 0, 0, 0.12);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --stx-mac-switch-on: #34c759;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff3b30;
+}
+:where(.dark) {
+  --stx-mac-accent: var(--stx-accent, #0a84ff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(255, 255, 255, 0.85);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.55);
+  --stx-mac-ink-tertiary: rgba(255, 255, 255, 0.25);
+  --stx-mac-window: #1e1e1e;
+  --stx-mac-sidebar: #2a2a2a;
+  --stx-mac-card: rgba(255, 255, 255, 0.05);
+  --stx-mac-separator: rgba(255, 255, 255, 0.1);
+  --stx-mac-hover: rgba(255, 255, 255, 0.06);
+  --stx-mac-selection-inactive: rgba(255, 255, 255, 0.1);
+  --stx-mac-well: rgba(255, 255, 255, 0.1);
+  --stx-mac-control: rgba(255, 255, 255, 0.14);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.06);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+  --stx-mac-switch-on: #30d158;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff453a;
+}
+@media (max-resolution: 1.5dppx) {
+:where(:root) {
+  --stx-mac-hairline: 1px;
+}
+}
+@media (prefers-contrast: more) {
+:where(:root) {
+  --stx-mac-separator: rgba(0, 0, 0, 0.4);
+  --stx-mac-control-line: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.75);
+  --stx-mac-hairline: 1px;
+}
+:where(.dark) {
+  --stx-mac-separator: rgba(255, 255, 255, 0.45);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.5);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.8);
+}
+}
+
+:where([data-settings-item]) {
+  --stx-settings-item-height: 30px;
+  --stx-settings-item-radius: 8px;
+  --stx-settings-tile-size: 20px;
+  --stx-settings-tile-radius: 5.5px;
+  --stx-settings-selection: var(--stx-mac-accent);
+  --stx-settings-selection-ink: var(--stx-mac-accent-ink);
+  /* How much colour a tile keeps in a window that is not in front. */
+  --stx-settings-tile-inactive-saturation: 0.7;
+}
+
+.stx-settings-item {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--stx-settings-item-height);
+  margin: 0;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--stx-settings-item-radius);
+  outline: 0;
+  background: none;
+  color: var(--stx-mac-ink);
+  font: inherit;
+  font-family: var(--stx-mac-font);
+  font-size: var(--stx-mac-font-size);
+  letter-spacing: -0.08px;
+  text-align: left;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+.stx-settings-item[hidden] { display: none; }
+.stx-settings-item-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stx-settings-item:focus-visible { box-shadow: var(--stx-mac-focus-ring); }
+
+.stx-settings-item-badge {
+  flex: none;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--stx-mac-well);
+  color: var(--stx-mac-ink-secondary);
+  font-size: var(--stx-mac-font-size-small);
+  font-variant-numeric: tabular-nums;
+  line-height: 19px;
+  letter-spacing: 0;
+  text-align: center;
+}
+
+/* ---------- The tile ---------- */
+.stx-settings-tile {
+  --stx-settings-tile: #8e8e93;
+  --stx-settings-tile-glyph: #ffffff;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--stx-settings-tile-size);
+  height: var(--stx-settings-tile-size);
+  border-radius: var(--stx-settings-tile-radius);
+  /* Lighter at the top, as a tile is lit from above. */
+  background: linear-gradient(color-mix(in srgb, var(--stx-settings-tile) 84%, #ffffff), var(--stx-settings-tile));
+  color: var(--stx-settings-tile-glyph);
+}
+.stx-settings-tile > span { display: block; width: 13px; height: 13px; }
+.stx-settings-tile[data-tone="grey"] { --stx-settings-tile: #8e8e93; }
+.stx-settings-tile[data-tone="blue"] { --stx-settings-tile: #007aff; }
+.stx-settings-tile[data-tone="red"] { --stx-settings-tile: #ff3b30; }
+.stx-settings-tile[data-tone="orange"] { --stx-settings-tile: #ff9500; }
+.stx-settings-tile[data-tone="yellow"] { --stx-settings-tile: #ffcc00; }
+.stx-settings-tile[data-tone="green"] { --stx-settings-tile: #34c759; }
+.stx-settings-tile[data-tone="indigo"] { --stx-settings-tile: #5856d6; }
+.stx-settings-tile[data-tone="purple"] { --stx-settings-tile: #af52de; }
+.stx-settings-tile[data-tone="pink"] { --stx-settings-tile: #ff2d55; }
+.stx-settings-tile[data-tone="ink"] { --stx-settings-tile: #1d1d1f; }
+/* Ink is the page's own ink: black on white, and the reverse in the dark. */
+:where(.dark) .stx-settings-tile[data-tone="ink"] { --stx-settings-tile: #dcdce0; --stx-settings-tile-glyph: #1d1d1f; }
+
+/* ---------- Selected ---------- */
+.stx-settings-item[aria-selected="true"] {
+  background: var(--stx-settings-selection);
+  color: var(--stx-settings-selection-ink);
+  /* The same weight as its neighbours, as System Settings draws it: the fill
+     says which row is chosen, and a heavier label would shift its width. */
+  font-weight: var(--stx-settings-selection-weight, inherit);
+}
+.stx-settings-item[aria-selected="true"] .stx-settings-item-badge {
+  background: color-mix(in srgb, var(--stx-settings-selection-ink) 22%, transparent);
+  color: var(--stx-settings-selection-ink);
+}
+.stx-settings-item[aria-selected="true"]:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--stx-settings-selection) 45%, transparent);
+}
+
+/*
+ * A window that is not in front goes quiet: the selection is the grey pill,
+ * in the ordinary ink. Craft stamps the root element; the shell stamps itself.
+ */
+:where([data-stx-window-active="false"]) .stx-settings-item[aria-selected="true"],
+:root[data-craft-window-active='false'] .stx-settings-item[aria-selected="true"] {
+  background: var(--stx-mac-selection-inactive);
+  color: var(--stx-mac-ink);
+}
+:where([data-stx-window-active="false"]) .stx-settings-item[aria-selected="true"] .stx-settings-item-badge,
+:root[data-craft-window-active='false'] .stx-settings-item[aria-selected="true"] .stx-settings-item-badge {
+  background: var(--stx-mac-well);
+  color: var(--stx-mac-ink-secondary);
+}
+:where([data-stx-window-active="false"]) .stx-settings-tile,
+:root[data-craft-window-active='false'] .stx-settings-tile { filter: saturate(var(--stx-settings-tile-inactive-saturation)); }
+
+@media (prefers-contrast: more) {
+  .stx-settings-item[aria-selected="true"] { outline: 1px solid var(--stx-mac-ink); outline-offset: -1px; }
+}
+</style>
