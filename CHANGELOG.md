@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.855...v0.2.856)
+
+## ✨ Features
+
+- **components**: add JsonTree, DataGrid, SplitPane, ContextMenu, GraphView and PreviewFrame ([4092104](https://github.com/stacksjs/stx/commit/4092104)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **components**: add componentApi, a way to a component's exposed methods ([6f40cd0](https://github.com/stacksjs/stx/commit/6f40cd0)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **stx**: keep a closing script tag in a prop from ending a component's script ([ba05bf7](https://github.com/stacksjs/stx/commit/ba05bf7)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.856 ([a57472e](https://github.com/stacksjs/stx/commit/a57472e)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.854...v0.2.855)
 
 ## ✨ Features
