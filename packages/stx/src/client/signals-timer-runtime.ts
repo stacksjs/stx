@@ -27,8 +27,16 @@ export const SIGNALS_TIMER_RUNTIME = `  // =====================================
     return get;
   }
 
+  // A wait of 0 is a wait of 0. These defaults were written with ||, which
+  // also replaces 0: useTimeout(fn, 0), meant as "on the next turn", waited a
+  // full second, and a debounce or throttle of 0 waited 250ms. Only an omitted
+  // wait takes the default, as in the module composables (use-timer.ts).
+  function waitOr(value, fallback) {
+    return value === undefined ? fallback : value;
+  }
+
   function useDebounce(fn, delay) {
-    delay = delay || 250;
+    delay = waitOr(delay, 250);
     var timer = null;
     var lastArgs = null;
     var debounced = function() {
@@ -60,7 +68,7 @@ export const SIGNALS_TIMER_RUNTIME = `  // =====================================
   var useDebounceFn = useDebounce;
 
   function useDebouncedValue(getter, delay) {
-    delay = delay || 250;
+    delay = waitOr(delay, 250);
     var current = getter();
     var listeners = [];
     var timer = null;
@@ -90,7 +98,7 @@ export const SIGNALS_TIMER_RUNTIME = `  // =====================================
   var refDebounced = useDebouncedValue;
 
   function useThrottle(fn, limit) {
-    limit = limit || 250;
+    limit = waitOr(limit, 250);
     var timer = null;
     var lastRan = 0;
     var throttled = function() {
@@ -191,7 +199,7 @@ else if (timer === null) {
   }
 
   function useTimeout(callback, delay) {
-    delay = delay || 1000;
+    delay = waitOr(delay, 1000);
     var timer = null;
     var pending = false;
     var listeners = [];

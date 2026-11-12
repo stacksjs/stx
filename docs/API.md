@@ -5671,6 +5671,11 @@ const { counter, pause, resume, reset } = useInterval(1000)
 
 One-shot timeout with start/stop control. Auto-starts and auto-cleans up.
 
+It starts counting when it is created, so call `stop()` straight away for a
+timer you only want to start later. `delay` defaults to 1000 when omitted; a
+`delay` of 0 runs the callback on the next turn. The same holds for
+`useDebounce` and `useThrottle`: only an omitted wait takes their 250 default.
+
 ```html
 <script client lang="ts">
 const { isPending, start, stop } = useTimeout(() => showToast(), 3000)
