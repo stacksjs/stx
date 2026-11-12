@@ -9,8 +9,8 @@ const root = process.cwd()
 // Removed when the smoke passes, and on exit or interrupt when it does not.
 const smokeRoot = createTempDir('installed-smoke')
 
-async function run(cmd: string[], cwd = smokeRoot): Promise<void> {
-  const child = Bun.spawn(cmd, { cwd, stdout: 'pipe', stderr: 'pipe', timeout: 120_000 })
+async function run(cmd: string[], cwd = smokeRoot, env: Record<string, string> = {}): Promise<void> {
+  const child = Bun.spawn(cmd, { cwd, env: { ...process.env, ...env }, stdout: 'pipe', stderr: 'pipe', timeout: 120_000 })
   const [code, stdout, stderr] = await Promise.all([child.exited, new Response(child.stdout).text(), new Response(child.stderr).text()])
   if (code !== 0) {
     console.error(stdout)
@@ -60,9 +60,15 @@ writeFileSync(join(smokeRoot, 'bunfig.toml'), '[install]\nlinker = "hoisted"\n')
 await using registry = await packageCandidateRegistry(publicTypeArchives)
 const scopes = [...new Set(publicTypeArchives.map(owner => owner.name.startsWith('@') ? owner.name.split('/')[0] : '').filter(Boolean))]
 writeFileSync(join(smokeRoot, '.npmrc'), [`registry=${registry.url}`, 'always-auth=false', ...scopes.map(scope => `${scope}:registry=${registry.url}`), ''].join('\n'))
+// A cache of this run's own. Bun keys its install cache by name, version and
+// registry host, and a candidate has the version of the release before it and
+// always comes from 127.0.0.1: a second run on one machine, after a commit
+// that adds a file, installed the first run's copy and failed here on the
+// missing file, although the archive in hand was right.
+const installCache = join(smokeRoot, '.bun-install-cache')
 let normalLock: string | undefined
 for (const flags of [[], ['--frozen-lockfile']]) {
-  await run([process.execPath, '--no-env-file', 'install', `--registry=${registry.url}`, ...flags])
+  await run([process.execPath, '--no-env-file', 'install', `--registry=${registry.url}`, ...flags], smokeRoot, { BUN_INSTALL_CACHE_DIR: installCache })
   assert.equal(existsSync(join(smokeRoot, 'node_modules/@dtsx/bun')), false, 'Published SDK consumers must not install the declaration producer as a workspace development dependency')
   const lock = new Bun.CryptoHasher('sha256').update(readFileSync(join(smokeRoot, 'bun.lock'))).digest('hex')
   if (normalLock) assert.equal(lock, normalLock, 'Frozen install changed the qualified lockfile')
