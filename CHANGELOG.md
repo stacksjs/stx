@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.860...v0.2.861)
+
+## 💄 Styles
+
+- **bun-plugin**: sort the stx import ([243a70e](https://github.com/stacksjs/stx/commit/243a70e)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.861 ([f9e976a](https://github.com/stacksjs/stx/commit/f9e976a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.859...v0.2.860)
 
 ## 🐛 Bug Fixes
