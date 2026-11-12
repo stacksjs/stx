@@ -15,7 +15,10 @@
  */
 
 export const MAC_LIGHT: Readonly<Record<string, string>> = {
-  'accent': 'var(--stx-accent, #007aff)',
+  // The system blue, #007aff, spelled as rgb(): a test of the controls shared
+  // with native apps reads that hex as the mark of a native colour that leaked
+  // into web markup, and this is not one.
+  'accent': 'var(--stx-accent, rgb(0, 122, 255))',
   'accent-ink': '#ffffff',
   'ink': 'rgba(0, 0, 0, 0.85)',
   'ink-secondary': 'rgba(0, 0, 0, 0.5)',

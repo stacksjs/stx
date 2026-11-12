@@ -16,6 +16,16 @@ const remaining = [
 ] as const
 
 /**
+ * Names shared with a component that is not a migration of the primitive at
+ * all. The shared Slider is the Mac one a Settings window draws, on a real
+ * `<input type="range">`; a native screen keeps the platform's own, and
+ * nothing is planned to change that.
+ */
+const separate = [
+  ['Slider', 'slider', 'value="1"'],
+] as const
+
+/**
  * Video's media URL migrated (#2091). The shared component accepts the
  * primitive's `source` name, as a string or a `{ uri }` payload, and honours
  * an explicit box instead of imposing its own.
@@ -42,10 +52,10 @@ const videoSelections = [
 it('inventories every shared/native name collision so new overlaps require a compatibility decision (#2091)', async () => {
   const primitives = (await readdir(nativePrimitivesDir())).filter(name => name.endsWith('.stx')).map(name => basename(name, '.stx'))
   const shared = new Set((await readdir(join(components, 'src'), { recursive: true })).filter(name => name.endsWith('.stx')).map(name => basename(name, '.stx')))
-  expect(primitives.filter(name => shared.has(name)).sort()).toEqual(['Button', 'Checkbox', 'Image', 'Switch', 'TextInput', 'Video'])
+  expect(primitives.filter(name => shared.has(name)).sort()).toEqual(['Button', 'Checkbox', 'Image', 'Slider', 'Switch', 'TextInput', 'Video'])
 })
 
-it.each(remaining)('%s keeps its native contract until shared migration is verified', async (name, directory, attributes) => {
+it.each([...remaining, ...separate])('%s keeps its native contract until shared migration is verified', async (name, directory, attributes) => {
   const root = createTempDir('stx-remaining-resolution-')
   const file = join(root, 'Screen.stx')
   const source = `<div><${name} ${attributes} /></div>`

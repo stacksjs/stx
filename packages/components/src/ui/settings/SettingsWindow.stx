@@ -161,7 +161,7 @@ defineExpose({
   --stx-mac-row-height: 38px;
   --stx-mac-row-inset: 10px;
   --stx-mac-sidebar-width: 226px;
-  --stx-mac-accent: var(--stx-accent, #007aff);
+  --stx-mac-accent: var(--stx-accent, rgb(0, 122, 255));
   --stx-mac-accent-ink: #ffffff;
   --stx-mac-ink: rgba(0, 0, 0, 0.85);
   --stx-mac-ink-secondary: rgba(0, 0, 0, 0.5);

@@ -36,7 +36,7 @@ describe('the Mac theme', () => {
   })
 
   it('takes its accent from the library accent', () => {
-    expect(MAC_LIGHT.accent).toBe('var(--stx-accent, #007aff)')
+    expect(MAC_LIGHT.accent).toBe('var(--stx-accent, rgb(0, 122, 255))')
     expect(MAC_DARK.accent).toBe('var(--stx-accent, #0a84ff)')
   })
 
