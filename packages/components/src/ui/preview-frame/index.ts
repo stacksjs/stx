@@ -14,7 +14,12 @@ export interface PreviewFrameProps {
   frameHeight?: number
   /** Turn a phone or tablet on its side. */
   landscape?: boolean
-  /** What the page's `prefers-color-scheme` reports. `auto` (default) follows the host page. */
+  /**
+   * The colour scheme the frame is drawn with, which is what the page's
+   * `prefers-color-scheme` reports in an engine that passes a frame's scheme
+   * to its page (Chromium; WebKit reports the system's). `auto` (default)
+   * follows the host page.
+   */
   scheme?: PreviewScheme
   /** Let the page's own scripts run. They get an origin of their own and cannot reach the host. Default off. */
   scripts?: boolean

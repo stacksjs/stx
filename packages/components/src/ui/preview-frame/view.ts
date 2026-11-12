@@ -222,9 +222,11 @@ export class PreviewFrameView {
   }
 
   /**
-   * A frame's page takes its `prefers-color-scheme` from the `color-scheme`
-   * its frame element is drawn with. So the scheme is set here, on the host's
-   * side, and the page needs no script and no cooperation to follow it.
+   * The scheme is set here, on the host's side, as the frame element's
+   * `color-scheme`. Chromium hands that to the page as its
+   * `prefers-color-scheme`, so the page follows with no script and no
+   * cooperation. WebKit does not hand it over: there the page keeps the
+   * system's scheme whatever is set here (stacksjs/stx#2186).
    */
   private applyScheme(): void {
     const scheme = this.effectiveScheme()

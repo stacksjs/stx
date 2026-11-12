@@ -122,10 +122,30 @@ describe('isolation', () => {
 })
 
 describe('the colour scheme', () => {
-  it('reaches the page as prefers-color-scheme', async () => {
-    const result = await page.json(on(`return { scripted: last('scripted').dark, phone: last('phone').dark, style: frame('scripted').style.colorScheme, attr: host('scripted').getAttribute('data-scheme') }`))
+  /*
+   * What the page inside reports is the engine's doing, and the two engines
+   * this suite runs in do different things (stacksjs/stx#2186).
+   *
+   * Chromium hands a frame's `color-scheme` to its page, so a frame drawn dark
+   * holds a page that prefers dark. WebKit does not: the page keeps the
+   * system's scheme whatever its frame is drawn with. Written as one
+   * expectation, this case passed or failed by the appearance of the machine
+   * it ran on (a Mac set to dark agreed with the dark frame and not the light
+   * one) and never ran in WebKit on CI at all.
+   *
+   * So each engine is held to what it does. If WebKit starts passing the
+   * scheme on, its half fails, and the README's limit can come out.
+   */
+  const pageSees = async (forced: boolean): Promise<boolean> =>
+    page.apple ? page.json<boolean>(`return matchMedia('(prefers-color-scheme: dark)').matches`) : forced
 
-    expect(result).toEqual({ scripted: true, phone: false, style: 'dark', attr: 'dark' })
+  it('is drawn on the frame, and reaches the page where the engine passes it on', async () => {
+    const result = await page.json(on(`return { scripted: last('scripted').dark, phone: last('phone').dark, style: frame('scripted').style.colorScheme, phoneStyle: frame('phone').style.colorScheme, attr: host('scripted').getAttribute('data-scheme'), phoneAttr: host('phone').getAttribute('data-scheme') }`))
+
+    // The host's side is the component's own, and the same in every engine.
+    expect(result).toMatchObject({ style: 'dark', attr: 'dark', phoneStyle: 'light', phoneAttr: 'light' })
+    // The page's side: forced where the engine allows it, the system's where not.
+    expect({ scripted: result.scripted, phone: result.phone }).toEqual({ scripted: await pageSees(true), phone: await pageSees(false) })
   })
 
   it('changes without reloading the page when the prop changes', async () => {
@@ -154,7 +174,7 @@ describe('the colour scheme', () => {
 
     expect(result.before).toEqual({ pressed: 'false', text: 'Light' })
     expect(result.after).toEqual({ pressed: 'true', text: 'Dark', style: 'dark', label: 'Dark colour scheme' })
-    expect(result.page).toBe(true)
+    expect(result.page).toBe(await pageSees(true))
   })
 
   it('follows a dark host page when left on auto', async () => {

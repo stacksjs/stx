@@ -22,10 +22,11 @@ The markup goes into an `<iframe srcdoc>` with a `sandbox` attribute.
   DOM, storage or cookies, and none of their own. `allow-same-origin`, top
   navigation and popups are never granted. Links are sent to a new window,
   which the sandbox refuses, so a click cannot navigate the preview away.
-- **Colour scheme.** A frame's page takes its `prefers-color-scheme` from the
-  `color-scheme` its frame element is drawn with. The scheme is set there, on
-  the host's side, so the page follows it with no script and no cooperation,
-  and a change does not reload it.
+- **Colour scheme.** The scheme is set on the frame element, as its
+  `color-scheme`, on the host's side. An engine that hands a frame's
+  `color-scheme` to the page inside gives that page its
+  `prefers-color-scheme` from it, with no script and no cooperation, and a
+  change does not reload it. Chromium does. WebKit does not: see Limits.
 - **Viewport.** The frame is laid out at the device's real size and drawn
   smaller to fit, so the page's own media queries see 390 pixels for a phone
   whatever the box is. It is never enlarged.
@@ -102,6 +103,13 @@ the ground a device sits on), `--stx-preview-line` (`line`),
   its title or its errors. With `scripts` on, a page can `postMessage` its
   parent and the host can listen for it.
 - **No device chrome, pixel ratio or touch emulation.** A viewport is a size.
-- **Inherits what the engine does.** Passing `color-scheme` through to a frame
-  is standard and was checked in WebKit; an engine without it shows the page
-  in the system scheme.
+- **The scheme reaches the page only where the engine passes it on.** In
+  Chromium the page's `prefers-color-scheme` follows the frame, and a change
+  fires the page's `change` listeners. In WebKit (Safari, and a Craft window,
+  which is a WKWebView) the page always sees the system scheme: measured on
+  macOS 26.3.1, a frame drawn `light` on a dark system reported dark at load
+  and 1.5 seconds later, and a page that declares both schemes was still drawn
+  dark. There the `scheme` prop, the toolbar button and the `@scheme` event
+  change the frame element and nothing inside it. A preview that has to show
+  one scheme on every engine needs markup that does not depend on the media
+  query (stacksjs/stx#2186).
