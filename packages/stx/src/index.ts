@@ -240,6 +240,8 @@ export * from './loading-indicator'
 export * from './reactive-bindings'
 export * from './client-helpers'
 export * from './client-script'
+// The guard a bundler plugin puts around a render it has to do inside a loader.
+export { isWithinBundlerCallback, withinBundlerCallback } from './client-script-bundler'
 /*
  * The authoring surface, as data.
  *

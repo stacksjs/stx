@@ -616,6 +616,42 @@ export function withModuleSubstitutes<T>(modules: ReadonlyMap<string, string>, r
   return moduleSubstitutes.run({ modules, key: hasher.digest('hex').slice(0, 12) }, run)
 }
 
+const bundlerCallbackScope = new AsyncLocalStorage<true>()
+
+/**
+ * Run `run` as work done on behalf of a Bun bundler callback (`onLoad`,
+ * `onResolve`). Bun never settles a `Bun.build` started from inside one: the
+ * outer build waits for its callback, the callback for the inner build, and
+ * the process idles forever. Anything that would start a client bundle build
+ * within `run` throws instead (`assertBundleBuildCanSettle`), so the failure
+ * is an error that names the page, not a build that never ends.
+ *
+ * `bun-plugin-stx` wraps the one render it cannot move out of its loader in
+ * this: a `.stx` file that is imported rather than an entrypoint. Entrypoints
+ * are rendered in `onStart`, where a build does settle.
+ */
+export function withinBundlerCallback<T>(run: () => Promise<T>): Promise<T> {
+  return bundlerCallbackScope.run(true, run)
+}
+
+/** Whether the current async work is inside `withinBundlerCallback`. */
+export function isWithinBundlerCallback(): boolean {
+  return bundlerCallbackScope.getStore() === true
+}
+
+/**
+ * Refuse a client bundle build that could never finish. Called right before
+ * each cold `Bun.build`; a cache hit never reaches it, so a page whose bundle
+ * is already on disk still renders from inside a loader.
+ */
+export function assertBundleBuildCanSettle(filePath: string): void {
+  if (!isWithinBundlerCallback()) return
+  throw new Error(
+    `The client script of ${filePath} needs bundling, and it is being rendered inside a Bun.build loader, where Bun never finishes a second build. `
+    + 'Make the page an entrypoint of the build (bun-plugin-stx renders entrypoints before the bundler starts), or render it once outside the build so its bundle is cached.',
+  )
+}
+
 /** The substitutes in force (`withModuleSubstitutes`), as part of a cache key: empty with none. */
 export function moduleSubstitutionKey(): string {
   return moduleSubstitutes.getStore()?.key ?? ''
@@ -1088,6 +1124,7 @@ export async function bundleClientScript(
     return shared
   }
 
+  assertBundleBuildCanSettle(filePath)
   const build = queueClientBundleBuild(() =>
     buildBundle(code, filePath, { projectRoot, minify, cacheDir, hash, cachePath, depsPath, collectInputs: options.collectInputs, externalizeUserModules, serverApi, expose, throwOnFailure: options.throwOnFailure, substitutes: substituted?.modules }),
   )
@@ -1145,6 +1182,7 @@ export async function bundleClientEntriesSplit(
   }
   const [firstFile, firstSource] = [...virtual][0]!
   const inputFiles = new Set<string>()
+  assertBundleBuildCanSettle(options.filePath)
   try {
     const result = await Bun.build({
       entrypoints: [...virtual.keys()],
