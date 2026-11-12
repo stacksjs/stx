@@ -120,3 +120,63 @@ const n = state(0)
     expect(setupCode).not.toContain('<\\/')
   })
 })
+
+describe('a component given markup as a prop', () => {
+  /*
+   * A component's client script reads its props with `{{ name }}`, so a prop
+   * holding markup puts that markup inside the script as a string. The script
+   * is escaped where it is emitted, but the body of a component used once is
+   * inlined into its call afterwards, and the body of one used twice goes into
+   * the shared factory script. Both were written raw, so `<Preview
+   * html="...</script>">` ended its own script at the value and the component
+   * never mounted.
+   *
+   * The component imports something, as any with real logic does: that is what
+   * sends its script through the bundler, whose printer writes the value back
+   * out as an ordinary string and drops the escape it arrived with.
+   */
+  const component = `<script server>\nexport const html = $props.html || ''\n</script>\n<script client>\nimport { shout } from './shout'\nconst markup = state(shout({{ html }}))\nconst afterTheValue = true\n</script>\n<div class="preview" :text="markup()"></div>\n`
+  const value = '<p>hi</p><script>alert(1)</script>'
+
+  async function render(body: string): Promise<string> {
+    const { mkdtemp, mkdir, writeFile, rm } = await import('node:fs/promises')
+    const { tmpdir } = await import('node:os')
+    const { join } = await import('node:path')
+    const { processDirectives } = await import('../src/process')
+    const root = await mkdtemp(join(tmpdir(), 'stx-script-emit-'))
+    try {
+      await mkdir(join(root, 'components'), { recursive: true })
+      await writeFile(join(root, 'components', 'Preview.stx'), component)
+      await writeFile(join(root, 'components', 'shout.ts'), 'export function shout(text: string): string {\n  return text.toUpperCase()\n}\n')
+      return await processDirectives(`<!doctype html><html><head></head><body>${body}</body></html>`, { value }, join(root, 'page.stx'), { componentsDir: join(root, 'components'), root, cache: false, debug: false } as any, new Set())
+    }
+    finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  }
+
+  /** Every script element's body, as an HTML parser would cut it. */
+  const scriptBodies = (html: string): string[] => [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(match => match[1])
+
+  it('keeps the closing tag out of the script of a component used once', async () => {
+    const html = await render('<Preview html="{{ value }}" />')
+    const body = scriptBodies(html).find(script => script.includes('alert(1)'))
+
+    // The parser did not cut the script at the value: what follows the value
+    // is still in it, and it is still a program.
+    expect(body).toBeDefined()
+    expect(body!.includes('afterTheValue')).toBe(true)
+    expect(() => new Function(body!)).not.toThrow()
+  })
+
+  it('keeps it out of the shared script of a component used twice with the same value', async () => {
+    const html = await render('<Preview html="{{ value }}" /><Preview html="{{ value }}" />')
+    const bodies = scriptBodies(html).filter(script => script.includes('alert(1)'))
+
+    expect(bodies.length).toBeGreaterThan(0)
+    for (const body of bodies) {
+      expect(body.includes('afterTheValue')).toBe(true)
+      expect(() => new Function(body)).not.toThrow()
+    }
+  })
+})

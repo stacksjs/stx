@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { scanAtElementPosition } from './html-masking'
+import { escapeScriptBody } from './script-emit'
 
 export const COMPONENT_CLIENT_FACTORIES_CONTEXT_KEY = '__stx_component_client_factories'
 
@@ -85,7 +86,10 @@ export function injectComponentClientFactories(
         edits.push({
           start: match.index,
           end: match.index + match[0].length,
-          replacement: `(${body})(${match[2]});`,
+          // The body is inlined after the script it lands in was escaped, so a
+          // value in it holding a closing script tag (markup handed to a prop)
+          // would end that script here.
+          replacement: escapeScriptBody(`(${body})(${match[2]});`),
         })
       }
       match = invocation.exec(html)
@@ -109,7 +113,7 @@ export function injectComponentClientFactories(
   const prelude = `<script data-stx-scoped data-stx-run="always" data-stx-component-factories>
 (function() {
   const factories = window.__stxComponentFactories = window.__stxComponentFactories || {};
-${definitions}
+${escapeScriptBody(definitions)}
 })();
 </script>`
 
