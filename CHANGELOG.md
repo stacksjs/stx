@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.856...v0.2.857)
+
+## 💄 Styles
+
+- **components**: format the result-panel components ([3a7a0ac](https://github.com/stacksjs/stx/commit/3a7a0ac)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **components**: ask a previewed page what it sees after it has loaded ([3c1d9b0](https://github.com/stacksjs/stx/commit/3c1d9b0)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.857 ([be6de18](https://github.com/stacksjs/stx/commit/be6de18)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.855...v0.2.856)
 
 ## ✨ Features
