@@ -3750,7 +3750,7 @@ function __stxOverlay(errs){
         // dirs so dynamic routes also resolve `<Notification>` etc.
         ...('_pluginComponentDirs' in stxConfig && { _pluginComponentDirs: stxConfig._pluginComponentDirs }),
         ...('_pluginPageDirs' in stxConfig && { _pluginPageDirs: stxConfig._pluginPageDirs }),
-      ...('_nativePrimitivesFallback' in stxConfig && { _nativePrimitivesFallback: stxConfig._nativePrimitivesFallback }),
+        ...('_nativePrimitivesFallback' in stxConfig && { _nativePrimitivesFallback: stxConfig._nativePrimitivesFallback }),
       }
 
       let output = templateContent
