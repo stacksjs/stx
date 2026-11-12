@@ -39,7 +39,7 @@ import type { StxOptions } from '@stacksjs/stx'
 import type { BunPlugin } from 'bun'
 import fs from 'node:fs'
 import path from 'node:path'
-import { insertBeforeBodyClose, buildWebComponents, cacheTemplate, checkCache, classifyAllScripts, defaultConfig, extractVariables, loadStxConfig, processClientScript, processDirectives, readMarkdownFile, withinBundlerCallback } from '@stacksjs/stx'
+import { buildWebComponents, cacheTemplate, checkCache, classifyAllScripts, defaultConfig, extractVariables, insertBeforeBodyClose, loadStxConfig, processClientScript, processDirectives, readMarkdownFile, withinBundlerCallback } from '@stacksjs/stx'
 
 // Export watch functionality
 export { createWatcher, startWatchMode, watchAndBuild } from './watch'
