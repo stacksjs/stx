@@ -1626,6 +1626,12 @@ export async function serve(options: ServeOptions): Promise<void> {
         stxConfig._pluginComponentDirs = pluginLoaded._pluginComponentDirs
       if (pluginLoaded?._pluginPageDirs)
         stxConfig._pluginPageDirs = pluginLoaded._pluginPageDirs
+      // The native primitives as components of last resort (`nativePrimitives`).
+      // Left behind here, a served page answered "component could not be
+      // resolved" for `<FloatingActions>` or `<View>` that `renderTemplate`
+      // with the loaded config resolves.
+      if (pluginLoaded?._nativePrimitivesFallback)
+        stxConfig._nativePrimitivesFallback = pluginLoaded._nativePrimitivesFallback
       // A plugin's setup() can mutate the loaded config — e.g. an analytics
       // plugin sets `analytics.{enabled,driver,custom}` so injectAnalytics
       // runs. bunfig's loadConfig above returns the RAW object (pre-setup), so
@@ -3305,6 +3311,7 @@ function __stxOverlay(errs){
       // `loadStxConfig` when each plugin is loaded.
       ...('_pluginComponentDirs' in stxConfig && { _pluginComponentDirs: stxConfig._pluginComponentDirs }),
       ...('_pluginPageDirs' in stxConfig && { _pluginPageDirs: stxConfig._pluginPageDirs }),
+      ...('_nativePrimitivesFallback' in stxConfig && { _nativePrimitivesFallback: stxConfig._nativePrimitivesFallback }),
     }
 
     // When SSR is disabled, serve a client-side SPA shell instead of processing directives
@@ -3743,6 +3750,7 @@ function __stxOverlay(errs){
         // dirs so dynamic routes also resolve `<Notification>` etc.
         ...('_pluginComponentDirs' in stxConfig && { _pluginComponentDirs: stxConfig._pluginComponentDirs }),
         ...('_pluginPageDirs' in stxConfig && { _pluginPageDirs: stxConfig._pluginPageDirs }),
+      ...('_nativePrimitivesFallback' in stxConfig && { _nativePrimitivesFallback: stxConfig._nativePrimitivesFallback }),
       }
 
       let output = templateContent

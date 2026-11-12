@@ -137,6 +137,7 @@ describe('<FloatingActions> on a web page', () => {
       const group = document.querySelector<HTMLElement>('[data-floating-actions-web]')!
       expect(group.getAttribute('data-floating-actions-web')).toBe('vertical')
       expect(group.getAttribute('role')).toBe('group')
+      expect(group.getAttribute('aria-label')).toBe('Add, Messages')
       // Its look is one stylesheet, put in the page once, and nothing inline.
       expect(document.querySelectorAll('style[data-floating-actions-style]').length).toBe(1)
       expect(group.getAttribute('style')).toBeNull()

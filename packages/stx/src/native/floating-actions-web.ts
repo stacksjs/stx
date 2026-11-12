@@ -189,7 +189,8 @@ export function mountFloatingActionsWeb(doc: Document = document): FloatingActio
       group = doc.createElement('div')
       group.setAttribute('data-floating-actions-web', layout)
       group.setAttribute('role', 'group')
-      group.setAttribute('aria-label', accessory.accessibilityLabel || accessory.title)
+      // Named for all it holds: a group of Add and Messages is not "Messages".
+      group.setAttribute('aria-label', list.map(action => action.label).join(', '))
       if (classes.group) group.className = classes.group
       const here = doc.defaultView?.location?.pathname?.replace(/\/$/, '') || '/'
       list.forEach((action, index) => {
