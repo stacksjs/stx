@@ -34,6 +34,8 @@ export interface FloatingActionsWebClasses {
   badge?: string
   /** An action's menu. */
   menu?: string
+  /** An action that is on: its page is the one showing, or it is `active`. */
+  active?: string
 }
 
 export interface FloatingActionsWeb {
@@ -73,6 +75,9 @@ export const FLOATING_ACTIONS_CSS = [
   `:where([data-floating-action-name]){font-size:12px;font-weight:600;line-height:1;padding:0 6px;white-space:nowrap}`,
   `:where([data-floating-action-badge]){position:absolute;top:4px;inset-inline-end:2px;display:flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:${TINT};color:#fff;font-size:11px;font-weight:600;line-height:1}`,
   `:where([data-floating-actions-menu]){position:absolute;inset-inline-end:0;bottom:calc(100% + 8px);display:flex;flex-direction:column;width:max-content;min-width:200px;max-width:min(280px,calc(100vw - 32px));padding:6px;border-radius:18px;color:inherit;${GLASS}}`,
+  // Beside a column of actions, on its leading side, as a host opens a menu
+  // from a control at the screen's trailing edge; above a row of them.
+  `:where(${G}="vertical"]) :where([data-floating-actions-menu]){inset-inline-end:calc(100% + 8px);bottom:0}`,
   `:where([data-floating-actions-choice]){display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:12px;color:inherit;text-decoration:none;font-size:16px;line-height:20px}`,
   `:where([data-floating-actions-choice]) :where([data-floating-action-symbol]){width:20px;height:20px}`,
 ].join('\n')
@@ -205,7 +210,10 @@ export function mountFloatingActionsWeb(doc: Document = document): FloatingActio
         control.title = action.label
         const current = href.split('?')[0]!.replace(/\/$/, '') === here
         // On: the tint, as the hosts draw an action whose screen is showing.
-        if (action.active || current) control.setAttribute('data-on', '')
+        if (action.active || current) {
+          control.setAttribute('data-on', '')
+          if (classes.active) control.className = classes.active
+        }
         if (offers) {
           const button = control as HTMLButtonElement
           button.type = 'button'

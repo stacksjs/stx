@@ -876,7 +876,9 @@ are often not the app's, so an action (and a menu choice) can say both:
 neither. Without an `icon` the action is drawn as its name. Its look is one
 stylesheet of `:where()` rules, which weigh nothing, so the page's own
 classes win: `class` on the group (where it shows, its colour and surface),
-`badgeClass` on the badge and `menuClass` on a menu. The page can also place
+`badgeClass` on the badge, `menuClass` on a menu and `activeClass` on an
+action whose page is showing. A column's menu opens on its leading side, a
+row's above it. The page can also place
 and colour it with custom properties on `:root`:
 
 | Property | What it sets | Default |

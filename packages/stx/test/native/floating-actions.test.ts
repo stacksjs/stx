@@ -183,15 +183,18 @@ describe('<FloatingActions> on a web page', () => {
     const { browser, document } = page('https://fixture.invalid/messages')
     try {
       const web = mountFloatingActionsWeb(document)
-      web.update([webAdd, webMessages], 'separate', { group: 'flex md:hidden text-brand', badge: 'bg-brand', menu: 'bg-surface' })
+      web.update([webAdd, webMessages], 'separate', { group: 'flex md:hidden text-ink', badge: 'bg-brand', menu: 'bg-surface', active: 'text-brand' })
       let group = document.querySelector<HTMLElement>('[data-floating-actions-web]')!
       // The page's classes, on the parts they are for.
       expect(group.getAttribute('data-floating-actions-web')).toBe('separate')
-      expect(group.className).toBe('flex md:hidden text-brand')
+      expect(group.className).toBe('flex md:hidden text-ink')
       expect(group.querySelector('[data-floating-action-badge]')!.className).toBe('bg-brand')
       group.querySelector<HTMLButtonElement>('[data-floating-action="/m/add"]')!.click()
       expect(group.querySelector('[data-floating-actions-menu]')!.className).toBe('bg-surface')
       expect(group.querySelector('[data-floating-action="/m/messages"]')!.hasAttribute('data-on')).toBe(true)
+      // Only the action whose page is showing takes the page's class for "on".
+      expect(group.querySelector('[data-floating-action="/m/messages"]')!.className).toBe('text-brand')
+      expect(group.querySelector('[data-floating-action="/m/add"]')!.className).toBe('')
       // The page it opens is the page showing.
       expect(group.querySelector('[data-floating-action="/m/messages"]')!.getAttribute('aria-current')).toBe('page')
       web.update([{ ...webMessages, badge: 0 }], 'horizontal')
@@ -236,6 +239,9 @@ describe('<FloatingActions> on a web page', () => {
     }
     expect(FLOATING_ACTIONS_CSS).toContain('border-radius:24px')
     expect(FLOATING_ACTIONS_CSS).toContain('height:55px')
+    // A column's menu opens beside it, on the leading side; a row's above it.
+    expect(FLOATING_ACTIONS_CSS).toContain(':where([data-floating-actions-web="vertical"]) :where([data-floating-actions-menu]){inset-inline-end:calc(100% + 8px);bottom:0}')
+    expect(FLOATING_ACTIONS_CSS).toContain('bottom:calc(100% + 8px)')
   })
 
   it('keeps what only a web page uses out of what a host is sent', () => {

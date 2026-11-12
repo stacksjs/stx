@@ -17,7 +17,9 @@
   each action's `icon` (an icon class) in place of its SF Symbol, opening its
   `href` where the website's path differs from the app's. Its look weighs
   nothing against a class: `class` goes on the group (`flex md:hidden` shows
-  it on a phone only), `badgeClass` on the badge and `menuClass` on a menu.
+  it on a phone only), `badgeClass` on the badge, `menuClass` on a menu and
+  `activeClass` on an action whose page is showing. A column's menu opens on
+  its leading side, a row's above it.
   `--stx-floating-actions-*` place and colour it too (floating-actions-web.ts). For actions every screen shares, pass
   `floatingActions()` from `@stacksjs/stx/native` to `craft.navigation.setChrome`.
 --}}
@@ -32,6 +34,7 @@ const floatingClass = useReactiveProp('class', '')
 const floatingClassName = useReactiveProp('className', '')
 const floatingBadgeClass = useReactiveProp('badgeClass', '')
 const floatingMenuClass = useReactiveProp('menuClass', '')
+const floatingActiveClass = useReactiveProp('activeClass', '')
 const floatingHost = typeof craft !== 'undefined' && craft && craft.navigation ? craft.navigation : null
 // A page drawn by a browser has no host chrome to put them in, so it draws them.
 const floatingPage = !floatingHost && typeof document !== 'undefined' ? mountFloatingActionsWeb(document) : null
@@ -40,7 +43,7 @@ let floatingSent = ''
 effect(() => {
   if (floatingPage) {
     const list = floatingList()
-    floatingPage.update(Array.isArray(list) ? list : [], String(floatingLayout() || 'vertical'), { group: String(floatingClassName() || floatingClass() || ''), badge: String(floatingBadgeClass() || ''), menu: String(floatingMenuClass() || '') })
+    floatingPage.update(Array.isArray(list) ? list : [], String(floatingLayout() || 'vertical'), { group: String(floatingClassName() || floatingClass() || ''), badge: String(floatingBadgeClass() || ''), menu: String(floatingMenuClass() || ''), active: String(floatingActiveClass() || '') })
     return
   }
   if (!floatingHost) return
