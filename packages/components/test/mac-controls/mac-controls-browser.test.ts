@@ -234,7 +234,9 @@ describe('the pop-up button', () => {
     expect(drawn.discRadius).toBe('50%')
     expect(drawn.discFill).toBe(WELL)
     expect(drawn.flush).toBe(0)
-    expect(drawn.chevrons).toEqual(['1.5px', '1.5px'])
+    // One and a half pixels, which an engine drawing at one pixel a point
+    // reports as the whole pixel it can draw.
+    expect(drawn.chevrons.every((width: string) => width === '1.5px' || width === '1px')).toBe(true)
     // The disc is a picture: the select under it takes the click.
     expect(drawn.through).toBe('none')
   })
@@ -524,7 +526,9 @@ describe('the stepper', () => {
     expect(drawn.halves).toEqual([[15, 11], [15, 11]])
     expect(drawn.gap).toBe(4)
     expect(drawn.names).toEqual(['Increment', 'Decrement'])
-    expect(drawn.chevrons).toEqual(['1.5px', '1.5px'])
+    // One and a half pixels, which an engine drawing at one pixel a point
+    // reports as the whole pixel it can draw.
+    expect(drawn.chevrons.every((width: string) => width === '1.5px' || width === '1px')).toBe(true)
   })
 
   it('steps up and down into its model and its form, and stops at its bounds', async () => {

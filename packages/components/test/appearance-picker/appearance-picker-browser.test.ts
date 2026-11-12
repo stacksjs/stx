@@ -85,7 +85,8 @@ describe('what is drawn', () => {
       return { accentColour, on: ring('auto'), off: ring('light') }
     `))
 
-    expect(drawn.on.width).toBe('2.5px')
+    // 2.5, which an engine drawing at one pixel a point rounds to 2.
+    expect(drawn.on.width).toMatch(/^(2\.5|2)px$/)
     expect(drawn.on.colour).toBe(drawn.accentColour)
     expect(drawn.on.top).toBe('-4.5px')
     expect(drawn.on.radius).toBe('11.5px')
