@@ -41,14 +41,16 @@ export const probe = `<style>body { font: 14px/1.6 ui-monospace, monospace; padd
 <pre id="out"></pre>
 <script>
   const attempt = fn => { try { return String(fn()) } catch (e) { return 'blocked' } }
-  document.getElementById('out').textContent = [
+  // Once loaded: a frame learns its size and scheme from its embedder, and
+  // an engine may not have passed them on while the first script runs.
+  addEventListener('load', () => setTimeout(() => document.getElementById('out').textContent = [
     'origin:            ' + location.origin,
     'host document:     ' + attempt(() => parent.document.title),
     'host localStorage: ' + attempt(() => parent.localStorage.length),
     'own localStorage:  ' + attempt(() => localStorage.length),
     'viewport width:    ' + innerWidth,
     'prefers dark:      ' + matchMedia('(prefers-color-scheme: dark)').matches,
-  ].join('\\n')
+  ].join('\\n'), 60))
 </script>`
 </script>
 

@@ -469,7 +469,7 @@ describe('a hundred thousand rows', () => {
       return {
         set, rowCount: g.getAttribute('aria-rowcount'), colCount: g.getAttribute('aria-colcount'), status: status('big'),
         rows: rows.length, cells: rows[0].childElementCount, heads: heads('big').length, elements: root('big').querySelectorAll('*').length,
-        height: root('big').querySelector('[data-dg="content"]').style.height, viewport: [g.clientWidth, g.clientHeight],
+        height: root('big').querySelector('[data-dg="content"]').offsetHeight, viewport: [g.clientWidth, g.clientHeight],
         total: view('big').model.totalWidth,
       }
     `))
@@ -480,7 +480,9 @@ describe('a hundred thousand rows', () => {
     expect(result.rowCount).toBe('100001')
     expect(result.colCount).toBe('12')
     expect(result.status).toBe('100,000 rows')
-    expect(result.height).toBe('2800032px')
+    // The laid-out height, not the inline style: Chrome writes a length this
+    // large back as `2.80003e+06px`.
+    expect(result.height).toBe(2800032)
     // About 12 rows fit; a few more are drawn past each edge.
     expect(result.rows).toBeGreaterThan(8)
     expect(result.rows).toBeLessThan(40)

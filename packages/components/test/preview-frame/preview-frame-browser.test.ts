@@ -16,9 +16,15 @@ allowForARealBrowser()
 let page: BrowserPage
 
 // What a page reports about itself and about what it can reach.
+/*
+ * It reports once it has loaded and been laid out, not as it is parsed: a
+ * frame's size and colour scheme come from the element that embeds it, and
+ * Chrome has not handed them over yet while the frame's first script runs
+ * (the page saw a width of 0 and the system scheme).
+ */
 const REPORT = `<p id="p">hello</p><script>
   const attempt = fn => { try { return String(fn()) } catch (e) { return 'blocked' } }
-  parent.postMessage({
+  addEventListener('load', () => setTimeout(() => parent.postMessage({
     from: NAME,
     dark: matchMedia('(prefers-color-scheme: dark)').matches,
     width: innerWidth,
@@ -28,7 +34,7 @@ const REPORT = `<p id="p">hello</p><script>
     ownStorage: attempt(() => localStorage.length),
     hostSecret: attempt(() => parent.secret),
     cookie: attempt(() => document.cookie),
-  }, '*')
+  }, '*'), 60))
 </script>`
 const report = (name: string): string => REPORT.replace('NAME', JSON.stringify(name))
 
@@ -40,7 +46,7 @@ const HELPERS = `
   const said = name => window.messages.filter(m => m.from === name)
   const last = name => said(name).slice(-1)[0] || null
   const box = el => { const r = el.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height) } }
-  const later = (fn, ms) => new Promise(done => setTimeout(() => done(fn()), ms || 250))
+  const later = (fn, ms) => new Promise(done => setTimeout(() => done(fn()), ms || 500))
 `
 const on = (body: string): string => `${HELPERS}\n${body}`
 
