@@ -1,5 +1,27 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.862...v0.2.863)
+
+## 🐛 Bug Fixes
+
+- **runtime**: let a wait of 0 mean 0 in useTimeout, useDebounce and useThrottle ([f1c6969](https://github.com/stacksjs/stx/commit/f1c6969)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 📝 Documentation
+
+- **native**: record selection by usage as the design (#2091) ([8e99e52](https://github.com/stacksjs/stx/commit/8e99e52)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2091](https://github.com/stacksjs/stx/issues/2091), [#2184](https://github.com/stacksjs/stx/issues/2184))
+
+## 🔧 Chores
+
+- release v0.2.863 ([e232f89](https://github.com/stacksjs/stx/commit/e232f89)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'refs/remotes/origin/main' ([80b14d4](https://github.com/stacksjs/stx/commit/80b14d4)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.861...v0.2.862)
 
 ## 🐛 Bug Fixes
