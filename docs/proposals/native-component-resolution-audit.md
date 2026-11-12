@@ -11,14 +11,40 @@ The shipped shared library and native primitive directory have six overlapping
 names. `test/native/remaining-component-resolution.test.ts` enumerates both
 directories and fails if a new overlap has no recorded compatibility decision.
 
-| Name | Current native selection | Browser selection without an explicit override | Remaining gate |
-| --- | --- | --- | --- |
-| Button | Shared app/plugin file, primitive fallback | Shared app/plugin file | Device accessibility/visual validation |
-| Checkbox | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | iOS same-source acceptance recorded; Android/accessibility remain |
-| Switch | Shared for checked/change usage; primitive for legacy value/value-change | Shared file | iOS same-source acceptance recorded; Android/accessibility remain |
-| TextInput | Shared for value-model calls without `@input`; primitive for legacy/ambiguous calls | Shared file | Preserve object-payload callers; device validation |
-| Image | Shared for src + presentation API + alt/decorative; primitive for plain/legacy calls | Same shared selection; builtin for plain/legacy/transformation calls | Matching Craft 0.0.396+ shell; Craft #441 pixel drawing and remaining device validation |
-| Video | Shared for src with shared media events; primitive for source, mixed, bare or legacy-event calls | Shared file | Preserve legacy API; provider/DRM/API and device validation remain |
+| Name | Shared component when | Native primitive when |
+| --- | --- | --- |
+| Button | Any call, including the desktop `title` / `symbol` / `iconOnly` API | A host-drawn `variant` the shared file does not implement (`toolbar`) |
+| Checkbox | `checked` / `:checked` / `@change` | `value` alone, `@value-change`, or no API marker |
+| Switch | `checked` / `:checked` / `@change` | `value` alone, `@value-change`, or no API marker |
+| TextInput | `v-model:value` or `@update:value`, with no `@input` listener | Any `@input` listener, or a plain `:value` binding |
+| Image | `src` or `source`, with an SSR `alt` or `decorative`, and a presentation prop (`fit`, `resizeMode`, `position`, `rounded`, `aspectRatio`, ...) | Plain calls, `defaultSource`, a call naming both spellings of one thing, native-only events, and the builtin's transformation options |
+| Video | `src` or `source`, with only shared media events (`@play`, `@pause`, `@ended`, `@timeupdate`, `@loadedmetadata`, `@loadstart`, `@error`) | Neither URL prop, or a native-only event such as `@progress` |
+
+Every row falls back to the primitive when no shared library is installed.
+
+### Selection by usage is the design (decided 2026-11-12)
+
+The two paths in each row are not a migration half done. They hand an event
+handler different things, and code already shipped depends on which:
+
+```html
+<!-- primitive: the handler receives the host event -->
+<TextInput @input="email.set($event.text)" />
+<!-- shared component: the handler receives the value -->
+<TextInput @input="email.set($event)" />
+<TextInput v-model:value="email" />
+```
+
+Making `@input` hand over the value everywhere would turn `$event.text` into
+`undefined` in every existing native caller, which sets their state to nothing
+without an error. `@value-change` on Checkbox and Switch has the same shape
+(`$event.value` against a boolean). So the payloads are not converged: a call
+written against the primitive's contract keeps the primitive, and new code opts
+into the shared component by writing its API (`v-model:value`, `checked`).
+That closes the resolution question of #2091. What it leaves is acceptance on
+hosts this audit never ran (Android, physical devices, screen readers), which
+is tracked in [#2184](https://github.com/stacksjs/stx/issues/2184) rather than
+as a reason to keep resolution open.
 
 Explicit imports and screen-local components remain overrides. The audit tests
 verify dependency paths rather than inferring selection from similar HTML.

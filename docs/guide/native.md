@@ -42,15 +42,17 @@ convention directories (`resources/views/components`, `resources/components`,
 before falling back to the native primitive. With `@stacksjs/components`
 installed, web and native therefore select the same `ui/button/Button.stx`
 unless the app supplies an override. Without a shared Button, the primitive
-continues to work. Checkbox/Switch and TextInput use the per-usage policies below. Other overlapping names retain their existing primitive
-precedence until their compatibility tests support migration; this is not a
-global precedence change.
+continues to work. The other five overlapping names (Checkbox, Switch,
+TextInput, Image, Video) are selected per usage: a call written against the
+shared component's API gets the shared file, and a call written against the
+primitive's keeps the primitive. That is the settled design, not a migration in
+progress, because the two hand an event handler different things and shipped
+code depends on which; this is not a global precedence change.
 
 The [resolution audit](../proposals/native-component-resolution-audit.md)
-records all six overlapping names, the remaining migration blockers, and the
-tests protecting legacy native APIs. Image presentation calls can now select
-the shared file on both targets; plain calls and builtin-specific options keep
-the builtin/primitive paths. A matching filename alone does not prove selection.
+records the rule for all six names, why the event payloads are not converged,
+and the tests protecting both contracts. A matching filename alone does not
+prove selection.
 
 Checkbox/Switch migration must preserve two existing contracts, covered by
 `test/native/control-compatibility.test.ts`:
@@ -91,9 +93,9 @@ file from the directory returned by `nativePrimitivesDir()` in
 Resolution and same-source behavior are covered in
 `test/native/shared-component-resolution.test.ts`, with strict native mutation
 coverage in `test/native/native-conditional-toggle.test.ts`. These are runtime
-contract tests, not a claim of device-level visual parity. Further overlapping
-names and host verification remain tracked in
-[#2091](https://github.com/stacksjs/stx/issues/2091).
+contract tests, not a claim of device-level visual parity. Acceptance on
+Android, physical devices and screen readers is tracked in
+[#2184](https://github.com/stacksjs/stx/issues/2184).
 
 ### Reactive structure and styles
 
