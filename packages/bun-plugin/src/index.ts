@@ -39,7 +39,7 @@ import type { StxOptions } from '@stacksjs/stx'
 import type { BunPlugin } from 'bun'
 import fs from 'node:fs'
 import path from 'node:path'
-import { buildWebComponents, cacheTemplate, checkCache, classifyAllScripts, defaultConfig, extractVariables, loadStxConfig, processClientScript, processDirectives, readMarkdownFile, withinBundlerCallback } from '@stacksjs/stx'
+import { insertBeforeBodyClose, buildWebComponents, cacheTemplate, checkCache, classifyAllScripts, defaultConfig, extractVariables, loadStxConfig, processClientScript, processDirectives, readMarkdownFile, withinBundlerCallback } from '@stacksjs/stx'
 
 // Export watch functionality
 export { createWatcher, startWatchMode, watchAndBuild } from './watch'
@@ -371,13 +371,7 @@ export { content as default };
               return processClientScript(contentMatch[1], { eventBindings, templateContent: output })
             }))
             const scriptsHtml = transformedScripts.join('\n')
-            const bodyEndMatch = output.match(/(<\/body>)/i)
-            if (bodyEndMatch) {
-              output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)
-            }
-            else {
-              output += `\n${scriptsHtml}`
-            }
+            output = insertBeforeBodyClose(output, scriptsHtml)
             // Clear event bindings after use
             context.__stx_event_bindings = []
           }

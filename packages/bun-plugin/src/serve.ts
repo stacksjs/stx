@@ -26,7 +26,7 @@ import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { extractLayoutMetadata } from 'stx-router/layout-metadata'
 import { FILE_SEGMENT_GUARD, isFileRequestPath } from 'stx-router/file-requests'
-import { actionRedirectResponse, compressResponse, runPageAction as sharedRunPageAction } from '@stacksjs/stx'
+import { insertBeforeBodyClose, actionRedirectResponse, compressResponse, runPageAction as sharedRunPageAction } from '@stacksjs/stx'
 import { compileDomainRoutes, describeDomainRoutes, requestHost, resolveDomainElsewhere, resolveDomainRoute } from './domain-routes'
 import type { DomainRoutesOption } from './domain-routes'
 import { IMAGE_BUILTIN_PATTERN, servedTemplatesUseImageBuiltins } from './image-warmup-scope'
@@ -3878,9 +3878,7 @@ function __stxOverlay(errs){
     const configTagRe = /<script>window\.__stxRouterConfig=\{[^<]*\}<\/script>\s*/i
     if (configTagRe.test(html))
       return html.replace(configTagRe, block)
-    if (/<\/body>/i.test(html))
-      return html.replace(/<\/body>/i, `${block}</body>`)
-    return `${html}\n${block}`
+    return insertBeforeBodyClose(html, block)
   }
 
   async function applyI18nToResponse(res: Response, locale: string, normalizedPath: string): Promise<Response> {
@@ -3927,9 +3925,7 @@ function __stxOverlay(errs){
     // exists when the script runs.
     if (i18nConfig && stx.buildLangPickerScript) {
       const pickerScript = stx.buildLangPickerScript(i18nConfig, locale)
-      html = /<\/body>/i.test(html)
-        ? html.replace(/<\/body>/i, `${pickerScript}\n</body>`)
-        : html + pickerScript
+      html = insertBeforeBodyClose(html, pickerScript)
     }
 
     // Tag each rendered page with its locale via the SPA router's

@@ -5,6 +5,7 @@
  * Designed to be used by documentation systems like BunPress
  */
 
+import { insertBeforeBodyClose } from './body-close'
 import type { Server } from 'bun'
 import type { StxOptions } from './types'
 import { serve as bunServe } from 'bun'
@@ -245,14 +246,7 @@ export async function serve(options: ServeOptions = {}): Promise<ServeResult> {
     if (clientScripts.length > 0) {
       const { interpolateScriptsInTemplate } = await import('./expressions')
       const scriptsHtml = interpolateScriptsInTemplate(clientScripts.join('\n'), context)
-      const bodyEndMatch = output.match(/(<\/body>)/i)
-      if (bodyEndMatch) {
-        output = output.replace(/(<\/body>)/i, `${scriptsHtml}\n$1`)
-      }
-      else {
-        // If no </body> tag, append scripts at the end
-        output += `\n${scriptsHtml}`
-      }
+      output = insertBeforeBodyClose(output, scriptsHtml)
     }
 
     // What the page decided about its own response — `@status(code)`,

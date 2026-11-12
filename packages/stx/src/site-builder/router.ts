@@ -10,6 +10,7 @@
  * site-builder doesn't pull it in for non-SPA builds.
  */
 
+import { insertBeforeBodyClose } from '../body-close'
 import type { SiteRouterOptions } from './types'
 
 export type RouterOptions = SiteRouterOptions
@@ -51,8 +52,5 @@ export async function injectRouterScript(html: string, options?: RouterOptions):
 
   const block = `${configBlock}<script>${script}</script>`
 
-  if (/<\/body>/i.test(html))
-    return html.replace(/<\/body>/i, `${block}\n</body>`)
-
-  return `${html}\n${block}`
+  return insertBeforeBodyClose(html, block)
 }
