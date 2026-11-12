@@ -24,13 +24,29 @@ export interface NativeFloatingAction {
   /** An unread count or a short word. A number past 99 reads `99+`; zero and empty show nothing. Only the last action carries one. */
   badge?: string | number | null
   /** Destinations it offers instead of opening `path`. Any action but the last may carry one. */
-  menu?: NativeAccessoryMenuItem[]
+  menu?: NativeFloatingActionChoice[]
+  /**
+   * Its picture on a web page: an icon class (`i-lucide-plus`). A browser has
+   * no SF Symbols, so `<FloatingActions>` draws this there; an action without
+   * one is drawn as its name. A host never sees it.
+   */
+  icon?: string
+  /** Where it goes on a web page, when the website's path is not the app's (`/messages` for `/m/messages`). */
+  href?: string
 }
 
 /**
  * `vertical` and `horizontal` join the actions in one capsule of glass, as the
  * map controls in Maps are joined; `separate` keeps a round control each.
  */
+/** One destination of an action's menu, with what a web page draws and opens for it. */
+export interface NativeFloatingActionChoice extends NativeAccessoryMenuItem {
+  /** Its picture on a web page: an icon class. */
+  icon?: string
+  /** Where it goes on a web page, when that is not `path`. */
+  href?: string
+}
+
 export type NativeFloatingActionsLayout = 'vertical' | 'horizontal' | 'separate'
 
 /** The most actions one group holds. */
@@ -85,7 +101,8 @@ export function floatingActions(actions: ReadonlyArray<NativeFloatingAction | nu
       symbol: action.symbol,
       ...(action.accessibilityLabel ? { accessibilityLabel: action.accessibilityLabel } : {}),
       ...(action.active ? { selected: true } : {}),
-      ...(action.menu?.length ? { menu: action.menu.map(choice => ({ ...choice })) } : {}),
+      // What only a web page uses stays out of what the host is sent.
+      ...(action.menu?.length ? { menu: action.menu.map(choice => ({ path: choice.path, title: choice.title, ...(choice.symbol ? { symbol: choice.symbol } : {}) })) } : {}),
     }
   })
   return {

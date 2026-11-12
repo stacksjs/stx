@@ -858,6 +858,34 @@ The group has Maps' proportions on iOS: 48 points across, its first and last
 symbols at the centres of the capsule's round ends, 55 points from one symbol
 to the next.
 
+On a web page there is no host, so the component draws the same group itself:
+one capsule fixed at the trailing edge, a control per action, the last one's
+badge and a menu of links. A browser has no SF Symbols and a website's paths
+are often not the app's, so an action (and a menu choice) can say both:
+
+```html
+<FloatingActions class="hidden max-md:flex" :actions="[
+  { path: '/m/add', label: 'Add', symbol: 'plus', icon: 'i-lucide-plus', menu: [
+    { path: '/m/workouts/new', href: '/workouts/new', title: 'Workout', symbol: 'dumbbell', icon: 'i-lucide-dumbbell' },
+  ] },
+  { path: '/m/messages', href: '/messages', label: 'Messages', symbol: 'message.fill', icon: 'i-lucide-message-circle', badge: unread() },
+]" />
+```
+
+`icon` is an icon class and `href` the website's path; a host is sent
+neither. Without an `icon` the action is drawn as its name. `class` goes on
+the group, so the page decides where it shows. The page also places and
+colours it, with custom properties on any ancestor:
+
+| Property | What it sets | Default |
+| --- | --- | --- |
+| `--stx-floating-actions-bottom` | distance from the bottom edge; clear a tab bar here | `calc(16px + env(safe-area-inset-bottom))` |
+| `--stx-floating-actions-inset-end` | distance from the trailing edge | `16px` |
+| `--stx-floating-actions-color` | the symbols | `CanvasText` |
+| `--stx-floating-actions-tint` | an action that is on, and the badge | `#007aff` |
+| `--stx-floating-actions-background` | the glass | `Canvas` at 78% |
+| `--stx-floating-actions-z` | its layer | `40` |
+
 Actions every screen shares go through the app's chrome instead, built by the
 same rules with `floatingActions()`:
 

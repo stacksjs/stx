@@ -1,7 +1,9 @@
 import { join } from 'node:path'
 import { describe, expect, it } from 'bun:test'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
+import { Window } from 'very-happy-dom'
 import { floatingActions } from '../../src/native/floating-actions'
+import { mountFloatingActionsWeb } from '../../src/native/floating-actions-web'
 import { mountNativeScreen } from '../../src/native/testing'
 import { createTempDir } from '../../src/temp-dir'
 
@@ -113,4 +115,114 @@ const actions = derived(() => offered() ? [
     if (holder) expect(holder.style?.display).toBe('none')
     phone.unmount()
   }, 30_000)
+})
+
+describe('<FloatingActions> on a web page', () => {
+  const webAdd = { path: '/m/add', href: '/add', label: 'Add', symbol: 'plus', icon: 'i-lucide-plus', menu: [
+    { path: '/m/workouts/new', href: '/workouts/new', title: 'Workout', symbol: 'dumbbell', icon: 'i-lucide-dumbbell' },
+    { path: '/m/habits', title: 'Habit', symbol: 'checkmark.circle' },
+  ] }
+  const webMessages = { path: '/m/messages', href: '/messages', label: 'Messages', symbol: 'message', icon: 'i-lucide-message-circle', badge: 120 }
+  const page = (url = 'https://fixture.invalid/home') => {
+    const browser = new Window({ url })
+    return { browser, document: browser.document as unknown as Document }
+  }
+
+  it('draws one capsule: a control per action in order, the last with its badge', () => {
+    const { browser, document } = page()
+    try {
+      const web = mountFloatingActionsWeb(document)
+      expect(web.element).toBeNull()
+      web.update([webAdd, webMessages])
+      const group = document.querySelector<HTMLElement>('[data-floating-actions-web]')!
+      expect(group.getAttribute('data-floating-actions-web')).toBe('vertical')
+      expect(group.getAttribute('role')).toBe('group')
+      expect(group.style.position).toBe('fixed')
+      expect(group.style.flexDirection).toBe('column')
+      expect(group.style.borderRadius).toBe('24px')
+      const controls = [...group.querySelectorAll<HTMLElement>('[data-floating-action]')]
+      expect(controls.map(control => [control.tagName, control.getAttribute('data-floating-action')])).toEqual([['BUTTON', '/m/add'], ['A', '/m/messages']])
+      // The website's own path, and its icon class in place of the SF Symbol.
+      expect(controls[1]!.getAttribute('href')).toBe('/messages')
+      expect(controls[0]!.querySelector('span')!.className).toBe('i-lucide-plus')
+      expect(controls[1]!.getAttribute('aria-label')).toBe('Messages, 99+')
+      expect(controls[1]!.querySelector('[data-floating-action-badge]')!.textContent).toBe('99+')
+      expect(controls[0]!.querySelector('[data-floating-action-badge]')).toBeNull()
+      // Joined: no surface of its own per control.
+      expect(controls[0]!.style.background).toBe('transparent')
+      web.dispose()
+      expect(document.querySelector('[data-floating-actions-web]')).toBeNull()
+    }
+    finally { browser.close() }
+  })
+
+  it('opens an action\'s menu of links, and closes it on a second press or Escape', () => {
+    const { browser, document } = page()
+    try {
+      const web = mountFloatingActionsWeb(document)
+      web.update([webAdd, webMessages])
+      const button = document.querySelector<HTMLButtonElement>('[data-floating-action="/m/add"]')!
+      expect(button.getAttribute('aria-haspopup')).toBe('menu')
+      button.click()
+      const menu = document.querySelector('[data-floating-actions-menu]')!
+      expect(button.getAttribute('aria-expanded')).toBe('true')
+      expect([...menu.querySelectorAll('a')].map(link => [link.getAttribute('href'), link.textContent])).toEqual([['/workouts/new', 'Workout'], ['/m/habits', 'Habit']])
+      button.click()
+      expect(document.querySelector('[data-floating-actions-menu]')).toBeNull()
+      expect(button.getAttribute('aria-expanded')).toBe('false')
+      button.click()
+      browser.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'Escape' }) as never)
+      expect(document.querySelector('[data-floating-actions-menu]')).toBeNull()
+      web.dispose()
+    }
+    finally { browser.close() }
+  })
+
+  it('follows its actions: redrawn when they change, gone when there are none', () => {
+    const { browser, document } = page('https://fixture.invalid/messages')
+    try {
+      const web = mountFloatingActionsWeb(document)
+      web.update([webAdd, webMessages], 'separate', 'hidden max-md:flex')
+      let group = document.querySelector<HTMLElement>('[data-floating-actions-web]')!
+      expect(group.className).toBe('hidden max-md:flex')
+      // The class decides whether it shows; a round surface each when separate.
+      expect(group.getAttribute('style')).not.toContain('display:flex')
+      expect(group.querySelector<HTMLElement>('[data-floating-action="/m/add"]')!.style.background).not.toBe('transparent')
+      // The page it opens is the page showing.
+      expect(group.querySelector('[data-floating-action="/m/messages"]')!.getAttribute('aria-current')).toBe('page')
+      web.update([{ ...webMessages, badge: 0 }], 'horizontal')
+      expect(document.querySelectorAll('[data-floating-actions-web]').length).toBe(1)
+      group = document.querySelector<HTMLElement>('[data-floating-actions-web]')!
+      expect(group.style.flexDirection).toBe('row')
+      expect(group.querySelector('[data-floating-action-badge]')).toBeNull()
+      web.update([])
+      expect(document.querySelector('[data-floating-actions-web]')).toBeNull()
+      expect(web.element).toBeNull()
+    }
+    finally { browser.close() }
+  })
+
+  it('refuses what a host would refuse, and never links off the site', () => {
+    const { browser, document } = page()
+    try {
+      const web = mountFloatingActionsWeb(document)
+      expect(() => web.update([webMessages, webAdd])).toThrow('put the menu on an earlier one')
+      web.update([{ ...webMessages, href: 'https://elsewhere.invalid/x' }])
+      expect(document.querySelector('[data-floating-action]')!.getAttribute('href')).toBe('/m/messages')
+      web.update([{ ...webMessages, href: '//elsewhere.invalid/x', icon: undefined }])
+      const control = document.querySelector('[data-floating-action]')!
+      expect(control.getAttribute('href')).toBe('/m/messages')
+      // No picture for the web: its name.
+      expect(control.querySelector('span')!.textContent).toBe('Messages')
+      web.dispose()
+    }
+    finally { browser.close() }
+  })
+
+  it('keeps what only a web page uses out of what a host is sent', () => {
+    expect(floatingActions([webAdd, webMessages])).toEqual({
+      path: '/m/messages', title: 'Messages', symbol: 'message', badge: '99+', layout: 'vertical',
+      companions: [{ path: '/m/add', title: 'Add', symbol: 'plus', menu: [{ path: '/m/workouts/new', title: 'Workout', symbol: 'dumbbell' }, { path: '/m/habits', title: 'Habit', symbol: 'checkmark.circle' }] }],
+    })
+  })
 })

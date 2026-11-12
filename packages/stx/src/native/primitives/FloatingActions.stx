@@ -11,19 +11,33 @@
   `layout` is `vertical` (the default), `horizontal`, or `separate` for a
   round control each. The host draws them (Liquid Glass on iOS 26), so this
   takes no room in the screen's own layout; they follow `actions` as it
-  changes and leave with the screen. For actions every screen shares, pass
+  changes and leave with the screen.
+
+  A web page has no host, so there the component draws the same group itself:
+  each action's `icon` (an icon class) in place of its SF Symbol, opening its
+  `href` where the website's path differs from the app's. `class` goes on the
+  group (`hidden max-md:flex` shows it on a phone only), and the page places
+  and colours it with `--stx-floating-actions-*` (floating-actions-web.ts). For actions every screen shares, pass
   `floatingActions()` from `@stacksjs/stx/native` to `craft.navigation.setChrome`.
 --}}
 <script client>
 import { floatingActions } from '../floating-actions'
+import { mountFloatingActionsWeb } from '../floating-actions-web'
 
 const floatingList = useReactiveProp('actions', [])
 const floatingLayout = useReactiveProp('layout', 'vertical')
-// A page drawn by a browser has no host chrome to put them in.
+const floatingClass = useReactiveProp('class', '')
 const floatingHost = typeof craft !== 'undefined' && craft && craft.navigation ? craft.navigation : null
+// A page drawn by a browser has no host chrome to put them in, so it draws them.
+const floatingPage = !floatingHost && typeof document !== 'undefined' ? mountFloatingActionsWeb(document) : null
 let floatingSent = ''
 
 effect(() => {
+  if (floatingPage) {
+    const list = floatingList()
+    floatingPage.update(Array.isArray(list) ? list : [], String(floatingLayout() || 'vertical'), String(floatingClass() || ''))
+    return
+  }
   if (!floatingHost) return
   const list = floatingList()
   const accessory = floatingActions(Array.isArray(list) ? list : [], String(floatingLayout() || 'vertical'))
@@ -36,6 +50,7 @@ effect(() => {
 })
 
 onDestroy(() => {
+  if (floatingPage) floatingPage.dispose()
   if (floatingHost && floatingSent && floatingSent !== 'null') floatingHost.setOptions({ tabAccessory: null })
 })
 </script>
