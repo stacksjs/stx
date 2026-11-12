@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.866...v0.2.867)
+
+## 💄 Styles
+
+- **bun-plugin**: indent the native primitives fallback with its neighbours ([e8c601b](https://github.com/stacksjs/stx/commit/e8c601b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.867 ([1e4f30d](https://github.com/stacksjs/stx/commit/1e4f30d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.865...v0.2.866)
 
 ## ✨ Features
