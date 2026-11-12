@@ -1,5 +1,34 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.863...v0.2.864)
+
+## ✨ Features
+
+- **native**: let a page's classes style FloatingActions on the web ([b63c20b](https://github.com/stacksjs/stx/commit/b63c20b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **native**: draw FloatingActions on a web page as the app's hosts do ([a2c3b7a](https://github.com/stacksjs/stx/commit/a2c3b7a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **components**: type hints in CodeEditor ([2dff7dc](https://github.com/stacksjs/stx/commit/2dff7dc)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **release**: install the smoke test's candidates through a cache of its own ([d222ef0](https://github.com/stacksjs/stx/commit/d222ef0)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **site-builder**: let a build say where its components come from ([ed989c2](https://github.com/stacksjs/stx/commit/ed989c2)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **components**: name the button from a bound ariaLabel ([10d2d0e](https://github.com/stacksjs/stx/commit/10d2d0e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **runtime**: keep a looped component's item in its slot inside an outer loop (#2185) ([759a469](https://github.com/stacksjs/stx/commit/759a469)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2185](https://github.com/stacksjs/stx/issues/2185))
+
+## ✅ Tests
+
+- **components**: hold each engine to what it does with a frame's colour scheme (#2186) ([1940677](https://github.com/stacksjs/stx/commit/1940677)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2186](https://github.com/stacksjs/stx/issues/2186))
+
+## 🔧 Chores
+
+- release v0.2.864 ([25e3952](https://github.com/stacksjs/stx/commit/25e3952)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.862...v0.2.863)
 
 ## 🐛 Bug Fixes
