@@ -8,6 +8,8 @@ export interface RadioGroupProps {
   onChange?: (value: any) => void
   className?: string
   as?: string
+  /** `'mac'` draws Mac radio buttons from the `--stx-mac-*` tokens. Child options take it too. */
+  variant?: 'mac'
 }
 
 export interface RadioGroupLabelProps {
@@ -18,6 +20,8 @@ export interface RadioGroupLabelProps {
 export interface RadioGroupOptionProps {
   value: any
   disabled?: boolean
+  /** `'mac'` draws the Mac radio button; set it on the group as well. */
+  variant?: 'mac'
   className?: string
   as?: string
   currentValue?: any

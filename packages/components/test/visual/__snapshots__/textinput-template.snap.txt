@@ -21,6 +21,21 @@ export const maxLength = $props.maxLength ?? $props.maxlength
 export const showCount = $bool($props.showCount)
 export const className = $props.className || ''
 export const inputClassName = $props.inputClassName || ''
+/*
+ * `variant="mac"` draws the text field a Mac draws: 24px tall with 6px
+ * corners, a raised face inside a hairline, 13px text, and the accent's ring
+ * while it has the keyboard. It is the same
+  <input>
+  with the same attributes
+ * and events; only the classes change, to `stx-mac-field`, which this file's
+ *
+  <style>
+    block draws from the `--stx-mac-*` tokens. It has one size, so
+ * `size` is not read, and it is as wide as `--stx-mac-field-width` (the
+ * whole of its container when that is unset).
+ */
+export const mac = $props.variant === 'mac'
+export const macFieldClasses = `stx-mac-field ${leftIcon ? 'stx-mac-field-leading' : ''} ${rightIcon || clearable ? 'stx-mac-field-trailing' : ''} ${inputClassName}`.replace(/\s+/g, ' ').trim()
 
 /*
  * Padding decides the height here too, with no `h-*` to override it: an app
@@ -52,8 +67,8 @@ const baseClasses = 'block w-full border-0 rounded-control shadow-sm ring-1 ring
  * time: a form posted with fetch learns it after the submit, with no
  * re-render. So a field could never BECOME invalid, which made the component a
  * step backwards from a plain
-  <input>
-  for exactly the forms it is for.
+    <input>
+    for exactly the forms it is for.
  *
  * Toggled as an object binding rather than a whole class string, because a
  * reactive class string MERGES with the static one -- measured, the element
@@ -80,8 +95,8 @@ export const iconClasses = iconSizeClasses[size] || iconSizeClasses.md
  *
  * These were derived from the LABEL or hardcoded outright, so two of these on
  * one page -- an ordinary form -- emitted the same id twice. `
-  <label for>
-    `
+    <label for>
+      `
  * then activated the FIRST field from every label, and `aria-describedby`
  * pointed every field's description at the first one's helper text. A label
  * containing a space also produced an invalid id, `input-First name`, which
@@ -165,9 +180,9 @@ export const autofocus = $bool($props.autofocus)
 export const nativeFieldClasses = `h-12 px-4 text-[17px] text-[#000000] dark:text-[#ffffff] bg-[#767680]/12 dark:bg-[#767680]/24 rounded-[10px] border-0 ${inputClassName}`.trim()
 export const nativeLabelClasses = 'mb-1.5 px-4 text-[13px] uppercase text-[#6d6d72] dark:text-[#8d8d93]'
 export const nativeHelperClasses = `mt-1.5 px-4 text-[13px] ${error ? 'text-[#ff3b30] dark:text-[#ff453a]' : 'text-[#6d6d72] dark:text-[#8d8d93]'}`
-  </script>
-  <script client>
-    // Reserve value events before the first edit: lazy input must not leak its
+    </script>
+    <script client>
+      // Reserve value events before the first edit: lazy input must not leak its
 // bubbling DOM/native event object to a caller expecting the committed value.
 const emit = defineEmits(['input', 'clear', 'focus', 'blur', 'submit', 'submit-editing'])
 // Validity is live, for the same reason `disabled` is: a form posted with
@@ -273,16 +288,16 @@ const hasValue = derived(() => String(inputValue()).length > 0)
 const charCount = derived(() => `${String(inputValue()).length} / {{ maxLength || 0 }}`)
 
 defineExpose({ value: inputValue, clear: onClear })
-  </script>
-  @if($native)
-  <div class="w-full {{ className }}">
-    @if(label)
-    <label for="{{ inputId }}" class="{{ nativeLabelClasses }}">
-      {{ label }}
-    </label>
-    @endif
-    <div class="relative justify-center">
-      <input
+    </script>
+    @if($native)
+    <div class="w-full {{ className }}">
+      @if(label)
+      <label for="{{ inputId }}" class="{{ nativeLabelClasses }}">
+        {{ label }}
+      </label>
+      @endif
+      <div class="relative justify-center">
+        <input
       data-stx-native-host-root
       @if(name)name="{{ name }}"@endif
       @if(autocomplete)autocomplete="{{ autocomplete }}"@endif
@@ -315,46 +330,134 @@ defineExpose({ value: inputValue, clear: onClear })
       :class="{ 'border border-[#ff3b30] dark:border-[#ff453a]': isError(), 'opacity-50': isDisabled() }"
       @if(clearable):clearButtonMode="nativeClear ? 'while-editing' : 'never'" :style="nativeClear ? null : { paddingRight: 40 }"@endif
     />
-      @if(clearable)
-      <button :if="!nativeClear" type="button" :show="hasValue() && !isDisabled() && !isReadonly()"
+        @if(clearable)
+        <button :if="!nativeClear" type="button" :show="hasValue() && !isDisabled() && !isReadonly()"
         @click="onClear()" class="absolute top-0 right-0 h-12 w-10 items-center justify-center" aria-label="Clear input"
       >
-        <i class="i-lucide-circle-x h-[17px] w-[17px] text-[#c4c4c7] dark:text-[#5b5b5f]">
-        </i>
-      </button>
+          <i class="i-lucide-circle-x h-[17px] w-[17px] text-[#c4c4c7] dark:text-[#5b5b5f]">
+          </i>
+        </button>
+        @endif
+      </div>
+      @if(helperText)
+      <p id="{{ helperId }}" class="{{ nativeHelperClasses }}">
+        {{ helperText }}
+      </p>
+      @endif
+  @if(showCount && maxLength)
+      <p class="mt-1.5 px-4 text-right text-[13px] text-[#6d6d72] dark:text-[#8d8d93]" :text="charCount()">
+      </p>
       @endif
     </div>
-    @if(helperText)
-    <p id="{{ helperId }}" class="{{ nativeHelperClasses }}">
-      {{ helperText }}
-    </p>
-    @endif
-  @if(showCount && maxLength)
-    <p class="mt-1.5 px-4 text-right text-[13px] text-[#6d6d72] dark:text-[#8d8d93]" :text="charCount()">
-    </p>
-    @endif
-  </div>
-  @else
-  <div class="w-full {{ className }}">
-    @if(label)
-    <label for="{{ inputId }}" class="{{ labelClasses }}">
-      {{ label }}
+    @elseif(mac)
+    <div class="stx-mac-field-wrap {{ className }}">
+      @if(label)
+      <label for="{{ inputId }}" class="stx-mac-field-label" @if(error)data-error="true"@endif>
+        {{ label }}
       @if(required)
-      <span class="text-danger ml-1">
-        *
-      </span>
+        <span class="stx-mac-field-required">
+          *
+        </span>
+        @endif
+      </label>
       @endif
-    </label>
-    @endif
-    <div class="relative">
-      @if(leftIcon)
-      <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-        <span class="{{ iconClasses }} text-fg-soft">
+      <div class="stx-mac-field-box">
+        @if(leftIcon)
+        <span class="stx-mac-field-icon stx-mac-field-icon-leading" aria-hidden="true">
           {!! leftIcon !!}
         </span>
+        @endif
+        <input
+      data-stx-native-host-root
+      @if(name)name="{{ name }}"@endif
+      @if(autocomplete)autocomplete="{{ autocomplete }}"@endif
+      @if(form)form="{{ form }}"@endif
+      @if(inputMode)inputmode="{{ inputMode }}"@endif
+      @if(enterKeyHint)enterkeyhint="{{ enterKeyHint }}"@endif
+      type="{{ type }}"
+      @if(min)min="{{ min }}"@endif
+      @if(max)max="{{ max }}"@endif
+      @if(step)step="{{ step }}"@endif
+      @if(pattern)pattern="{{ pattern }}"@endif
+      @if(minLength)minlength="{{ minLength }}"@endif
+      @if(htmlSize)size="{{ htmlSize }}"@endif
+      @if(list)list="{{ list }}"@endif
+      @if(autofocus)autofocus@endif
+      id="{{ inputId }}"
+      class="{{ macFieldClasses }}"
+      value="{{ value }}"
+      :value="inputValue()"
+      placeholder="{{ placeholder }}"
+      :placeholder="String(placeholderText() ?? '')"
+      @if(disabled)disabled@endif
+      :disabled="isDisabled()"
+      @if(readonly)readonly@endif
+      :readonly="isReadonly()"
+      @if(required)required@endif
+      @if(maxLength && freeText)maxlength="{{ maxLength }}"@endif
+      @input="onInput($event)"
+      @change="onChange($event)"
+      @focus="onFocus($event)"
+      @blur="onBlur($event)"
+      aria-invalid="{{ error ? 'true' : 'false' }}"
+      :aria-invalid="isError() ? 'true' : 'false'"
+      @if(helperText)aria-describedby="{{ helperId }}"@endif
+    />
+        @if(clearable)
+        <button
+        type="button"
+        :show="hasValue() && !isDisabled() && !isReadonly()"
+        @click="onClear()"
+        class="stx-mac-field-clear"
+        aria-label="Clear input"
+      >
+        </button>
+        @endif
+    @if(rightIcon && !clearable)
+        <span class="stx-mac-field-icon stx-mac-field-icon-trailing" aria-hidden="true">
+          {!! rightIcon !!}
+        </span>
+        @endif
+      </div>
+      @if(helperText || (showCount && maxLength))
+      <div class="stx-mac-field-foot">
+        @if(helperText)
+        <p id="{{ helperId }}" class="stx-mac-field-helper" @if(error)data-error="true"@endif>
+          {{ helperText }}
+        </p>
+        @else
+        <span>
+        </span>
+        @endif
+
+      @if(showCount && maxLength)
+        <p class="stx-mac-field-helper" x-text="charCount()">
+        </p>
+        @endif
       </div>
       @endif
-      <input
+    </div>
+    @else
+    <div class="w-full {{ className }}">
+      @if(label)
+      <label for="{{ inputId }}" class="{{ labelClasses }}">
+        {{ label }}
+      @if(required)
+        <span class="text-danger ml-1">
+          *
+        </span>
+        @endif
+      </label>
+      @endif
+      <div class="relative">
+        @if(leftIcon)
+        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+          <span class="{{ iconClasses }} text-fg-soft">
+            {!! leftIcon !!}
+          </span>
+        </div>
+        @endif
+        <input
       data-stx-native-host-root
       @if(name)name="{{ name }}"@endif
       @if(autocomplete)autocomplete="{{ autocomplete }}"@endif
@@ -402,47 +505,277 @@ defineExpose({ value: inputValue, clear: onClear })
       :class="{ '{{ stateInvalidClasses }}': isError(), '{{ stateValidClasses }}': !isError(), 'opacity-50 cursor-not-allowed': isDisabled(), 'bg-surface': isDisabled() || isReadonly(), 'bg-field': !isDisabled() && !isReadonly(), 'cursor-default': !isDisabled() && isReadonly() }"
       @if(helperText)aria-describedby="{{ helperId }}"@endif
     />
-      @if(clearable)
-      <div :show="hasValue() && !isDisabled() && !isReadonly()" class="absolute inset-y-0 right-0 flex items-center pr-3">
-        <button
+        @if(clearable)
+        <div :show="hasValue() && !isDisabled() && !isReadonly()" class="absolute inset-y-0 right-0 flex items-center pr-3">
+          <button
           type="button"
           @click="onClear()"
           class="text-fg-soft hover:text-fg-strong focus:outline-none"
           aria-label="Clear input"
         >
-          <svg class="{{ iconClasses }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      @endif
+            <svg class="{{ iconClasses }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        @endif
     @if(rightIcon && !clearable)
-      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-        <span class="{{ iconClasses }} text-fg-soft">
-          {!! rightIcon !!}
-        </span>
+        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+          <span class="{{ iconClasses }} text-fg-soft">
+            {!! rightIcon !!}
+          </span>
+        </div>
+        @endif
       </div>
-      @endif
-    </div>
-    @if(helperText || (showCount && maxLength))
-    <div class="flex items-center justify-between mt-2">
-      @if(helperText)
-      <p id="{{ helperId }}" class="{{ helperClasses }}">
-        {{ helperText }}
-      </p>
-      @else
-      <span>
-      </span>
-      @endif
+      @if(helperText || (showCount && maxLength))
+      <div class="flex items-center justify-between mt-2">
+        @if(helperText)
+        <p id="{{ helperId }}" class="{{ helperClasses }}">
+          {{ helperText }}
+        </p>
+        @else
+        <span>
+        </span>
+        @endif
 
       @if(showCount && maxLength)
-      <p class="text-sm text-fg-soft" x-text="charCount()">
-      </p>
+        <p class="text-sm text-fg-soft" x-text="charCount()">
+        </p>
+        @endif
+      </div>
       @endif
     </div>
     @endif
-  </div>
-  @endif
+    <style>
+      :where(:root) {
+  --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
+  --stx-mac-font-size: 13px;
+  --stx-mac-font-size-small: 11px;
+  --stx-mac-hairline: 0.5px;
+  --stx-mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--stx-mac-accent) 35%, transparent);
+  --stx-mac-card-radius: 12px;
+  --stx-mac-control-radius: 6px;
+  --stx-mac-row-height: 38px;
+  --stx-mac-row-inset: 10px;
+  --stx-mac-sidebar-width: 226px;
+  --stx-mac-accent: var(--stx-accent, #007aff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(0, 0, 0, 0.85);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-tertiary: rgba(0, 0, 0, 0.26);
+  --stx-mac-window: #ffffff;
+  --stx-mac-sidebar: #f2f1f0;
+  --stx-mac-card: rgba(0, 0, 0, 0.04);
+  --stx-mac-separator: rgba(0, 0, 0, 0.1);
+  --stx-mac-hover: rgba(0, 0, 0, 0.05);
+  --stx-mac-selection-inactive: rgba(0, 0, 0, 0.08);
+  --stx-mac-well: rgba(0, 0, 0, 0.07);
+  --stx-mac-control: #ffffff;
+  --stx-mac-control-line: rgba(0, 0, 0, 0.12);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --stx-mac-switch-on: #34c759;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff3b30;
+}
+:where(.dark) {
+  --stx-mac-accent: var(--stx-accent, #0a84ff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(255, 255, 255, 0.85);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.55);
+  --stx-mac-ink-tertiary: rgba(255, 255, 255, 0.25);
+  --stx-mac-window: #1e1e1e;
+  --stx-mac-sidebar: #2a2a2a;
+  --stx-mac-card: rgba(255, 255, 255, 0.05);
+  --stx-mac-separator: rgba(255, 255, 255, 0.1);
+  --stx-mac-hover: rgba(255, 255, 255, 0.06);
+  --stx-mac-selection-inactive: rgba(255, 255, 255, 0.1);
+  --stx-mac-well: rgba(255, 255, 255, 0.1);
+  --stx-mac-control: rgba(255, 255, 255, 0.14);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.06);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+  --stx-mac-switch-on: #30d158;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff453a;
+}
+@media (max-resolution: 1.5dppx) {
+:where(:root) {
+  --stx-mac-hairline: 1px;
+}
+}
+@media (prefers-contrast: more) {
+:where(:root) {
+  --stx-mac-separator: rgba(0, 0, 0, 0.4);
+  --stx-mac-control-line: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.75);
+  --stx-mac-hairline: 1px;
+}
+:where(.dark) {
+  --stx-mac-separator: rgba(255, 255, 255, 0.45);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.5);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.8);
+}
+}
+
+.stx-mac-field-wrap {
+  display: block;
+  width: var(--stx-mac-field-width, 100%);
+  max-width: 100%;
+  font-family: var(--stx-mac-font);
+  font-size: var(--stx-mac-font-size);
+  letter-spacing: -0.08px;
+  -webkit-font-smoothing: antialiased;
+  color: var(--stx-mac-ink);
+  cursor: default;
+}
+
+.stx-mac-field-label {
+  display: block;
+  margin-bottom: 4px;
+  line-height: 16px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.stx-mac-field-label[data-error='true'],
+.stx-mac-field-required,
+.stx-mac-field-helper[data-error='true'] {
+  color: var(--stx-mac-danger);
+}
+
+.stx-mac-field-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.stx-mac-field {
+  --stx-mac-field-line: inset 0 0 0 var(--stx-mac-hairline) var(--stx-mac-control-line);
+  display: block;
+  flex: 1 1 auto;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  margin: 0;
+  padding: 0 7px;
+  border: 0;
+  border-radius: var(--stx-mac-control-radius);
+  background: var(--stx-mac-control);
+  box-shadow: var(--stx-mac-field-line);
+  color: var(--stx-mac-ink);
+  font: inherit;
+  letter-spacing: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  transition: box-shadow 150ms ease;
+}
+
+.stx-mac-field::placeholder {
+  color: var(--stx-mac-ink-tertiary);
+}
+
+.stx-mac-field:focus-visible {
+  box-shadow: var(--stx-mac-field-line), var(--stx-mac-focus-ring);
+}
+
+.stx-mac-field[aria-invalid='true'] {
+  --stx-mac-field-line: inset 0 0 0 1px var(--stx-mac-danger);
+}
+
+.stx-mac-field:disabled {
+  opacity: 0.5;
+}
+
+.stx-mac-field-helper {
+  margin: 4px 0 0;
+  font-size: var(--stx-mac-font-size-small);
+  line-height: 14px;
+  letter-spacing: 0;
+  color: var(--stx-mac-ink-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stx-mac-field {
+    transition: none;
+  }
+}
+
+/* Two classes, so these win over the plain field's rules whichever component's stylesheet the page loads last. */
+.stx-mac-field.stx-mac-field-leading {
+  padding-left: 24px;
+}
+
+.stx-mac-field.stx-mac-field-trailing {
+  padding-right: 24px;
+}
+
+.stx-mac-field-icon {
+  position: absolute;
+  top: 5.5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  color: var(--stx-mac-ink-secondary);
+  pointer-events: none;
+}
+
+.stx-mac-field-icon-leading {
+  left: 6px;
+}
+
+.stx-mac-field-icon-trailing {
+  right: 6px;
+}
+
+/* The clear button: a small filled disc with a cross cut from two bars. */
+.stx-mac-field-clear {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--stx-mac-ink-tertiary);
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: default;
+  outline: none;
+}
+
+.stx-mac-field-clear::before,
+.stx-mac-field-clear::after {
+  content: '';
+  position: absolute;
+  top: 6.25px;
+  left: 3.5px;
+  width: 7px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: var(--stx-mac-window);
+  transform: rotate(45deg);
+}
+
+.stx-mac-field-clear::after {
+  transform: rotate(-45deg);
+}
+
+.stx-mac-field-clear:focus-visible {
+  box-shadow: var(--stx-mac-focus-ring);
+}
+
+.stx-mac-field-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+    </style>
 
 === Extracted Classes ===
 !isDisabled()
@@ -460,7 +793,15 @@ defineExpose({ value: inputValue, clear: onClear })
 --
 --stx-control-leading
 --stx-control-text
+Helvetica
+Neue
+Pro
+SF
+Segoe
+Text
 The
+UI
+Variable
 a
 absolute
 adjusted
@@ -480,6 +821,7 @@ border
 border-0
 border-[#ff3b30]
 box
+box-shadow
 button
 by
 change
@@ -488,9 +830,11 @@ clear
 color
 const
 content
+cross
 cursor-default
 cursor-not-allowed
 cursor-not-allowed':
+cut
 dark:border-[#ff453a]':
 dark:text-[#5b5b5f]
 dark:text-[#8d8d93]
@@ -500,6 +844,7 @@ declared
 default
 density
 disabled
+disc
 duration-200
 email
 error
@@ -507,6 +852,7 @@ every
 fallbacks
 false
 field
+filled
 flex
 focus
 focus:outline-none
@@ -516,6 +862,7 @@ focus:ring-danger-focus
 focus:ring-inset
 font-medium
 form
+from
 h-10
 h-12
 h-4
@@ -528,6 +875,7 @@ i-lucide-circle-x
 iconClasses
 input
 inputClasses
+inset
 inset-y-0
 inside
 instead
@@ -547,6 +895,8 @@ lands
 leading-6
 left-0
 line-height
+loads
+macFieldClasses
 mb-2
 md
 ml-1
@@ -566,6 +916,7 @@ on
 opacity-50
 own
 padding
+page
 pl-10
 pl-3
 placeholder
@@ -589,16 +940,31 @@ ring-danger-line
 ring-inset
 ring-line-strong
 rounded-control
+s
 search
 sets
 shadow-sm
 size
 sizeClasses
 sm
+small
 so
 stateInvalidClasses
 stateValidClasses
 step
+stx-mac-field-box
+stx-mac-field-clear
+stx-mac-field-foot
+stx-mac-field-helper
+stx-mac-field-icon
+stx-mac-field-icon-leading
+stx-mac-field-icon-trailing
+stx-mac-field-label
+stx-mac-field-leading
+stx-mac-field-required
+stx-mac-field-trailing
+stx-mac-field-wrap
+stylesheet
 submit
 submit-editing
 tel
@@ -622,6 +988,7 @@ time
 top-0
 transition-colors
 true
+two
 types
 uppercase
 url

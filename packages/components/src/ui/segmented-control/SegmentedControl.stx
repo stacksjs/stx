@@ -41,6 +41,14 @@ export const disabled = $bool($props.disabled)
 export const size = $props.size === 'sm' ? 'sm' : $props.size === 'lg' ? 'lg' : 'md'
 export const testID = $props.testID || ''
 export const className = $props.className || ''
+/*
+ * `variant="mac"` draws the segmented control a Mac draws: a 24px capsule
+ * track with the chosen segment raised in it. The buttons, `aria-pressed` and
+ * the events are the ones below; only the classes change, to
+ * `stx-mac-segmented`, which this file's <style> block draws from the
+ * `--stx-mac-*` tokens. It has one size, so `size` is not read.
+ */
+export const mac = $props.variant === 'mac' && !$native
 
 const sizeClasses = {
   sm: { segment: 'min-h-[28px] px-2.5 py-1', text: 'text-[13px]' },
@@ -64,7 +72,9 @@ const segmentSizing = stretch ? sizing.segment.replace(/\bpx-\S+/, stretchedPadd
  */
 export const trackClasses = $native
   ? `${stretch ? 'flex' : 'self-start'} flex-row gap-0.5 p-0.5 rounded-[9px] bg-[#767680]/12 dark:bg-[#767680]/24 ${className}`.replace(/\s+/g, ' ').trim()
-  : `${stretch ? 'flex' : 'inline-flex'} flex-row gap-0.5 p-0.5 rounded-control bg-surface-sunken ${className}`.replace(/\s+/g, ' ').trim()
+  : mac
+    ? `stx-mac-segmented ${stretch ? 'stx-mac-segmented-stretch' : ''} ${className}`.replace(/\s+/g, ' ').trim()
+    : `${stretch ? 'flex' : 'inline-flex'} flex-row gap-0.5 p-0.5 rounded-control bg-surface-sunken ${className}`.replace(/\s+/g, ' ').trim()
 export const segmentBase = $native
   ? `${stretch ? 'flex-1 min-w-0' : ''} items-center justify-center rounded-[7px] ${segmentSizing}`.replace(/\s+/g, ' ').trim()
   : `${stretch ? 'flex-1 min-w-0' : ''} items-center justify-center rounded-control transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${segmentSizing}`.replace(/\s+/g, ' ').trim()
@@ -89,6 +99,9 @@ const segmentOn = {{ segmentOn }}
 const segmentOff = {{ segmentOff }}
 const labelOn = {{ labelOn }}
 const labelOff = {{ labelOff }}
+// The Mac look is drawn from `aria-pressed` and `disabled` in the stylesheet,
+// so a segment's class does not change with its state.
+const macLook = {{ mac }}
 
 /** A choice as `{ value, label, disabled }`, whichever way it was written. */
 function normalise(choice) {
@@ -130,11 +143,13 @@ function onNativeChange(event) {
 }
 
 function segmentClasses(segment) {
+  if (macLook) return 'stx-mac-segment'
   const state = isOn(segment) ? segmentOn : 'bg-transparent'
   return `${segmentBase} ${state} ${isOff(segment) ? segmentOff : 'cursor-pointer'}`
 }
 
 function labelClasses(segment) {
+  if (macLook) return 'stx-mac-segment-label'
   return `${textSize} ${isOn(segment) ? labelOn : labelOff}`
 }
 
@@ -176,3 +191,157 @@ defineExpose({ selected })
     @click="choose(segment)"
   ><span class="truncate" :class="labelClasses(segment)" :text="segment.label"></span></button>
 </div>
+
+<style>
+:where(:root) {
+  --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
+  --stx-mac-font-size: 13px;
+  --stx-mac-font-size-small: 11px;
+  --stx-mac-hairline: 0.5px;
+  --stx-mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--stx-mac-accent) 35%, transparent);
+  --stx-mac-card-radius: 12px;
+  --stx-mac-control-radius: 6px;
+  --stx-mac-row-height: 38px;
+  --stx-mac-row-inset: 10px;
+  --stx-mac-sidebar-width: 226px;
+  --stx-mac-accent: var(--stx-accent, #007aff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(0, 0, 0, 0.85);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-tertiary: rgba(0, 0, 0, 0.26);
+  --stx-mac-window: #ffffff;
+  --stx-mac-sidebar: #f2f1f0;
+  --stx-mac-card: rgba(0, 0, 0, 0.04);
+  --stx-mac-separator: rgba(0, 0, 0, 0.1);
+  --stx-mac-hover: rgba(0, 0, 0, 0.05);
+  --stx-mac-selection-inactive: rgba(0, 0, 0, 0.08);
+  --stx-mac-well: rgba(0, 0, 0, 0.07);
+  --stx-mac-control: #ffffff;
+  --stx-mac-control-line: rgba(0, 0, 0, 0.12);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --stx-mac-switch-on: #34c759;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff3b30;
+}
+:where(.dark) {
+  --stx-mac-accent: var(--stx-accent, #0a84ff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(255, 255, 255, 0.85);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.55);
+  --stx-mac-ink-tertiary: rgba(255, 255, 255, 0.25);
+  --stx-mac-window: #1e1e1e;
+  --stx-mac-sidebar: #2a2a2a;
+  --stx-mac-card: rgba(255, 255, 255, 0.05);
+  --stx-mac-separator: rgba(255, 255, 255, 0.1);
+  --stx-mac-hover: rgba(255, 255, 255, 0.06);
+  --stx-mac-selection-inactive: rgba(255, 255, 255, 0.1);
+  --stx-mac-well: rgba(255, 255, 255, 0.1);
+  --stx-mac-control: rgba(255, 255, 255, 0.14);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.06);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+  --stx-mac-switch-on: #30d158;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff453a;
+}
+@media (max-resolution: 1.5dppx) {
+:where(:root) {
+  --stx-mac-hairline: 1px;
+}
+}
+@media (prefers-contrast: more) {
+:where(:root) {
+  --stx-mac-separator: rgba(0, 0, 0, 0.4);
+  --stx-mac-control-line: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.75);
+  --stx-mac-hairline: 1px;
+}
+:where(.dark) {
+  --stx-mac-separator: rgba(255, 255, 255, 0.45);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.5);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.8);
+}
+}
+
+.stx-mac-segmented {
+  display: inline-flex;
+  box-sizing: border-box;
+  height: 24px;
+  padding: 2px;
+  border-radius: 12px;
+  background: var(--stx-mac-well);
+  font-family: var(--stx-mac-font);
+  font-size: var(--stx-mac-font-size);
+  letter-spacing: -0.08px;
+  -webkit-font-smoothing: antialiased;
+  color: var(--stx-mac-ink);
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.stx-mac-segmented-stretch {
+  display: flex;
+}
+
+.stx-mac-segment {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 0;
+  height: 20px;
+  margin: 0;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: default;
+  outline: none;
+  transition: background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.stx-mac-segmented-stretch .stx-mac-segment {
+  flex: 1 1 0;
+}
+
+.stx-mac-segment[aria-pressed='true'] {
+  background: var(--stx-mac-control);
+  box-shadow: var(--stx-mac-control-shadow);
+}
+
+.stx-mac-segment:focus-visible {
+  box-shadow: var(--stx-mac-focus-ring);
+}
+
+.stx-mac-segment[aria-pressed='true']:focus-visible {
+  box-shadow: var(--stx-mac-control-shadow), var(--stx-mac-focus-ring);
+}
+
+.stx-mac-segment:disabled {
+  opacity: 0.5;
+}
+
+.stx-mac-segment-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stx-mac-segment {
+    transition: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .stx-mac-segmented {
+    box-shadow: inset 0 0 0 1px var(--stx-mac-control-line);
+  }
+}
+</style>

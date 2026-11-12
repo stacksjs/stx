@@ -6,6 +6,13 @@ export { default as Button } from './Button.stx'
 
 export interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
+  /**
+   * `'mac'` draws the Mac push button from the `--stx-mac-*` tokens. `variant`
+   * keeps meaning intent: `primary` is the accent-filled default button,
+   * `danger` the destructive one, `ghost` faceless, and anything else
+   * (including none) the plain push button. `size` is not read.
+   */
+  appearance?: 'mac'
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
   disabled?: boolean
   loading?: boolean
@@ -25,6 +32,7 @@ export interface ButtonProps {
  */
 export const buttonPropSchema: PropSchema = {
   variant: PropTypes.oneOf(['primary', 'secondary', 'outline', 'ghost', 'danger']),
+  appearance: PropTypes.oneOf(['mac']),
   size: PropTypes.oneOf(['xs', 'sm', 'md', 'lg', 'xl']),
   disabled: PropTypes.boolean,
   loading: PropTypes.boolean,

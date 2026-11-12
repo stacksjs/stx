@@ -216,3 +216,15 @@ const handleCountryChange = (value) => {
   />
 </form>
 ```
+
+## Mac look
+
+`variant="mac"` draws the pop-up button a Mac draws: the chosen value as 13px text, right-aligned, and a 20px disc holding an up and a down chevron. The control is as wide as the chosen value, so it sits at the end of a settings row.
+
+```html
+<Select variant="mac" v-model:value="size" name="size" placeholder="" :options="['Small', 'Medium', 'Large']" />
+```
+
+It is still a native `<select>`: the menu it opens, the keys that work in it and the value it submits are the platform's own. On a Mac that menu is the system's pop-up menu; the component does not draw one. `size` is not read under this look.
+
+Colours and type come from the `--stx-mac-*` custom properties (`src/utils/mac-theme.ts`), light and dark, so an app re-themes it by setting a variable. A window that is not the key window (`data-stx-window-active="false"` on an ancestor, or Craft's `data-craft-window-active`) draws it without colour. The disc is `--stx-mac-popup-disc`, and `--stx-mac-popup-disc-hover` under the pointer.

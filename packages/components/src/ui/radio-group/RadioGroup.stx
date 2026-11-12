@@ -24,11 +24,24 @@ export const as = $props.as || 'div'
 export const options = Array.isArray($props.options) ? $props.options : []
 export const hasPropOptions = options.length > 0
 
-const optionBaseClasses = 'relative flex cursor-pointer rounded-panel px-5 py-4 shadow-md focus:outline-none transition-all bg-panel text-fg focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel'
-export const optionClasses = optionBaseClasses
-export const optionDisabledClasses = `${optionBaseClasses} opacity-50 cursor-not-allowed`
+/*
+ * `variant="mac"` draws the radio buttons a Mac draws: a 15px circle beside
+ * each label, sunk when off and the accent around a white dot when on, 22px
+ * from one row to the next. The roles, the values and the keys are the ones
+ * below; only the classes change, to `stx-mac-radio`, which this file's
+ * <style> block draws from the `--stx-mac-*` tokens. An option written as a
+ * <RadioGroupOption> child takes `variant="mac"` itself.
+ */
+export const mac = $props.variant === 'mac'
 
-const baseClasses = 'w-full'
+const optionBaseClasses = 'relative flex cursor-pointer rounded-panel px-5 py-4 shadow-md focus:outline-none transition-all bg-panel text-fg focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel'
+export const optionClasses = mac ? 'stx-mac-radio' : optionBaseClasses
+export const optionDisabledClasses = mac ? 'stx-mac-radio' : `${optionBaseClasses} opacity-50 cursor-not-allowed`
+export const optionTextClasses = mac ? 'stx-mac-radio-text' : 'flex flex-col'
+export const optionLabelClasses = mac ? 'stx-mac-radio-label' : 'text-sm font-medium'
+export const optionDescriptionClasses = mac ? 'stx-mac-radio-description' : 'text-sm opacity-70'
+
+const baseClasses = mac ? 'stx-mac-radio-group' : 'w-full'
 export const groupClasses = `${baseClasses} ${className}`.trim()
 export const radioGroupInstanceId = $uid
 </script>
@@ -137,10 +150,10 @@ defineExpose({ selected, selectValue })
         tabindex="{{ option.disabled ? '-1' : '0' }}"
         class="{{ option.disabled ? optionDisabledClasses : optionClasses }}"
       >
-        <span class="flex flex-col">
-          <span class="text-sm font-medium">{{ option.label }}</span>
+        <span class="{{ optionTextClasses }}">
+          <span class="{{ optionLabelClasses }}">{{ option.label }}</span>
           @if(option.description)
-            <span class="text-sm opacity-70">{{ option.description }}</span>
+            <span class="{{ optionDescriptionClasses }}">{{ option.description }}</span>
           @endif
         </span>
       </div>
@@ -149,3 +162,168 @@ defineExpose({ selected, selectValue })
     <slot />
   @endif
 </component>
+
+<style>
+:where(:root) {
+  --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
+  --stx-mac-font-size: 13px;
+  --stx-mac-font-size-small: 11px;
+  --stx-mac-hairline: 0.5px;
+  --stx-mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--stx-mac-accent) 35%, transparent);
+  --stx-mac-card-radius: 12px;
+  --stx-mac-control-radius: 6px;
+  --stx-mac-row-height: 38px;
+  --stx-mac-row-inset: 10px;
+  --stx-mac-sidebar-width: 226px;
+  --stx-mac-accent: var(--stx-accent, #007aff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(0, 0, 0, 0.85);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-tertiary: rgba(0, 0, 0, 0.26);
+  --stx-mac-window: #ffffff;
+  --stx-mac-sidebar: #f2f1f0;
+  --stx-mac-card: rgba(0, 0, 0, 0.04);
+  --stx-mac-separator: rgba(0, 0, 0, 0.1);
+  --stx-mac-hover: rgba(0, 0, 0, 0.05);
+  --stx-mac-selection-inactive: rgba(0, 0, 0, 0.08);
+  --stx-mac-well: rgba(0, 0, 0, 0.07);
+  --stx-mac-control: #ffffff;
+  --stx-mac-control-line: rgba(0, 0, 0, 0.12);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --stx-mac-switch-on: #34c759;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff3b30;
+}
+:where(.dark) {
+  --stx-mac-accent: var(--stx-accent, #0a84ff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(255, 255, 255, 0.85);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.55);
+  --stx-mac-ink-tertiary: rgba(255, 255, 255, 0.25);
+  --stx-mac-window: #1e1e1e;
+  --stx-mac-sidebar: #2a2a2a;
+  --stx-mac-card: rgba(255, 255, 255, 0.05);
+  --stx-mac-separator: rgba(255, 255, 255, 0.1);
+  --stx-mac-hover: rgba(255, 255, 255, 0.06);
+  --stx-mac-selection-inactive: rgba(255, 255, 255, 0.1);
+  --stx-mac-well: rgba(255, 255, 255, 0.1);
+  --stx-mac-control: rgba(255, 255, 255, 0.14);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.06);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+  --stx-mac-switch-on: #30d158;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff453a;
+}
+@media (max-resolution: 1.5dppx) {
+:where(:root) {
+  --stx-mac-hairline: 1px;
+}
+}
+@media (prefers-contrast: more) {
+:where(:root) {
+  --stx-mac-separator: rgba(0, 0, 0, 0.4);
+  --stx-mac-control-line: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.75);
+  --stx-mac-hairline: 1px;
+}
+:where(.dark) {
+  --stx-mac-separator: rgba(255, 255, 255, 0.45);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.5);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.8);
+}
+}
+
+.stx-mac-radio-group {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--stx-mac-font);
+  font-size: var(--stx-mac-font-size);
+  letter-spacing: -0.08px;
+  -webkit-font-smoothing: antialiased;
+  color: var(--stx-mac-ink);
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.stx-mac-radio.stx-mac-radio {
+  --stx-mac-radio-inactive: color-mix(in srgb, var(--stx-mac-ink) 16%, transparent);
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  box-sizing: border-box;
+  min-height: 22px;
+  padding: 3px 0;
+  line-height: 16px;
+  background: transparent;
+  outline: none;
+  font-family: var(--stx-mac-font);
+  font-size: var(--stx-mac-font-size);
+  letter-spacing: -0.08px;
+  -webkit-font-smoothing: antialiased;
+  color: var(--stx-mac-ink);
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* The circle: sunk when off, the accent around a white dot when on. */
+.stx-mac-radio::before {
+  content: '';
+  flex: none;
+  box-sizing: border-box;
+  width: 15px;
+  height: 15px;
+  margin-top: 0.5px;
+  border-radius: 50%;
+  background-color: var(--stx-mac-well);
+  transition: background-color 150ms ease;
+}
+
+.stx-mac-radio[aria-checked='true']::before {
+  background-color: var(--stx-mac-accent);
+  background-image: radial-gradient(circle, var(--stx-mac-accent-ink) 0 2.5px, transparent 3px);
+}
+
+.stx-mac-radio:focus-visible::before {
+  box-shadow: var(--stx-mac-focus-ring);
+}
+
+.stx-mac-radio[aria-disabled='true'] {
+  opacity: 0.5;
+}
+
+.stx-mac-radio-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.stx-mac-radio-description {
+  font-size: var(--stx-mac-font-size-small);
+  line-height: 14px;
+  letter-spacing: 0;
+  color: var(--stx-mac-ink-secondary);
+}
+
+/* A window that is not the key window draws its controls without colour. */
+:where([data-stx-window-active='false']) .stx-mac-radio[aria-checked='true']::before,
+:root[data-craft-window-active='false'] .stx-mac-radio[aria-checked='true']::before {
+  background-color: var(--stx-mac-radio-inactive);
+  background-image: radial-gradient(circle, var(--stx-mac-ink) 0 2.5px, transparent 3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stx-mac-radio::before {
+    transition: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .stx-mac-radio:not([aria-checked='true'])::before {
+    box-shadow: inset 0 0 0 1px var(--stx-mac-control-line);
+  }
+}
+</style>

@@ -22,10 +22,16 @@ export interface BaseInputProps {
   inputClassName?: string
 }
 
+/** The Mac look, which TextInput, PasswordInput and NumberInput draw; `size` is not read under it. */
+export interface MacFieldLookProps {
+  /** `'mac'` draws the 24px Mac field (a stepper, for NumberInput) from the `--stx-mac-*` tokens. */
+  variant?: 'mac'
+}
+
 /** The text-like input types `TextInput` renders; anything else is served as `text`. */
 export type TextInputType = 'text' | 'date' | 'time' | 'datetime-local' | 'month' | 'week' | 'url' | 'tel' | 'color' | 'search' | 'email' | 'number' | 'password'
 
-export interface TextInputProps extends BaseInputProps {
+export interface TextInputProps extends BaseInputProps, MacFieldLookProps {
   type?: TextInputType
   leftIcon?: string
   rightIcon?: string
@@ -54,12 +60,12 @@ export interface EmailInputProps extends Omit<BaseInputProps, 'placeholder'> {
   placeholder?: string
 }
 
-export interface PasswordInputProps extends Omit<BaseInputProps, 'placeholder'> {
+export interface PasswordInputProps extends Omit<BaseInputProps, 'placeholder'>, MacFieldLookProps {
   placeholder?: string
   showStrength?: boolean
 }
 
-export interface NumberInputProps extends BaseInputProps {
+export interface NumberInputProps extends BaseInputProps, MacFieldLookProps {
   min?: number
   max?: number
   step?: number

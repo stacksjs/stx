@@ -20,6 +20,8 @@ export interface SelectProps {
   placeholder?: string
   disabled?: boolean
   size?: 'sm' | 'md' | 'lg'
+  /** `'mac'` draws the Mac pop-up button from the `--stx-mac-*` tokens; `size` is not read. */
+  variant?: 'mac'
   error?: boolean
   label?: string
   helperText?: string

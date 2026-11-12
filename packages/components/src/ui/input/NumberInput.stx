@@ -35,6 +35,16 @@ export const step = $num($props.step, 1)
 export const showControls = $bool($props.showControls, true)
 export const className = $props.className || ''
 export const inputClassName = $props.inputClassName || ''
+/*
+ * `variant="mac"` draws the stepper a Mac draws: a narrow field with its
+ * digits against the right edge, and beside it a 15x22 capsule holding an up
+ * and a down chevron. The field is the same <input type="number">, so the
+ * arrow keys step it as the browser does, and the two buttons are the ones
+ * the default look has. Only the classes change, to `stx-mac-stepper`, which
+ * this file's <style> block draws from the `--stx-mac-*` tokens. `size` is
+ * not read; the field is as wide as `--stx-mac-stepper-width` (56px unset).
+ */
+export const mac = $props.variant === 'mac'
 
 /*
  * Padding decides the height here too, with no `h-*` to override it: an app
@@ -135,6 +145,58 @@ function decrement() {
 defineExpose({ value: inputValue, increment, decrement })
 </script>
 
+@if(mac)
+<div class="stx-mac-stepper-wrap {{ className }}">
+  @if(label)
+    <label for="{{ inputId }}" class="stx-mac-field-label" @if(error)data-error="true"@endif>
+      {{ label }}
+      @if(required)
+        <span class="stx-mac-field-required">*</span>
+      @endif
+    </label>
+  @endif
+
+  <div class="stx-mac-stepper">
+    <input
+      @if(name)name="{{ name }}"@endif
+      @if(autocomplete)autocomplete="{{ autocomplete }}"@endif
+      @if(form)form="{{ form }}"@endif
+      @if(inputMode)inputmode="{{ inputMode }}"@endif
+      @if(enterKeyHint)enterkeyhint="{{ enterKeyHint }}"@endif
+      type="number"
+      id="{{ inputId }}"
+      class="stx-mac-field stx-mac-stepper-field {{ inputClassName }}"
+      value="{{ value }}"
+      :value="inputValue()"
+      placeholder="{{ placeholder }}"
+      :placeholder="String(placeholderText() ?? '')"
+      @if(disabled)disabled@endif
+      @if(readonly)readonly@endif
+      @if(required)required@endif
+      @if(min !== undefined)min="{{ min }}"@endif
+      @if(max !== undefined)max="{{ max }}"@endif
+      step="{{ step }}"
+      @input="onInput($event)"
+      @change="onChange($event)"
+      :aria-invalid="{{ error ? 'true' : 'false' }}"
+      @if(helperText)aria-describedby="{{ helperId }}"@endif
+    />
+
+    @if(showControls && !disabled && !readonly)
+      <div class="stx-mac-stepper-buttons">
+        <button type="button" @click="increment()" class="stx-mac-stepper-button stx-mac-stepper-up" aria-label="Increment"></button>
+        <button type="button" @click="decrement()" class="stx-mac-stepper-button stx-mac-stepper-down" aria-label="Decrement"></button>
+      </div>
+    @endif
+  </div>
+
+  @if(helperText)
+    <p id="{{ helperId }}" class="stx-mac-field-helper" @if(error)data-error="true"@endif>
+      {{ helperText }}
+    </p>
+  @endif
+</div>
+@else
 <div class="w-full {{ className }}">
   @if(label)
     <label for="{{ inputId }}" class="{{ labelClasses }}">
@@ -214,3 +276,244 @@ defineExpose({ value: inputValue, increment, decrement })
     </p>
   @endif
 </div>
+@endif
+
+<style>
+:where(:root) {
+  --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
+  --stx-mac-font-size: 13px;
+  --stx-mac-font-size-small: 11px;
+  --stx-mac-hairline: 0.5px;
+  --stx-mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--stx-mac-accent) 35%, transparent);
+  --stx-mac-card-radius: 12px;
+  --stx-mac-control-radius: 6px;
+  --stx-mac-row-height: 38px;
+  --stx-mac-row-inset: 10px;
+  --stx-mac-sidebar-width: 226px;
+  --stx-mac-accent: var(--stx-accent, #007aff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(0, 0, 0, 0.85);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-tertiary: rgba(0, 0, 0, 0.26);
+  --stx-mac-window: #ffffff;
+  --stx-mac-sidebar: #f2f1f0;
+  --stx-mac-card: rgba(0, 0, 0, 0.04);
+  --stx-mac-separator: rgba(0, 0, 0, 0.1);
+  --stx-mac-hover: rgba(0, 0, 0, 0.05);
+  --stx-mac-selection-inactive: rgba(0, 0, 0, 0.08);
+  --stx-mac-well: rgba(0, 0, 0, 0.07);
+  --stx-mac-control: #ffffff;
+  --stx-mac-control-line: rgba(0, 0, 0, 0.12);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --stx-mac-switch-on: #34c759;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff3b30;
+}
+:where(.dark) {
+  --stx-mac-accent: var(--stx-accent, #0a84ff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(255, 255, 255, 0.85);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.55);
+  --stx-mac-ink-tertiary: rgba(255, 255, 255, 0.25);
+  --stx-mac-window: #1e1e1e;
+  --stx-mac-sidebar: #2a2a2a;
+  --stx-mac-card: rgba(255, 255, 255, 0.05);
+  --stx-mac-separator: rgba(255, 255, 255, 0.1);
+  --stx-mac-hover: rgba(255, 255, 255, 0.06);
+  --stx-mac-selection-inactive: rgba(255, 255, 255, 0.1);
+  --stx-mac-well: rgba(255, 255, 255, 0.1);
+  --stx-mac-control: rgba(255, 255, 255, 0.14);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.06);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+  --stx-mac-switch-on: #30d158;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff453a;
+}
+@media (max-resolution: 1.5dppx) {
+:where(:root) {
+  --stx-mac-hairline: 1px;
+}
+}
+@media (prefers-contrast: more) {
+:where(:root) {
+  --stx-mac-separator: rgba(0, 0, 0, 0.4);
+  --stx-mac-control-line: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.75);
+  --stx-mac-hairline: 1px;
+}
+:where(.dark) {
+  --stx-mac-separator: rgba(255, 255, 255, 0.45);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.5);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.8);
+}
+}
+
+.stx-mac-stepper-wrap {
+  display: inline-block;
+  max-width: 100%;
+  font-family: var(--stx-mac-font);
+  font-size: var(--stx-mac-font-size);
+  letter-spacing: -0.08px;
+  -webkit-font-smoothing: antialiased;
+  color: var(--stx-mac-ink);
+  cursor: default;
+}
+
+.stx-mac-field-label {
+  display: block;
+  margin-bottom: 4px;
+  line-height: 16px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.stx-mac-field-label[data-error='true'],
+.stx-mac-field-required,
+.stx-mac-field-helper[data-error='true'] {
+  color: var(--stx-mac-danger);
+}
+
+.stx-mac-field-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.stx-mac-field {
+  --stx-mac-field-line: inset 0 0 0 var(--stx-mac-hairline) var(--stx-mac-control-line);
+  display: block;
+  flex: 1 1 auto;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  margin: 0;
+  padding: 0 7px;
+  border: 0;
+  border-radius: var(--stx-mac-control-radius);
+  background: var(--stx-mac-control);
+  box-shadow: var(--stx-mac-field-line);
+  color: var(--stx-mac-ink);
+  font: inherit;
+  letter-spacing: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  transition: box-shadow 150ms ease;
+}
+
+.stx-mac-field::placeholder {
+  color: var(--stx-mac-ink-tertiary);
+}
+
+.stx-mac-field:focus-visible {
+  box-shadow: var(--stx-mac-field-line), var(--stx-mac-focus-ring);
+}
+
+.stx-mac-field[aria-invalid='true'] {
+  --stx-mac-field-line: inset 0 0 0 1px var(--stx-mac-danger);
+}
+
+.stx-mac-field:disabled {
+  opacity: 0.5;
+}
+
+.stx-mac-field-helper {
+  margin: 4px 0 0;
+  font-size: var(--stx-mac-font-size-small);
+  line-height: 14px;
+  letter-spacing: 0;
+  color: var(--stx-mac-ink-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stx-mac-field {
+    transition: none;
+  }
+}
+
+.stx-mac-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Two classes, so these win over the plain field's rules whichever component's stylesheet the page loads last. */
+.stx-mac-field.stx-mac-stepper-field {
+  flex: none;
+  width: var(--stx-mac-stepper-width, 56px);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+}
+
+.stx-mac-field.stx-mac-stepper-field::-webkit-inner-spin-button,
+.stx-mac-field.stx-mac-stepper-field::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.stx-mac-stepper-buttons {
+  --stx-mac-stepper-pressed: color-mix(in srgb, var(--stx-mac-ink) 10%, transparent);
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 15px;
+  height: 22px;
+  overflow: hidden;
+  border-radius: 7.5px;
+  background: var(--stx-mac-control);
+  box-shadow: var(--stx-mac-control-shadow);
+}
+
+.stx-mac-stepper-buttons:has(:focus-visible) {
+  box-shadow: var(--stx-mac-control-shadow), var(--stx-mac-focus-ring);
+}
+
+.stx-mac-stepper-button {
+  position: relative;
+  flex: 1 1 0;
+  width: 15px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--stx-mac-ink);
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: default;
+  outline: none;
+}
+
+.stx-mac-stepper-button:active {
+  background: var(--stx-mac-stepper-pressed);
+}
+
+/* Each chevron is the corner of a small square turned on its point. */
+.stx-mac-stepper-button::before {
+  content: '';
+  position: absolute;
+  left: 5.25px;
+  box-sizing: border-box;
+  width: 4.5px;
+  height: 4.5px;
+  border: solid currentColor;
+  border-width: 1.5px 0 0 1.5px;
+}
+
+.stx-mac-stepper-up::before {
+  top: 5px;
+  transform: rotate(45deg);
+}
+
+.stx-mac-stepper-down::before {
+  top: 1.5px;
+  transform: rotate(225deg);
+}
+
+@media (prefers-contrast: more) {
+  .stx-mac-stepper-buttons {
+    box-shadow: inset 0 0 0 1px var(--stx-mac-control-line);
+  }
+}
+</style>

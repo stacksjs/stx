@@ -42,6 +42,19 @@ export const label = $props.label || ''
 export const helperText = $props.helperText || ''
 export const required = $bool($props.required)
 export const className = $props.className || ''
+/*
+ * `variant="mac"` draws the pop-up button a Mac draws: the chosen value as
+ * plain text, right-aligned, and a 20px disc holding an up and a down
+ * chevron. It is still the
+  <select>
+    below, so the menu it opens, the keys
+ * that work in it and the value it submits are the platform's own (on a Mac
+ * that menu is the system's). Only the classes change, to `stx-mac-popup`,
+ * which this file's
+    <style>
+      block draws from the `--stx-mac-*` tokens.
+ */
+export const mac = $props.variant === 'mac'
 
 /*
  * Padding decides the height here too, with no `h-*` to override it: an app
@@ -83,8 +96,8 @@ export const helperClasses = `mt-2 text-sm ${error ? 'text-danger' : 'text-fg-so
  *
  * These were derived from the LABEL or hardcoded outright, so two of these on
  * one page -- an ordinary form -- emitted the same id twice. `
-  <label for>
-    `
+      <label for>
+        `
  * then activated the FIRST field from every label, and `aria-describedby`
  * pointed every field's description at the first one's helper text. A label
  * containing a space also produced an invalid id, `input-First name`, which
@@ -116,9 +129,9 @@ export const helperId = `${selectId}-helper`
 export const name = $props.name || ''
 export const autocomplete = $props.autocomplete || $props.autoComplete || ''
 export const form = $props.form || ''
-  </script>
-  <script client>
-    const emit = defineEmits()
+      </script>
+      <script client>
+        const emit = defineEmits()
 // Validity is live, for the same reason `disabled` is: a form posted with
 // fetch learns it after the submit, and nothing re-renders (#2047).
 const isError = useReactiveProp('error', {{ error }})
@@ -172,20 +185,20 @@ function onChange(event) {
 }
 
 defineExpose({ value: selectedValue, options: optionList })
-  </script>
-  @if($native)
+      </script>
+      @if($native)
 {{-- On a native host the control is the platform's picker (UIPickerView,
      Android's Spinner) fed with its items. Children are not something either
      picker holds, so slotted
-  <option>
-    s are a web-only spelling. --}}
-    <div class="w-full {{ className }}">
-      @if(label)
-      <label for="{{ selectId }}" class="mb-1.5 px-4 text-[13px] uppercase text-[#6d6d72] dark:text-[#8d8d93]">
-        {{ label }}
-      </label>
-      @endif
-      <div
+      <option>
+        s are a web-only spelling. --}}
+        <div class="w-full {{ className }}">
+          @if(label)
+          <label for="{{ selectId }}" class="mb-1.5 px-4 text-[13px] uppercase text-[#6d6d72] dark:text-[#8d8d93]">
+            {{ label }}
+          </label>
+          @endif
+          <div
     data-native="Picker"
     data-stx-native-host-root
     id="{{ selectId }}"
@@ -197,27 +210,89 @@ defineExpose({ value: selectedValue, options: optionList })
     aria-invalid="{{ error ? 'true' : 'false' }}"
     :aria-invalid="isError() ? 'true' : 'false'"
   >
-      </div>
-      @if(helperText)
-      <p id="{{ helperId }}" class="mt-1.5 px-4 text-[13px] {{ error ? 'text-[#ff3b30] dark:text-[#ff453a]' : 'text-[#6d6d72] dark:text-[#8d8d93]' }}">
-        {{ helperText }}
-      </p>
-      @endif
-    </div>
-    @else
-    <div class="w-full">
-      @if(label)
-      <label for="{{ selectId }}" class="{{ labelClasses }}">
-        {{ label }}
+          </div>
+          @if(helperText)
+          <p id="{{ helperId }}" class="mt-1.5 px-4 text-[13px] {{ error ? 'text-[#ff3b30] dark:text-[#ff453a]' : 'text-[#6d6d72] dark:text-[#8d8d93]' }}">
+            {{ helperText }}
+          </p>
+          @endif
+        </div>
+        @elseif(mac)
+        <div class="stx-mac-popup-field">
+          @if(label)
+          <label for="{{ selectId }}" class="stx-mac-popup-label">
+            {{ label }}
       @if(required)
-        <span class="text-danger ml-1">
-          *
-        </span>
-        @endif
-      </label>
-      @endif
-      <div class="{{ label ? 'mt-2' : '' }}">
-        <select
+            <span class="stx-mac-popup-required">
+              *
+            </span>
+            @endif
+          </label>
+          @endif
+          <div class="stx-mac-popup">
+            <select
+      @if(name)name="{{ name }}"@endif
+      @if(autocomplete)autocomplete="{{ autocomplete }}"@endif
+      @if(form)form="{{ form }}"@endif
+      id="{{ selectId }}"
+      class="stx-mac-popup-select {{ className }}"
+      :value="selectedValue()"
+      @if(disabled)disabled@endif
+      @if(required)required@endif
+      @change="onChange($event)"
+      aria-invalid="{{ error ? 'true' : 'false' }}"
+      :aria-invalid="isError() ? 'true' : 'false'"
+      @if(helperText)aria-describedby="{{ helperId }}"@endif
+    >
+              @if(placeholder)
+              <option value="" disabled>
+                {{ placeholder }}
+              </option>
+              @endif
+
+      {{-- The served list and the live one, as in the default look below. --}}
+      @foreach(option in options)
+              <option
+          x-no-cloak
+          x-if="false"
+          value="{{ option.value }}"
+          @if(option.disabled)disabled@endif
+          @if(option.value === String(value))selected@endif
+        >
+                {{ option.label }}
+              </option>
+              @endforeach
+              <template :for="option in optionList()" :key="option.value">
+                <option :value="option.value" :disabled="option.disabled" x-text="option.label">
+                </option>
+              </template>
+              <slot />
+            </select>
+            {{-- The disc is a picture of the control, not a second one: the select
+         lies under it and takes the click. --}}
+            <span class="stx-mac-popup-disc" aria-hidden="true">
+            </span>
+          </div>
+          @if(helperText)
+          <p id="{{ helperId }}" class="stx-mac-popup-helper" @if(error)data-error="true"@endif>
+            {{ helperText }}
+          </p>
+          @endif
+        </div>
+        @else
+        <div class="w-full">
+          @if(label)
+          <label for="{{ selectId }}" class="{{ labelClasses }}">
+            {{ label }}
+      @if(required)
+            <span class="text-danger ml-1">
+              *
+            </span>
+            @endif
+          </label>
+          @endif
+          <div class="{{ label ? 'mt-2' : '' }}">
+            <select
       @if(name)name="{{ name }}"@endif
       @if(autocomplete)autocomplete="{{ autocomplete }}"@endif
       @if(form)form="{{ form }}"@endif
@@ -232,11 +307,11 @@ defineExpose({ value: selectedValue, options: optionList })
       :class="{ '{{ stateInvalidClasses }}': isError(), '{{ stateValidClasses }}': !isError() }"
       @if(helperText)aria-describedby="{{ helperId }}"@endif
     >
-          @if(placeholder)
-          <option value="" disabled>
-            {{ placeholder }}
-          </option>
-          @endif
+              @if(placeholder)
+              <option value="" disabled>
+                {{ placeholder }}
+              </option>
+              @endif
 
       {{-- First paint, and the whole list with JavaScript off.
 
@@ -249,46 +324,244 @@ defineExpose({ value: selectedValue, options: optionList })
            than `:if` because @foreach pre-evaluates every `:name="…"` inside
            it as a component prop, which turns `:if` into a dead attribute. --}}
       @foreach(option in options)
-          <option
+              <option
           x-no-cloak
           x-if="false"
           value="{{ option.value }}"
           @if(option.disabled)disabled@endif
           @if(option.value === String(value))selected@endif
         >
-            {{ option.label }}
-          </option>
-          @endforeach
+                {{ option.label }}
+              </option>
+              @endforeach
 
       {{-- The live list. A
-          <template>
-            , so nothing of it shows before the
+              <template>
+                , so nothing of it shows before the
            runtime expands it -- an
-            <option :for>
-              would paint as an empty
+                <option :for>
+                  would paint as an empty
            entry first. The select's own `:value` re-applies itself when its
            options change, so the chosen value is reflected once they arrive. --}}
-              <template :for="option in optionList()" :key="option.value">
-                <option :value="option.value" :disabled="option.disabled" x-text="option.label">
-                </option>
-              </template>
-              {{-- Or the options as children, for a list the page draws itself:
-              <Select v-model:value="x">
-                <option :for="o in list" :value="o.id">
-                  …
-                </option>
-              </Select>
-              --}}
-              <slot />
-            </select>
-          </div>
-          @if(helperText)
-          <p id="{{ helperId }}" class="{{ helperClasses }}">
-            {{ helperText }}
-          </p>
-          @endif
-        </div>
-        @endif
+                  <template :for="option in optionList()" :key="option.value">
+                    <option :value="option.value" :disabled="option.disabled" x-text="option.label">
+                    </option>
+                  </template>
+                  {{-- Or the options as children, for a list the page draws itself:
+                  <Select v-model:value="x">
+                    <option :for="o in list" :value="o.id">
+                      …
+                    </option>
+                  </Select>
+                  --}}
+                  <slot />
+                </select>
+              </div>
+              @if(helperText)
+              <p id="{{ helperId }}" class="{{ helperClasses }}">
+                {{ helperText }}
+              </p>
+              @endif
+            </div>
+            @endif
+            <style>
+              :where(:root) {
+  --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
+  --stx-mac-font-size: 13px;
+  --stx-mac-font-size-small: 11px;
+  --stx-mac-hairline: 0.5px;
+  --stx-mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--stx-mac-accent) 35%, transparent);
+  --stx-mac-card-radius: 12px;
+  --stx-mac-control-radius: 6px;
+  --stx-mac-row-height: 38px;
+  --stx-mac-row-inset: 10px;
+  --stx-mac-sidebar-width: 226px;
+  --stx-mac-accent: var(--stx-accent, #007aff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(0, 0, 0, 0.85);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-tertiary: rgba(0, 0, 0, 0.26);
+  --stx-mac-window: #ffffff;
+  --stx-mac-sidebar: #f2f1f0;
+  --stx-mac-card: rgba(0, 0, 0, 0.04);
+  --stx-mac-separator: rgba(0, 0, 0, 0.1);
+  --stx-mac-hover: rgba(0, 0, 0, 0.05);
+  --stx-mac-selection-inactive: rgba(0, 0, 0, 0.08);
+  --stx-mac-well: rgba(0, 0, 0, 0.07);
+  --stx-mac-control: #ffffff;
+  --stx-mac-control-line: rgba(0, 0, 0, 0.12);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --stx-mac-switch-on: #34c759;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff3b30;
+}
+:where(.dark) {
+  --stx-mac-accent: var(--stx-accent, #0a84ff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(255, 255, 255, 0.85);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.55);
+  --stx-mac-ink-tertiary: rgba(255, 255, 255, 0.25);
+  --stx-mac-window: #1e1e1e;
+  --stx-mac-sidebar: #2a2a2a;
+  --stx-mac-card: rgba(255, 255, 255, 0.05);
+  --stx-mac-separator: rgba(255, 255, 255, 0.1);
+  --stx-mac-hover: rgba(255, 255, 255, 0.06);
+  --stx-mac-selection-inactive: rgba(255, 255, 255, 0.1);
+  --stx-mac-well: rgba(255, 255, 255, 0.1);
+  --stx-mac-control: rgba(255, 255, 255, 0.14);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.06);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+  --stx-mac-switch-on: #30d158;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff453a;
+}
+@media (max-resolution: 1.5dppx) {
+:where(:root) {
+  --stx-mac-hairline: 1px;
+}
+}
+@media (prefers-contrast: more) {
+:where(:root) {
+  --stx-mac-separator: rgba(0, 0, 0, 0.4);
+  --stx-mac-control-line: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.75);
+  --stx-mac-hairline: 1px;
+}
+:where(.dark) {
+  --stx-mac-separator: rgba(255, 255, 255, 0.45);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.5);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.8);
+}
+}
+
+.stx-mac-popup-field {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  max-width: 100%;
+  font-family: var(--stx-mac-font);
+  font-size: var(--stx-mac-font-size);
+  letter-spacing: -0.08px;
+  -webkit-font-smoothing: antialiased;
+  color: var(--stx-mac-ink);
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.stx-mac-popup-required {
+  color: var(--stx-mac-danger);
+}
+
+.stx-mac-popup {
+  --stx-mac-popup-disc: var(--stx-mac-well);
+  --stx-mac-popup-disc-hover: color-mix(in srgb, var(--stx-mac-ink) 14%, transparent);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  height: 20px;
+}
+
+.stx-mac-popup-select {
+  box-sizing: border-box;
+  max-width: 100%;
+  height: 20px;
+  margin: 0;
+  padding: 0 28px 0 6px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--stx-mac-ink);
+  font: inherit;
+  line-height: 20px;
+  letter-spacing: inherit;
+  text-align: right;
+  text-align-last: right;
+  field-sizing: content;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: default;
+  outline: none;
+}
+
+.stx-mac-popup-select:focus-visible {
+  box-shadow: var(--stx-mac-focus-ring);
+}
+
+.stx-mac-popup-select[aria-invalid='true'] {
+  color: var(--stx-mac-danger);
+}
+
+.stx-mac-popup-select:disabled,
+.stx-mac-popup-select:disabled + .stx-mac-popup-disc {
+  opacity: 0.5;
+}
+
+.stx-mac-popup-disc {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--stx-mac-popup-disc);
+  color: var(--stx-mac-ink);
+  pointer-events: none;
+  transition: background-color 150ms ease;
+}
+
+.stx-mac-popup:hover .stx-mac-popup-select:not(:disabled) + .stx-mac-popup-disc {
+  background: var(--stx-mac-popup-disc-hover);
+}
+
+/* The two chevrons, each the corner of a small square turned on its point. */
+.stx-mac-popup-disc::before,
+.stx-mac-popup-disc::after {
+  content: '';
+  position: absolute;
+  left: 7.5px;
+  box-sizing: border-box;
+  width: 5px;
+  height: 5px;
+  border: solid currentColor;
+  border-width: 1.5px 0 0 1.5px;
+}
+
+.stx-mac-popup-disc::before {
+  top: 5.5px;
+  transform: rotate(45deg);
+}
+
+.stx-mac-popup-disc::after {
+  top: 9.5px;
+  transform: rotate(225deg);
+}
+
+.stx-mac-popup-helper {
+  margin: 0;
+  font-size: var(--stx-mac-font-size-small);
+  letter-spacing: 0;
+  color: var(--stx-mac-ink-secondary);
+}
+
+.stx-mac-popup-helper[data-error='true'] {
+  color: var(--stx-mac-danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stx-mac-popup-disc {
+    transition: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .stx-mac-popup-disc {
+    box-shadow: inset 0 0 0 1px var(--stx-mac-control-line);
+  }
+}
+            </style>
 
 === Extracted Classes ===
 !isError()
@@ -303,9 +576,19 @@ defineExpose({ value: selectedValue, options: optionList })
 --stx-control-text
 :
 ?
+Helvetica
+It
 M
+Mac
+Neue
+Pro
 S
+SF
+Segoe
+Text
 The
+UI
+Variable
 a
 adjusted
 already
@@ -316,16 +599,21 @@ and
 app
 are
 around
+as
+background-color
 bg-field
 bg-surface
 block
 border-0
 box
+button
 by
 change
+chosen
 className
 const
 content
+corner
 cursor-not-allowed
 cursor-pointer
 dark:text-[#8d8d93]
@@ -335,7 +623,11 @@ declared
 default
 density
 disabled:opacity-50
+disc
+down
+draws
 duration-200
+each
 error
 every
 fallbacks
@@ -349,14 +641,17 @@ font-medium
 form
 h-10
 helperClasses
+holding
 hover:ring-line-hover
 in
+inset
 inside
 instead
 is
 isError(),
 it
 its
+keys
 label
 labelClasses
 lands
@@ -365,6 +660,7 @@ line-height
 list
 mb-1.5
 md
+menu
 ml-1
 moves
 mt-1.5
@@ -381,6 +677,9 @@ own
 padding
 placeholder-danger
 placeholder-fg-soft
+plain
+platform
+pop-up
 px-4
 px-5
 px-control-x
@@ -399,10 +698,22 @@ shadow-sm
 size
 sizeClasses
 sm
+small
 so
+solid
+square
 stateInvalidClasses
 stateValidClasses
 step
+still
+stx-mac-popup
+stx-mac-popup-disc
+stx-mac-popup-field
+stx-mac-popup-helper
+stx-mac-popup-label
+stx-mac-popup-required
+stx-mac-popup-select
+submits
 text-[#6d6d72]
 text-[13px]
 text-control
@@ -417,12 +728,16 @@ the
 ties
 transition-colors
 true
+turned
+two
+up
 uppercase
 uses
 value
 w-full
 were
 with
+work
 {
 {{
 }

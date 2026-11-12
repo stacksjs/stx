@@ -25,6 +25,8 @@ export interface SegmentedControlProps {
   disabled?: boolean
   /** Large keeps every segment at least 44px tall for touch input. */
   size?: 'sm' | 'md' | 'lg'
+  /** `'mac'` draws the 24px Mac capsule track from the `--stx-mac-*` tokens; `size` is not read. */
+  variant?: 'mac'
   /** Names the group; each segment is `<testID>-<value>`. */
   testID?: string
   className?: string

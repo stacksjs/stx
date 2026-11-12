@@ -78,3 +78,24 @@ bun add @stacksjs/components
 - Accessible by default
 - Smooth transitions
 - Headwind utility classes for easy customization
+
+## Mac look
+
+`appearance="mac"` draws the push button a Mac draws: 22px tall, a capsule, 13px words. The prop is `appearance` rather than `variant` because `variant` already says what a button is for, and it keeps doing that:
+
+| `variant` | Under `appearance="mac"` |
+|---|---|
+| none, `secondary`, `outline` | The plain push button: a raised face (`--stx-mac-control`) |
+| `primary` | The default button: accent fill, white words |
+| `danger` | Destructive: red words on the plain face |
+| `ghost` | No face until it is pointed at |
+
+```html
+<Button appearance="mac">Cancel</Button>
+<Button appearance="mac" variant="primary">Save</Button>
+<Button appearance="mac" variant="danger">Delete</Button>
+```
+
+Note that a button with no `variant` is the plain one here, not the primary one: on a Mac most buttons are plain. `size` is not read. `disabled`, `loading`, `label`, `fullWidth`, the icons and `@click` behave as they do everywhere else.
+
+Colours and type come from the `--stx-mac-*` custom properties (`src/utils/mac-theme.ts`), light and dark, so an app re-themes it by setting a variable. A window that is not the key window (`data-stx-window-active="false"` on an ancestor, or Craft's `data-craft-window-active`) draws it without colour. A default button gives up its fill in an inactive window, as the system's does. The pressed tint is `--stx-mac-button-pressed`.

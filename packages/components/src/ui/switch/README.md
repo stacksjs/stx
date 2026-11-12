@@ -112,3 +112,14 @@ Example:
 ```stx
 <Switch checked className="!bg-green-500" />
 ```
+
+## Mac look
+
+`variant="mac"` draws the switch System Settings draws: a 36x20 capsule with a 22x16 pill for a knob, green when on (`--stx-mac-switch-on`, never the accent). `size="mini"` is the 26x15 one. Everything else is the same switch: `checked`, `v-model:checked`, `@change`, `name` and the hidden input, `disabled`, `label`.
+
+```html
+<Switch variant="mac" v-model:checked="tint" name="tint" />
+<Switch variant="mac" size="mini" checked />
+```
+
+Colours and type come from the `--stx-mac-*` custom properties (`src/utils/mac-theme.ts`), light and dark, so an app re-themes it by setting a variable. A window that is not the key window (`data-stx-window-active="false"` on an ancestor, or Craft's `data-craft-window-active`) draws it without colour. The knob's shadow is `--stx-mac-switch-knob-shadow` and the inactive fill `--stx-mac-switch-inactive`.

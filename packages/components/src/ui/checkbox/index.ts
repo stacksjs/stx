@@ -3,6 +3,8 @@ export { default as Checkbox } from './Checkbox.stx'
 export interface CheckboxProps {
   /** Use the host browser's native switch while retaining checkbox semantics. */
   appearance?: 'checkbox' | 'switch'
+  /** `'mac'` draws the 14px Mac checkbox from the `--stx-mac-*` tokens. */
+  variant?: 'mac'
   checked?: boolean
   onChange?: (checked: boolean) => void
   disabled?: boolean

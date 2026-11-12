@@ -29,6 +29,17 @@ export const disabled = $bool($props.disabled)
 export const size = $props.size || 'md'
 export const className = $props.className || ''
 export const label = $props.label || ''
+/*
+ * `variant="mac"` draws the switch System Settings draws: a 36x20 capsule with
+ * a pill for a knob, green when on (never the accent), and 26x15 at
+ * `size="mini"`. It is the same button, the same hidden input and the same
+ * events in other clothes: the classes below are replaced by `stx-mac-switch`,
+ * which this file's
+    <style>
+      block draws from the `--stx-mac-*` tokens.
+ */
+export const mac = $props.variant === 'mac'
+export const macSize = size === 'mini' ? 'mini' : 'regular'
 
 const sizeConfig = {
   sm: { track: 'h-5 w-9', thumb: 'h-4 w-4', translate: 'translate-x-4' },
@@ -44,9 +55,9 @@ export const config = sizeConfig[size] || sizeConfig.md
 export const trackBaseClasses = 'relative inline-flex shrink-0 cursor-pointer border-2 border-transparent rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel'
 export const trackDisabledClasses = 'opacity-50 cursor-not-allowed pointer-events-none'
 export const thumbBaseClasses = 'pointer-events-none inline-block transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out'
-  </script>
-  <script client>
-    const emit = defineEmits(['change'])
+    </script>
+    <script client>
+      const emit = defineEmits(['change'])
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
 const currentLabel = useReactiveProp('label', {{ label }}, { parse: value => value ?? '' })
 const config = {{ config }}
@@ -88,16 +99,16 @@ function thumbClasses() {
 }
 
 defineExpose({ isChecked, toggle })
-  </script>
-  @if($native)
+    </script>
+    @if($native)
 {{-- On a native host the control is the platform's own switch (UISwitch,
      Android's Switch), at the end of its row as a settings row puts it. --}}
-  <label class="flex-row items-center justify-between gap-3 {{ className }}">
-    <span :if="currentLabel()" :text="currentLabel()" class="flex-1 text-[17px] text-[#000000] dark:text-[#ffffff]">
-      {{ label }}
-    </span>
-    @if(name)
-    <input
+    <label class="flex-row items-center justify-between gap-3 {{ className }}">
+      <span :if="currentLabel()" :text="currentLabel()" class="flex-1 text-[17px] text-[#000000] dark:text-[#ffffff]">
+        {{ label }}
+      </span>
+      @if(name)
+      <input
       type="hidden"
       name="{{ name }}"
       @if(disabled)disabled@endif
@@ -106,9 +117,9 @@ defineExpose({ isChecked, toggle })
       value="{{ checked ? checkedValue : uncheckedValue }}"
       :value="isChecked() ? '{{ checkedValue }}' : '{{ uncheckedValue }}'"
     />
-    @endif
+      @endif
   {{-- Keep the controlled value boolean when a nullable model resets. --}}
-    <div
+      <div
     data-native="Switch"
     data-stx-native-host-root
     role="switch"
@@ -123,19 +134,15 @@ defineExpose({ isChecked, toggle })
     class="text-accent disabled:opacity-50"
     @change="onNativeChange($event)"
   >
-    </div>
-  </label>
-  @else
-  <label class="inline-flex items-center gap-3 cursor-pointer">
-    <span :if="currentLabel()" :text="currentLabel()" class="text-sm font-medium text-fg-strong">
-      {{ label }}
-    </span>
-    @if(name)
-    {{-- Always submitted, carrying one of two values, rather than a checkbox's
-         present-or-absent convention: a reader then gets an explicit "false"
-         instead of a missing key, which is the difference between "switched
-         off" and "field was never in the form". --}}
-    <input
+      </div>
+    </label>
+    @elseif(mac)
+    <label class="stx-mac-switch-row">
+      <span :if="currentLabel()" :text="currentLabel()" class="stx-mac-switch-label">
+        {{ label }}
+      </span>
+      @if(name)
+      <input
       type="hidden"
       name="{{ name }}"
       @if(disabled)disabled@endif
@@ -144,8 +151,51 @@ defineExpose({ isChecked, toggle })
       value="{{ checked ? checkedValue : uncheckedValue }}"
       :value="isChecked() ? '{{ checkedValue }}' : '{{ uncheckedValue }}'"
     />
-    @endif
-    <button
+      @endif
+
+  {{-- Drawn from `aria-checked`, so the state a reader hears is the state on
+       screen. It is served as well as bound: the capsule is green on the
+       first paint rather than once the page has hydrated. --}}
+      <button
+    data-stx-native-host-root
+    type="button"
+    role="switch"
+    aria-label="{{ label || 'Toggle switch' }}"
+    :aria-label="currentLabel() || 'Toggle switch'"
+    aria-checked="{{ checked ? 'true' : 'false' }}"
+    :aria-checked="isChecked() ? 'true' : 'false'"
+    class="stx-mac-switch {{ className }}"
+    data-size="{{ macSize }}"
+    @if(disabled)disabled aria-disabled="true"@endif
+    :disabled="isDisabled()"
+    :aria-disabled="isDisabled() ? 'true' : 'false'"
+    @click="toggle()"
+  >
+        <span aria-hidden="true" class="stx-mac-switch-knob">
+        </span>
+      </button>
+    </label>
+    @else
+    <label class="inline-flex items-center gap-3 cursor-pointer">
+      <span :if="currentLabel()" :text="currentLabel()" class="text-sm font-medium text-fg-strong">
+        {{ label }}
+      </span>
+      @if(name)
+    {{-- Always submitted, carrying one of two values, rather than a checkbox's
+         present-or-absent convention: a reader then gets an explicit "false"
+         instead of a missing key, which is the difference between "switched
+         off" and "field was never in the form". --}}
+      <input
+      type="hidden"
+      name="{{ name }}"
+      @if(disabled)disabled@endif
+      :disabled="isDisabled()"
+      @if(form)form="{{ form }}"@endif
+      value="{{ checked ? checkedValue : uncheckedValue }}"
+      :value="isChecked() ? '{{ checkedValue }}' : '{{ uncheckedValue }}'"
+    />
+      @endif
+      <button
     data-stx-native-host-root
     type="button"
     role="switch"
@@ -158,14 +208,194 @@ defineExpose({ isChecked, toggle })
     :aria-disabled="isDisabled() ? 'true' : 'false'"
     @click="toggle()"
   >
-      <span aria-hidden="true" :class="thumbClasses()">
-      </span>
-    </button>
-  </label>
-  @endif
+        <span aria-hidden="true" :class="thumbClasses()">
+        </span>
+      </button>
+    </label>
+    @endif
+    <style>
+      :where(:root) {
+  --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
+  --stx-mac-font-size: 13px;
+  --stx-mac-font-size-small: 11px;
+  --stx-mac-hairline: 0.5px;
+  --stx-mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--stx-mac-accent) 35%, transparent);
+  --stx-mac-card-radius: 12px;
+  --stx-mac-control-radius: 6px;
+  --stx-mac-row-height: 38px;
+  --stx-mac-row-inset: 10px;
+  --stx-mac-sidebar-width: 226px;
+  --stx-mac-accent: var(--stx-accent, #007aff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(0, 0, 0, 0.85);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-tertiary: rgba(0, 0, 0, 0.26);
+  --stx-mac-window: #ffffff;
+  --stx-mac-sidebar: #f2f1f0;
+  --stx-mac-card: rgba(0, 0, 0, 0.04);
+  --stx-mac-separator: rgba(0, 0, 0, 0.1);
+  --stx-mac-hover: rgba(0, 0, 0, 0.05);
+  --stx-mac-selection-inactive: rgba(0, 0, 0, 0.08);
+  --stx-mac-well: rgba(0, 0, 0, 0.07);
+  --stx-mac-control: #ffffff;
+  --stx-mac-control-line: rgba(0, 0, 0, 0.12);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --stx-mac-switch-on: #34c759;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff3b30;
+}
+:where(.dark) {
+  --stx-mac-accent: var(--stx-accent, #0a84ff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(255, 255, 255, 0.85);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.55);
+  --stx-mac-ink-tertiary: rgba(255, 255, 255, 0.25);
+  --stx-mac-window: #1e1e1e;
+  --stx-mac-sidebar: #2a2a2a;
+  --stx-mac-card: rgba(255, 255, 255, 0.05);
+  --stx-mac-separator: rgba(255, 255, 255, 0.1);
+  --stx-mac-hover: rgba(255, 255, 255, 0.06);
+  --stx-mac-selection-inactive: rgba(255, 255, 255, 0.1);
+  --stx-mac-well: rgba(255, 255, 255, 0.1);
+  --stx-mac-control: rgba(255, 255, 255, 0.14);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.06);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+  --stx-mac-switch-on: #30d158;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff453a;
+}
+@media (max-resolution: 1.5dppx) {
+:where(:root) {
+  --stx-mac-hairline: 1px;
+}
+}
+@media (prefers-contrast: more) {
+:where(:root) {
+  --stx-mac-separator: rgba(0, 0, 0, 0.4);
+  --stx-mac-control-line: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.75);
+  --stx-mac-hairline: 1px;
+}
+:where(.dark) {
+  --stx-mac-separator: rgba(255, 255, 255, 0.45);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.5);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.8);
+}
+}
+
+.stx-mac-switch-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--stx-mac-font);
+  font-size: var(--stx-mac-font-size);
+  letter-spacing: -0.08px;
+  -webkit-font-smoothing: antialiased;
+  color: var(--stx-mac-ink);
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.stx-mac-switch {
+  --stx-mac-switch-width: 36px;
+  --stx-mac-switch-height: 20px;
+  --stx-mac-switch-knob-width: 22px;
+  --stx-mac-switch-knob-height: 16px;
+  --stx-mac-switch-travel: 10px;
+  --stx-mac-switch-knob-shadow: 0 0.5px 2px rgba(0, 0, 0, 0.22), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  --stx-mac-switch-inactive: color-mix(in srgb, var(--stx-mac-ink) 24%, transparent);
+  position: relative;
+  display: inline-block;
+  flex: none;
+  box-sizing: border-box;
+  width: var(--stx-mac-switch-width);
+  height: var(--stx-mac-switch-height);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: calc(var(--stx-mac-switch-height) / 2);
+  background: var(--stx-mac-well);
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: default;
+  outline: none;
+  transition: background-color 150ms ease;
+}
+
+.stx-mac-switch[data-size='mini'] {
+  --stx-mac-switch-width: 26px;
+  --stx-mac-switch-height: 15px;
+  --stx-mac-switch-knob-width: 16px;
+  --stx-mac-switch-knob-height: 11px;
+  --stx-mac-switch-travel: 6px;
+}
+
+.stx-mac-switch[aria-checked='true'] {
+  background: var(--stx-mac-switch-on);
+}
+
+.stx-mac-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: var(--stx-mac-switch-knob-width);
+  height: var(--stx-mac-switch-knob-height);
+  border-radius: calc(var(--stx-mac-switch-knob-height) / 2);
+  background: var(--stx-mac-knob);
+  box-shadow: var(--stx-mac-switch-knob-shadow);
+  pointer-events: none;
+  transition: transform 150ms ease;
+}
+
+.stx-mac-switch[aria-checked='true'] .stx-mac-switch-knob {
+  transform: translateX(var(--stx-mac-switch-travel));
+}
+
+.stx-mac-switch:focus-visible {
+  box-shadow: var(--stx-mac-focus-ring);
+}
+
+.stx-mac-switch:disabled {
+  opacity: 0.5;
+}
+
+/* A window that is not the key window draws its controls without colour. */
+:where([data-stx-window-active='false']) .stx-mac-switch[aria-checked='true'],
+:root[data-craft-window-active='false'] .stx-mac-switch[aria-checked='true'] {
+  background: var(--stx-mac-switch-inactive);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stx-mac-switch,
+  .stx-mac-switch-knob {
+    transition: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .stx-mac-switch {
+    box-shadow: inset 0 0 0 1px var(--stx-mac-control-line);
+  }
+
+  .stx-mac-switch:focus-visible {
+    box-shadow: inset 0 0 0 1px var(--stx-mac-control-line), var(--stx-mac-focus-ring);
+  }
+}
+    </style>
 
 === Extracted Classes ===
+A
+Helvetica
+Neue
+Pro
+SF
+Segoe
+Text
 Toggle
+UI
+Variable
+background-color
 bg-accent-solid
 bg-neutral-400
 bg-white
@@ -174,11 +404,13 @@ border-transparent
 change
 checked
 className
+controls
 cursor-pointer
 dark:bg-neutral-600
 dark:text-[#ffffff]
 disabled
 disabled:opacity-50
+draws
 duration-200
 ease-in-out
 false
@@ -197,21 +429,33 @@ h-4
 h-5
 inline-block
 inline-flex
+inset
+is
 items-center
+its
 justify-between
+key
 label
+mini
+not
 pointer-events-none
 relative
 ring-0
 rounded-full
 shadow-lg
 shrink-0
+stx-mac-switch
+stx-mac-switch-knob
+stx-mac-switch-label
+stx-mac-switch-row
 switch
 text-[#000000]
 text-[17px]
 text-accent
 text-fg-strong
 text-sm
+that
+the
 thumbClasses()
 trackClasses()
 transform
@@ -225,5 +469,7 @@ w-11
 w-24
 w-4
 w-9
+window
+without
 {{
 }}

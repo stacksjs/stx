@@ -137,3 +137,20 @@ function handleChange(plan) {
 - Disabled state support
 - Active state on focus
 - Customizable styling
+
+## Mac look
+
+`variant="mac"` draws the radio buttons a Mac draws: a 15px circle beside each label, sunk when off and the accent around a white dot when on, 22px from one row to the next. Set it on the group, and on each `RadioGroupOption` written as a child (an option does not learn its look from the group).
+
+```html
+<RadioGroup variant="mac" value="auto" :options="[{ value: 'auto', label: 'Automatically' }, { value: 'always', label: 'Always' }]" />
+
+<RadioGroup variant="mac" value="page">
+  <RadioGroupOption variant="mac" value="page">Jump to the next page</RadioGroupOption>
+  <RadioGroupOption variant="mac" value="spot">Jump to the spot that's clicked</RadioGroupOption>
+</RadioGroup>
+```
+
+Roles, values, `@change` and the keys (Space or Enter chooses the focused option) are unchanged. `RadioGroupLabel` and `RadioGroupDescription` have no Mac look; under it an option's words are plain text.
+
+Colours and type come from the `--stx-mac-*` custom properties (`src/utils/mac-theme.ts`), light and dark, so an app re-themes it by setting a variable. A window that is not the key window (`data-stx-window-active="false"` on an ancestor, or Craft's `data-craft-window-active`) draws it without colour. The inactive fill is `--stx-mac-radio-inactive`.

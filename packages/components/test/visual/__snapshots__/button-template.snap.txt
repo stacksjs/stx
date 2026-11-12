@@ -6,6 +6,24 @@
 === Template ===
 <script server cache>
   export const variant = $props.variant || 'primary'
+/*
+ * `appearance="mac"` draws the push button a Mac draws: 22px tall, a capsule,
+ * 13px words on a raised face. `variant` already says what a button is FOR
+ * here, so the look has a prop of its own, and `variant` keeps meaning intent:
+ * `primary` is the accent-filled default button, `danger` the destructive one
+ * (red words on the plain face), `ghost` a button with no face until it is
+ * pointed at, and anything else, including no variant at all, the plain push
+ * button, because on a Mac most buttons are that. It has one size, so `size`
+ * is not read. The
+  <button>
+    , its events and its states are the ones below;
+ * only the classes change, to `stx-mac-button`, which this file's
+    <style>
+      * block draws from the `--stx-mac-*` tokens.
+ */
+export const mac = $props.appearance === 'mac'
+const macIntents = { primary: 'primary', danger: 'destructive', ghost: 'plain' }
+export const macIntent = macIntents[$props.variant] || 'default'
 export const size = $props.size || 'md'
 export const disabled = $bool($props.disabled)
 export const loading = $bool($props.loading)
@@ -22,8 +40,8 @@ export const fullWidth = $bool($props.fullWidth)
  * this button keeps inside itself.
  *
  * So the reactive spelling is a prop: `
-  <Button :label="rotateLabel()">
-    `. Given
+      <Button :label="rotateLabel()">
+        `. Given
  * one, the button renders it in a span that tracks the parent's binding; given
  * none, the slot behaves exactly as before. See stacksjs/stx#1997.
  */
@@ -50,8 +68,8 @@ export const hasLabel = label !== ''
  *
  * `:label` is client-categorised, so the server cannot see it: a
  * `
-    <Button :label="confirmLabel()" />
-    ` with no slot content has no text and no
+        <Button :label="confirmLabel()" />
+        ` with no slot content has no text and no
  * name in the markup actually served, and assistive technology reaching it
  * before hydration finds an unlabelled button. On a destructive confirmation
  * that is the worst case (stacksjs/stx#2034). Slot content is the better
@@ -74,8 +92,8 @@ export const className = $props.className || ''
  * a call site can control.
  *
  * `bg-accent-solid` is `var(--stx-accent-solid,
-    <blue-500>
-      )`, so an app sets
+        <blue-500>
+          )`, so an app sets
  * one variable and primary buttons follow, dark mode included and with no
  * `dark:` anywhere. The solid/hover/ink triple exists because all three have
  * to move together: a themed fill needs its own hover step, and white text on
@@ -164,9 +182,9 @@ export const nativeButtonClasses = `flex-row items-center justify-center ${nativ
 export const nativeTextClasses = `font-semibold ${nativeSize.text} ${nativeVariant.text}`
 export const legacyNativeTint = variant === 'primary' || variant === 'danger' ? '#ffffff' : '#007aff'
 export const nativeTintClass = nativeVariant.text
-    </script>
-    <script client>
-      const emit = defineEmits()
+        </script>
+        <script client>
+          const emit = defineEmits()
 const platformControls = typeof craft !== 'undefined' && craft.capabilities.nativePlatformControls === true
 const legacyNativeTint = {{ $native ? legacyNativeTint : '' }}
 
@@ -178,10 +196,10 @@ const legacyNativeTint = {{ $native ? legacyNativeTint : '' }}
  * of button state in an application could not be expressed:
  *
  *
-      <Button :disabled="saving()" @click="save">
-        Save
-      </Button>
-      *
+          <Button :disabled="saving()" @click="save">
+            Save
+          </Button>
+          *
  * `saving()` is a signal. On the server it is not yet meaningful, so the button
  * shipped enabled and STAYED enabled for the life of the page — through the
  * exact async action it was there to guard. Double submits, destructive
@@ -219,9 +237,9 @@ function onClick(event) {
   }
   emit('click', event)
 }
-    </script>
-    @if($native)
-    <button
+        </script>
+        @if($native)
+        <button
   type="{{ type }}"
   class="{{ nativeButtonClasses }}"
   activeOpacity="0.6"
@@ -235,27 +253,66 @@ function onClick(event) {
   :aria-label="String(ariaLabelProp() ?? '') || null"
   @click="onClick($event)"
 >
-      <div data-native="ActivityIndicator" :show="isLoading()" class="{{ nativeTintClass }}" :color="platformControls ? null : legacyNativeTint" role="status">
-      </div>
-      @if(leftIcon)
-      <span :show="!isLoading()" class="{{ iconClasses }} {{ nativeTextClasses }}">
-        {!! leftIcon !!}
-      </span>
-      @endif
-      <span :if="!labelText()" class="{{ nativeTextClasses }}">
-        <slot />
-      </span>
-      <span :if="labelText()" class="{{ nativeTextClasses }}" :text="labelText()">
-        {{ label }}
-      </span>
-      @if(rightIcon)
-      <span :show="!isLoading()" class="{{ iconClasses }} {{ nativeTextClasses }}">
-        {!! rightIcon !!}
-      </span>
-      @endif
-    </button>
-    @else
-    <button
+          <div data-native="ActivityIndicator" :show="isLoading()" class="{{ nativeTintClass }}" :color="platformControls ? null : legacyNativeTint" role="status">
+          </div>
+          @if(leftIcon)
+          <span :show="!isLoading()" class="{{ iconClasses }} {{ nativeTextClasses }}">
+            {!! leftIcon !!}
+          </span>
+          @endif
+          <span :if="!labelText()" class="{{ nativeTextClasses }}">
+            <slot />
+          </span>
+          <span :if="labelText()" class="{{ nativeTextClasses }}" :text="labelText()">
+            {{ label }}
+          </span>
+          @if(rightIcon)
+          <span :show="!isLoading()" class="{{ iconClasses }} {{ nativeTextClasses }}">
+            {!! rightIcon !!}
+          </span>
+          @endif
+        </button>
+        @elseif(mac)
+        <button
+  type="{{ type }}"
+  class="stx-mac-button {{ fullWidth ? 'stx-mac-button-full' : '' }} {{ className }}"
+  data-intent="{{ macIntent }}"
+  @if(isDisabled)disabled@endif
+  :disabled="isDisabled()"
+  aria-busy="{{ loading ? 'true' : 'false' }}"
+  :aria-busy="isLoading() ? 'true' : 'false'"
+  @if(ariaLabel)aria-label="{{ ariaLabel }}"@endif
+  :aria-label="String(ariaLabelProp() ?? '') || null"
+  @click="onClick($event)"
+>
+          <span :show="isLoading()" @if(!loading)x-cloak@endif class="stx-mac-button-spinner" aria-hidden="true">
+          </span>
+          @if(leftIcon)
+          <span :show="!isLoading()" @if(loading)x-cloak@endif class="stx-mac-button-icon">
+            {!! leftIcon !!}
+          </span>
+          @endif
+
+  {{-- The slot is the label's fallback and the label is decided on the
+       client, exactly as in the default look below. --}}
+          <span style="display:contents" :if="!labelText()">
+            <slot />
+          </span>
+          <span
+    :if="labelText()"
+    @if(!hasLabel)x-cloak@endif
+    :text="labelText()"
+  >
+            {{ label }}
+          </span>
+          @if(rightIcon)
+          <span :show="!isLoading()" @if(loading)x-cloak@endif class="stx-mac-button-icon">
+            {!! rightIcon !!}
+          </span>
+          @endif
+        </button>
+        @else
+        <button
   type="{{ type }}"
   class="{{ buttonClasses }}"
   @if(isDisabled)disabled@endif
@@ -266,12 +323,12 @@ function onClick(event) {
   :aria-label="String(ariaLabelProp() ?? '') || null"
   @click="onClick($event)"
 >
-      {{-- The spinner is always in the DOM so `loading` can turn it on after render;
+          {{-- The spinner is always in the DOM so `loading` can turn it on after render;
        it was inside an @if, which meant the only way to see it was to have been
        loading when the page was built. x-cloak only when the server says we are
        NOT loading, so a button rendered loading shows its spinner on first
        paint rather than waiting for hydration. --}}
-      <svg
+          <svg
     :show="isLoading()"
     @if(!loading)x-cloak@endif
     class="{{ spinnerClasses }}"
@@ -279,35 +336,35 @@ function onClick(event) {
     fill="none"
     viewBox="0 0 24 24"
   >
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-        </circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-        </path>
-      </svg>
-      @if(leftIcon)
-      <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
-        {!! leftIcon !!}
-      </span>
-      @endif
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+            </circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+          </svg>
+          @if(leftIcon)
+          <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
+            {!! leftIcon !!}
+          </span>
+          @endif
 
   {{-- The slot is the label's FALLBACK, not its sibling (stacksjs/stx#2034).
 
        A reactive label is invisible to the server, so the only text a
        `
-      <Button :label="confirmLabel()">
-        Confirm
-      </Button>
-      ` can serve is the slot
+          <Button :label="confirmLabel()">
+            Confirm
+          </Button>
+          ` can serve is the slot
        content -- and it used to render it NEXT TO the label span, so once
        labelText() resolved the button read "ConfirmDelete project". An author
        had to choose between a server-rendered accessible name and a reactive
        one, which is why the reporting app kept a plain
-      <button>
-        .
+          <button>
+            .
 
        Wrapped rather than put on the slot itself: `
-        <slot :if="...">
-          ` does not
+            <slot :if="...">
+              ` does not
        work, because the slot is replaced by the caller's markup at render time
        and the attribute goes with it. display:contents so the wrapper is not a
        box -- slot children stay direct flex items of the button, so the gap
@@ -315,10 +372,10 @@ function onClick(event) {
 
        `:if` rather than `:show` for the same reason: `:show` writes
        style.display, which would fight the display:contents this needs. --}}
-          <span style="display:contents" :if="!labelText()">
-            <slot />
-          </span>
-          {{-- The label span is decided on the CLIENT, because the server cannot see a
+              <span style="display:contents" :if="!labelText()">
+                <slot />
+              </span>
+              {{-- The label span is decided on the CLIENT, because the server cannot see a
        reactive prop at all: `:label="rotateLabel()"` is categorised as client
        reactive, so `$props.label` is undefined during render and only the
        root's data-stx-parent-bindings records that a binding exists.
@@ -328,25 +385,238 @@ function onClick(event) {
        trailing gap to every button that uses the slot. x-cloak while the
        server has no label, so that gap is not visible for the frame before
        hydration - the same pairing the spinner above uses. --}}
-          <span
+              <span
     :if="labelText()"
     @if(!hasLabel)x-cloak@endif
     :text="labelText()"
   >
-            {{ label }}
-          </span>
-          @if(rightIcon)
-          <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
-            {!! rightIcon !!}
-          </span>
-          @endif
-        </button>
-        @endif
+                {{ label }}
+              </span>
+              @if(rightIcon)
+              <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
+                {!! rightIcon !!}
+              </span>
+              @endif
+            </button>
+            @endif
+            <style>
+              :where(:root) {
+  --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
+  --stx-mac-font-size: 13px;
+  --stx-mac-font-size-small: 11px;
+  --stx-mac-hairline: 0.5px;
+  --stx-mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--stx-mac-accent) 35%, transparent);
+  --stx-mac-card-radius: 12px;
+  --stx-mac-control-radius: 6px;
+  --stx-mac-row-height: 38px;
+  --stx-mac-row-inset: 10px;
+  --stx-mac-sidebar-width: 226px;
+  --stx-mac-accent: var(--stx-accent, #007aff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(0, 0, 0, 0.85);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-tertiary: rgba(0, 0, 0, 0.26);
+  --stx-mac-window: #ffffff;
+  --stx-mac-sidebar: #f2f1f0;
+  --stx-mac-card: rgba(0, 0, 0, 0.04);
+  --stx-mac-separator: rgba(0, 0, 0, 0.1);
+  --stx-mac-hover: rgba(0, 0, 0, 0.05);
+  --stx-mac-selection-inactive: rgba(0, 0, 0, 0.08);
+  --stx-mac-well: rgba(0, 0, 0, 0.07);
+  --stx-mac-control: #ffffff;
+  --stx-mac-control-line: rgba(0, 0, 0, 0.12);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --stx-mac-switch-on: #34c759;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff3b30;
+}
+:where(.dark) {
+  --stx-mac-accent: var(--stx-accent, #0a84ff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(255, 255, 255, 0.85);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.55);
+  --stx-mac-ink-tertiary: rgba(255, 255, 255, 0.25);
+  --stx-mac-window: #1e1e1e;
+  --stx-mac-sidebar: #2a2a2a;
+  --stx-mac-card: rgba(255, 255, 255, 0.05);
+  --stx-mac-separator: rgba(255, 255, 255, 0.1);
+  --stx-mac-hover: rgba(255, 255, 255, 0.06);
+  --stx-mac-selection-inactive: rgba(255, 255, 255, 0.1);
+  --stx-mac-well: rgba(255, 255, 255, 0.1);
+  --stx-mac-control: rgba(255, 255, 255, 0.14);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.06);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+  --stx-mac-switch-on: #30d158;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff453a;
+}
+@media (max-resolution: 1.5dppx) {
+:where(:root) {
+  --stx-mac-hairline: 1px;
+}
+}
+@media (prefers-contrast: more) {
+:where(:root) {
+  --stx-mac-separator: rgba(0, 0, 0, 0.4);
+  --stx-mac-control-line: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.75);
+  --stx-mac-hairline: 1px;
+}
+:where(.dark) {
+  --stx-mac-separator: rgba(255, 255, 255, 0.45);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.5);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.8);
+}
+}
+
+.stx-mac-button {
+  --stx-mac-button-pressed: color-mix(in srgb, var(--stx-mac-ink) 8%, transparent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-sizing: border-box;
+  height: 22px;
+  margin: 0;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 11px;
+  background-color: var(--stx-mac-control);
+  box-shadow: var(--stx-mac-control-shadow);
+  line-height: 16px;
+  white-space: nowrap;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  transition: background-color 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+  font-family: var(--stx-mac-font);
+  font-size: var(--stx-mac-font-size);
+  letter-spacing: -0.08px;
+  -webkit-font-smoothing: antialiased;
+  color: var(--stx-mac-ink);
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.stx-mac-button-full {
+  display: flex;
+  width: 100%;
+}
+
+.stx-mac-button:active:not(:disabled) {
+  background-image: linear-gradient(var(--stx-mac-button-pressed), var(--stx-mac-button-pressed));
+}
+
+.stx-mac-button[data-intent='primary'] {
+  background-color: var(--stx-mac-accent);
+  box-shadow: none;
+  color: var(--stx-mac-accent-ink);
+}
+
+.stx-mac-button[data-intent='primary']:active:not(:disabled) {
+  background-image: none;
+  filter: brightness(0.9);
+}
+
+.stx-mac-button[data-intent='destructive'] {
+  color: var(--stx-mac-danger);
+}
+
+.stx-mac-button[data-intent='plain'] {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.stx-mac-button[data-intent='plain']:hover:not(:disabled) {
+  background-color: var(--stx-mac-hover);
+}
+
+.stx-mac-button:focus-visible {
+  box-shadow: var(--stx-mac-control-shadow), var(--stx-mac-focus-ring);
+}
+
+.stx-mac-button[data-intent='primary']:focus-visible,
+.stx-mac-button[data-intent='plain']:focus-visible {
+  box-shadow: var(--stx-mac-focus-ring);
+}
+
+.stx-mac-button:disabled {
+  opacity: 0.5;
+}
+
+.stx-mac-button-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+}
+
+.stx-mac-button-spinner {
+  flex: none;
+  box-sizing: border-box;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: stx-mac-button-spin 0.7s linear infinite;
+}
+
+@keyframes stx-mac-button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* A window that is not the key window gives up its default button's colour. */
+:where([data-stx-window-active='false']) .stx-mac-button[data-intent='primary'],
+:root[data-craft-window-active='false'] .stx-mac-button[data-intent='primary'] {
+  background-color: var(--stx-mac-control);
+  box-shadow: var(--stx-mac-control-shadow);
+  color: var(--stx-mac-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stx-mac-button {
+    transition: none;
+  }
+
+  .stx-mac-button-spinner {
+    animation-duration: 2.4s;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .stx-mac-button:not([data-intent='primary']) {
+    box-shadow: inset 0 0 0 1px var(--stx-mac-control-line);
+  }
+
+  .stx-mac-button:not([data-intent='primary']):focus-visible {
+    box-shadow: inset 0 0 0 1px var(--stx-mac-control-line), var(--stx-mac-focus-ring);
+  }
+}
+            </style>
 
 === Extracted Classes ===
+''
+'stx-mac-button-full'
 -
 --
+:
+?
+A
 ActivityIndicator
+Helvetica
+Neue
+Pro
+SF
+Segoe
+Text
+UI
+Variable
 a
 above
 add
@@ -356,6 +626,7 @@ and
 ariaLabel
 at
 attribute
+background-color
 because
 before
 between
@@ -368,11 +639,15 @@ border
 border-2
 border-accent
 box
+box-shadow
 button
 buttonClasses
 children
+className
 click
 container
+default
+destructive
 direct
 disabled
 disabled:cursor-not-allowed
@@ -384,6 +659,7 @@ empty
 every
 false
 filled
+filter
 flex
 flex-row
 focus:outline-none
@@ -394,10 +670,12 @@ focus:ring-offset-panel
 font-semibold
 for
 frame
+fullWidth
 gap
 gap-1
 gap-2
 gap-3
+gives
 goes
 h-10
 h-11
@@ -418,12 +696,16 @@ hover:shadow-lg
 hydration
 iconClasses
 inline-flex
+inset
 is
 item
 items
 items-center
+its
 justify-center
+key
 label
+linear
 loading
 markup
 nativeButtonClasses
@@ -435,6 +717,8 @@ of
 opacity-25
 opacity-75
 pairing
+plain
+primary
 px-3
 px-4
 px-5
@@ -451,11 +735,17 @@ server
 shadow-md
 slot
 so
+solid
 span
 spinner
 spinnerClasses
 stay
 still
+stx-mac-button
+stx-mac-button-full
+stx-mac-button-icon
+stx-mac-button-spin
+stx-mac-button-spinner
 system-blue
 text
 text-accent
@@ -477,6 +767,7 @@ to
 trailing
 transition-all
 true
+up
 uses
 visible
 w-3
@@ -486,6 +777,7 @@ w-6
 w-7
 w-full
 while
+window
 with
 would
 wrapper
