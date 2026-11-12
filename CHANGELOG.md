@@ -1,5 +1,28 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.854...v0.2.855)
+
+## ✨ Features
+
+- **components**: add CodeEditor ([4e39c4f](https://github.com/stacksjs/stx/commit/4e39c4f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **components**: colour CodeBlock with classes, and ship its stylesheet ([f706a8d](https://github.com/stacksjs/stx/commit/f706a8d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **components**: type into CodeEditor the same way in every engine ([f49af35](https://github.com/stacksjs/stx/commit/f49af35)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.855 ([ffd938a](https://github.com/stacksjs/stx/commit/ffd938a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- update ts-syntax-highlighter to 0.2.20 ([bcc5f6c](https://github.com/stacksjs/stx/commit/bcc5f6c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.853...v0.2.854)
 
 ## 🐛 Bug Fixes
