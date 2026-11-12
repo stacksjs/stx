@@ -200,6 +200,10 @@ const labelProp = useReactiveProp('label', {{ label }}, { parse: value => value 
 const textProp = useReactiveProp('text', '', { parse: value => value == null ? '' : String(value) })
 const labelText = derived(() => labelProp() || textProp())
 const isLoading = useReactiveProp('loading', {{ loading }})
+// The accessible name is live too. Read once on the server, a bound one
+// (:ariaLabel="action.label" in a row of icon buttons) stayed on the boxless
+// scope wrapper and never reached the button, which then had no name at all.
+const ariaLabelProp = useReactiveProp('ariaLabel', {{ ariaLabel }}, { parse: value => value == null ? '' : String(value) })
 const disabledProp = useReactiveProp('disabled', {{ disabled }})
 
 // Loading implies disabled, the same combination the server computes for the
@@ -228,6 +232,7 @@ function onClick(event) {
   aria-busy="{{ loading ? 'true' : 'false' }}"
   :aria-busy="isLoading() ? 'true' : 'false'"
   @if(ariaLabel)aria-label="{{ ariaLabel }}"@endif
+  :aria-label="String(ariaLabelProp() ?? '') || null"
   @click="onClick($event)"
 >
       <div data-native="ActivityIndicator" :show="isLoading()" class="{{ nativeTintClass }}" :color="platformControls ? null : legacyNativeTint" role="status">
@@ -258,6 +263,7 @@ function onClick(event) {
   aria-busy="{{ loading ? 'true' : 'false' }}"
   :aria-busy="isLoading() ? 'true' : 'false'"
   @if(ariaLabel)aria-label="{{ ariaLabel }}"@endif
+  :aria-label="String(ariaLabelProp() ?? '') || null"
   @click="onClick($event)"
 >
       {{-- The spinner is always in the DOM so `loading` can turn it on after render;
@@ -347,6 +353,7 @@ add
 always
 an
 and
+ariaLabel
 at
 attribute
 because
