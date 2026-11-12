@@ -3,7 +3,7 @@ import { describe, expect, it } from 'bun:test'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
 import { Window } from 'very-happy-dom'
 import { floatingActions } from '../../src/native/floating-actions'
-import { mountFloatingActionsWeb } from '../../src/native/floating-actions-web'
+import { FLOATING_ACTIONS_CSS, mountFloatingActionsWeb } from '../../src/native/floating-actions-web'
 import { mountNativeScreen } from '../../src/native/testing'
 import { createTempDir } from '../../src/temp-dir'
 
@@ -137,19 +137,19 @@ describe('<FloatingActions> on a web page', () => {
       const group = document.querySelector<HTMLElement>('[data-floating-actions-web]')!
       expect(group.getAttribute('data-floating-actions-web')).toBe('vertical')
       expect(group.getAttribute('role')).toBe('group')
-      expect(group.style.position).toBe('fixed')
-      expect(group.style.flexDirection).toBe('column')
-      expect(group.style.borderRadius).toBe('24px')
+      // Its look is one stylesheet, put in the page once, and nothing inline.
+      expect(document.querySelectorAll('style[data-floating-actions-style]').length).toBe(1)
+      expect(group.getAttribute('style')).toBeNull()
       const controls = [...group.querySelectorAll<HTMLElement>('[data-floating-action]')]
       expect(controls.map(control => [control.tagName, control.getAttribute('data-floating-action')])).toEqual([['BUTTON', '/m/add'], ['A', '/m/messages']])
       // The website's own path, and its icon class in place of the SF Symbol.
       expect(controls[1]!.getAttribute('href')).toBe('/messages')
-      expect(controls[0]!.querySelector('span')!.className).toBe('i-lucide-plus')
+      expect(controls[0]!.querySelector('[data-floating-action-symbol]')!.className).toBe('i-lucide-plus')
+      expect(controls[0]!.hasAttribute('data-first')).toBe(true)
+      expect(controls[1]!.hasAttribute('data-last')).toBe(true)
       expect(controls[1]!.getAttribute('aria-label')).toBe('Messages, 99+')
       expect(controls[1]!.querySelector('[data-floating-action-badge]')!.textContent).toBe('99+')
       expect(controls[0]!.querySelector('[data-floating-action-badge]')).toBeNull()
-      // Joined: no surface of its own per control.
-      expect(controls[0]!.style.background).toBe('transparent')
       web.dispose()
       expect(document.querySelector('[data-floating-actions-web]')).toBeNull()
     }
@@ -182,19 +182,25 @@ describe('<FloatingActions> on a web page', () => {
     const { browser, document } = page('https://fixture.invalid/messages')
     try {
       const web = mountFloatingActionsWeb(document)
-      web.update([webAdd, webMessages], 'separate', 'hidden max-md:flex')
+      web.update([webAdd, webMessages], 'separate', { group: 'flex md:hidden text-brand', badge: 'bg-brand', menu: 'bg-surface' })
       let group = document.querySelector<HTMLElement>('[data-floating-actions-web]')!
-      expect(group.className).toBe('hidden max-md:flex')
-      // The class decides whether it shows; a round surface each when separate.
-      expect(group.getAttribute('style')).not.toContain('display:flex')
-      expect(group.querySelector<HTMLElement>('[data-floating-action="/m/add"]')!.style.background).not.toBe('transparent')
+      // The page's classes, on the parts they are for.
+      expect(group.getAttribute('data-floating-actions-web')).toBe('separate')
+      expect(group.className).toBe('flex md:hidden text-brand')
+      expect(group.querySelector('[data-floating-action-badge]')!.className).toBe('bg-brand')
+      group.querySelector<HTMLButtonElement>('[data-floating-action="/m/add"]')!.click()
+      expect(group.querySelector('[data-floating-actions-menu]')!.className).toBe('bg-surface')
+      expect(group.querySelector('[data-floating-action="/m/messages"]')!.hasAttribute('data-on')).toBe(true)
       // The page it opens is the page showing.
       expect(group.querySelector('[data-floating-action="/m/messages"]')!.getAttribute('aria-current')).toBe('page')
       web.update([{ ...webMessages, badge: 0 }], 'horizontal')
       expect(document.querySelectorAll('[data-floating-actions-web]').length).toBe(1)
       group = document.querySelector<HTMLElement>('[data-floating-actions-web]')!
-      expect(group.style.flexDirection).toBe('row')
+      expect(group.getAttribute('data-floating-actions-web')).toBe('horizontal')
+      expect(group.className).toBe('')
       expect(group.querySelector('[data-floating-action-badge]')).toBeNull()
+      // One stylesheet still, after three drawings.
+      expect(document.querySelectorAll('style[data-floating-actions-style]').length).toBe(1)
       web.update([])
       expect(document.querySelector('[data-floating-actions-web]')).toBeNull()
       expect(web.element).toBeNull()
@@ -213,10 +219,22 @@ describe('<FloatingActions> on a web page', () => {
       const control = document.querySelector('[data-floating-action]')!
       expect(control.getAttribute('href')).toBe('/m/messages')
       // No picture for the web: its name.
-      expect(control.querySelector('span')!.textContent).toBe('Messages')
+      expect(control.querySelector('[data-floating-action-name]')!.textContent).toBe('Messages')
       web.dispose()
     }
     finally { browser.close() }
+  })
+
+  it('weighs nothing against a class: every rule is inside :where()', () => {
+    for (const rule of FLOATING_ACTIONS_CSS.split('\n')) {
+      const selector = rule.slice(0, rule.indexOf('{'))
+      // What is left once each :where(...) is taken out is only the spaces between them.
+      let rest = selector
+      for (let before = ''; before !== rest;) { before = rest; rest = rest.replace(/:where\([^()]*\)/g, '') }
+      expect(rest.trim()).toBe('')
+    }
+    expect(FLOATING_ACTIONS_CSS).toContain('border-radius:24px')
+    expect(FLOATING_ACTIONS_CSS).toContain('height:55px')
   })
 
   it('keeps what only a web page uses out of what a host is sent', () => {

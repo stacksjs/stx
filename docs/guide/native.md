@@ -873,9 +873,11 @@ are often not the app's, so an action (and a menu choice) can say both:
 ```
 
 `icon` is an icon class and `href` the website's path; a host is sent
-neither. Without an `icon` the action is drawn as its name. `class` goes on
-the group, so the page decides where it shows. The page also places and
-colours it, with custom properties on any ancestor:
+neither. Without an `icon` the action is drawn as its name. Its look is one
+stylesheet of `:where()` rules, which weigh nothing, so the page's own
+classes win: `class` on the group (where it shows, its colour and surface),
+`badgeClass` on the badge and `menuClass` on a menu. The page can also place
+and colour it with custom properties on `:root`:
 
 | Property | What it sets | Default |
 | --- | --- | --- |
