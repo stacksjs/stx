@@ -94,7 +94,13 @@ export const SIGNALS_COMPONENT_PROPS_RUNTIME = `  function bindParentComponentPr
       if (receiver.__stx_page_scope) return layerTemplateScopes(receiver.__stx_page_scope, pageScope);
       // A routed page or keyed row can replace the caller inside a persistent shell.
       if (receiver.__stx_scope && !receiver.hasAttribute('data-stx-scope')) return receiver.__stx_scope;
-      if (receiver.getAttribute && (receiver.getAttribute('data-stx-template-scope') || receiver.getAttribute('data-stx-scope')) === owner)
+      // The owner is named by whichever id the slot content was stamped with:
+      // the component's live scope id, or the template id it was cloned from.
+      // A loop clone carries both, and they differ. Reading only the template
+      // id when present missed a clone whose slot content had been renamed
+      // with it, so the walk went on past the component to the next row scope
+      // above, which knows the outer loop's item and not this one's (#2185).
+      if (receiver.getAttribute && (receiver.getAttribute('data-stx-scope') === owner || receiver.getAttribute('data-stx-template-scope') === owner))
         return receiver.__stx_parent_scope || componentCallerScopeFrom(receiver.parentElement || receiver.parentNode, pageScope);
       receiver = receiver.parentElement || receiver.parentNode;
     }
