@@ -1,0 +1,93 @@
+<script server>
+// A mail with dark styles of its own, the way a real one is written.
+export const mail = `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<style>
+  body { margin: 0; padding: 24px; font: 15px/1.5 system-ui, sans-serif; background: #f6f6f7; color: #18181b; }
+  .card { max-width: 520px; margin: 0 auto; padding: 24px; border-radius: 12px; background: #ffffff; }
+  h1 { margin: 0 0 8px; font-size: 22px; }
+  a.button { display: inline-block; margin-top: 12px; padding: 10px 16px; border-radius: 8px; background: #2563eb; color: #ffffff; text-decoration: none; }
+  .cols { display: flex; gap: 12px; margin-top: 16px; }
+  .cols div { flex: 1; padding: 12px; border-radius: 8px; background: #f1f5f9; }
+  @media (max-width: 480px) { .cols { flex-direction: column; } body { padding: 12px; } }
+  @media (prefers-color-scheme: dark) {
+    body { background: #09090b; color: #f4f4f5; }
+    .card { background: #18181b; }
+    .cols div { background: #27272a; }
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Welcome aboard</h1>
+    <p>Your account is ready. The two boxes below sit side by side on a wide screen and stack on a phone.</p>
+    <div class="cols"><div>Projects<br><strong>3</strong></div><div>Teammates<br><strong>12</strong></div></div>
+    <a class="button" href="https://example.com/start">Get started</a>
+  </div>
+</body>
+</html>`
+
+export const fragment = `<h1>Just a fragment</h1>
+<p>No document around it, no styles. It follows the colour scheme because the frame wraps it in a page that declares both.</p>
+<p><a href="https://example.com">A link</a> that goes nowhere: the sandbox refuses the window it asks for.</p>`
+
+// What a page that is allowed to run scripts can and cannot reach.
+export const probe = `<style>body { font: 14px/1.6 ui-monospace, monospace; padding: 16px; }</style>
+<p>This page may run scripts. What it can reach:</p>
+<pre id="out"></pre>
+<script>
+  const attempt = fn => { try { return String(fn()) } catch (e) { return 'blocked' } }
+  document.getElementById('out').textContent = [
+    'origin:            ' + location.origin,
+    'host document:     ' + attempt(() => parent.document.title),
+    'host localStorage: ' + attempt(() => parent.localStorage.length),
+    'own localStorage:  ' + attempt(() => localStorage.length),
+    'viewport width:    ' + innerWidth,
+    'prefers dark:      ' + matchMedia('(prefers-color-scheme: dark)').matches,
+  ].join('\\n')
+</script>`
+</script>
+
+<script client>
+const samples = { mail: {{ mail }}, fragment: {{ fragment }}, probe: {{ probe }} }
+const which = state('mail')
+const markup = derived(() => samples[which()])
+const scripts = derived(() => which() === 'probe')
+const status = state('Loading')
+
+function describe(name, detail) {
+  const size = detail.width ? detail.width + ' x ' + detail.height + ' at ' + Math.round(detail.scale * 100) + '%' : 'filling the frame'
+  status.set(name + ': ' + detail.viewport + ', ' + size + ', ' + detail.effectiveScheme)
+}
+</script>
+
+<main class="flex flex-col gap-4 p-6 max-w-6xl mx-auto">
+  <header class="flex flex-col gap-1">
+    <h1 class="text-xl font-semibold text-fg">PreviewFrame</h1>
+    <p class="text-sm text-fg-muted">Markup shown as a page, in a frame that cannot reach this one. Pick a device, flip the colour scheme, reload.</p>
+  </header>
+
+  <div class="flex flex-wrap items-center gap-2 text-sm">
+    <Button size="sm" variant="outline" @click="which.set('mail')">A mail with dark styles</Button>
+    <Button size="sm" variant="outline" @click="which.set('fragment')">A bare fragment</Button>
+    <Button size="sm" variant="outline" @click="which.set('probe')">A page that runs scripts</Button>
+    <span class="ml-auto font-mono text-fg-muted" x-text="status()"></span>
+  </div>
+
+  <PreviewFrame
+    id="demo-preview"
+    title="Sample preview"
+    viewport="phone"
+    height="70vh"
+    :html="markup()"
+    :scripts="scripts()"
+    @load="describe('loaded', $event)"
+    @reload="describe('reloaded', $event)"
+    @viewport="describe('viewport', $event)"
+    @scheme="describe('scheme', $event)"
+  />
+</main>

@@ -127,6 +127,25 @@ if (!editorResult.success) {
   process.exit(1)
 }
 
+// The result-panel components without their templates, one entry each: a
+// framework-free core and the view that draws it. Browser code with no
+// imports outside its own folder, so a host can mount one itself, or use a
+// core (a tree model, a grid model, a graph layout) with no DOM at all.
+const headless = ['context-menu', 'data-grid', 'graph-view', 'json-tree', 'preview-frame', 'split-pane']
+for (const name of headless) {
+  const headlessResult = await Bun.build({
+    entrypoints: [`./src/ui/${name}/${name}.ts`],
+    outdir: `./dist/${name}`,
+    target: 'browser',
+    minify: false,
+    external: ['@stacksjs/stx'],
+  })
+  if (!headlessResult.success) {
+    for (const log of headlessResult.logs) console.error(log)
+    process.exit(1)
+  }
+}
+
 // The overlay stack is browser code too, and an app calls it from its own
 // `<script client>`. The package root reaches the syntax highlighter, which
 // needs Node's streams, so a page importing the stack from the root failed its
@@ -139,6 +158,19 @@ const overlaysResult = await Bun.build({
 })
 if (!overlaysResult.success) {
   for (const log of overlaysResult.logs) console.error(log)
+  process.exit(1)
+}
+
+// A component's exposed methods, from the page that uses it. Browser code, and
+// an entry of its own for the same reason the overlay stack has one.
+const apiResult = await Bun.build({
+  entrypoints: ['./src/utils/component-api.ts'],
+  outdir: './dist/component-api',
+  target: 'browser',
+  minify: false,
+})
+if (!apiResult.success) {
+  for (const log of apiResult.logs) console.error(log)
   process.exit(1)
 }
 

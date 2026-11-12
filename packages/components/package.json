@@ -57,6 +57,41 @@
       "bun": "./dist/code-editor/editor.js",
       "import": "./dist/code-editor/editor.js"
     },
+    "./component-api": {
+      "types": "./dist/utils/component-api.d.ts",
+      "bun": "./dist/component-api/component-api.js",
+      "import": "./dist/component-api/component-api.js"
+    },
+    "./context-menu": {
+      "types": "./dist/ui/context-menu/context-menu.d.ts",
+      "bun": "./dist/context-menu/context-menu.js",
+      "import": "./dist/context-menu/context-menu.js"
+    },
+    "./data-grid": {
+      "types": "./dist/ui/data-grid/data-grid.d.ts",
+      "bun": "./dist/data-grid/data-grid.js",
+      "import": "./dist/data-grid/data-grid.js"
+    },
+    "./graph-view": {
+      "types": "./dist/ui/graph-view/graph-view.d.ts",
+      "bun": "./dist/graph-view/graph-view.js",
+      "import": "./dist/graph-view/graph-view.js"
+    },
+    "./json-tree": {
+      "types": "./dist/ui/json-tree/json-tree.d.ts",
+      "bun": "./dist/json-tree/json-tree.js",
+      "import": "./dist/json-tree/json-tree.js"
+    },
+    "./preview-frame": {
+      "types": "./dist/ui/preview-frame/preview-frame.d.ts",
+      "bun": "./dist/preview-frame/preview-frame.js",
+      "import": "./dist/preview-frame/preview-frame.js"
+    },
+    "./split-pane": {
+      "types": "./dist/ui/split-pane/split-pane.d.ts",
+      "bun": "./dist/split-pane/split-pane.js",
+      "import": "./dist/split-pane/split-pane.js"
+    },
     "./overlays": {
       "types": "./dist/utils/overlays.d.ts",
       "bun": "./dist/overlays/overlays.js",

@@ -1,0 +1,320 @@
+<script server>
+export const nodes = Array.isArray($props.nodes) ? $props.nodes : []
+export const edges = Array.isArray($props.edges) ? $props.edges : []
+export const layout = $props.layout === 'force' ? 'force' : 'layered'
+export const direction = $props.direction === 'TB' ? 'TB' : 'LR'
+export const selected = $props.selected == null ? '' : String($props.selected)
+/* A CSS length. `100%` fills a sized parent, which is what a pane wants. */
+export const height = $props.height || '24rem'
+export const minZoom = $num($props.minZoom, 0.1)
+export const maxZoom = $num($props.maxZoom, 4)
+export const toolbar = $bool($props.toolbar, true)
+export const contextMenu = $bool($props.contextMenu)
+/* Nodes glide to a new layout. Off, they are simply there. */
+export const animate = $bool($props.animate, true)
+export const label = $props.label || 'Graph'
+export const className = $props.className || ''
+export const graphId = $props.id || `graph-view-${$uid}`
+export const statusId = `${graphId}-status`
+</script>
+
+<script client>
+/*
+ * <GraphView>: nodes and edges, laid out, that can be panned, zoomed, walked
+ * with the arrow keys and grown a node at a time.
+ *
+ * The layouts and the geometry are in ./core and the SVG in ./view; this is
+ * the wiring: props in, events out, and the toolbar.
+ */
+import { GraphCanvas } from './view'
+
+const emit = defineEmits(['select', 'expand', 'open', 'move', 'viewport', 'context', 'layout'])
+
+function asList(value) {
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string' && value.charAt(0) === '[') {
+    try { return JSON.parse(value) }
+    catch (e) { return [] }
+  }
+  return []
+}
+const asLayout = value => (value === 'force' ? 'force' : 'layered')
+const asDirection = value => (value === 'TB' ? 'TB' : 'LR')
+const asId = value => (value == null ? '' : String(value))
+
+const liveNodes = useReactiveProp('nodes', {{ nodes }}, { parse: asList })
+const liveEdges = useReactiveProp('edges', {{ edges }}, { parse: asList })
+const liveLayout = useReactiveProp('layout', {{ layout }}, { parse: asLayout })
+const liveDirection = useReactiveProp('direction', {{ direction }}, { parse: asDirection })
+const liveSelected = useReactiveProp('selected', {{ selected }}, { parse: asId })
+
+// What the layout switch shows as pressed. It follows the prop and the buttons.
+const layoutName = state({{ layout }})
+const zoomText = state('100%')
+
+const rootRef = useRef('graph-view')
+let canvas = null
+
+onMount(() => {
+  const root = rootRef()
+  if (!root) return
+
+  canvas = new GraphCanvas(root, {
+    nodes: asList(liveNodes()),
+    edges: asList(liveEdges()),
+    layout: asLayout(liveLayout()),
+    direction: asDirection(liveDirection()),
+    selected: asId(liveSelected()) || null,
+    minZoom: {{ minZoom }},
+    maxZoom: {{ maxZoom }},
+    contextMenu: {{ contextMenu }},
+    animate: {{ animate }},
+    label: {{ label }},
+  }, {
+    onSelect(detail) { emit('select', detail) },
+    onExpand(detail) { emit('expand', detail) },
+    onOpen(detail) { emit('open', detail) },
+    onMove(detail) { emit('move', detail) },
+    onViewport(detail) {
+      zoomText.set(Math.round(detail.k * 100) + '%')
+      emit('viewport', detail)
+    },
+    onContext(detail) { emit('context', detail) },
+    onLayout(detail) {
+      layoutName.set(detail.layout)
+      emit('layout', detail)
+    },
+  })
+  zoomText.set(Math.round(canvas.getViewport().k * 100) + '%')
+
+  // The first run of the graph effect finds what the canvas was built with.
+  let graphSeen = false
+  effect(() => {
+    const nextNodes = asList(liveNodes())
+    const nextEdges = asList(liveEdges())
+    if (graphSeen) canvas.setGraph(nextNodes, nextEdges)
+    graphSeen = true
+  })
+  effect(() => canvas.setLayout(asLayout(liveLayout())))
+  effect(() => canvas.setDirection(asDirection(liveDirection())))
+  effect(() => {
+    const id = asId(liveSelected())
+    if (id) canvas.select(id, { silent: true })
+  })
+})
+
+onDestroy(() => {
+  if (canvas) canvas.destroy()
+  canvas = null
+})
+
+function zoomIn() { if (canvas) canvas.zoomIn() }
+function zoomOut() { if (canvas) canvas.zoomOut() }
+function fitAll() { if (canvas) canvas.fit() }
+function chooseLayout(name) { if (canvas) canvas.setLayout(name) }
+
+defineExpose({
+  setGraph: (nextNodes, nextEdges) => { if (canvas) canvas.setGraph(asList(nextNodes), asList(nextEdges)) },
+  addNeighbours: (id, moreNodes, moreEdges) => (canvas ? canvas.addNeighbours(asId(id), asList(moreNodes), asList(moreEdges)) : { nodes: [], edges: [] }),
+  updateNode: (id, patch) => { if (canvas) canvas.updateNode(asId(id), patch || {}) },
+  select: (id) => { if (canvas) canvas.select(id == null ? null : asId(id)) },
+  focusNode: (id) => { if (canvas) canvas.focusNode(asId(id)) },
+  fit: fitAll,
+  zoomIn,
+  zoomOut,
+  setLayout: chooseLayout,
+  getViewport: () => (canvas ? canvas.getViewport() : { x: 0, y: 0, k: 1 }),
+  graph: () => (canvas ? canvas.graph() : null),
+  canvas: () => canvas,
+})
+</script>
+
+<div
+  ref="graph-view"
+  id="{{ graphId }}"
+  data-stx-graph-view
+  class="stx-gv {{ className }}"
+  style="height: {{ height }}"
+>
+  @if(toolbar)
+    <div role="toolbar" aria-label="{{ label }} controls" class="stx-gv-toolbar">
+      <button type="button" class="stx-gv-button" aria-label="Zoom out" title="Zoom out" @click="zoomOut()">&minus;</button>
+      <span class="stx-gv-zoom" aria-hidden="true" x-text="zoomText()">100%</span>
+      <button type="button" class="stx-gv-button" aria-label="Zoom in" title="Zoom in" @click="zoomIn()">+</button>
+      <button type="button" class="stx-gv-button" @click="fitAll()">Fit</button>
+      <span class="stx-gv-divider" aria-hidden="true"></span>
+      <button type="button" class="stx-gv-button" data-gv-layout="layered" :aria-pressed="layoutName() === 'layered' ? 'true' : 'false'" @click="chooseLayout('layered')">Layered</button>
+      <button type="button" class="stx-gv-button" data-gv-layout="force" :aria-pressed="layoutName() === 'force' ? 'true' : 'false'" @click="chooseLayout('force')">Force</button>
+    </div>
+  @endif
+
+  {{-- The graph itself. One stop in the tab order; the arrow keys walk the
+       nodes from there, and the status line below says where they landed. --}}
+  <div
+    data-gv="surface"
+    class="stx-gv-surface"
+    tabindex="0"
+    role="application"
+    aria-roledescription="graph"
+    aria-label="{{ label }}"
+    aria-describedby="{{ statusId }}"
+  ></div>
+
+  <div data-gv="status" id="{{ statusId }}" role="status" aria-live="polite" class="stx-gv-status"></div>
+</div>
+
+<style>
+/*
+ * Everything the graph is drawn with is a custom property that falls back to
+ * one of the library's role tokens, so a themed app has a matching graph.
+ */
+:where([data-stx-graph-view]) {
+  --stx-graph-bg: var(--stx-panel, #ffffff);
+  --stx-graph-fg: var(--stx-fg, #171717);
+  --stx-graph-muted: var(--stx-fg-soft, #737373);
+  --stx-graph-line: var(--stx-line, #e5e5e5);
+  --stx-graph-node-bg: var(--stx-surface, #fafafa);
+  --stx-graph-node-line: var(--stx-line-strong, #a3a3a3);
+  --stx-graph-edge: var(--stx-fg-subtle, #a3a3a3);
+  --stx-graph-accent: var(--stx-accent, #2563eb);
+  --stx-graph-font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --stx-graph-font-size: 12px;
+  --stx-graph-dim: 0.22;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--stx-graph-line);
+  border-radius: var(--stx-radius-panel, 8px);
+  background: var(--stx-graph-bg);
+  color: var(--stx-graph-fg);
+  font-family: var(--stx-graph-font);
+  font-size: var(--stx-graph-font-size);
+}
+
+[data-stx-graph-view] .stx-gv-toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--stx-graph-line);
+}
+[data-stx-graph-view] .stx-gv-button {
+  min-width: 26px;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+[data-stx-graph-view] .stx-gv-button:hover { background: color-mix(in srgb, var(--stx-graph-fg) 8%, transparent); }
+[data-stx-graph-view] .stx-gv-button[aria-pressed="true"] {
+  border-color: var(--stx-graph-line);
+  background: color-mix(in srgb, var(--stx-graph-accent) 14%, transparent);
+}
+[data-stx-graph-view] .stx-gv-button:focus-visible {
+  outline: 2px solid var(--stx-graph-accent);
+  outline-offset: 1px;
+}
+[data-stx-graph-view] .stx-gv-zoom {
+  min-width: 4ch;
+  color: var(--stx-graph-muted);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+[data-stx-graph-view] .stx-gv-divider {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: var(--stx-graph-line);
+}
+
+[data-stx-graph-view] .stx-gv-surface {
+  position: relative;
+  flex: 1 1 0px;
+  min-height: 0;
+  overflow: hidden;
+  outline: none;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+[data-stx-graph-view] .stx-gv-surface:focus-visible { box-shadow: inset 0 0 0 2px var(--stx-graph-accent); }
+[data-stx-graph-view][data-dragging] .stx-gv-surface { cursor: grabbing; }
+
+[data-stx-graph-view] .stx-gv-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+[data-stx-graph-view] .stx-gv-node { cursor: pointer; transition: opacity 120ms ease; }
+[data-stx-graph-view] .stx-gv-node rect {
+  fill: var(--stx-graph-node-bg);
+  stroke: var(--stx-graph-node-line);
+  stroke-width: 1;
+}
+[data-stx-graph-view] .stx-gv-node text {
+  fill: var(--stx-graph-fg);
+  font-family: var(--stx-graph-font);
+  font-size: var(--stx-graph-font-size);
+  pointer-events: none;
+}
+[data-stx-graph-view] .stx-gv-node .stx-gv-node-detail { fill: var(--stx-graph-muted); font-size: 10px; }
+[data-stx-graph-view] .stx-gv-node .stx-gv-node-mark { fill: var(--stx-graph-muted); font-weight: 600; }
+[data-stx-graph-view] .stx-gv-node:hover rect { stroke: var(--stx-graph-accent); }
+[data-stx-graph-view] .stx-gv-node[data-selected] rect {
+  fill: color-mix(in srgb, var(--stx-graph-accent) 14%, var(--stx-graph-node-bg));
+  stroke: var(--stx-graph-accent);
+  stroke-width: 2;
+}
+[data-stx-graph-view] .stx-gv-node[data-neighbour] rect { stroke: var(--stx-graph-accent); }
+
+[data-stx-graph-view] .stx-gv-edge { transition: opacity 120ms ease; }
+[data-stx-graph-view] .stx-gv-edge path {
+  stroke: var(--stx-graph-edge);
+  stroke-width: 1.25;
+}
+[data-stx-graph-view] .stx-gv-edge[data-active] path { stroke: var(--stx-graph-accent); stroke-width: 1.75; }
+[data-stx-graph-view] .stx-gv-arrow path { fill: var(--stx-graph-edge); }
+[data-stx-graph-view] .stx-gv-arrow-active path { fill: var(--stx-graph-accent); }
+
+[data-stx-graph-view] .stx-gv-edge-label { pointer-events: none; transition: opacity 120ms ease; }
+[data-stx-graph-view] .stx-gv-edge-label rect { fill: var(--stx-graph-bg); }
+[data-stx-graph-view] .stx-gv-edge-label text {
+  fill: var(--stx-graph-muted);
+  font-family: var(--stx-graph-font);
+  font-size: 10px;
+}
+[data-stx-graph-view] .stx-gv-edge-label[data-active] text { fill: var(--stx-graph-accent); }
+
+/* With a node selected, what it does not touch steps back. */
+[data-stx-graph-view][data-has-selection] .stx-gv-node:not([data-selected], [data-neighbour]),
+[data-stx-graph-view][data-has-selection] .stx-gv-edge:not([data-active]),
+[data-stx-graph-view][data-has-selection] .stx-gv-edge-label:not([data-active]) { opacity: var(--stx-graph-dim); }
+
+/* Read aloud, never seen. */
+[data-stx-graph-view] .stx-gv-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-stx-graph-view] :is(.stx-gv-node, .stx-gv-edge, .stx-gv-edge-label) { transition: none; }
+}
+</style>

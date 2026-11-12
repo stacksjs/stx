@@ -1,0 +1,257 @@
+<script server>
+export const html = typeof $props.html === 'string' ? $props.html : ''
+export const viewport = ['phone', 'tablet', 'desktop'].includes($props.viewport) ? $props.viewport : 'fill'
+export const frameWidth = $num($props.frameWidth, 0)
+export const frameHeight = $num($props.frameHeight, 0)
+export const landscape = $bool($props.landscape)
+export const scheme = ['light', 'dark'].includes($props.scheme) ? $props.scheme : 'auto'
+/*
+ * Off unless asked for. A page's scripts never share the host's origin either
+ * way; this decides whether they run at all.
+ */
+export const scripts = $bool($props.scripts)
+export const forms = $bool($props.forms)
+export const toolbar = $bool($props.toolbar, true)
+export const title = $props.title || 'Preview'
+/* A CSS length for the whole component, toolbar included. */
+export const height = $props.height || '24rem'
+export const className = $props.className || ''
+export const previewId = $props.id || `preview-frame-${$uid}`
+export const viewports = [
+  { name: 'fill', label: 'Fill' },
+  { name: 'phone', label: 'Phone' },
+  { name: 'tablet', label: 'Tablet' },
+  { name: 'desktop', label: 'Desktop' },
+]
+</script>
+
+<script client>
+/*
+ * <PreviewFrame>: an HTML string shown as a page, in a frame that cannot
+ * reach the page around it.
+ *
+ * What goes into the frame and what it is allowed is in ./core; the frame
+ * itself, its size and its toolbar are in ./view. This is the wiring.
+ */
+import { PreviewFrameView } from './view'
+
+const emit = defineEmits(['load', 'reload', 'viewport', 'scheme'])
+
+function asBoolean(value) {
+  if (value == null) return false
+  if (typeof value === 'string') return !['false', '0', 'off', 'no'].includes(value.trim().toLowerCase())
+  return Boolean(value)
+}
+function asText(value) { return value == null ? '' : String(value) }
+function asSize(value) {
+  const size = Number(value)
+  return Number.isFinite(size) && size > 0 ? size : null
+}
+
+const liveHtml = useReactiveProp('html', {{ html }}, { parse: asText })
+const liveViewport = useReactiveProp('viewport', {{ viewport }}, { parse: asText })
+const liveScheme = useReactiveProp('scheme', {{ scheme }}, { parse: asText })
+const liveLandscape = useReactiveProp('landscape', {{ landscape }}, { parse: asBoolean })
+const liveScripts = useReactiveProp('scripts', {{ scripts }}, { parse: asBoolean })
+const liveFrameWidth = useReactiveProp('frameWidth', {{ frameWidth }}, { parse: asSize })
+const liveFrameHeight = useReactiveProp('frameHeight', {{ frameHeight }}, { parse: asSize })
+
+const rootRef = useRef('preview-frame')
+let preview = null
+
+onMount(() => {
+  const root = rootRef()
+  if (!root) return
+
+  preview = new PreviewFrameView(root, {
+    html: asText(liveHtml()),
+    viewport: asText(liveViewport()),
+    frameWidth: asSize(liveFrameWidth()),
+    frameHeight: asSize(liveFrameHeight()),
+    landscape: asBoolean(liveLandscape()),
+    scheme: asText(liveScheme()),
+    scripts: asBoolean(liveScripts()),
+    forms: {{ forms }},
+    title: {{ title }},
+  }, {
+    onLoad(detail) { emit('load', detail) },
+    onReload(detail) { emit('reload', detail) },
+    onViewport(detail) { emit('viewport', detail) },
+    onScheme(detail) { emit('scheme', detail) },
+  })
+
+  effect(() => preview.setHtml(asText(liveHtml())))
+  effect(() => preview.setScheme(asText(liveScheme())))
+  effect(() => preview.setPermissions({ scripts: asBoolean(liveScripts()) }))
+  // What the toolbar chose stays chosen until the parent says something new.
+  let viewportSeen = false
+  effect(() => {
+    const name = asText(liveViewport())
+    const options = { landscape: asBoolean(liveLandscape()), width: asSize(liveFrameWidth()), height: asSize(liveFrameHeight()) }
+    if (viewportSeen) preview.setViewport(name, options)
+    viewportSeen = true
+  })
+})
+
+onDestroy(() => {
+  if (preview) preview.destroy()
+  preview = null
+})
+
+defineExpose({
+  reload: () => { if (preview) preview.reload() },
+  setHtml: (next) => { if (preview) preview.setHtml(asText(next)) },
+  setViewport: (name, options) => { if (preview) preview.setViewport(asText(name), options || {}) },
+  setScheme: (next) => { if (preview) preview.setScheme(asText(next)) },
+  getState: () => (preview ? preview.getState() : null),
+})
+</script>
+
+<div
+  ref="preview-frame"
+  id="{{ previewId }}"
+  data-stx-preview-frame
+  data-viewport="{{ viewport }}"
+  class="stx-preview {{ className }}"
+  style="height: {{ height }}"
+>
+  @if(toolbar)
+    <div data-pf="toolbar" role="toolbar" aria-label="{{ title }} controls" class="stx-preview-toolbar">
+      <div role="radiogroup" aria-label="Viewport" class="stx-preview-group">
+        @foreach(option in viewports)
+          <button
+            type="button"
+            role="radio"
+            data-pf-viewport="{{ option.name }}"
+            aria-checked="{{ option.name === viewport ? 'true' : 'false' }}"
+            tabindex="{{ option.name === viewport ? '0' : '-1' }}"
+            class="stx-preview-button"
+          >{{ option.label }}</button>
+        @endforeach
+      </div>
+      <button type="button" data-pf-action="rotate" aria-pressed="false" class="stx-preview-button">Rotate</button>
+      {{-- Not a live region: it changes on every drag of a pane, and reading
+           each size out would bury everything else. --}}
+      <span data-pf="size" class="stx-preview-size"></span>
+      <span class="stx-preview-spacer"></span>
+      <button type="button" data-pf-action="scheme" aria-pressed="false" aria-label="Dark colour scheme" class="stx-preview-button">
+        <span data-pf="scheme-text">Light</span>
+      </button>
+      <button type="button" data-pf-action="reload" class="stx-preview-button">Reload</button>
+    </div>
+  @endif
+
+  <div data-pf="stage" class="stx-preview-stage">
+    <div data-pf="device" class="stx-preview-device"></div>
+  </div>
+</div>
+
+<style>
+/*
+ * The stage is the neutral ground a device sits on. The frame's own
+ * background is the page's business: the frame is drawn in the scheme the
+ * page was given, so an unstyled page is white or near-black as it would be
+ * in a browser.
+ */
+:where([data-stx-preview-frame]) {
+  --stx-preview-bg: var(--stx-panel, #ffffff);
+  --stx-preview-fg: var(--stx-fg, #171717);
+  --stx-preview-fg-soft: var(--stx-fg-soft, #737373);
+  --stx-preview-stage: var(--stx-surface-sunken, #e5e5e5);
+  --stx-preview-line: var(--stx-line, #e5e5e5);
+  --stx-preview-active: var(--stx-accent, #2563eb);
+  --stx-preview-font-size: 12px;
+  --stx-preview-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid var(--stx-preview-line);
+  border-radius: var(--stx-preview-radius);
+  background: var(--stx-preview-bg);
+  color: var(--stx-preview-fg);
+}
+
+/*
+ * The layout is written out here rather than left to utility classes: a
+ * device that is the wrong size is a wrong preview, so it must not depend on
+ * what the app's stylesheet happens to generate.
+ */
+[data-stx-preview-frame] :is(.stx-preview-toolbar) {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--stx-preview-line);
+  font-size: var(--stx-preview-font-size);
+  line-height: 1.5;
+  /* One line always: a toolbar that wraps changes the size of the stage under it. */
+  white-space: nowrap;
+  overflow: hidden;
+}
+[data-stx-preview-frame] :is(.stx-preview-spacer) { flex: 1 1 0; }
+[data-stx-preview-frame] :is(.stx-preview-group) {
+  display: flex;
+  flex: none;
+  border: 1px solid var(--stx-preview-line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+[data-stx-preview-frame] :is(.stx-preview-button) {
+  padding: 2px 8px;
+  flex: none;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+[data-stx-preview-frame] :is(.stx-preview-group) > :is(.stx-preview-button) { border-radius: 0; }
+[data-stx-preview-frame] :is(.stx-preview-button):hover { background: color-mix(in srgb, var(--stx-preview-fg) 8%, transparent); }
+[data-stx-preview-frame] :is(.stx-preview-button):is([aria-checked="true"], [aria-pressed="true"]) {
+  background: color-mix(in srgb, var(--stx-preview-active) 16%, transparent);
+  color: var(--stx-preview-active);
+}
+[data-stx-preview-frame] :is(.stx-preview-button):focus-visible {
+  outline: 2px solid var(--stx-preview-active);
+  outline-offset: -2px;
+}
+[data-stx-preview-frame] :is(.stx-preview-button):disabled { opacity: 0.45; cursor: default; background: transparent; }
+[data-stx-preview-frame] :is(.stx-preview-size) { overflow: hidden; text-overflow: ellipsis; color: var(--stx-preview-fg-soft); font-variant-numeric: tabular-nums; }
+
+[data-stx-preview-frame] :is(.stx-preview-stage) {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--stx-preview-stage);
+}
+[data-stx-preview-frame] :is(.stx-preview-device) {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px var(--stx-preview-line), 0 8px 24px rgb(0 0 0 / 0.12);
+}
+[data-stx-preview-frame] :is(.stx-preview-frame) {
+  display: block;
+  border: 0;
+  transform-origin: 0 0;
+  /* Never see-through, so the stage does not show under a page with no background. */
+  background: Canvas;
+}
+
+/* Filling: no device, the page has the whole stage. */
+[data-stx-preview-frame][data-viewport="fill"] :is(.stx-preview-device) {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+}
+[data-stx-preview-frame][data-viewport="fill"] :is(.stx-preview-frame) { width: 100%; height: 100%; }
+</style>

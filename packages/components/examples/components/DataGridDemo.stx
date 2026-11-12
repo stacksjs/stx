@@ -1,0 +1,135 @@
+<script client>
+import { componentApi } from '../../src/utils/component-api'
+/*
+ * A hundred thousand rows of twelve columns, made here in the page and handed
+ * to the grid with setRows(). Binding them (`:rows`) works too, but stx also
+ * writes a bound value onto the element as an attribute, and for this many
+ * rows that is 24 MB of text nobody reads.
+ */
+const ROWS = 100000
+
+const first = ['Ada', 'Grace', 'Linus', 'Margaret', 'Dennis', 'Barbara', 'Ken', 'Radia', 'Alan', 'Edsger', 'Hedy', 'Tim']
+const last = ['Lovelace', 'Hopper', 'Torvalds', 'Hamilton', 'Ritchie', 'Liskov', 'Thompson', 'Perlman', 'Turing', 'Dijkstra', 'Lamarr', 'Berners-Lee']
+const cities = ['Berlin', 'Lisbon', 'Osaka', 'Lagos', 'Lima', 'Oslo', 'Perth', 'Quito', 'Hanoi', 'Turin']
+const plans = ['free', 'pro', 'team', 'enterprise']
+
+function makeRows(count) {
+  // The same rows every time, so two runs of the page can be compared.
+  let seed = 42
+  const next = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296
+  const pick = list => list[Math.floor(next() * list.length)]
+  const rows = new Array(count)
+  for (let index = 0; index < count; index++) {
+    const given = pick(first)
+    const family = pick(last)
+    rows[index] = {
+      id: index + 1,
+      name: given + ' ' + family,
+      email: (given + '.' + family + index + '@example.com').toLowerCase(),
+      age: 18 + Math.floor(next() * 60),
+      score: Math.round(next() * 1e6) / 100,
+      active: next() > 0.5,
+      created: new Date(1600000000000 + Math.floor(next() * 1e11)).toISOString(),
+      city: pick(cities),
+      plan: pick(plans),
+      balance: Math.round((next() - 0.3) * 1e7) / 100,
+      visits: next() > 0.1 ? Math.floor(next() * 5000) : null,
+      tags: index % 7 === 0 ? ['vip', 'beta'] : ['user'],
+    }
+  }
+  return rows
+}
+
+const hostRef = useRef('grid-host')
+const log = state([])
+const loaded = state('')
+const picked = state('Nothing selected')
+
+function note(text) {
+  log.set([text, ...log()].slice(0, 6))
+}
+
+/* The grid's own methods: setRows is how a hundred thousand rows get in. */
+function grid() {
+  return componentApi(hostRef())
+}
+
+function load(count) {
+  const api = grid()
+  if (!api) return
+  const madeAt = performance.now()
+  const rows = makeRows(count)
+  const setAt = performance.now()
+  api.setRows(rows)
+  const doneAt = performance.now()
+  loaded.set(count.toLocaleString('en-US') + ' rows made in ' + Math.round(setAt - madeAt) + ' ms, shown in ' + Math.round(doneAt - setAt) + ' ms')
+}
+
+onMount(() => load(ROWS))
+
+function onSort(sort) {
+  note(sort.length ? 'sort: ' + sort.map(entry => entry.key + ' ' + entry.direction).join(', then ') : 'sort: none')
+}
+function onFilter(detail) {
+  note('filter: "' + detail.text + '" leaves ' + detail.count.toLocaleString('en-US') + ' rows')
+}
+function onSelect(detail) {
+  picked.set(detail.indices.length ? detail.indices.length.toLocaleString('en-US') + ' selected' : 'Nothing selected')
+}
+function onActivate(detail) {
+  note('activate: row ' + (detail.rowIndex + 1) + ', ' + detail.row.name)
+}
+function onCopy(detail) {
+  note('copy ' + detail.what + ': ' + detail.text.replace(/\s+/g, ' ').slice(0, 80))
+}
+function onExport(detail) {
+  note('export: ' + detail.rows.toLocaleString('en-US') + ' rows as ' + detail.format + ', ' + (detail.text.length / 1e6).toFixed(1) + ' MB')
+}
+function onContext(detail) {
+  note('right click: ' + (detail.column ? detail.column.key : '') + ' = ' + String(detail.value))
+}
+</script>
+
+<main class="flex flex-col gap-4 max-w-6xl mx-auto px-4 py-6">
+  <header class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-semibold text-fg">DataGrid</h1>
+      <p class="text-sm text-fg-muted">A hundred thousand rows of twelve columns. Scroll either way: only the rows and columns on screen are in the page.</p>
+    </div>
+    <dl class="flex gap-6 text-sm text-fg-muted">
+      <div><dt class="inline">Selection </dt><dd class="inline font-mono text-fg" x-text="picked()"></dd></div>
+      <div><dt class="inline">Slowest frame, last second </dt><dd class="inline"><FrameMeter /></dd></div>
+    </dl>
+  </header>
+
+  <div class="flex flex-wrap items-center gap-2 text-sm">
+    <Button size="sm" variant="outline" @click="load(100000)">100,000 rows</Button>
+    <Button size="sm" variant="outline" @click="load(500000)">500,000 rows</Button>
+    <Button size="sm" variant="ghost" @click="load(50)">50 rows</Button>
+    <span class="font-mono text-fg-muted" x-text="loaded()"></span>
+    <span class="ml-auto text-fg-muted">Click a header to sort, Shift+click to sort by a second. Drag a header's edge to resize, double click it to fit. Arrow keys move, Space selects, Cmd/Ctrl+C copies the cell.</span>
+  </div>
+
+  <div ref="grid-host">
+    <DataGrid
+      id="demo-grid"
+      label="People"
+      fileName="people"
+      height="65vh"
+      @sort="onSort($event)"
+      @filter="onFilter($event)"
+      @select="onSelect($event)"
+      @activate="onActivate($event)"
+      @copy="onCopy($event)"
+      @export="onExport($event)"
+      @context="onContext($event)"
+    />
+  </div>
+
+  <section aria-label="Events" class="p-3 text-sm bg-surface border border-line rounded-panel">
+    <p class="text-fg-muted" :show="log().length === 0">Sort, filter, copy or export to see the events the grid sends.</p>
+    <ul class="font-mono text-fg">
+      <li :for="entry in log()" x-text="entry"></li>
+    </ul>
+  </section>
+</main>

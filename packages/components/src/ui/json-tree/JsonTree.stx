@@ -1,0 +1,317 @@
+<script server>
+/*
+ * Either prop can arrive here as an object (a value known on the server) or
+ * not at all (a bound one, which the client script reads live).
+ */
+export const value = $props.value && typeof $props.value === 'object' ? $props.value : null
+export const tinker = $props.tinker && typeof $props.tinker === 'object' ? $props.tinker : null
+export const depth = $num($props.depth, 1)
+export const rowHeight = $num($props.rowHeight) || 22
+export const contextMenu = $bool($props.contextMenu)
+/* A CSS length. `100%` fills a sized parent, which is what a pane wants. */
+export const height = $props.height || '20rem'
+export const label = $props.label || 'Value'
+export const className = $props.className || ''
+export const treeId = $props.id || `json-tree-${$uid}`
+</script>
+
+<script client>
+/*
+ * <JsonTree>: an expandable inspector for a described value.
+ *
+ * This script is the wiring: props in, events out. Which rows are visible is
+ * in ./core, how a tinker result becomes nodes is in ./tinker, and how the
+ * rows on screen are drawn is in ./view.
+ */
+import { fromTinkerValue } from './tinker'
+import { JsonTreeView } from './view'
+
+const emit = defineEmits(['select', 'toggle', 'copy', 'open', 'load-more', 'context'])
+
+function asBoolean(value) {
+  if (value == null) return false
+  if (typeof value === 'string') return !['false', '0', 'off', 'no'].includes(value.trim().toLowerCase())
+  return Boolean(value)
+}
+// A described value is an object or a list of them. As an attribute it is JSON.
+function asDescribed(value) {
+  if (value && typeof value === 'object') return value
+  if (typeof value === 'string' && (value.charAt(0) === '{' || value.charAt(0) === '[')) {
+    try { return JSON.parse(value) }
+    catch (e) { return null }
+  }
+  return null
+}
+function asDepth(value) {
+  const number = Number(value)
+  return value == null || value === '' || Number.isNaN(number) ? 1 : number
+}
+
+const liveValue = useReactiveProp('value', {{ value }}, { parse: asDescribed })
+const liveTinker = useReactiveProp('tinker', {{ tinker }}, { parse: asDescribed })
+const liveDepth = useReactiveProp('depth', {{ depth }}, { parse: asDepth })
+const liveContextMenu = useReactiveProp('contextMenu', {{ contextMenu }}, { parse: asBoolean })
+// A function can only arrive through a bound attribute, and is read as it is.
+const liveOpenable = useReactiveProp('openable', null, { parse: v => v })
+
+// The nodes to show: the described value, or the tinker result adapted.
+function described() {
+  const nodes = asDescribed(liveValue())
+  if (nodes) return nodes
+  const result = asDescribed(liveTinker())
+  return result ? fromTinkerValue(result) : null
+}
+function asFunction(value) { return typeof value === 'function' ? value : null }
+
+const rootRef = useRef('json-tree')
+let tree = null
+
+onMount(() => {
+  const root = rootRef()
+  if (!root) return
+
+  tree = new JsonTreeView(root, {
+    value: described(),
+    depth: asDepth(liveDepth()),
+    rowHeight: {{ rowHeight }},
+    openable: asFunction(liveOpenable()),
+    contextMenu: asBoolean(liveContextMenu()),
+  }, {
+    onSelect(detail) { emit('select', detail) },
+    onToggle(detail) { emit('toggle', detail) },
+    onCopy(detail) { emit('copy', detail) },
+    onOpen(detail) { emit('open', detail) },
+    onLoadMore(detail) { emit('load-more', detail) },
+    onContext(detail) { emit('context', detail) },
+  })
+
+  // The first run of each finds what the view was just built with. Setting it
+  // again would throw away nothing yet, but would build the rows twice.
+  let valueSeen = false
+  effect(() => {
+    const next = described()
+    if (valueSeen) tree.setValue(next)
+    valueSeen = true
+  })
+  let depthSeen = false
+  effect(() => {
+    const next = asDepth(liveDepth())
+    if (depthSeen) tree.setDepth(next)
+    depthSeen = true
+  })
+  effect(() => tree.setOpenable(asFunction(liveOpenable())))
+  effect(() => tree.setContextMenu(asBoolean(liveContextMenu())))
+})
+
+onDestroy(() => {
+  if (tree) tree.destroy()
+  tree = null
+})
+
+defineExpose({
+  expandAll: (id) => { if (tree) tree.expandAll(id) },
+  collapseAll: () => { if (tree) tree.collapseAll() },
+  expand: id => (tree ? tree.expand(id) : false),
+  collapse: id => (tree ? tree.collapse(id) : false),
+  reveal: id => (tree ? tree.reveal(id) : false),
+  appendChildren: (id, nodes, more) => (tree ? tree.appendChildren(id, nodes, more) : false),
+  setValue: (node) => { if (tree) tree.setValue(node) },
+  setTinker: (result) => { if (tree) tree.setValue(result ? fromTinkerValue(result) : null) },
+  getSelected: () => (tree ? tree.getSelected() : null),
+  select: id => (tree ? tree.select(id) : false),
+  focus: () => { if (tree) tree.focus() },
+  tree: () => tree,
+})
+</script>
+
+<div
+  ref="json-tree"
+  id="{{ treeId }}"
+  data-stx-json-tree
+  class="stx-jt {{ className }}"
+  style="height: {{ height }}"
+>
+  {{-- The tree is the thing with focus. Its rows are drawn by the view, and
+       the two wrappers between them carry no meaning of their own. --}}
+  <div data-jt="scroller" role="tree" tabindex="0" aria-label="{{ label }}" class="stx-jt-scroller">
+    <div data-jt="content" role="none" class="stx-jt-content">
+      <div data-jt="rows" role="none" class="stx-jt-rows"></div>
+    </div>
+  </div>
+  <div data-jt="status" role="status" aria-live="polite" class="stx-jt-status"></div>
+</div>
+
+<style>
+/*
+ * Everything the tree is drawn with is a custom property. The surface colours
+ * fall back to the library's role tokens and the value colours to the syntax
+ * tokens <CodeBlock> and <CodeEditor> use, so a value reads like the code that
+ * produced it. Each has a literal behind it, because the stylesheet that
+ * defines the syntax tokens ships with those components and may not be here.
+ */
+:where([data-stx-json-tree]) {
+  --stx-tree-font: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  --stx-tree-font-size: 12.5px;
+  --stx-tree-row-height: 22px;
+  --stx-tree-indent: 14px;
+  --stx-tree-bg: var(--stx-panel, #ffffff);
+  --stx-tree-fg: var(--stx-fg, #171717);
+  --stx-tree-muted: var(--stx-fg-soft, #737373);
+  --stx-tree-hover: color-mix(in srgb, var(--stx-fg, #171717) 6%, transparent);
+  --stx-tree-active: color-mix(in srgb, var(--stx-accent, #2563eb) 16%, transparent);
+  --stx-tree-focus: var(--stx-accent, #2563eb);
+  --stx-tree-line: var(--stx-line, #e5e5e5);
+  --stx-tree-key: var(--stx-syntax-attribute, #0550ae);
+  --stx-tree-string: var(--stx-syntax-string, #0a3069);
+  --stx-tree-number: var(--stx-syntax-numeric, #0550ae);
+  --stx-tree-keyword: var(--stx-syntax-keyword, #cf222e);
+  --stx-tree-type: var(--stx-syntax-type, #953800);
+  --stx-tree-function: var(--stx-syntax-function, #8250df);
+  --stx-tree-comment: var(--stx-syntax-comment, #6e7781);
+  --stx-tree-error: var(--stx-danger, #dc2626);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--stx-tree-bg);
+  color: var(--stx-tree-fg);
+}
+/* Dark follows the `.dark` class, as the role tokens do: a surface from one
+   and text from the other would not be readable. */
+:where(.dark) :where([data-stx-json-tree]) {
+  --stx-tree-bg: var(--stx-panel, #262626);
+  --stx-tree-fg: var(--stx-fg, #f5f5f5);
+  --stx-tree-muted: var(--stx-fg-soft, #a3a3a3);
+  --stx-tree-hover: color-mix(in srgb, var(--stx-fg, #f5f5f5) 8%, transparent);
+  --stx-tree-line: var(--stx-line, #404040);
+  --stx-tree-key: var(--stx-syntax-attribute, #79c0ff);
+  --stx-tree-string: var(--stx-syntax-string, #a5d6ff);
+  --stx-tree-number: var(--stx-syntax-numeric, #79c0ff);
+  --stx-tree-keyword: var(--stx-syntax-keyword, #ff7b72);
+  --stx-tree-type: var(--stx-syntax-type, #ffa657);
+  --stx-tree-function: var(--stx-syntax-function, #d2a8ff);
+  --stx-tree-comment: var(--stx-syntax-comment, #8b949e);
+  --stx-tree-error: var(--stx-danger, #f87171);
+}
+
+[data-stx-json-tree] .stx-jt-scroller {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  outline: none;
+  font-family: var(--stx-tree-font);
+  font-size: var(--stx-tree-font-size);
+  line-height: var(--stx-tree-row-height);
+  font-variant-ligatures: none;
+}
+[data-stx-json-tree] .stx-jt-scroller:focus-visible {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--stx-tree-focus) 55%, transparent);
+}
+[data-stx-json-tree] .stx-jt-content { position: relative; min-width: 100%; }
+[data-stx-json-tree] .stx-jt-rows { position: absolute; top: 0; left: 0; right: 0; }
+
+/* Every row is the same height and is placed by a transform, so which rows
+   are on screen is arithmetic and moving one costs no layout. */
+[data-stx-json-tree] .stx-jt-row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  height: var(--stx-tree-row-height);
+  padding-left: calc(6px + var(--stx-tree-indent) * var(--stx-tree-depth, 0));
+  padding-right: 6px;
+  white-space: nowrap;
+  cursor: default;
+  contain: layout style;
+}
+[data-stx-json-tree] .stx-jt-row:hover { background: var(--stx-tree-hover); }
+[data-stx-json-tree] .stx-jt-row[data-active] { background: var(--stx-tree-active); }
+[data-stx-json-tree] .stx-jt-scroller:focus-visible .stx-jt-row[data-active] {
+  box-shadow: inset 2px 0 0 var(--stx-tree-focus);
+}
+
+[data-stx-json-tree] .stx-jt-twisty {
+  flex: 0 0 var(--stx-tree-indent);
+  color: var(--stx-tree-muted);
+  text-align: center;
+  user-select: none;
+  -webkit-user-select: none;
+}
+[data-stx-json-tree] .stx-jt-label { flex: 0 0 auto; color: var(--stx-tree-key); }
+[data-stx-json-tree] .stx-jt-separator { flex: 0 0 auto; color: var(--stx-tree-muted); white-space: pre; }
+[data-stx-json-tree] .stx-jt-preview {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--stx-tree-muted);
+}
+
+[data-stx-json-tree] .stx-jt-preview[data-kind="string"],
+[data-stx-json-tree] .stx-jt-preview[data-kind="regexp"],
+[data-stx-json-tree] .stx-jt-preview[data-kind="url"],
+[data-stx-json-tree] .stx-jt-preview[data-kind="date"] { color: var(--stx-tree-string); }
+[data-stx-json-tree] .stx-jt-preview[data-kind="number"],
+[data-stx-json-tree] .stx-jt-preview[data-kind="bigint"],
+[data-stx-json-tree] .stx-jt-preview[data-kind="bytes"] { color: var(--stx-tree-number); }
+[data-stx-json-tree] .stx-jt-preview[data-kind="boolean"],
+[data-stx-json-tree] .stx-jt-preview[data-kind="null"],
+[data-stx-json-tree] .stx-jt-preview[data-kind="undefined"] { color: var(--stx-tree-keyword); }
+[data-stx-json-tree] .stx-jt-preview[data-kind="function"],
+[data-stx-json-tree] .stx-jt-preview[data-kind="symbol"],
+[data-stx-json-tree] .stx-jt-preview[data-kind="promise"] { color: var(--stx-tree-function); }
+[data-stx-json-tree] .stx-jt-preview[data-kind="model"],
+[data-stx-json-tree] .stx-jt-preview[data-kind="html"],
+[data-stx-json-tree] .stx-jt-preview[data-kind="relation"] { color: var(--stx-tree-type); }
+[data-stx-json-tree] .stx-jt-preview[data-kind="error"] { color: var(--stx-tree-error); }
+[data-stx-json-tree] .stx-jt-preview[data-kind="ref"],
+[data-stx-json-tree] .stx-jt-preview[data-kind="cut"],
+[data-stx-json-tree] .stx-jt-preview[data-kind="more"],
+[data-stx-json-tree] .stx-jt-preview[data-kind="hidden"] { color: var(--stx-tree-comment); font-style: italic; }
+[data-stx-json-tree] .stx-jt-row[data-kind="ref"],
+[data-stx-json-tree] .stx-jt-row[data-kind="more"] { cursor: pointer; }
+
+/* The row's buttons: there for a pointer over the row, and for the row the
+   cursor is on. The keyboard reaches the same things through the tree's keys. */
+[data-stx-json-tree] .stx-jt-actions {
+  flex: 0 0 auto;
+  display: none;
+  gap: 4px;
+  margin-left: 8px;
+}
+[data-stx-json-tree] .stx-jt-row:hover .stx-jt-actions,
+[data-stx-json-tree] .stx-jt-row[data-active] .stx-jt-actions { display: inline-flex; }
+[data-stx-json-tree] .stx-jt-action {
+  appearance: none;
+  box-sizing: border-box;
+  height: calc(var(--stx-tree-row-height) - 4px);
+  margin: 0;
+  padding: 0 6px;
+  border: 1px solid var(--stx-tree-line);
+  border-radius: 4px;
+  background: var(--stx-tree-bg);
+  color: var(--stx-tree-muted);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+[data-stx-json-tree] .stx-jt-action:hover { color: var(--stx-tree-fg); border-color: var(--stx-tree-focus); }
+[data-stx-json-tree] .stx-jt-action[data-jt-action="open"] { color: var(--stx-tree-focus); }
+
+[data-stx-json-tree] .stx-jt-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+</style>

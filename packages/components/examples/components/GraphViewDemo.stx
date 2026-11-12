@@ -1,0 +1,142 @@
+<script server>
+import { seededRandom } from '../../src/ui/graph-view/core'
+
+// Two hundred nodes and three hundred edges: a tree, so it reads as a
+// hierarchy, plus a hundred more edges, some of which close cycles.
+const random = seededRandom(11)
+export const bigNodes = Array.from({ length: 200 }, (_, index) => ({ id: `n${index}`, label: `Node ${index}` }))
+export const bigEdges = []
+for (let index = 1; index < 200; index++)
+  bigEdges.push({ source: `n${Math.floor(random() * index)}`, target: `n${index}` })
+for (let index = 0; index < 101; index++) {
+  const a = Math.floor(random() * 200)
+  const b = Math.floor(random() * 200)
+  if (a !== b)
+    bigEdges.push({ id: `x${index}`, source: `n${a}`, target: `n${b}` })
+}
+</script>
+
+<script client>
+import { componentApi } from '../../src/utils/component-api'
+const log = state([])
+function note(text) {
+  log.set([text, ...log()].slice(0, 6))
+}
+
+// Every relation the app's models declare. The graph starts with User and
+// what it touches; expanding a model loads the rest of its relations from here,
+// the way a host would ask the server for them.
+const relations = [
+  ['User', 'hasMany', 'Post'], ['User', 'belongsTo', 'Team'], ['User', 'hasOne', 'Profile'], ['User', 'hasMany', 'Order'],
+  ['Post', 'belongsTo', 'User'], ['Post', 'hasMany', 'Comment'], ['Post', 'belongsToMany', 'Tag'],
+  ['Comment', 'belongsTo', 'User'], ['Comment', 'belongsTo', 'Post'],
+  ['Team', 'hasMany', 'User'], ['Team', 'hasMany', 'Project'], ['Project', 'hasMany', 'Task'], ['Task', 'belongsTo', 'User'],
+  ['Order', 'hasMany', 'OrderItem'], ['Order', 'hasOne', 'Payment'], ['Order', 'belongsTo', 'Coupon'],
+  ['OrderItem', 'belongsTo', 'Product'], ['Product', 'belongsTo', 'Category'], ['Product', 'hasMany', 'Review'], ['Review', 'belongsTo', 'User'],
+]
+const tables = { User: 'users', Post: 'posts', Team: 'teams', Profile: 'profiles', Order: 'orders', Comment: 'comments', Tag: 'tags', Project: 'projects', Task: 'tasks', OrderItem: 'order_items', Payment: 'payments', Coupon: 'coupons', Product: 'products', Category: 'categories', Review: 'reviews' }
+const loaded = { User: true }
+const hasMore = name => relations.some(r => r[0] === name)
+const modelNode = name => ({ id: name, label: name, kind: 'model', detail: tables[name], expandable: hasMore(name) && !loaded[name] })
+const relationEdge = r => ({ source: r[0], target: r[2], label: r[1] })
+const around = name => relations.filter(r => r[0] === name)
+
+const modelNodes = [modelNode('User'), ...around('User').map(r => modelNode(r[2]))]
+const modelEdges = around('User').map(relationEdge)
+
+// An object graph: nodes are objects, edges are the properties that hold
+// them. `order.customer.orders` leads back to where it started.
+const objectNodes = [
+  { id: 'order', label: 'Order #1042', kind: 'object' },
+  { id: 'customer', label: 'Customer', kind: 'object', detail: 'Ada Lovelace' },
+  { id: 'items', label: 'Array(3)', kind: 'array' },
+  { id: 'item0', label: 'OrderItem', kind: 'object', detail: '2 x Notebook' },
+  { id: 'item1', label: 'OrderItem', kind: 'object', detail: '1 x Pen' },
+  { id: 'item2', label: 'OrderItem', kind: 'object', detail: '1 x Ink' },
+  { id: 'address', label: 'Address', kind: 'object', detail: 'London' },
+  { id: 'orders', label: 'Array(1)', kind: 'array' },
+  { id: 'meta', label: 'Map(2)', kind: 'map' },
+]
+const objectEdges = [
+  { source: 'order', target: 'customer', label: 'customer' },
+  { source: 'order', target: 'items', label: 'items' },
+  { source: 'order', target: 'meta', label: 'meta' },
+  { source: 'items', target: 'item0', label: '0' },
+  { source: 'items', target: 'item1', label: '1' },
+  { source: 'items', target: 'item2', label: '2' },
+  { source: 'item0', target: 'order', label: 'order' },
+  { source: 'customer', target: 'address', label: 'address' },
+  { source: 'customer', target: 'orders', label: 'orders' },
+  { source: 'orders', target: 'order', label: '0' },
+  { source: 'order', target: 'order', label: 'self' },
+]
+
+const bigNodes = {{ bigNodes }}
+const bigEdges = {{ bigEdges }}
+
+// The graph's own methods: addNeighbours is how an expansion is answered.
+const modelsBox = useRef('models-box')
+const graphApi = () => componentApi(modelsBox())
+
+// A component's event hands its payload straight to the handler as $event.
+function onExpand(detail) {
+  const name = detail.node.id
+  const api = graphApi()
+  if (!api || loaded[name]) return
+  loaded[name] = true
+  const found = around(name)
+  const added = api.addNeighbours(name, found.map(r => modelNode(r[2])), found.map(relationEdge))
+  api.updateNode(name, { expandable: false })
+  note('expand ' + name + ': ' + added.nodes.length + ' new models, ' + added.edges.length + ' new relations')
+}
+
+function onSelect(detail) {
+  note(detail.node ? 'select ' + detail.node.id + ' (' + detail.neighbours.map(n => n.id).join(', ') + ')' : 'selection cleared')
+}
+
+function onOpen(detail) {
+  note('open ' + detail.node.id)
+}
+</script>
+
+<main class="flex flex-col gap-6 max-w-6xl mx-auto px-4 py-6">
+  <header>
+    <h1 class="text-xl font-semibold text-fg">GraphView</h1>
+    <p class="text-sm text-fg-muted">Drag the background to pan and a node to move it. Scroll pans; pinch, or scroll with Ctrl or Cmd held, zooms. With the graph focused, the arrow keys walk the nodes, Enter expands one, plus and minus zoom, 0 fits and f centres.</p>
+  </header>
+
+  <section aria-labelledby="models-title" class="flex flex-col gap-2">
+    <h2 id="models-title" class="text-base font-medium text-fg">Model relations</h2>
+    <p class="text-sm text-fg-muted">A model marked + has relations that are not loaded yet. Double-click it, or select it and press Enter.</p>
+    <div ref="models-box">
+      <GraphView
+        id="demo-models"
+        label="Model relations"
+        height="26rem"
+        :nodes="modelNodes"
+        :edges="modelEdges"
+        @expand="onExpand($event)"
+        @select="onSelect($event)"
+        @open="onOpen($event)"
+      />
+    </div>
+    <section aria-label="Events" class="p-3 text-sm bg-surface border border-line rounded-panel">
+      <p class="text-fg-muted" :show="log().length === 0">Select or expand a model to see the events the graph sends.</p>
+      <ul class="font-mono text-fg">
+        <li :for="entry in log()" x-text="entry"></li>
+      </ul>
+    </section>
+  </section>
+
+  <section aria-labelledby="objects-title" class="flex flex-col gap-2">
+    <h2 id="objects-title" class="text-base font-medium text-fg">An object graph, with cycles</h2>
+    <p class="text-sm text-fg-muted">Edges are property names. The order's first item points back at the order, and the order holds itself.</p>
+    <GraphView id="demo-objects" label="Object graph" height="24rem" direction="TB" :nodes="objectNodes" :edges="objectEdges" />
+  </section>
+
+  <section aria-labelledby="big-title" class="flex flex-col gap-2">
+    <h2 id="big-title" class="text-base font-medium text-fg">{{ bigNodes.length }} nodes, {{ bigEdges.length }} edges</h2>
+    <p class="text-sm text-fg-muted">Switch between the two layouts in the toolbar. Slowest frame of the last second: <FrameMeter />.</p>
+    <GraphView id="demo-big" label="Large graph" height="36rem" layout="force" :nodes="bigNodes" :edges="bigEdges" />
+  </section>
+</main>

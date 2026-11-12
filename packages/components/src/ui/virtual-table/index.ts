@@ -1,3 +1,9 @@
+/**
+ * @deprecated Use `<DataGrid>` (`../data-grid`). It virtualizes columns as
+ * well as rows and adds sorting, resizing, filtering, selection, keyboard
+ * navigation and export. `<VirtualTable>` stays so existing pages keep
+ * working, and gets no new features.
+ */
 export { default as VirtualTable } from './VirtualTable.stx'
 
 export interface VirtualTableColumn<T = any> {

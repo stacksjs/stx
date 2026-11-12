@@ -83,7 +83,8 @@ Lines and columns are zero-based everywhere, as a language server counts them.
 
 ## Methods
 
-Through a ref on the component: `getValue`, `setValue`, `getSelection`,
+From `componentApi(target)` (`@stacksjs/components/component-api`), where
+`target` is the component's element, its id or a selector: `getValue`, `setValue`, `getSelection`,
 `setSelection(anchor, head)`, `focus`, `undo`, `redo`, `exec(command)`,
 `setWidgets`, `setDiagnostics`, `setGhostText`, `showCompletions(items, { from })`,
 `closeCompletions`, and `editor()` for the controller itself.
