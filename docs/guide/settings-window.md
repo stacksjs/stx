@@ -214,6 +214,8 @@ point where a display can draw one. Motion stops under
   cannot see the window's `pane` prop while the server renders it. Without it
   the first pane shows until the script runs.
 - **Appearance thumbnails are sketches** drawn in CSS, not Apple's artwork.
+- **The Mac look is for a web view.** Its styles are left out of a native
+  (iOS, Android) build, where a control has the platform's own look already.
 - **Icons need the app's icon CSS.** A tile shows nothing if the page does not
   generate the Iconify class it was given.
 - **Not looked at:** a real Craft window, Windows and Linux web views, a screen

@@ -30,7 +30,7 @@ const detail = useReactiveProp('description', {{ description }})
   <div class="stx-settings-hero-extra"><slot /></div>
 </header>
 
-<style>
+<style data-native-exclude>
 :where(:root) {
   --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
   --stx-mac-font-size: 13px;

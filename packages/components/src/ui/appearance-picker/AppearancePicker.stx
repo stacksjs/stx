@@ -117,7 +117,7 @@ defineExpose({ value: chosen })
   ><span class="stx-appearance-frame" aria-hidden="true"><span class="stx-appearance-thumb"><span class="stx-appearance-scene" data-scheme="light"></span><span class="stx-appearance-scene" data-scheme="dark"></span></span></span><span class="stx-appearance-caption" :text="mode.label"></span></button>
 </div>
 
-<style>
+<style data-native-exclude>
 :where(:root) {
   --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
   --stx-mac-font-size: 13px;

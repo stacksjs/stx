@@ -36,7 +36,7 @@ export const className = $props.className || ''
   @endif
 </button>
 
-<style>
+<style data-native-exclude>
 :where(:root) {
   --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
   --stx-mac-font-size: 13px;
