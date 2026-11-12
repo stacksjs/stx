@@ -27,7 +27,10 @@
 import { expect, it } from 'bun:test'
 import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
+import { loadStxConfig } from '../../src/config'
+import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
 import { compileScreenSource, nativePrimitivesDir } from '../../src/native/compiler/render-screen'
+import { mountNativeScreen } from '../../src/native/testing'
 import { processDirectives } from '../../src/process'
 import { createTempDir } from '../../src/temp-dir'
 import { clearComponentCache } from '../../src/utils'
@@ -136,4 +139,48 @@ it('an explicit @import still outranks the converged component', async () => {
   const dependencies = await compile(root, `@import('Button', ${JSON.stringify(hostButton)})\n<div><Button label="Share Report" /></div>`)
   expect(dependencies).toContain(hostButton)
   expect(dependencies).not.toContain(sharedButton)
+}, 30_000)
+
+it('recognises library roots supplied by a framework wrapper without changing its other defaults', async () => {
+  // The public compiler is also used with a scratch project and an absolute
+  // framework plugin, as in stacksjs/stacks#3213. That plugin contributes the
+  // installed library root itself: the scratch project has no node_modules
+  // from which stx could auto-register the library's own plugin.
+  const root = createTempDir('stx-converged-wrapper-')
+  const framework = join(root, 'framework')
+  const frameworkButton = join(framework, 'components/Dashboard/UI/Button.stx')
+  const frameworkAvatar = join(framework, 'components/Dashboard/UI/Avatar.stx')
+  await Bun.write(frameworkButton, '<button data-framework-button="yes" class="aria-disabled:opacity-40"><slot /></button>\n')
+  await Bun.write(frameworkAvatar, '<span data-framework-avatar="yes" class="aria-disabled:opacity-40">Framework avatar</span>\n')
+  const plugin = join(framework, 'plugin.ts')
+  await Bun.write(plugin, `export default { name: '@stacksjs/defaults/components', components: ['./components', ${JSON.stringify(join(componentsPkg, 'src/ui'))}] }`)
+  await Bun.write(join(root, 'stx.config.ts'), `export default { plugins: [${JSON.stringify(plugin)}] }`)
+
+  const source = '<Button label="Share Report" />'
+  const file = join(root, 'Screen.stx')
+  await Bun.write(file, source)
+  const native = await compileScreenSource(source, file, { root })
+  expect(native.dependencies).toContain(sharedButton)
+  expect(native.dependencies).not.toContain(frameworkButton)
+  expect(native.diagnostics.filter(entry => entry.kind !== 'dropped-subtree')).toEqual([])
+  const { code } = await compileSharedScreenBundle(file, { root })
+  const screen = mountNativeScreen(code, 'Screen')
+  try {
+    await screen.settle()
+    expect(screen.texts()).toContain('Share Report')
+  }
+  finally { screen.unmount() }
+
+  const avatar = await compileScreenSource('<Avatar initials="AL" />', file, { root })
+  expect(avatar.dependencies).toContain(frameworkAvatar)
+  expect(avatar.diagnostics.some(entry => entry.kind === 'unknown-class')).toBe(true)
+
+  const loaded = await loadStxConfig(root)
+  const dependencies = new Set<string>()
+  const html = await processDirectives('<div><Button label="Share Report" /><Avatar initials="AL" /></div>', {}, file, { ...loaded, root, cache: false }, dependencies)
+  expect(dependencies.has(frameworkButton)).toBe(true)
+  expect(dependencies.has(frameworkAvatar)).toBe(true)
+  expect(dependencies.has(sharedButton)).toBe(false)
+  expect(html).toContain('data-framework-button')
+  expect(html).toContain('data-framework-avatar')
 }, 30_000)
