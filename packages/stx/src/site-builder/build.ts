@@ -11,7 +11,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs'
-import { dirname, join, relative } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 import process from 'node:process'
 import stxPlugin from 'bun-plugin-stx'
 import { CONVENTIONAL_ASSET_OUTPUT, resolveConventionalAssetRoot } from '../asset-roots'
@@ -89,6 +89,11 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
   if (entrypoints.length === 0)
     throw new Error(`No .stx files found in ${pagesDir}/`)
 
+  // The dev server takes these as options; a build that ignored them resolved
+  // a component name to a different file than the page the author had been
+  // looking at, with nothing to say so.
+  const componentOptions = componentDirOptions(options)
+
   // One malformed view must not fail the whole site (#1810). The batch build
   // runs first, so a healthy build pays nothing; only if it throws do we rebuild
   // one page at a time to find out which ones are actually broken.
@@ -99,7 +104,7 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
   const isolated = await buildIsolatingFailures(entrypoints, subset => Bun.build({
     entrypoints: subset,
     outdir: outDir,
-    plugins: [stxPlugin()],
+    plugins: [stxPlugin(componentOptions)],
     naming: { entry: '[name].[ext]' },
   }))
 
@@ -258,6 +263,26 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
 
   const builtPages = htmlFiles.map(pathFromFile)
   return { outDir, pages: builtPages, durationMs: Date.now() - start }
+}
+
+/**
+ * The component directories a build was given, absolute, in the shape the stx
+ * plugin takes. Only what was set is returned, so anything left out still
+ * comes from the project's stx config.
+ */
+export function componentDirOptions(
+  options: Pick<BuildOptions, 'componentsDir' | 'additionalComponentsDirs' | 'fallbackComponentsDir'>,
+  cwd: string = process.cwd(),
+): { componentsDir?: string, additionalComponentsDirs?: string[], fallbackComponentsDir?: string } {
+  const resolved: { componentsDir?: string, additionalComponentsDirs?: string[], fallbackComponentsDir?: string } = {}
+  if (options.componentsDir)
+    resolved.componentsDir = resolve(cwd, options.componentsDir)
+  if (options.additionalComponentsDirs?.length)
+    resolved.additionalComponentsDirs = options.additionalComponentsDirs.map(dir => resolve(cwd, dir))
+  if (options.fallbackComponentsDir)
+    resolved.fallbackComponentsDir = resolve(cwd, options.fallbackComponentsDir)
+
+  return resolved
 }
 
 function dirnameOf(p: string): string { return dirname(p) }

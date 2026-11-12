@@ -162,6 +162,23 @@ export interface PageMeta {
 export interface BuildOptions extends SiteConfig {
   /** Skip cleaning outDir before build (default: false) */
   noClean?: boolean
+  /**
+   * Where a page's components come from, searched first. The same option, with
+   * the same meaning, as the dev server's (`serve({ componentsDir })`), so a
+   * built page resolves `<Card />` to the file the served page did.
+   *
+   * Relative paths are resolved against the directory the build runs in. Left
+   * out, the project's stx config decides, as before.
+   */
+  componentsDir?: string
+  /**
+   * More component roots, searched in order right after `componentsDir` and
+   * ahead of the convention, plugin and `fallbackComponentsDir` directories.
+   * A name present in two of them resolves to the earlier one.
+   */
+  additionalComponentsDirs?: string[]
+  /** Where to look for a component none of the above has. */
+  fallbackComponentsDir?: string
 }
 
 /**

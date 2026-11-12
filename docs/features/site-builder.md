@@ -283,6 +283,29 @@ const result = await buildStaticSite({
 console.log(`Built ${result.pages.length} pages in ${result.durationMs}ms`)
 ```
 
+### Component directories
+
+A build finds components where the project's stx config says to. A host that
+layers its own components over a framework's can say so for one build, with the
+same options the dev server takes:
+
+```ts
+await buildStaticSite({
+  ...siteConfig,
+  componentsDir: 'resources/components',        // searched first
+  additionalComponentsDirs: [                    // then these, in order
+    'node_modules/@stacksjs/components/src/ui',
+    'storage/framework/defaults/resources/components',
+  ],
+  fallbackComponentsDir: 'vendor/components',    // last, after plugins
+})
+```
+
+A component name present in more than one of them resolves to the earliest.
+Relative paths are resolved against the directory the build runs in. Pass the
+same values to `serve()` and a built page uses the same component files as the
+page you were looking at in development.
+
 ## Lower-Level Helpers
 
 For advanced cases (custom build pipelines, doc engines), the individual helpers are exported too:
