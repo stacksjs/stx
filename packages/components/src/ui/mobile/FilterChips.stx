@@ -21,8 +21,13 @@ export const className = $props.className || ''
  * screen edges while its first chip still lines up with the title above it —
  * a row that stops at the gutter looks complete when it is not.
  */
+/*
+ * `shrink-0`: a row that scrolls sideways has no height of its own to give
+ * up. In a screen taller than the phone (any phone on its side) the column
+ * shrank it first, to nothing, and the filters were gone.
+ */
 export const rowClasses = `
-  -mx-4 flex gap-2 overflow-x-auto px-4 pb-1
+  -mx-4 flex shrink-0 gap-2 overflow-x-auto px-4 pb-1
   [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
   ${className}
 `.replace(/\s+/g, ' ').trim()

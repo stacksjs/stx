@@ -56,13 +56,24 @@ describe('a labelled box around controls', () => {
       <div testID="rating" role="group" aria-label="Rated 4 of 5"><i class="i-lucide-star"></i><span>4</span></div>
       <div testID="card" aria-label="Open order 12" @click="open()"><button>Details</button></div>
       <div testID="tabs" role="tablist" aria-label="Sections"><button role="tab">One</button></div>
+      <div testID="pills" role="list" aria-label="Exercises"><div role="listitem"><button aria-label="Remove squats"></button></div></div>
       <div testID="scroller" data-native="ScrollView" aria-label="Tour"><button>Next</button></div>
       <div testID="native" accessibilityLabel="Toolbar"><button>Bold</button></div>
     </div>`)
-    for (const [id, label] of [['rating', 'Rated 4 of 5'], ['card', 'Open order 12'], ['tabs', 'Sections'], ['scroller', 'Tour'], ['native', 'Toolbar']] as const) {
+    for (const [id, label] of [['rating', 'Rated 4 of 5'], ['card', 'Open order 12'], ['tabs', 'Sections'], ['pills', 'Exercises'], ['scroller', 'Tour'], ['native', 'Toolbar']] as const) {
       expect(byTestID(root, id).props[READER_GROUP]).toBeUndefined()
       expect(byTestID(root, id).props.accessibilityLabel).toBe(label)
     }
+  })
+
+  it('is a list a host can name and still enter, when it says it is one', async () => {
+    const { root } = await translateHtmlToIR('<div testID="pills" role="list" aria-label="Exercises"><div role="listitem"><button aria-label="Remove squats"></button></div></div>')
+    // Both hosts treat a list as a container: named, and open to a reader.
+    expect(byTestID(root, 'pills').props).toMatchObject({ accessibilityRole: 'list', accessibilityLabel: 'Exercises' })
+    // An item is not a stop of its own: what is inside it is.
+    const item = find(root, node => node.props.role === 'listitem')!
+    expect(item.props.accessibilityRole).toBeUndefined()
+    expect(find(root, node => node.props['aria-label'] === 'Remove squats')!.props.accessibilityLabel).toBe('Remove squats')
   })
 
   it('stays unnamed when its label is written again later', () => {

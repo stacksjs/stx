@@ -51,11 +51,17 @@ export const READER_GROUP = 'data-stx-reader-group'
 /**
  * ARIA roles a host can announce, in its own vocabulary.
  *
- * Container roles (`group`, `radiogroup`, `list`, `region`) are left out on
- * purpose. iOS has no trait for them, and Android reads `accessibilityRole`
- * aloud as the role description, so a group would be announced as the word
- * "group" before every control in it. A labelled container is already
- * grouped by both hosts.
+ * Container roles (`group`, `radiogroup`, `region`) are left out on purpose.
+ * iOS has no trait for them, and Android reads `accessibilityRole` aloud as
+ * the role description, so a group would be announced as the word "group"
+ * before every control in it.
+ *
+ * `list` is the exception, because it is the one container both hosts can
+ * name and still let a reader into: iOS announces its label on the way in and
+ * reaches every control inside, and "list" is the word Android's own lists are
+ * announced with. A row of removable pills or of filter buttons written as
+ * `<div role="list" aria-label="Exercises">` keeps its name that way, where a
+ * plain labelled box loses it (see READER_GROUP).
  */
 const ROLES: Record<string, string> = {
   alert: 'alert',
@@ -67,6 +73,7 @@ const ROLES: Record<string, string> = {
   image: 'image',
   img: 'image',
   link: 'link',
+  list: 'list',
   menu: 'menu',
   menubar: 'menubar',
   menuitem: 'menuitem',
