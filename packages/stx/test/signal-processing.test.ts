@@ -288,6 +288,45 @@ describe('convertSignalLoopsToAttributes — server-data detection', () => {
 })
 
 /**
+ * A reactive branch whose only child is a COMPONENT keeps its condition on a
+ * wrapper. Placed on the component tag, `@if="..."` was read as a listener for
+ * an event named `if` (every `@`-prefixed attribute on a component tag is an
+ * event the parent listens for), so the condition never ran and every branch
+ * of the chain showed at once: a Settings pane offered Install and Check Now
+ * side by side and never the third branch.
+ */
+describe('convertSignalDirectivesToAttributes: a component branch', () => {
+  const page = (body: string): string => `<script client>\nconst ready = state(false)\nconst done = state(false)\n</script>\n${body}`
+
+  it('wraps a component branch of a chain instead of putting the condition on its tag', () => {
+    const output = convertSignalDirectivesToAttributes(page(`
+      @if(done())
+        <Button variant="primary" @click="restart()">Restart</Button>
+      @elseif(ready())
+        <Button variant="primary" @click="install()">Install</Button>
+      @else
+        <Button @click="check()">Check</Button>
+      @endif
+    `))
+
+    expect(output).toContain('<template @if="done()"><Button variant="primary" @click="restart()">Restart</Button></template>')
+    expect(output).toContain('<template @else-if="ready()"><Button variant="primary" @click="install()">Install</Button></template>')
+    expect(output).toContain('<template @else><Button @click="check()">Check</Button></template>')
+    expect(output).not.toMatch(/<Button[^>]*\s@(?:if|else-if|else)[\s=>]/)
+  })
+
+  it('wraps a lone component under @if the same way', () => {
+    const output = convertSignalDirectivesToAttributes(page(`@if(ready())<Card title="x">Body</Card>@endif`))
+    expect(output).toContain('<template @if="ready()"><Card title="x">Body</Card></template>')
+  })
+
+  it('still puts the condition on a plain element', () => {
+    const output = convertSignalDirectivesToAttributes(page(`@if(ready())<button type="button">Go</button>@endif`))
+    expect(output).toContain('<button type="button" @if="ready()">Go</button>')
+  })
+})
+
+/**
  * Regression: `@if (expr) ... @else ... @endif` must NOT be converted into a
  * reactive `@if="expr"` attribute. The attribute form is a simple boolean
  * show/hide — it has no concept of else branches. Before the fix, the

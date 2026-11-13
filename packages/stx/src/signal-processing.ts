@@ -475,11 +475,21 @@ function branchToAttrElement(content: string, attrName: string, attrValue?: stri
   // (`<p>a</p><p>b</p>`) falsely look like one element. Verify the inner content is
   // actually balanced for this tag before placing the attribute on it; otherwise a
   // stray sibling would escape the conditional (and break findIfChain in a chain).
-  if (singleElementMatch && isBalancedForTag(singleElementMatch[3], singleElementMatch[1])) {
+  // A component tag is not an element yet: it is replaced by what the component
+  // renders, and an `@`-prefixed attribute on it is read as an event the parent
+  // listens for. The condition placed there became a listener for an event named
+  // `if`, so every branch of the chain showed at once. A component branch keeps
+  // its condition on a wrapper the component is rendered inside.
+  if (singleElementMatch && !isComponentTagName(singleElementMatch[1]) && isBalancedForTag(singleElementMatch[3], singleElementMatch[1])) {
     const [, tag, attrs, innerContent] = singleElementMatch
     return `<${tag}${attrs}${attr}>${innerContent}</${tag}>`
   }
   return `<template${attr}>${trimmed}</template>`
+}
+
+/** A PascalCase tag (`<Button>`) names a component, not an element. */
+function isComponentTagName(tag: string): boolean {
+  return /^[A-Z]/.test(tag)
 }
 
 /**

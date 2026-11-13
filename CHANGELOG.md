@@ -1,5 +1,37 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.870...v0.2.871)
+
+## 🐛 Bug Fixes
+
+- **signals**: a condition around a component is kept on a wrapper, not read as an event on its tag ([dbc222f](https://github.com/stacksjs/stx/commit/dbc222f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **native**: let a list name its controls, and keep the filter row from collapsing (#2184) ([8e10f1e](https://github.com/stacksjs/stx/commit/8e10f1e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184))
+- **native**: let a shared button or field grow with the reader's text size (#2184, #2187) ([db5911e](https://github.com/stacksjs/stx/commit/db5911e)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184), [#2187](https://github.com/stacksjs/stx/issues/2187))
+- **native**: keep a named group of controls reachable by a screen reader (#2184) ([f6131a4](https://github.com/stacksjs/stx/commit/f6131a4)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184))
+- **native**: name a field by its label for a screen reader, and let aria-hidden hide (#2184) ([0af3ba9](https://github.com/stacksjs/stx/commit/0af3ba9)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184), [#2059](https://github.com/stacksjs/stx/issues/2059))
+
+## 📝 Documentation
+
+- **native**: point the host's contrast finding at its Craft issue (#2184) ([cc2fc4f](https://github.com/stacksjs/stx/commit/cc2fc4f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184), [craft-native/craft#531](https://github.com/craft-native/craft/issues/531))
+- **native**: record the accessibility gate run against current Craft (#2184) ([9014581](https://github.com/stacksjs/stx/commit/9014581)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184))
+
+## ✅ Tests
+
+- PasswordInput binds its value with useModel now (#2184) ([d3dcb39](https://github.com/stacksjs/stx/commit/d3dcb39)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184), [#1704](https://github.com/stacksjs/stx/issues/1704))
+- **native**: play a file over the network and a segmented stream through the shared Video on iOS (#2184) ([b851c28](https://github.com/stacksjs/stx/commit/b851c28)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184))
+- **native**: run the iOS suites on any phone, either way up, in either direction (#2184) ([731378d](https://github.com/stacksjs/stx/commit/731378d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184), [craft-native/craft#539](https://github.com/craft-native/craft/issues/539))
+- **native**: run the shared controls at the largest accessibility text size on iOS (#2184) ([f00023a](https://github.com/stacksjs/stx/commit/f00023a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184), [craft-native/craft#535](https://github.com/craft-native/craft/issues/535), [#536](https://github.com/stacksjs/stx/issues/536), [#537](https://github.com/stacksjs/stx/issues/537))
+- **native**: check what VoiceOver reaches in the shared lists, pager and overlays on iOS (#2184) ([07c72d4](https://github.com/stacksjs/stx/commit/07c72d4)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184))
+
+## 🔧 Chores
+
+- release v0.2.871 ([5de21c6](https://github.com/stacksjs/stx/commit/5de21c6)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.869...v0.2.870)
 
 ## ✅ Tests
