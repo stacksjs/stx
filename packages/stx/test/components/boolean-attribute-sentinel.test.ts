@@ -76,14 +76,16 @@ describe('a signal-driven @if/@else around a builtin', () => {
     expect(out).not.toContain('stx-boolean-attribute')
   })
 
-  it('still forwards @else as a bare directive the runtime can see', async () => {
-    // Dropping it would be the wrong fix — the runtime binds the chain off
-    // these element-level attributes.
+  it('still gives the runtime @else as a bare directive', async () => {
+    // Dropping it would be the wrong fix: the runtime binds the chain off these
+    // attributes. A component branch carries them on the wrapper it is rendered
+    // inside, because on the component tag an `@` attribute is an event.
     const out = await render(CHAIN(cls => `<StxLink to="/pricing" class="${cls}">x</StxLink>`))
-    const anchors = out.match(/<a [^>]*@else[^>]*>/g) || []
-    expect(anchors).toHaveLength(1)
-    expect(anchors[0]).toContain('@else ')
-    expect(anchors[0]).not.toContain('@else=')
+    const branches = out.match(/<template [^>]*@else[^>]*>/g) || []
+    expect(branches).toHaveLength(1)
+    expect(branches[0]).not.toContain('@else=')
+    expect(out).toMatch(/<template [^>]*@if="pro\(\)"/)
+    expect(out.match(/<a [^>]*@(?:if|else)[^>]*>/g) || []).toHaveLength(0)
   })
 
   it('is clean for a user component too', async () => {
