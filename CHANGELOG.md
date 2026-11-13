@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.868...v0.2.869)
+
+## 🐛 Bug Fixes
+
+- **bun-plugin**: a page's slot template is not the page ([97373f0](https://github.com/stacksjs/stx/commit/97373f0)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.869 ([1830bfd](https://github.com/stacksjs/stx/commit/1830bfd)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.867...v0.2.868)
 
 ## ✨ Features
