@@ -1,5 +1,31 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.867...v0.2.868)
+
+## ✨ Features
+
+- **components**: add the Settings window ([99d9f11](https://github.com/stacksjs/stx/commit/99d9f11)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **components**: add Slider, ColorSwatches and AppearancePicker ([0532d92](https://github.com/stacksjs/stx/commit/0532d92)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **components**: give the form controls a Mac look ([c56e9f3](https://github.com/stacksjs/stx/commit/c56e9f3)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **components**: add the Mac theme tokens ([02b4b08](https://github.com/stacksjs/stx/commit/02b4b08)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **components**: settle the new Slider and the Mac accent with the native checks ([5300d1e](https://github.com/stacksjs/stx/commit/5300d1e)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **components**: keep the Mac styles out of native builds ([e447425](https://github.com/stacksjs/stx/commit/e447425)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **components**: hold the Mac controls to what either engine draws ([bd824c1](https://github.com/stacksjs/stx/commit/bd824c1)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.868 ([e03b2b2](https://github.com/stacksjs/stx/commit/e03b2b2)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.866...v0.2.867)
 
 ## 💄 Styles
