@@ -29,6 +29,7 @@ const COMPONENTS = {
   'components/Select.stx': component('select/Select.stx'),
   'components/Textarea.stx': component('textarea/Textarea.stx'),
   'components/NumberInput.stx': component('input/NumberInput.stx'),
+  'components/PasswordInput.stx': component('input/PasswordInput.stx'),
 }
 
 afterEach(() => {
@@ -194,6 +195,52 @@ describe('Textarea', () => {
     expect(browser.window.probe.bio()).toBe('')
     await operate(browser, 'textarea', 'draft', 'change')
     expect(browser.window.probe.bio()).toBe('draft')
+  })
+})
+
+/*
+ * The one text field #2059 left out. A sign-in form bound its email with
+ * v-model:value and its password the same way; the first wrote back and the
+ * second compiled, drew, took typing and left the page's signal empty.
+ */
+describe('PasswordInput', () => {
+  it('binds both ways through v-model, and still emits input', async () => {
+    const browser = await open(`<script client>
+  const secret = state('seed')
+  const inputs = []
+  window.probe = { secret, inputs }
+  function typed(value) { inputs.push(value) }
+</script>
+<PasswordInput v-model:value="secret" @input="typed($event)" />`)
+
+    const field = browser.document.querySelector('input[type="password"]')
+    expect(field.value).toBe('seed')
+
+    await operate(browser, 'input[type="password"]', 'hunter2', 'input')
+    expect(browser.window.probe.secret()).toBe('hunter2')
+    expect(browser.window.probe.inputs).toEqual(['hunter2'])
+
+    browser.window.probe.secret.set('')
+    await settle()
+    expect(field.value).toBe('')
+  })
+
+  it('honours .lazy, and still takes a one-way value with @input', async () => {
+    const browser = await open(`<script client>
+  const lazy = state('')
+  const oneWay = state('')
+  window.probe = { lazy, oneWay }
+</script>
+<div id="lazy"><PasswordInput v-model:value.lazy="lazy" /></div>
+<div id="one-way"><PasswordInput :value="oneWay()" @input="oneWay.set($event)" /></div>`)
+
+    await operate(browser, '#lazy input', 'draft', 'input')
+    expect(browser.window.probe.lazy()).toBe('')
+    await operate(browser, '#lazy input', 'draft', 'change')
+    expect(browser.window.probe.lazy()).toBe('draft')
+
+    await operate(browser, '#one-way input', 'typed', 'input')
+    expect(browser.window.probe.oneWay()).toBe('typed')
   })
 })
 

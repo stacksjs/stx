@@ -832,10 +832,52 @@ export async function translateHtmlToIR(
       if (typeof child !== 'string') project(child)
     }
   }
+  nameControlsFromLabels(root)
   project(root)
   boundScrollingViewports(root)
 
   return { root, diagnostics }
+}
+
+/** Controls a `<label for>` can name: what a reader stops on as one thing. */
+const LABELLED_CONTROLS = new Set(['TextInput', 'Picker', 'Switch', 'Checkbox', 'Slider', 'DatePicker'])
+
+/**
+ * A `<label for>` names its control, as it does in a browser.
+ *
+ * On a phone the two were strangers: the label was a line of text above the
+ * field, and the field had no name. VoiceOver falls back to the placeholder
+ * for a text field without one, so a field labelled "Full name" was announced
+ * as "Ada Lovelace, text field", and a picker as the option it happened to
+ * hold. The label's words become the control's `aria-label`, in the HTML
+ * vocabulary so the ordinary projection and its precedence apply, and the
+ * label itself is hidden from the reader, since it would otherwise be read
+ * once on its own and once more as the name.
+ *
+ * A control that names itself keeps its name and its label stays readable.
+ * A label whose words are bound is left alone: there is no name to give yet.
+ */
+function nameControlsFromLabels(root: STXNode): void {
+  const byId = new Map<string, STXNode>()
+  const labels: STXNode[] = []
+  const visit = (node: STXNode): void => {
+    if (typeof node.props.id === 'string' && node.props.id) byId.set(node.props.id, node)
+    if (typeof node.props.for === 'string' && node.props.for) labels.push(node)
+    for (const child of node.children) {
+      if (typeof child !== 'string') visit(child)
+    }
+  }
+  visit(root)
+  for (const label of labels) {
+    const control = byId.get(label.props.for as string)
+    if (!control || !LABELLED_CONTROLS.has(control.type)) continue
+    const named = ['aria-label', 'accessibilityLabel'].some(name => control.props[name] !== undefined || control.bindings?.[name] !== undefined)
+    const words = label.bindings?.text === undefined ? flattenText(label) : ''
+    if (named || !words || words.includes('{{')) continue
+    control.props['aria-label'] = words
+    if (label.props['aria-hidden'] === undefined && label.bindings?.['aria-hidden'] === undefined)
+      label.props['aria-hidden'] = 'true'
+  }
 }
 
 /**

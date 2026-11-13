@@ -14,7 +14,8 @@ const { values } = parseArgs({ options: {
   appearance: { type: 'string', default: 'dark' },
   suite: { type: 'string', default: 'overlays' },
 } })
-const suites: Record<string, { source: string, tests: string, count: number, unitTests?: string, unitCount?: number }> = {
+// `support` files are compiled into the unit-test bundle beside `unitTests`.
+const suites: Record<string, { source: string, tests: string, count: number, unitTests?: string, unitCount?: number, support?: string[] }> = {
   hud: { source: 'native-hud-device.stx', tests: 'NativeHudUITests', count: 1 },
   controls: { source: 'shared-controls-device.stx', tests: 'SharedControlsUITests', count: 3 },
   overlays: { source: 'shared-overlays-device.stx', tests: 'SharedPortabilityUITests', count: 4 },
@@ -22,9 +23,10 @@ const suites: Record<string, { source: string, tests: string, count: number, uni
   videos: { source: 'shared-video-device.stx', tests: 'SharedVideoUITests', count: 1, unitTests: 'SharedVideoNativeTests', unitCount: 4 },
   toggles: { source: 'shared-toggle-device.stx', tests: 'SharedToggleUITests', count: 2, unitTests: 'SharedToggleNativeTests', unitCount: 3 },
   accessibility: { source: 'shared-accessibility-device.stx', tests: 'SharedAccessibilityUITests', count: 4 },
+  forms: { source: 'shared-forms-device.stx', tests: 'SharedFormsUITests', count: 3, unitTests: 'SharedFormsNativeTests', unitCount: 2, support: ['SpokenStops.swift'] },
 }
 if (!values['craft-root'] || !values.simulator || !['light', 'dark'].includes(values.appearance!) || !suites[values.suite!])
-  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|controls|hud|images|videos|toggles|accessibility]')
+  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|controls|hud|images|videos|toggles|accessibility|forms]')
 const suite = suites[values.suite!]
 
 function run(command: string[], cwd?: string, capture = false, allowFailure = false): string {
@@ -38,7 +40,11 @@ if (run(['git', 'status', '--porcelain'], craft, true))
   throw new Error('Use a clean Craft checkout for reproducible host validation')
 const craftCommit = run(['git', 'rev-parse', 'HEAD'], craft, true)
 const devices = JSON.parse(run(['xcrun', 'simctl', 'list', 'devices', 'booted', '--json'], undefined, true))
-if (!Object.values(devices.devices as Record<string, Array<{ udid: string }>>).flat().some(device => device.udid === values.simulator))
+// Which phone and which iOS a run was on is part of what it proves.
+const device = Object.entries(devices.devices as Record<string, Array<{ udid: string, name: string, deviceTypeIdentifier?: string }>>)
+  .flatMap(([runtime, list]) => list.map(item => ({ runtime: runtime.replace('com.apple.CoreSimulator.SimRuntime.', ''), name: item.name, type: (item.deviceTypeIdentifier ?? '').replace('com.apple.CoreSimulator.SimDeviceType.', ''), udid: item.udid })))
+  .find(item => item.udid === values.simulator)
+if (!device)
   throw new Error('The specified owned simulator must already be booted')
 
 const workspace = mkdtempSync(join(tmpdir(), 'stx-portability-ios-'))
@@ -58,6 +64,7 @@ copyFileSync(join(fixtures, `${suite.tests}.swift`), join(output, `UITests/${sui
 if (suite.unitTests) {
   mkdirSync(join(output, 'UnitTests'))
   copyFileSync(join(fixtures, `${suite.unitTests}.swift`), join(output, `UnitTests/${suite.unitTests}.swift`))
+  for (const file of suite.support ?? []) copyFileSync(join(fixtures, file), join(output, `UnitTests/${file}`))
 }
 const projectFile = join(output, 'project.yml')
 let project = readFileSync(projectFile, 'utf8')
@@ -96,9 +103,9 @@ project = project.replace(test, `${test}      targets:\n        - SharedPortabil
 writeFileSync(projectFile, project)
 if (craftCommit !== run(['git', 'rev-parse', 'HEAD'], craft, true) || run(['git', 'status', '--porcelain'], craft, true))
   throw new Error('Craft changed during generation; rerun with a stable checkout')
-const hashes = Object.fromEntries([bundle, ...compiled.dependencies, join(fixtures, `${suite.tests}.swift`), ...(suite.unitTests ? [join(fixtures, `${suite.unitTests}.swift`)] : [])]
+const hashes = Object.fromEntries([bundle, ...compiled.dependencies, join(fixtures, `${suite.tests}.swift`), ...(suite.unitTests ? [join(fixtures, `${suite.unitTests}.swift`)] : []), ...(suite.support ?? []).map(file => join(fixtures, file))]
   .map(file => [file, createHash('sha256').update(readFileSync(file)).digest('hex')]))
-writeFileSync(join(workspace, 'provenance.json'), JSON.stringify({ craftCommit, stxCommit: run(['git', 'rev-parse', 'HEAD'], root, true), stxWorkingTree: run(['git', 'status', '--porcelain'], root, true), hashes, appearance: values.appearance, simulator: values.simulator }, null, 2))
+writeFileSync(join(workspace, 'provenance.json'), JSON.stringify({ craftCommit, stxCommit: run(['git', 'rev-parse', 'HEAD'], root, true), stxWorkingTree: run(['git', 'status', '--porcelain'], root, true), hashes, appearance: values.appearance, simulator: values.simulator, device }, null, 2))
 run(['xcodegen', 'generate'], output)
 run(['xcrun', 'simctl', 'ui', values.simulator, 'appearance', values.appearance!])
 const results = join(workspace, 'TestResults.xcresult')

@@ -71,7 +71,7 @@ const ROLES: Record<string, string> = {
 
 /** Whether an attribute is one this module translates. */
 export function isAccessibilityAttribute(name: string): boolean {
-  return name === 'role' || name === 'aria-label' || name === 'aria-valuetext' || name in STATE_KEYS
+  return name === 'role' || name === 'aria-label' || name === 'aria-valuetext' || name === 'aria-hidden' || name in STATE_KEYS
 }
 
 /**
@@ -144,6 +144,13 @@ export function applyStaticAccessibility(props: Record<string, unknown>): void {
     const patch = accessibilityPatch(name, value, derived)
     if (patch) Object.assign(derived, patch)
   }
+  // `aria-hidden` takes a node out of what a screen reader reaches. Both hosts
+  // do that for the role "none", so it has to win over the node's own role:
+  // a decorative image is not an image to anyone listening, and the word
+  // "image" was what VoiceOver said on reaching one. It hides the node it is
+  // written on, not what is inside it: a host has no prop for a subtree.
+  if (stateValue('aria-hidden', props['aria-hidden']) === true)
+    derived.accessibilityRole = 'none'
   for (const key of ['accessibilityLabel', 'accessibilityRole', 'accessibilityValue']) {
     if (props[key] === undefined && derived[key] !== undefined && derived[key] !== null)
       props[key] = derived[key]

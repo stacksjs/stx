@@ -12,7 +12,8 @@ it('merges boolean ARIA state with per-field native overrides without mutating e
     accessibilityLabel: 'Native', accessibilityRole: 'switch', accessibilityValue: 'Off',
     accessibilityState: { checked: false, disabled: true, selected: false },
   })
-  expect(projectAccessibility({ 'aria-checked': 'mixed', 'aria-selected': 'undefined', 'aria-hidden': true })).toEqual({ accessibilityState: { checked: 'mixed' } })
+  // aria-hidden is not a state: it takes the node out of what a reader reaches.
+  expect(projectAccessibility({ 'aria-checked': 'mixed', 'aria-selected': 'undefined', 'aria-hidden': true })).toEqual({ accessibilityRole: 'none', accessibilityState: { checked: 'mixed' } })
 })
 
 it('clears stale projections without resetting unrelated accessibility fields', () => {

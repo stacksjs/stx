@@ -65,9 +65,9 @@ Three separate channels. Mixing them up is the most common mistake.
 A component that needs to talk back does it with an event, not a mutated prop. Every `Emits` entry in the reference below is a `@event` you can listen for.
 
 The form controls take a two-way binding instead, so a field and the page's
-signal cannot drift: `v-model:value` on `TextInput`, `Textarea`, `NumberInput`
-and `Select` (with `.lazy`, `.trim` and `.number`), `v-model:checked` on
-`Switch`. Their `@input` / `@change` events are still emitted.
+signal cannot drift: `v-model:value` on `TextInput`, `PasswordInput`,
+`Textarea`, `NumberInput` and `Select` (with `.lazy`, `.trim` and `.number`),
+`v-model:checked` on `Switch`. Their `@input` / `@change` events are still emitted.
 
 ```html
 <TextInput type="date" label="Race day" v-model:value="raceDay" min="2026-01-01" />

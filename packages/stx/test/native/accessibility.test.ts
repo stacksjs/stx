@@ -18,6 +18,7 @@ it('projects static ARIA fields without converting false or mixed into true', as
   })
   expect(root._accessibilitySource).toEqual({})
   expect(projectAccessibility({ 'aria-checked': 'mixed', 'aria-selected': 'false', 'aria-hidden': true })).toEqual({
+    accessibilityRole: 'none',
     accessibilityState: { checked: 'mixed', selected: false },
   })
 })
