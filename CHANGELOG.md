@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.869...v0.2.870)
+
+## ✅ Tests
+
+- **native**: check what a screen reader is told about the shared controls on iOS (#2184) ([fd2ea90](https://github.com/stacksjs/stx/commit/fd2ea90)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184), [#2187](https://github.com/stacksjs/stx/issues/2187))
+
+## 🔧 Chores
+
+- release v0.2.870 ([f277c5a](https://github.com/stacksjs/stx/commit/f277c5a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.868...v0.2.869)
 
 ## 🐛 Bug Fixes
