@@ -403,7 +403,7 @@ finding fails and a fixed one has to come off the list:
 | --- | --- | --- |
 | Dark | Contrast nearly passed | The shared TextInput's placeholder on its fill ([#2187](https://github.com/stacksjs/stx/issues/2187)) |
 | Both | Text may clip at larger Dynamic Type sizes | The shared TextInput, fixed at 48 points ([#2187](https://github.com/stacksjs/stx/issues/2187)) |
-| Light | Contrast failed | The host's navigation title ("main"), not a shared component |
+| Light | Contrast failed | The host's navigation title ("main"), not a shared component ([craft#531](https://github.com/craft-native/craft/issues/531)) |
 
 This is not VoiceOver speaking, which a simulator cannot run, and it says
 nothing about Android, TalkBack or a physical device: the machine that ran it

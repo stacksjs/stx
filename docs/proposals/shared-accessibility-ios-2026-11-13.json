@@ -68,7 +68,7 @@
         "kind": "contrast",
         "element": "the host's navigation title, \"main\"",
         "message": "Contrast failed for UILabel",
-        "tracked": "Host chrome, not a shared component; not fixed or filed against Craft from here."
+        "tracked": "Host chrome, not a shared component: https://github.com/craft-native/craft/issues/531"
       },
       {
         "kind": "textClipped",
