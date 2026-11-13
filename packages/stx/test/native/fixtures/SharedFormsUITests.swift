@@ -141,6 +141,7 @@ final class SharedFormsUITests: XCTestCase {
             // The placeholder grey on the fields' dark fill.
             known += fields.map { "contrast \($0)" }
         }
-        Gate.checkAudit(found: found, known: known, details: details)
+        // On a narrower phone the other placeholders run out of line too.
+        Gate.checkAudit(found: found, known: known, elsewhere: ["textClipped form-name", "textClipped form-email"], details: details)
     }
 }

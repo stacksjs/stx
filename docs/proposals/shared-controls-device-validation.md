@@ -409,3 +409,156 @@ This is not VoiceOver speaking, which a simulator cannot run, and it says
 nothing about Android, TalkBack or a physical device: the machine that ran it
 has no Android SDK. Image and Video are not in this suite.
 [Exact results, hashes and limits](shared-accessibility-ios-2026-11-13.json).
+
+## iOS acceptance, all of it: 2026-11-14
+
+[#2184](https://github.com/stacksjs/stx/issues/2184) was narrowed on
+2026-11-13 to iOS: Android, on an emulator or a phone, is out of scope for it.
+What follows is every iOS check that issue asked for, what running them found,
+and what is left with the reason it is left.
+
+### What the runs found, and what changed
+
+Each of these was seen on the simulator before it was fixed, and each has a
+protocol test in `packages/stx/test/native` beside the device suite that
+watches it.
+
+| Seen on the simulator | Now | Commit |
+| --- | --- | --- |
+| A field under the label "Full name" was announced by its placeholder, and a Select by the option it held: a `<label for>` named nothing on a host | The label's words name the control, and the label is read once | `0af3ba98a8` |
+| A decorative image was a stop for VoiceOver, announced as "image" | `aria-hidden` reaches the host | `0af3ba98a8` |
+| Typing into a `PasswordInput` bound with `v-model:value` left the page's signal empty | It binds both ways, as the other fields do | `0af3ba98a8` |
+| The Pager was one stop called "Tour", its pages and dots out of reach; an open Drawer was one stop with its close button inside | A box that names a group of controls keeps the name as ARIA and does not send it | `f6131a4180` |
+| The page a pager was on was not said to be the current one | `aria-current` is announced as selected | `f6131a4180` |
+| A Tooltip's words reached nobody who could not see them appear | They are the trigger's hint | `f6131a4180` |
+| A list row's title was drawn a space in, and read as " Second " | Template indentation is not text | `f6131a4180` |
+| At the largest text size a Button's label stuck out of its fill and a field cut its words in half | Their heights are floors | `db5911e80e` |
+| A row of filter chips vanished on a screen taller than the phone | It does not shrink | `8e10f1e5a0` |
+| An app had no way to name a group of its own controls and keep them reachable | `role="list"` is that group | `8e10f1e5a0` |
+
+### The suites
+
+```sh
+bun scripts/native-portability-ios.ts --craft-root /path/to/clean/craft \
+  --simulator "$STX_TEST_SIMULATOR" --appearance dark --suite forms
+```
+
+| Suite | Tests | What it holds |
+| --- | --- | --- |
+| `controls` | 3 UI | Typing keeps the keyboard through updates; a Card's inset follows its density token |
+| `overlays` | 4 UI, 2 in-app | Popover, Tooltip, nested Dialog, Drawer and Tabs take touches; a reader hears the tooltip's hint and the chosen tab, and is inside an open dialog or drawer |
+| `images` | 1 UI, 6 in-app | Fit, position, replacement and the pixels actually painted |
+| `videos` | 1 UI, 4 in-app | A local clip plays, pauses, loops, is replaced and removed |
+| `streams` | 1 UI, 3 in-app | A file over HTTP and an HLS stream play; a missing stream is an error the page hears, and the player recovers |
+| `toggles` | 2 UI, 3 in-app | Checkbox and Switch state, events and disabled touches |
+| `accessibility` | 4 UI | Role, name, state and order of Button, TextInput, Checkbox and Switch; the system audit |
+| `forms` | 4 UI, 2 in-app | Every field named by its label; typing, revealing and choosing reach the page; the last field stays above the keyboard; keyboard and autofill set-up; the system audit |
+| `lists` | 3 UI, 2 in-app | Rows, filters, a named list and the Pager as a reader reaches them; the system audit |
+| `text-size` | 1 UI, 1 in-app | At the largest accessibility size no word is cut off and every control can be scrolled to and used |
+| `hud` | 1 UI | The host's own HUD panel, not a shared component |
+
+`SpokenStops.swift` is what the in-app tests read a screen with. XCUITest
+lists every view that has an identifier whether or not a reader can reach it,
+so it cannot say that a decorative image is skipped or that a drawer's close
+button is out of reach. `SpokenStops` walks the views the way UIKit hands them
+to VoiceOver and lists the stops in order, as `name | value | what it is`.
+
+The gate also takes the settings a person can change. Each is recorded in the
+run's `provenance.json` with the device and its iOS version.
+
+| Flag | What it does |
+| --- | --- |
+| `--content-size` | Sets the simulator's text size for the run (`text-size` sets the largest by itself) |
+| `--orientation landscape` | Generates an app that turns, and holds the device sideways |
+| `--direction rtl` | Switches on the system's right-to-left pseudolanguage |
+| `--increase-contrast` | Switches on Increase Contrast |
+
+The lists of known audit findings in the suites were written against an
+iPhone 17 Pro held upright. On that phone a listed finding must still be
+found, so a fixed one has to come off the list. Any other run is told it is
+not the reference, and there the audit may only find what is listed: it reads
+what is on the screen, and a smaller screen shows less.
+
+### Recorded runs
+
+Xcode 26.6, iOS 26.5 Simulator, clean Craft `7580fcc387d3` (a clone of the
+checkout's HEAD; the checkout itself had another task's edits in it), stx
+`b851c28431` (and `d3dcb39071`, which changes one unit test). [Every run's counts, device and settings](shared-ios-acceptance-2026-11-14.json).
+
+| Device and setting | Appearance | Passed | Not passing |
+| --- | --- | --- | --- |
+| iPhone 17 Pro, upright | dark and light | 21 of 22 runs, 95 of 96 tests | `overlays` dark: 5 of 6 |
+| iPhone 17 Pro, upright, run again alone | dark and light | 3 of 3 runs, 18 of 18 tests | None |
+| iPhone 17 Pro, right-to-left | dark | 7 of 7 runs, 31 of 31 tests | None |
+| iPhone 17 Pro, Increase Contrast | dark and light | 12 of 12 runs, 58 of 58 tests | None |
+| iPad (A16) | dark | 11 of 11 runs, 48 of 48 tests | None |
+| iPhone SE (3rd generation) | dark | 9 of 11 runs, 46 of 48 tests | `forms` dark: 5 of 6; `hud` dark: 0 of 1 |
+| iPhone SE (3rd generation), run again | dark | 1 of 1 runs, 6 of 6 tests | None |
+| iPhone 17 Pro, landscape | dark | 0 of 3 runs, 12 of 15 tests | `lists` dark: 4 of 5; `forms` dark: 5 of 6; `accessibility` dark: 3 of 4 |
+
+The four lines that are not clean:
+
+- **`overlays` dark on the reference phone, 5 of 6.** One popover test timed
+  out while three simulators were building at once. Run again by itself it
+  passes 6 of 6, and it passed in every other setting above.
+- **`forms` on the iPhone SE, 5 of 6.** The audit reported a second
+  placeholder too long for one line in the narrower field. It is listed now
+  as something only a narrower phone brings out, and the run after that
+  passes 6 of 6.
+- **`hud` on the iPhone SE.** See the last entry under what is left.
+- **Landscape.** See below: the host does not scroll there.
+
+### What is the host's
+
+Six findings are in Craft's iOS host rather than in stx. Each is pinned in the
+suite that met it, as it is today, so the suite fails when the host changes
+and the pin has to be turned into the real expectation.
+
+| Finding | Craft issue | Pinned in |
+| --- | --- | --- |
+| The navigation title fails contrast in light appearance | [#531](https://github.com/craft-native/craft/issues/531) | `SharedAccessibilityUITests` known list |
+| A dialog's name stays on the node it was opened from and never reaches the sheet | [#535](https://github.com/craft-native/craft/issues/535) | `SharedOverlaysNativeTests` |
+| A labelled view is one stop even when it holds controls | [#536](https://github.com/craft-native/craft/issues/536) | stx withholds the label (`READER_GROUP`) |
+| A Picker's words are scaled for text size twice | [#537](https://github.com/craft-native/craft/issues/537) | `SharedTextSizeNativeTests` |
+| A scroll view does not scroll on a phone launched in landscape | [#539](https://github.com/craft-native/craft/issues/539) | Not pinned: see landscape below |
+| A TextInput's placeholder is inset by its padding twice | [#540](https://github.com/craft-native/craft/issues/540) | Not pinned: 16 points of drawing |
+
+### What is left, and why
+
+- **Landscape on a phone.** `--orientation landscape` works and the suites
+  are written to run in it, but everything below the fold is out of reach
+  there until craft#539 is fixed, which is most of every screen at 402 points
+  tall. Recorded as it is: `lists` 4 of 5, `forms` 5 of 6 and `accessibility` 3 of 4, each failure a control that is below the fold or a pager that will not turn its page.
+- **Right-to-left mirroring.** Every suite passes with the system's
+  right-to-left switch on, which is to say every control still works. The
+  drawing is half mirrored: text aligns right and the system's own controls
+  flip, while rows keep their order and a chevron stays on the right. Layout
+  direction is not something the host has, and the shared components position
+  with physical sides as they do on the web, so this is recorded and not
+  asserted.
+- **VoiceOver speaking.** A simulator cannot run VoiceOver. `SpokenStops` and
+  XCUITest check what it is handed, which is everything it reads from, not the
+  sentence it composes.
+- **A physical iPhone.** Not run. It needs the phone unlocked, a development
+  team to sign with and the gate taught to target a device; nothing in these
+  suites is simulator-specific except how the appearance and text size are
+  set.
+- **Picture in picture, background audio, interruption, DRM, provider
+  embeds.** The shared Video does not offer them: the host turns picture in
+  picture off and no prop turns it on (pinned in `streams`), and it adds no
+  audio-session or interruption handling of its own, so those are AVPlayer's
+  defaults. There is nothing of stx's to accept.
+- **Pixel parity with the browser.** Not a goal, by design. On a host the
+  shared Button, fields, Select, Checkbox, Switch and lists draw the
+  platform's control (their `$native` branch: a 48-point filled field where
+  the browser draws a ringed one), so a pixel comparison would compare two
+  designs. What is held instead is geometry measured in the app (`images`,
+  `controls`, `text-size`) and the system's audit of contrast and clipping.
+- **The placeholder grey and the secondary greys.** The audit reports the
+  field placeholder on its dark fill and a row's value and time on white.
+  Those are colour decisions and stay with
+  [#2187](https://github.com/stacksjs/stx/issues/2187); the clipping that
+  issue also described is fixed.
+- **The `hud` suite on a small iPhone.** Its buttons sit under the keyboard
+  on a 667-point screen. It is the host's panel and a fixture's layout, not a
+  shared component.

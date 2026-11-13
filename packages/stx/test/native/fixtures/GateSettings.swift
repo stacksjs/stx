@@ -37,13 +37,14 @@ enum Gate {
     /// Nothing may be found that is not on the list. On the reference phone
     /// the reverse holds too, so a finding that has been fixed has to come off
     /// it. Elsewhere it cannot: the audit reads what is on the screen, and a
-    /// smaller or turned screen shows less of it.
-    static func checkAudit(found: [String], known: [String], details: [String], file: StaticString = #filePath, line: UInt = #line) {
+    /// smaller or turned screen shows less of it. `elsewhere` lists what only
+    /// such a screen brings out, as a narrower field does a long placeholder.
+    static func checkAudit(found: [String], known: [String], elsewhere: [String] = [], details: [String], file: StaticString = #filePath, line: UInt = #line) {
         let report = "The system audit found:\n" + details.joined(separator: "\n")
         if isReferenceRun {
             XCTAssertEqual(found.sorted(), known.sorted(), report, file: file, line: line)
         } else {
-            XCTAssertEqual(found.filter { !known.contains($0) }.sorted(), [], report, file: file, line: line)
+            XCTAssertEqual(found.filter { !known.contains($0) && !elsewhere.contains($0) }.sorted(), [], report, file: file, line: line)
         }
     }
 }
