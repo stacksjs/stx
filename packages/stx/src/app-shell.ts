@@ -11,6 +11,7 @@
  * @module app-shell
  */
 
+import { findSfcTemplateBlock } from './sfc-template'
 import { bodyCloseIndex } from './document-tags'
 import type { StxOptions } from './types'
 import path from 'node:path'
@@ -116,9 +117,10 @@ export async function processShell(
 
     // Extract <template> block if SFC format
     let shellTemplate = content
-    const templateMatch = content.match(/<template\b[^>]*>([\s\S]*?)<\/template>/i)
-    if (templateMatch) {
-      shellTemplate = templateMatch[1].trim()
+    // The bare wrapper only: a slot or loop <template> inside the shell is its content (see sfc-template.ts).
+    const sfcTemplate = findSfcTemplateBlock(content)
+    if (sfcTemplate) {
+      shellTemplate = sfcTemplate.content.trim()
     }
 
     // Classify shell scripts using the unified classifier

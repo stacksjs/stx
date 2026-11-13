@@ -39,7 +39,7 @@ import type { StxOptions } from '@stacksjs/stx'
 import type { BunPlugin } from 'bun'
 import fs from 'node:fs'
 import path from 'node:path'
-import { buildWebComponents, cacheTemplate, checkCache, classifyAllScripts, defaultConfig, extractVariables, insertBeforeBodyClose, loadStxConfig, processClientScript, processDirectives, readMarkdownFile, withinBundlerCallback } from '@stacksjs/stx'
+import { buildWebComponents, cacheTemplate, checkCache, classifyAllScripts, defaultConfig, extractVariables, findSfcTemplateBlock, insertBeforeBodyClose, loadStxConfig, processClientScript, processDirectives, readMarkdownFile, withinBundlerCallback } from '@stacksjs/stx'
 
 // Export watch functionality
 export { createWatcher, startWatchMode, watchAndBuild } from './watch'
@@ -297,12 +297,18 @@ export { content as default };
 
           const content = await Bun.file(filePath).text()
 
-          // SFC Support: Extract <template> content if present
-          // This allows Vue-style single file components with explicit <template> tags
+          // SFC support: a page may wrap its markup in one bare <template>.
+          //
+          // Only a bare one. A <template #sidebar> (or v-slot, slot=, :for, @if)
+          // is content: a named slot handed to a component, or a client loop.
+          // Taking the first <template> of any kind made such a page's whole
+          // document that one slot's inside, so a build dropped the rest of the
+          // page, its @nolayout with it, and wrapped what was left in the
+          // default layout. The shared scanner knows the difference.
           let workingContent = content
-          const templateTagMatch = content.match(/<template\b[^>]*>([\s\S]*?)<\/template>/i)
-          if (templateTagMatch) {
-            workingContent = templateTagMatch[1].trim()
+          const sfcTemplate = findSfcTemplateBlock(content)
+          if (sfcTemplate) {
+            workingContent = sfcTemplate.content.trim()
           }
 
           // Extract all script tags and categorize them using the unified
