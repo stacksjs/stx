@@ -391,9 +391,9 @@ asserts what would be announced rather than what was passed down as a prop:
   order the screen was written.
 - **Apple's audit.** `performAccessibilityAudit()` runs every audit type.
 
-iPhone 17 Pro / iOS 26.5 Simulator against Craft `c8ba180d921d` (clean when
-the host app was generated): **4 passed / 0 failed / 0 skipped in dark, and
-4 / 0 / 0 in light.**
+iPhone 17 Pro / iOS 26.5 Simulator against clean Craft `da313f8b59d6`:
+**4 passed / 0 failed / 0 skipped in dark, and 4 / 0 / 0 in light.** An
+earlier pass against `c8ba180d921d` gave the same results and findings.
 
 Everything the audit checks about what a reader is told came back clean. What
 it found is about drawing, and the test lists it per appearance so that a new

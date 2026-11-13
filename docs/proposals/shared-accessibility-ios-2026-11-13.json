@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "date": "2026-11-13",
   "issue": "https://github.com/stacksjs/stx/issues/2184",
-  "releaseStatus": "Unreleased source after STX 0.2.869; no version or tag changed",
-  "stxBase": "e338192994fa01e3259246c97a59f5c62416b583",
+  "releaseStatus": "Run on the source of STX 0.2.870, which adds this suite and changes no published code",
+  "stxBase": "b4ffbb14aa",
   "craft": {
-    "commit": "c8ba180d921d4b80580477791c657d49a352eacc",
+    "commit": "da313f8b59d6b198b21229520273271f1b9c4dfe",
     "cleanSnapshot": true,
     "sourceEdited": false,
-    "note": "The gate generated the host app once, from a clean checkout at this commit. Another session then began uncommitted Android-only work in that checkout, so the later revisions of the test file were run from the retained generated app (same bundle, same fixture hash) rather than regenerating it. Nothing under packages/ios changed in between."
+    "note": "Both appearances were run through the gate itself, which generated the host app from this clean checkout each time. An earlier pass against Craft c8ba180d921d gave the same 4 of 4 in each appearance and the same audit findings; this commit changed packages/ios after it (grid track counts and the floating-actions clearance in CraftNativeScreen.swift)."
   },
   "environment": {
     "xcode": "26.6",
@@ -17,7 +17,7 @@
     "os": "iOS 26.5",
     "osBuildNumber": "23F77",
     "platform": "iOS Simulator",
-    "ownedSimulator": "CA2BEDCE-EA9D-466C-854C-B88F79F96148"
+    "ownedSimulator": "5E259FD6-1747-4491-B0B3-B480445872E0"
   },
   "sourceSha256": {
     "packages/stx/test/native/fixtures/shared-accessibility-device.stx": "d2dcb9b90022cc8839a4b398f8631db5f3f405a8c2c8f674e4696902ec29044c",
@@ -27,8 +27,20 @@
   "command": "bun scripts/native-portability-ios.ts --craft-root <craft> --simulator <booted udid> --appearance dark|light --suite accessibility",
   "method": "XCUITest reads the accessibility tree VoiceOver reads. These are assertions on that tree and on Apple's performAccessibilityAudit(), not a recording of VoiceOver speaking, which a simulator cannot run.",
   "results": {
-    "dark": { "result": "Passed", "total": 4, "passed": 4, "failed": 0, "skipped": 0 },
-    "light": { "result": "Passed", "total": 4, "passed": 4, "failed": 0, "skipped": 0 }
+    "dark": {
+      "result": "Passed",
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    "light": {
+      "result": "Passed",
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    }
   },
   "tests": {
     "testEachControlHasItsRoleAndName": "Button (words and a bound ariaLabel), TextInput (accessibilityLabel and placeholder), Checkbox and Switch (label) are each exposed as one element of the right kind with the name a reader hears.",
@@ -38,12 +50,32 @@
   },
   "auditFindings": {
     "dark": [
-      { "kind": "contrast", "element": "a11y-email (shared TextInput)", "message": "Contrast is not high enough for CraftNativeTextField unless font size is larger.", "tracked": "https://github.com/stacksjs/stx/issues/2187" },
-      { "kind": "textClipped", "element": "a11y-email (shared TextInput)", "message": "Text of this CraftNativeTextField may be clipped at larger Dynamic Type sizes.", "tracked": "https://github.com/stacksjs/stx/issues/2187" }
+      {
+        "kind": "contrast",
+        "element": "a11y-email (shared TextInput)",
+        "message": "Contrast is not high enough for CraftNativeTextField unless font size is larger.",
+        "tracked": "https://github.com/stacksjs/stx/issues/2187"
+      },
+      {
+        "kind": "textClipped",
+        "element": "a11y-email (shared TextInput)",
+        "message": "Text of this CraftNativeTextField may be clipped at larger Dynamic Type sizes.",
+        "tracked": "https://github.com/stacksjs/stx/issues/2187"
+      }
     ],
     "light": [
-      { "kind": "contrast", "element": "the host's navigation title, \"main\"", "message": "Contrast failed for UILabel", "tracked": "Host chrome, not a shared component; not fixed or filed against Craft from here." },
-      { "kind": "textClipped", "element": "a11y-email (shared TextInput)", "message": "Text of this CraftNativeTextField may be clipped at larger Dynamic Type sizes.", "tracked": "https://github.com/stacksjs/stx/issues/2187" }
+      {
+        "kind": "contrast",
+        "element": "the host's navigation title, \"main\"",
+        "message": "Contrast failed for UILabel",
+        "tracked": "Host chrome, not a shared component; not fixed or filed against Craft from here."
+      },
+      {
+        "kind": "textClipped",
+        "element": "a11y-email (shared TextInput)",
+        "message": "Text of this CraftNativeTextField may be clipped at larger Dynamic Type sizes.",
+        "tracked": "https://github.com/stacksjs/stx/issues/2187"
+      }
     ]
   },
   "notCovered": [
