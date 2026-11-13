@@ -24,12 +24,14 @@ const { values } = parseArgs({ options: {
 } })
 // `support` files are compiled into the unit-test bundle beside `unitTests`.
 // `contentSize` is the text size a suite is about, unless the caller names one.
-const suites: Record<string, { source: string, tests: string, count: number, unitTests?: string, unitCount?: number, support?: string[], contentSize?: string }> = {
+// `media` suites play a clip and a stream the gate makes and serves for the run.
+const suites: Record<string, { source: string, tests: string, count: number, unitTests?: string, unitCount?: number, support?: string[], contentSize?: string, media?: boolean }> = {
   hud: { source: 'native-hud-device.stx', tests: 'NativeHudUITests', count: 1 },
   controls: { source: 'shared-controls-device.stx', tests: 'SharedControlsUITests', count: 3 },
   overlays: { source: 'shared-overlays-device.stx', tests: 'SharedPortabilityUITests', count: 4, unitTests: 'SharedOverlaysNativeTests', unitCount: 2, support: ['SpokenStops.swift'] },
   images: { source: 'shared-image-device.stx', tests: 'SharedImageUITests', count: 1, unitTests: 'SharedImageNativeTests', unitCount: 6 },
   videos: { source: 'shared-video-device.stx', tests: 'SharedVideoUITests', count: 1, unitTests: 'SharedVideoNativeTests', unitCount: 4 },
+  streams: { source: 'shared-video-device.stx', tests: 'SharedVideoUITests', count: 1, unitTests: 'SharedVideoStreamNativeTests', unitCount: 3, media: true },
   toggles: { source: 'shared-toggle-device.stx', tests: 'SharedToggleUITests', count: 2, unitTests: 'SharedToggleNativeTests', unitCount: 3 },
   accessibility: { source: 'shared-accessibility-device.stx', tests: 'SharedAccessibilityUITests', count: 4 },
   lists: { source: 'shared-lists-device.stx', tests: 'SharedListsUITests', count: 3, unitTests: 'SharedListsNativeTests', unitCount: 2, support: ['SpokenStops.swift'] },
@@ -38,7 +40,7 @@ const suites: Record<string, { source: string, tests: string, count: number, uni
 }
 if (!values['craft-root'] || !values.simulator || !['light', 'dark'].includes(values.appearance!) || !suites[values.suite!]
   || !['portrait', 'landscape'].includes(values.orientation!) || !['ltr', 'rtl'].includes(values.direction!))
-  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|controls|hud|images|videos|toggles|accessibility|forms|lists|text-size] [--content-size large|accessibility-extra-extra-extra-large|...] [--orientation portrait|landscape] [--direction ltr|rtl] [--increase-contrast]')
+  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|controls|hud|images|videos|toggles|accessibility|forms|lists|text-size|streams] [--content-size large|accessibility-extra-extra-extra-large|...] [--orientation portrait|landscape] [--direction ltr|rtl] [--increase-contrast]')
 const suite = suites[values.suite!]
 const contentSize = values['content-size'] ?? suite.contentSize ?? 'large'
 
@@ -46,6 +48,11 @@ function run(command: string[], cwd?: string, capture = false, allowFailure = fa
   const result = Bun.spawnSync(command, { cwd, stdout: capture ? 'pipe' : 'inherit', stderr: 'inherit', env: { ...process.env, ...env } })
   if (result.exitCode !== 0 && !allowFailure) throw new Error(`${command[0]} failed with exit ${result.exitCode}`)
   return capture ? result.stdout?.toString().trim() ?? '' : ''
+}
+
+/** Run to the end without blocking, so the media server above can answer meanwhile. */
+async function runWhileServing(command: string[], cwd: string, env: Record<string, string>): Promise<void> {
+  await Bun.spawn(command, { cwd, stdout: 'inherit', stderr: 'inherit', env: { ...process.env, ...env } }).exited
 }
 
 const craft = resolve(values['craft-root'])
@@ -137,8 +144,38 @@ const rtlKeys = ['AppleTextDirection', 'NSForceRightToLeftWritingDirection']
 for (const key of rtlKeys) {
   run(['xcrun', 'simctl', 'spawn', values.simulator, 'defaults', ...(values.direction === 'rtl' ? ['write', '-g', key, '-bool', 'YES'] : ['delete', '-g', key])], undefined, false, true)
 }
+// A film over the network, as an app's would arrive: one file fetched in
+// ranges, and one stream cut into segments. Made here so the run needs no
+// network and ships no one's footage, and served on this machine, which a
+// simulator reaches as localhost.
+let media: ReturnType<typeof Bun.serve> | undefined
+if (suite.media) {
+  const dir = join(workspace, 'media')
+  mkdirSync(dir)
+  const picture = ['-f', 'lavfi', '-i', 'testsrc=duration=4:size=128x72:rate=10', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=4']
+  const encode = ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-g', '10', '-c:a', 'aac', '-shortest']
+  run(['ffmpeg', '-loglevel', 'error', '-y', ...picture, ...encode, '-movflags', '+faststart', join(dir, 'clip.mp4')])
+  run(['ffmpeg', '-loglevel', 'error', '-y', ...picture, ...encode, '-f', 'hls', '-hls_time', '1', '-hls_playlist_type', 'vod', '-hls_segment_filename', join(dir, 'part%d.ts'), join(dir, 'stream.m3u8')])
+  const types: Record<string, string> = { mp4: 'video/mp4', m3u8: 'application/vnd.apple.mpegurl', ts: 'video/mp2t' }
+  media = Bun.serve({
+    hostname: '127.0.0.1',
+    port: 0,
+    async fetch(request) {
+      const name = new URL(request.url).pathname.slice(1)
+      const file = Bun.file(join(dir, name))
+      if (!/^[\w.-]+$/.test(name) || !await file.exists()) return new Response('Not found', { status: 404 })
+      const headers: Record<string, string> = { 'Content-Type': types[name.split('.').pop()!] ?? 'application/octet-stream', 'Accept-Ranges': 'bytes' }
+      // AVPlayer reads a file in ranges and gives up on a server that ignores them.
+      const range = /^bytes=(\d*)-(\d*)$/.exec(request.headers.get('range') ?? '')
+      if (!range) return new Response(file, { headers })
+      const end = range[2] ? Math.min(Number(range[2]), file.size - 1) : file.size - 1
+      const start = range[1] ? Number(range[1]) : Math.max(0, file.size - Number(range[2]))
+      return new Response(file.slice(start, end + 1), { status: 206, headers: { ...headers, 'Content-Range': `bytes ${start}-${end}/${file.size}` } })
+    },
+  })
+}
 const results = join(workspace, 'TestResults.xcresult')
-run(['xcodebuild', '-project', 'StxPortability.xcodeproj', '-scheme', 'StxPortability',
+await runWhileServing(['xcodebuild', '-project', 'StxPortability.xcodeproj', '-scheme', 'StxPortability',
   '-configuration', 'Debug', '-destination', `id=${values.simulator}`,
   '-derivedDataPath', join(workspace, 'DerivedData'), '-resultBundlePath', results,
   '-parallel-testing-enabled', 'NO', '-collect-test-diagnostics', 'never',
@@ -146,7 +183,8 @@ run(['xcodebuild', '-project', 'StxPortability.xcodeproj', '-scheme', 'StxPortab
   'CODE_SIGN_IDENTITY=-', 'CODE_SIGNING_REQUIRED=NO', 'ENABLE_TESTABILITY=YES',
   'ONLY_ACTIVE_ARCH=YES', 'SWIFT_OPTIMIZATION_LEVEL=-Onone', 'test',
   `-only-testing:SharedPortabilityUITests/${suite.tests}`,
-  ...(suite.unitTests ? [`-only-testing:SharedPortabilityUnitTests/${suite.unitTests}`] : [])], output, false, true, { TEST_RUNNER_STX_ORIENTATION: values.orientation!, TEST_RUNNER_STX_REFERENCE: reference ? '1' : '0' })
+  ...(suite.unitTests ? [`-only-testing:SharedPortabilityUnitTests/${suite.unitTests}`] : [])], output, { TEST_RUNNER_STX_ORIENTATION: values.orientation!, TEST_RUNNER_STX_REFERENCE: reference ? '1' : '0', ...(media ? { TEST_RUNNER_STX_MEDIA_URL: `http://localhost:${media.port}` } : {}) })
+media?.stop(true)
 // The device is the caller's: leave it as a fresh one is.
 run(['xcrun', 'simctl', 'ui', values.simulator, 'content_size', 'large'], undefined, false, true)
 run(['xcrun', 'simctl', 'ui', values.simulator, 'increase_contrast', 'disabled'], undefined, false, true)

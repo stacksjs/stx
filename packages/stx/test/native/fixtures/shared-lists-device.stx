@@ -2,6 +2,7 @@
      filter row (stacksjs/stx#2184): a row read as one thing, a pager whose
      pages and dots can be reached, the current page and filter said to be
      so. Compiled by STX and run in the maintained iOS gate. --}}
+@import('Button', '../../../../components/src/ui/button/Button.stx')
 @import('GroupedList', '../../../../components/src/ui/grouped-list/GroupedList.stx')
 @import('GroupedListRow', '../../../../components/src/ui/grouped-list/GroupedListRow.stx')
 @import('SectionCard', '../../../../components/src/ui/mobile/SectionCard.stx')
@@ -20,7 +21,7 @@ window.listProbe = { opened, page }
   {{-- A named group of controls an app writes for itself. A list is the one
        container both hosts can name and still let a reader into. --}}
   <div role="list" aria-label="Exercises" class="flex-row gap-2">
-    <button testID="list-pill" aria-label="Remove squats">Squats</button>
+    <Button testID="list-pill" size="sm" variant="secondary" ariaLabel="Remove squats">Squats</Button>
   </div>
   <GroupedList testID="list-account" title="Account" footer="Signed in">
     <GroupedListRow testID="list-profile" title="Profile" subtitle="Name and photo" chevron @select="opened.set(opened() + 1)" />
