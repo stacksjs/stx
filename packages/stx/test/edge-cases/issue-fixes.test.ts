@@ -852,7 +852,7 @@ const current = state(1)
       ['checkbox/Checkbox.stx', "useReactiveProp('checked',"],
       ['radio/Radio.stx', "useReactiveProp('checked',"],
       ['input/TextInput.stx', "useModel('value',"],
-      ['input/PasswordInput.stx', "useReactiveProp('value',"],
+      ['input/PasswordInput.stx', "useModel('value',"],
       ['input/NumberInput.stx', "useModel('value',"],
       ['select/Select.stx', "useModel('value',"],
       ['textarea/Textarea.stx', "useModel('value',"],
