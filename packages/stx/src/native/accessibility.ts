@@ -29,7 +29,23 @@ const STATE_KEYS: Record<string, string> = {
   'aria-disabled': 'disabled',
   'aria-expanded': 'expanded',
   'aria-busy': 'busy',
+  // The page, step or link someone is on. Neither host has a word for
+  // "current", and "selected" is what both say for the one of several that is.
+  'aria-current': 'selected',
 }
+
+/**
+ * Marks a box that names a group of controls (set by the compiler).
+ *
+ * A browser reads `<div role="group" aria-label="Pages">` as a name for what
+ * is inside. A host has no such thing for a plain box: a View with a label is
+ * one stop for a screen reader, and whatever is inside it can no longer be
+ * reached. The shared Pager was one stop called "Tour", its pages and its
+ * page dots gone. So the name of such a box is not sent: the group goes
+ * unnamed and its controls stay reachable, which is the half that matters.
+ * Hosts' own containers (a scroll view, a tab strip, a dialog) keep theirs.
+ */
+export const READER_GROUP = 'data-stx-reader-group'
 
 /**
  * ARIA roles a host can announce, in its own vocabulary.
@@ -82,6 +98,9 @@ export function isAccessibilityAttribute(name: string): boolean {
 function stateValue(name: string, value: unknown): boolean | 'mixed' | undefined {
   if (value === undefined || value === null) return undefined
   const text = String(value).trim().toLowerCase()
+  // `aria-current` is a token list ("page", "step", "date"), and every token
+  // but "false" means this is the current one.
+  if (name === 'aria-current') return text !== 'false'
   if (text === 'mixed') return name === 'aria-checked' ? 'mixed' : true
   // A bare attribute (`aria-busy`) is HTML's true; "undefined" is ARIA's
   // spelling of "not set".
@@ -89,7 +108,8 @@ function stateValue(name: string, value: unknown): boolean | 'mixed' | undefined
   return text === '' || text === 'true'
 }
 
-function nativeRole(value: unknown): string | null {
+/** The role a host would announce for an ARIA `role`, or null where it has none. */
+export function nativeRole(value: unknown): string | null {
   if (value === undefined || value === null) return null
   // ARIA allows a fallback list (`role="switch checkbox"`): the first one a
   // host understands is the one to use.
@@ -151,6 +171,8 @@ export function applyStaticAccessibility(props: Record<string, unknown>): void {
   // written on, not what is inside it: a host has no prop for a subtree.
   if (stateValue('aria-hidden', props['aria-hidden']) === true)
     derived.accessibilityRole = 'none'
+  if (props[READER_GROUP] !== undefined)
+    delete derived.accessibilityLabel
   for (const key of ['accessibilityLabel', 'accessibilityRole', 'accessibilityValue']) {
     if (props[key] === undefined && derived[key] !== undefined && derived[key] !== null)
       props[key] = derived[key]

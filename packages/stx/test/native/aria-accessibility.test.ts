@@ -38,7 +38,11 @@ const destination = state('/details')
 describe('static ARIA in the compiled tree', () => {
   it('labels, roles and states a composed button', async () => {
     const { root } = await translateHtmlToIR('<div role="group" aria-label="Filter"><button type="button" role="tab" aria-selected="true" aria-label="All clubs"><span>All</span></button></div>')
-    expect(root.props.accessibilityLabel).toBe('Filter')
+    // A box that names a group of controls keeps the name as ARIA and does
+    // not send it: a labelled view is one stop for a screen reader, and the
+    // button inside it could no longer be reached (reader-groups.test.ts).
+    expect(root.props['aria-label']).toBe('Filter')
+    expect(root.props.accessibilityLabel).toBeUndefined()
     // A container role is not announced: Android reads the role aloud.
     expect(root.props.accessibilityRole).toBeUndefined()
     const button = root.children[0] as any

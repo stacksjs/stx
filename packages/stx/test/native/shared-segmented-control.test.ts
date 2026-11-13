@@ -52,8 +52,12 @@ describe('SegmentedControl on a native host', () => {
     const phone = mountNativeScreen(code, 'Screen', { globals: { console: { ...console, error: (...args: unknown[]) => errors.push(args) } } })
     await phone.settle()
 
+    // Drawn from parts, the group is a plain box: its name stays an ARIA
+    // attribute and is not sent as a label, which would make the box one
+    // stop for a screen reader and put every segment out of reach.
     const group = phone.byTestID('period')!
-    expect(group.props.accessibilityLabel).toBe('Period')
+    expect(group.props['aria-label']).toBe('Period')
+    expect(group.props.accessibilityLabel).toBeUndefined()
     const segment = (value: string) => phone.byTestID(`period-${value}`)!
     expect(segment('week').type).toBe('Pressable')
     expect(phone.all().some(node => node.children.includes('This month'))).toBe(true)
@@ -117,12 +121,24 @@ const name = state('Range')
 window.probe = { name }
 </script><div><SegmentedControl testID="range" :label="name()" value="a" :options="['a', 'b']" /></div>`)
     const { code } = await compileSharedScreenBundle(file, { root })
-    const phone = mountNativeScreen(code, 'Screen')
+    // The platform's own segmented control is a container a host can name.
+    const phone = mountNativeScreen(code, 'Screen', { capabilities: ['nativePlatformControls'] })
     await phone.settle()
+    expect(phone.byTestID('range')!.type).toBe('SegmentedControl')
     expect(phone.byTestID('range')!.props.accessibilityLabel).toBe('Range')
     phone.context.probe.name.set('Zeitraum')
     await phone.settle()
     expect(phone.byTestID('range')!.props.accessibilityLabel).toBe('Zeitraum')
+    unmountAllNativeScreens()
+
+    // Drawn from parts it is a box, which follows the name without sending it.
+    const parts = mountNativeScreen(code, 'Screen')
+    await parts.settle()
+    expect(parts.byTestID('range')!.props).toMatchObject({ 'aria-label': 'Range' })
+    parts.context.probe.name.set('Zeitraum')
+    await parts.settle()
+    expect(parts.byTestID('range')!.props).toMatchObject({ 'aria-label': 'Zeitraum' })
+    expect(parts.byTestID('range')!.props.accessibilityLabel ?? null).toBeNull()
   }, 30_000)
 })
 

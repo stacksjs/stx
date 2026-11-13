@@ -216,7 +216,10 @@ defineExpose({ selected, count, go, next, prev })
 
 <section class="{{ rootClasses }}" aria-roledescription="carousel" @if(label)aria-label="{{ label }}"@endif @keydown="onKey($event)">
   @if(nativeHost)
-    <div data-native="ScrollView" horizontal pagingEnabled :pageIndex="selected()" :scrollEnabled="allowSwipe" showsHorizontalScrollIndicator="false" showsVerticalScrollIndicator="false" class="flex-1 min-h-0" @page-selected="onNativePage($event)">
+    {{-- A host's scroller is where a pager's name goes: it announces the
+         name on the way in and leaves the pages inside reachable, which the
+         box around it cannot do (a named box is a single stop). --}}
+    <div data-native="ScrollView" @if(label)aria-label="{{ label }}"@endif horizontal pagingEnabled :pageIndex="selected()" :scrollEnabled="allowSwipe" showsHorizontalScrollIndicator="false" showsVerticalScrollIndicator="false" class="flex-1 min-h-0" @page-selected="onNativePage($event)">
       <slot />
     </div>
   @else

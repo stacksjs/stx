@@ -26,7 +26,7 @@
  * plausible tree that renders as the wrong screen.
  */
 import type { STXDocument, STXNode, STXStyle } from './ir'
-import { ACCESSIBILITY_FIELDS, projectAccessibility } from '../accessibility'
+import { ACCESSIBILITY_FIELDS, nativeRole, projectAccessibility, READER_GROUP } from '../accessibility'
 import { applyStaticTextEntry } from '../text-entry'
 import { NATIVE_EVENT_NAMES as EVENT_NAMES } from '../event-names'
 import { NATIVE_BOOLEAN_PROPS, nativePropName } from '../prop-names'
@@ -485,6 +485,15 @@ function settle(frame: Frame, diagnostics: TranslationDiagnostic[]): STXNode {
     return node
   }
 
+  // A Text is a box of its own on a host, so the indentation a template puts
+  // around its words is not a space between two words. Left in, a list row's
+  // title drew a space in from the lines under it and was read out as
+  // " Second ".
+  if (node.type === 'Text' && elements.length === 0 && node.children.length > 0) {
+    node.children = text ? [text] : []
+    return node
+  }
+
   if (CONTAINER_TYPES.has(node.type) && elements.length > 0)
     node.children = elements
 
@@ -833,10 +842,41 @@ export async function translateHtmlToIR(
     }
   }
   nameControlsFromLabels(root)
+  markReaderGroups(root)
   project(root)
   boundScrollingViewports(root)
 
   return { root, diagnostics }
+}
+
+/** What a screen reader operates: a stop of its own inside whatever holds it. */
+const READER_CONTROLS = new Set([
+  'Button', 'Link', 'TouchableOpacity', 'TouchableHighlight', 'Pressable',
+  'TextInput', 'Switch', 'Checkbox', 'Slider', 'Picker', 'SegmentedControl', 'DatePicker',
+])
+
+/** Whether anything under a node is a control, a link or takes a press. */
+function holdsControl(node: STXNode): boolean {
+  return node.children.some(child => typeof child !== 'string'
+    && (READER_CONTROLS.has(child.type) || child.events.onPress !== undefined || child.props.href !== undefined || holdsControl(child)))
+}
+
+/**
+ * Mark the plain boxes whose label names a group of controls (see
+ * READER_GROUP). A labelled box holding only words or pictures stays one
+ * stop, read by its label: that is what `aria-label` on a rating or a badge
+ * means. One that says what it is with a role a host knows keeps its label
+ * too, since the host decides what a tab strip or an image is.
+ */
+function markReaderGroups(node: STXNode): void {
+  const labelled = node.props['aria-label'] !== undefined || node.bindings?.['aria-label'] !== undefined
+  // `group`, `region`, `dialog`: roles a host has no word for, so the box
+  // would be announced by its label alone and then hold a reader out.
+  if (node.type === 'View' && labelled && nativeRole(node.props.role) === null && node.events.onPress === undefined && holdsControl(node))
+    node.props[READER_GROUP] = ''
+  for (const child of node.children) {
+    if (typeof child !== 'string') markReaderGroups(child)
+  }
 }
 
 /** Controls a `<label for>` can name: what a reader stops on as one thing. */

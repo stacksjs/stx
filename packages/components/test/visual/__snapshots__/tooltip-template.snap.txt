@@ -229,6 +229,15 @@ function describeTrigger() {
   target.setAttribute('aria-describedby', existing.join(' '))
 }
 
+/*
+ * A host has no `aria-describedby`. What it has is a hint: the sentence a
+ * screen reader adds after a control's name. Without it the words of a
+ * tooltip reached nobody who could not see them appear, since a reader has no
+ * reason to tap a button twice to find out what it is for. The hint is bound
+ * on the wrapper, which is the stop a reader makes: it is what takes the press.
+ */
+const nativeHint = derived(() => isDisabled() ? null : (String(tooltipContent() ?? '').trim() || null))
+
 let restorePanel = null
 onMount(() => {
   describeTrigger()
@@ -249,6 +258,7 @@ onDestroy(() => { if (restorePanel) restorePanel() })
        itself (stacksjs/stx#2048). --}}
     <span
     data-native="Pressable"
+    @if($native):accessibilityHint="nativeHint()"@endif
     x-ref="triggerRef"
     @click="toggleTouch($event)"
     @mouseenter="showTooltip()"

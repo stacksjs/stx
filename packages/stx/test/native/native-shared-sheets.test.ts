@@ -124,7 +124,10 @@ describe.each(['ios', 'android'] as const)('shared overlays on %s', (platform) =
     await phone.settle()
     const modal = phone.byTestID('filters')!
     expect(modal.props).toMatchObject({ animationType: 'slide', visible: true, sheetDetents: ['medium', 'large'] })
-    const sheet = phone.find(node => node.props.accessibilityLabel === 'Filters' && node.style.borderTopLeftRadius === 10)!
+    // Found by its ARIA name, which is not sent to the host as a label: a
+    // named box would be one stop for a screen reader, close button and all.
+    const sheet = phone.find(node => node.props['aria-label'] === 'Filters' && node.style.borderTopLeftRadius === 10)!
+    expect(sheet.props.accessibilityLabel).toBeUndefined()
     expect(sheet.style.backgroundColor).toBe('#f2f2f7')
     expect(phone.find(node => node.type === 'Text' && node.children[0] === 'Filters')!.style).toMatchObject({ fontSize: 17, fontWeight: '600' })
     const close = phone.find(node => node.props.accessibilityLabel === 'Close panel')!
