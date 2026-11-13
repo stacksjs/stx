@@ -13,12 +13,18 @@ const email = state('')
 const secret = state('')
 const sport = state('')
 const period = state('week')
+const notes = state('')
 </script>
-<section class="p-4 gap-3 bg-white dark:bg-black text-black dark:text-white">
+{{-- A form is longer than a small phone, or any phone on its side: it scrolls. --}}
+<div data-native="ScrollView" class="flex-1 bg-white dark:bg-black">
+<section class="p-4 gap-3 text-black dark:text-white">
   <TextInput testID="form-name" label="Full name" placeholder="Ada Lovelace" v-model:value="name" />
   <EmailInput testID="form-email" label="Email" v-model:value="email" />
   <PasswordInput testID="form-password" label="Password" v-model:value="secret" />
   <Select testID="form-sport" label="Sport" v-model:value="sport" :options="[{ value: 'run', label: 'Run' }, { value: 'ride', label: 'Ride' }]" />
   <SegmentedControl testID="form-period" label="Period" stretch v-model:value="period" :options="[{ value: 'week', label: 'This week' }, { value: 'month', label: 'This month' }, { value: 'all', label: 'All time', disabled: true }]" />
+  {{-- The last field of a form is the one a keyboard would cover. --}}
+  <TextInput testID="form-notes" label="Notes" enterKeyHint="done" v-model:value="notes" />
   <span testID="form-summary" :text="'Summary: ' + name() + ', ' + email() + ', ' + secret().length + ' characters, ' + (sport() || 'no sport') + ', ' + period()"></span>
 </section>
+</div>

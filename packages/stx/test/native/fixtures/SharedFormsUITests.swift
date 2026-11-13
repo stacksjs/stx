@@ -48,9 +48,10 @@ final class SharedFormsUITests: XCTestCase {
         waitFor(app.textFields["form-email"], "value == %@", "ada@example.com")
 
         let password = app.secureTextFields["form-password"]
+        app.reach(password)
         password.tap()
         app.typeText("hunter2")
-        waitFor(summary, "label == %@", "Summary: Ada, ada@example.com, 7 characters, no sport, week")
+        waitFor(app.secureTextFields["form-password"], "value == %@", "•••••••")
         // Hidden: a reader hears bullets, not the password.
         XCTAssertNotEqual(password.value as? String, "hunter2")
 
@@ -64,7 +65,10 @@ final class SharedFormsUITests: XCTestCase {
         app.buttons["Hide password"].tap()
         XCTAssertTrue(app.secureTextFields["form-password"].waitForExistence(timeout: 10))
 
+        // Put the keyboard away: on a small phone it covers the rest of the form.
+        app.typeText("\n")
         let sport = app.buttons["form-sport"]
+        app.reach(sport)
         sport.tap()
         let run = app.buttons["Run"]
         XCTAssertTrue(run.waitForExistence(timeout: 10))
@@ -72,7 +76,9 @@ final class SharedFormsUITests: XCTestCase {
         waitFor(sport, "value == %@", "Run")
         XCTAssertEqual(sport.label, "Sport")
 
+        app.reach(app.buttons["form-period-month"])
         app.buttons["form-period-month"].tap()
+        app.reach(summary)
         waitFor(summary, "label == %@", "Summary: Ada, ada@example.com, 7 characters, run, month")
         XCTAssertTrue(app.buttons["form-period-month"].isSelected)
         XCTAssertFalse(app.buttons["form-period-week"].isSelected)
@@ -80,6 +86,25 @@ final class SharedFormsUITests: XCTestCase {
         app.buttons["form-period-all"].tap()
         XCTAssertTrue(app.buttons["form-period-month"].isSelected)
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.lifetime = .keepAlways; add(shot)
+    }
+
+    /// The field at the bottom of a form is the one a keyboard covers. It is
+    /// moved above the keyboard when it takes focus, and its return key puts
+    /// the keyboard away.
+    func testTheLastFieldStaysAboveTheKeyboard() {
+        let app = launch()
+        let notes = app.textFields["form-notes"]
+        app.reach(notes)
+        notes.tap()
+        let keyboard = app.keyboards.firstMatch
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 10))
+        app.typeText("Remember")
+        waitFor(notes, "value == %@", "Remember")
+        XCTAssertLessThanOrEqual(notes.frame.maxY, keyboard.frame.minY + 1, "The field being typed in is under the keyboard")
+        XCTAssertTrue(notes.isHittable)
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.lifetime = .keepAlways; add(shot)
+        app.typeText("\n")
+        XCTAssertTrue(keyboard.waitForNonExistence(timeout: 10), "Done left the keyboard up")
     }
 
     /// The system's own accessibility audit of the form, all of it. What it
@@ -115,10 +140,7 @@ final class SharedFormsUITests: XCTestCase {
         if XCUIDevice.shared.appearance == .dark {
             // The placeholder grey on the fields' dark fill.
             known += fields.map { "contrast \($0)" }
-        } else {
-            // The host's navigation title, not a shared component (craft-native/craft#531).
-            known.append("contrast \"main\"")
         }
-        XCTAssertEqual(found.sorted(), known.sorted(), "The system audit found:\n" + details.joined(separator: "\n"))
+        Gate.checkAudit(found: found, known: known, details: details)
     }
 }

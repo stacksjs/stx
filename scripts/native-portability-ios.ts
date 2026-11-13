@@ -16,6 +16,11 @@ const { values } = parseArgs({ options: {
   // The text size the simulator is set to for the run, in simctl's words
   // (`large` is the default; `accessibility-extra-extra-extra-large` the top).
   'content-size': { type: 'string' },
+  // How the device is held, which way its text runs, and whether the
+  // reader has asked for stronger contrast.
+  orientation: { type: 'string', default: 'portrait' },
+  direction: { type: 'string', default: 'ltr' },
+  'increase-contrast': { type: 'boolean', default: false },
 } })
 // `support` files are compiled into the unit-test bundle beside `unitTests`.
 // `contentSize` is the text size a suite is about, unless the caller names one.
@@ -29,15 +34,16 @@ const suites: Record<string, { source: string, tests: string, count: number, uni
   accessibility: { source: 'shared-accessibility-device.stx', tests: 'SharedAccessibilityUITests', count: 4 },
   lists: { source: 'shared-lists-device.stx', tests: 'SharedListsUITests', count: 3, unitTests: 'SharedListsNativeTests', unitCount: 2, support: ['SpokenStops.swift'] },
   'text-size': { source: 'shared-text-size-device.stx', tests: 'SharedTextSizeUITests', count: 1, unitTests: 'SharedTextSizeNativeTests', unitCount: 1, contentSize: 'accessibility-extra-extra-extra-large' },
-  forms: { source: 'shared-forms-device.stx', tests: 'SharedFormsUITests', count: 3, unitTests: 'SharedFormsNativeTests', unitCount: 2, support: ['SpokenStops.swift'] },
+  forms: { source: 'shared-forms-device.stx', tests: 'SharedFormsUITests', count: 4, unitTests: 'SharedFormsNativeTests', unitCount: 2, support: ['SpokenStops.swift'] },
 }
-if (!values['craft-root'] || !values.simulator || !['light', 'dark'].includes(values.appearance!) || !suites[values.suite!])
-  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|controls|hud|images|videos|toggles|accessibility|forms|lists|text-size] [--content-size large|accessibility-extra-extra-extra-large|...]')
+if (!values['craft-root'] || !values.simulator || !['light', 'dark'].includes(values.appearance!) || !suites[values.suite!]
+  || !['portrait', 'landscape'].includes(values.orientation!) || !['ltr', 'rtl'].includes(values.direction!))
+  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|controls|hud|images|videos|toggles|accessibility|forms|lists|text-size] [--content-size large|accessibility-extra-extra-extra-large|...] [--orientation portrait|landscape] [--direction ltr|rtl] [--increase-contrast]')
 const suite = suites[values.suite!]
 const contentSize = values['content-size'] ?? suite.contentSize ?? 'large'
 
-function run(command: string[], cwd?: string, capture = false, allowFailure = false): string {
-  const result = Bun.spawnSync(command, { cwd, stdout: capture ? 'pipe' : 'inherit', stderr: 'inherit' })
+function run(command: string[], cwd?: string, capture = false, allowFailure = false, env: Record<string, string> = {}): string {
+  const result = Bun.spawnSync(command, { cwd, stdout: capture ? 'pipe' : 'inherit', stderr: 'inherit', env: { ...process.env, ...env } })
   if (result.exitCode !== 0 && !allowFailure) throw new Error(`${command[0]} failed with exit ${result.exitCode}`)
   return capture ? result.stdout?.toString().trim() ?? '' : ''
 }
@@ -54,6 +60,10 @@ const device = Object.entries(devices.devices as Record<string, Array<{ udid: st
 if (!device)
   throw new Error('The specified owned simulator must already be booted')
 
+// The known lists in the suites were written against one phone, held upright,
+// at the text size the suite is about. Any other run is told it is one.
+const reference = device.type === 'iPhone-17-Pro' && values.orientation === 'portrait' && values.direction === 'ltr'
+  && !values['increase-contrast'] && contentSize === (suite.contentSize ?? 'large')
 const workspace = mkdtempSync(join(tmpdir(), 'stx-portability-ios-'))
 console.log(`Evidence retained at ${workspace}`)
 const root = resolve(import.meta.dir, '..')
@@ -64,10 +74,13 @@ const compiled = await compileSharedScreenBundle(join(fixtures, suite.source), {
 writeFileSync(join(workspace, 'compile.json'), JSON.stringify({ diagnostics: compiled.diagnostics, dependencies: compiled.dependencies }, null, 2))
 const sdk = await import(pathToFileURL(join(craft, 'packages/ios/src/index.ts')).href)
 const output = join(workspace, 'StxPortability')
-await sdk.init({ name: 'StxPortability', bundleId: 'dev.stx.portability', output, runtimeDir: null, config: { renderer: 'native', appearance: 'system' } })
+// An app turns only as far as it says it supports; a landscape run needs one that does.
+const orientations = values.orientation === 'landscape' ? { orientations: ['portrait', 'landscape-left', 'landscape-right'] } : {}
+await sdk.init({ name: 'StxPortability', bundleId: 'dev.stx.portability', output, runtimeDir: null, config: { renderer: 'native', appearance: 'system', ...orientations } })
 await sdk.build({ output, nativeBundlePath: bundle, generateProject: false, runtimeDir: null })
 mkdirSync(join(output, 'UITests'))
 copyFileSync(join(fixtures, `${suite.tests}.swift`), join(output, `UITests/${suite.tests}.swift`))
+copyFileSync(join(fixtures, 'GateSettings.swift'), join(output, 'UITests/GateSettings.swift'))
 if (suite.unitTests) {
   mkdirSync(join(output, 'UnitTests'))
   copyFileSync(join(fixtures, `${suite.unitTests}.swift`), join(output, `UnitTests/${suite.unitTests}.swift`))
@@ -99,6 +112,7 @@ const targets = `${unitTarget}
     settings:
       TEST_TARGET_NAME: StxPortability
       GENERATE_INFOPLIST_FILE: YES
+      INFOPLIST_KEY_NSPrincipalClass: GateSettings
       PRODUCT_BUNDLE_IDENTIFIER: dev.stx.portability.uitests
       SWIFT_VERSION: "5.0"
 `
@@ -110,12 +124,19 @@ project = project.replace(test, `${test}      targets:\n        - SharedPortabil
 writeFileSync(projectFile, project)
 if (craftCommit !== run(['git', 'rev-parse', 'HEAD'], craft, true) || run(['git', 'status', '--porcelain'], craft, true))
   throw new Error('Craft changed during generation; rerun with a stable checkout')
-const hashes = Object.fromEntries([bundle, ...compiled.dependencies, join(fixtures, `${suite.tests}.swift`), ...(suite.unitTests ? [join(fixtures, `${suite.unitTests}.swift`)] : []), ...(suite.support ?? []).map(file => join(fixtures, file))]
+const hashes = Object.fromEntries([bundle, ...compiled.dependencies, join(fixtures, `${suite.tests}.swift`), join(fixtures, 'GateSettings.swift'), ...(suite.unitTests ? [join(fixtures, `${suite.unitTests}.swift`)] : []), ...(suite.support ?? []).map(file => join(fixtures, file))]
   .map(file => [file, createHash('sha256').update(readFileSync(file)).digest('hex')]))
-writeFileSync(join(workspace, 'provenance.json'), JSON.stringify({ craftCommit, stxCommit: run(['git', 'rev-parse', 'HEAD'], root, true), stxWorkingTree: run(['git', 'status', '--porcelain'], root, true), hashes, appearance: values.appearance, contentSize, simulator: values.simulator, device }, null, 2))
+writeFileSync(join(workspace, 'provenance.json'), JSON.stringify({ craftCommit, stxCommit: run(['git', 'rev-parse', 'HEAD'], root, true), stxWorkingTree: run(['git', 'status', '--porcelain'], root, true), hashes, appearance: values.appearance, contentSize, orientation: values.orientation, direction: values.direction, increaseContrast: values['increase-contrast'], reference, simulator: values.simulator, device }, null, 2))
 run(['xcodegen', 'generate'], output)
 run(['xcrun', 'simctl', 'ui', values.simulator, 'appearance', values.appearance!])
 run(['xcrun', 'simctl', 'ui', values.simulator, 'content_size', contentSize])
+run(['xcrun', 'simctl', 'ui', values.simulator, 'increase_contrast', values['increase-contrast'] ? 'enabled' : 'disabled'])
+// Right-to-left is the system's own pseudolanguage switch: every app launched
+// after it lays out as it would in Arabic or Hebrew, in the fixture's words.
+const rtlKeys = ['AppleTextDirection', 'NSForceRightToLeftWritingDirection']
+for (const key of rtlKeys) {
+  run(['xcrun', 'simctl', 'spawn', values.simulator, 'defaults', ...(values.direction === 'rtl' ? ['write', '-g', key, '-bool', 'YES'] : ['delete', '-g', key])], undefined, false, true)
+}
 const results = join(workspace, 'TestResults.xcresult')
 run(['xcodebuild', '-project', 'StxPortability.xcodeproj', '-scheme', 'StxPortability',
   '-configuration', 'Debug', '-destination', `id=${values.simulator}`,
@@ -125,9 +146,11 @@ run(['xcodebuild', '-project', 'StxPortability.xcodeproj', '-scheme', 'StxPortab
   'CODE_SIGN_IDENTITY=-', 'CODE_SIGNING_REQUIRED=NO', 'ENABLE_TESTABILITY=YES',
   'ONLY_ACTIVE_ARCH=YES', 'SWIFT_OPTIMIZATION_LEVEL=-Onone', 'test',
   `-only-testing:SharedPortabilityUITests/${suite.tests}`,
-  ...(suite.unitTests ? [`-only-testing:SharedPortabilityUnitTests/${suite.unitTests}`] : [])], output, false, true)
-// The device is the caller's: leave its text size as a fresh one has it.
+  ...(suite.unitTests ? [`-only-testing:SharedPortabilityUnitTests/${suite.unitTests}`] : [])], output, false, true, { TEST_RUNNER_STX_ORIENTATION: values.orientation!, TEST_RUNNER_STX_REFERENCE: reference ? '1' : '0' })
+// The device is the caller's: leave it as a fresh one is.
 run(['xcrun', 'simctl', 'ui', values.simulator, 'content_size', 'large'], undefined, false, true)
+run(['xcrun', 'simctl', 'ui', values.simulator, 'increase_contrast', 'disabled'], undefined, false, true)
+for (const key of rtlKeys) run(['xcrun', 'simctl', 'spawn', values.simulator, 'defaults', 'delete', '-g', key], undefined, false, true)
 const summary = JSON.parse(run(['xcrun', 'xcresulttool', 'get', 'test-results', 'summary', '--path', results], undefined, true))
 writeFileSync(join(workspace, 'summary.json'), JSON.stringify(summary, null, 2))
 const expectedCount = suite.count + (suite.unitCount ?? 0)

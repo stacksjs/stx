@@ -16,10 +16,11 @@ it.each([['ios', false], ['ios', true], ['android', false], ['android', true]] a
   try {
     await phone.settle()
     const named = (id: string): unknown => phone.byTestID(id)!.props.accessibilityLabel
-    expect(['form-name', 'form-email', 'form-password', 'form-sport'].map(named)).toEqual(['Full name', 'Email', 'Password', 'Sport'])
+    expect(['form-name', 'form-email', 'form-password', 'form-sport', 'form-notes'].map(named)).toEqual(['Full name', 'Email', 'Password', 'Sport', 'Notes'])
+    expect(phone.byTestID('form-notes')!.props.returnKeyType).toBe('done')
     // The captions drawn above the fields are read as the names, not again as lines.
     const captions = phone.all().filter(node => typeof node.props.for === 'string')
-    expect(captions.map(node => node.props.accessibilityRole)).toEqual(['none', 'none', 'none', 'none'])
+    expect(captions.map(node => node.props.accessibilityRole)).toEqual(['none', 'none', 'none', 'none', 'none'])
     expect(phone.byTestID('form-password')!.props).toMatchObject({ secureTextEntry: true, autoComplete: 'current-password' })
     expect(phone.byTestID('form-email')!.props).toMatchObject({ keyboardType: 'email-address', autoCapitalize: 'none', autoComplete: 'email' })
 

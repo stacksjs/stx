@@ -18,7 +18,9 @@ it.each([['ios', false], ['ios', true], ['android', false], ['android', true]] a
     // around its dots are not, or a reader could not get inside them.
     const pager = phone.all().find(node => node.type === 'ScrollView' && node.props.pagingEnabled === true)!
     expect(pager.props.accessibilityLabel).toBe('Tour')
-    expect(phone.all().filter(node => node.type === 'View' && node.props.accessibilityLabel !== undefined)).toEqual([])
+    // The one named box is the list, which a host can name and still enter.
+    expect(phone.all().filter(node => node.type === 'View' && node.props.accessibilityLabel !== undefined)
+      .map(node => [node.props.accessibilityRole, node.props.accessibilityLabel])).toEqual([['list', 'Exercises']])
     const chips = phone.all().filter(node => node.props['data-stx-filter-chip'] !== undefined)
     expect(chips.map(node => node.props.accessibilityState?.selected)).toEqual([true, false])
     // A row's title carries no template indentation.

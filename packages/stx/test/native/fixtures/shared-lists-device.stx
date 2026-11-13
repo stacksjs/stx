@@ -13,8 +13,15 @@ const opened = state(0)
 const page = state(0)
 window.listProbe = { opened, page }
 </script>
-<section class="p-4 gap-3 bg-white dark:bg-black text-black dark:text-white">
+{{-- Longer than a phone on its side, as a real screen is: it scrolls. --}}
+<div data-native="ScrollView" class="flex-1 bg-white dark:bg-black">
+<section class="p-4 gap-3 text-black dark:text-white">
   <FilterChips :chips="[{ label: 'People', href: '/people', active: true }, { label: 'Workouts', href: '/workouts' }]" />
+  {{-- A named group of controls an app writes for itself. A list is the one
+       container both hosts can name and still let a reader into. --}}
+  <div role="list" aria-label="Exercises" class="flex-row gap-2">
+    <button testID="list-pill" aria-label="Remove squats">Squats</button>
+  </div>
   <GroupedList testID="list-account" title="Account" footer="Signed in">
     <GroupedListRow testID="list-profile" title="Profile" subtitle="Name and photo" chevron @select="opened.set(opened() + 1)" />
     <GroupedListRow testID="list-plan" title="Plan" value="Pro" separator />
@@ -30,3 +37,4 @@ window.listProbe = { opened, page }
   </Pager>
   <span testID="list-summary" :text="'Opened: ' + opened() + ', page ' + (page() + 1)"></span>
 </section>
+</div>

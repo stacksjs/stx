@@ -137,6 +137,6 @@ final class SharedAccessibilityUITests: XCTestCase {
             // "main" for a screen that names none, on its light bar.
             known.append("contrast \"main\"")
         }
-        XCTAssertEqual(found.sorted(), known.sorted(), "The system audit found:\n" + details.joined(separator: "\n"))
+        Gate.checkAudit(found: found, known: known, details: details)
     }
 }

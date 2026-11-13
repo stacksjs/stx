@@ -47,6 +47,7 @@ final class SharedFormsNativeTests: XCTestCase {
             "This week |  | button, selected",
             "This month |  | button",
             "All time |  | button, dimmed",
+            "Notes |  | field",
             "Summary: , , 0 characters, no sport, week |  | ",
         ])
     }
@@ -69,6 +70,10 @@ final class SharedFormsNativeTests: XCTestCase {
         XCTAssertEqual(email.autocapitalizationType, UITextAutocapitalizationType.none)
         XCTAssertEqual(email.autocorrectionType, .no)
         XCTAssertEqual(email.textContentType, .emailAddress)
+
+        // The last field says what its return key does: it ends the form.
+        let notes = try XCTUnwrap(find("form-notes", in: screen.view) as? UITextField)
+        XCTAssertEqual(notes.returnKeyType, .done)
 
         XCTAssertTrue(password.isSecureTextEntry)
         XCTAssertEqual(password.autocapitalizationType, UITextAutocapitalizationType.none)

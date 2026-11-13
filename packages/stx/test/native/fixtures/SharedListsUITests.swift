@@ -30,6 +30,7 @@ final class SharedListsUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Workouts"].isHittable)
 
         app.buttons["list-profile"].tap()
+        app.reach(app.staticTexts["list-summary"])
         waitForLabel(app.staticTexts["list-summary"], "Opened: 1, page 1")
     }
 
@@ -39,6 +40,7 @@ final class SharedListsUITests: XCTestCase {
         let summary = app.staticTexts["list-summary"]
         let first = app.buttons["Go to page 1"], second = app.buttons["Go to page 2"], third = app.buttons["Go to page 3"]
         XCTAssertTrue(first.waitForExistence(timeout: 10))
+        app.reach(first)
         XCTAssertTrue(first.isSelected)
         XCTAssertTrue(app.staticTexts["list-page-one"].isHittable)
 
@@ -82,11 +84,9 @@ final class SharedListsUITests: XCTestCase {
         // target. They are words, not controls: nothing happens on a tap.
         var known = ["ACCOUNT", "Signed in", "Second", "2m"].map { "hitRegion \"\($0)\"" }
         if XCUIDevice.shared.appearance != .dark {
-            // The grey a row's value and time are set in, on white
-            // (stacksjs/stx#2187), and the host's navigation title
-            // (craft-native/craft#531).
-            known += ["contrast \"Pro\"", "contrast \"2m\"", "contrast \"main\""]
+            // The grey a row's value and time are set in, on white (stacksjs/stx#2187).
+            known += ["contrast \"Pro\"", "contrast \"2m\""]
         }
-        XCTAssertEqual(found.sorted(), known.sorted(), "The system audit found:\n" + details.joined(separator: "\n"))
+        Gate.checkAudit(found: found, known: known, details: details)
     }
 }

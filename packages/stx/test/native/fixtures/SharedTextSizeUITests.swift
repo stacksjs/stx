@@ -10,18 +10,6 @@ final class SharedTextSizeUITests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [check], timeout: 10), .completed, "\(element.identifier) reads \(element.label), expected \(label)")
     }
 
-    /// Bring a control onto the screen the way a person does, by scrolling.
-    private func reach(_ element: XCUIElement, in app: XCUIApplication) {
-        var swipes = 0
-        while !element.isHittable, swipes < 12 {
-            // Above the screen or below it: move the page the other way.
-            if element.frame.midY < app.frame.midY { app.swipeDown(velocity: .slow) } else { app.swipeUp(velocity: .slow) }
-            swipes += 1
-        }
-        if !element.isHittable { let shot = XCTAttachment(screenshot: app.screenshot()); shot.lifetime = .keepAlways; add(shot) }
-        XCTAssertTrue(element.isHittable, "\(element) cannot be scrolled onto the screen: it is at \(element.frame)")
-    }
-
     func testEveryControlCanBeReachedAndUsed() {
         let app = XCUIApplication()
         app.launch()
@@ -32,7 +20,7 @@ final class SharedTextSizeUITests: XCTestCase {
         name.tap()
         app.typeText("Ada")
         let password = app.secureTextFields["size-password"]
-        reach(password, in: app)
+        app.reach(password)
         password.tap()
         app.typeText("pw")
         // What was typed is in the fields, the password as bullets.
@@ -42,16 +30,16 @@ final class SharedTextSizeUITests: XCTestCase {
         app.typeText("\n")
 
         let terms = app.descendants(matching: .any).matching(identifier: "size-terms").firstMatch
-        reach(terms, in: app)
+        app.reach(terms)
         terms.tap()
         let alerts = app.switches["size-alerts"]
-        reach(alerts, in: app)
+        app.reach(alerts)
         alerts.tap()
         let row = app.buttons["size-row"]
-        reach(row, in: app)
+        app.reach(row)
         row.tap()
         let save = app.buttons["size-save"]
-        reach(save, in: app)
+        app.reach(save)
         save.tap()
 
         let summary = app.staticTexts["size-summary"]

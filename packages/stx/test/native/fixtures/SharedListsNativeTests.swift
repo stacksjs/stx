@@ -44,6 +44,8 @@ final class SharedListsNativeTests: XCTestCase {
             "Filters |  | group",
             "People |  | button, selected",
             "Workouts |  | button",
+            "Exercises |  | group",
+            "Remove squats |  | button",
             "ACCOUNT |  | ",
             "Profile, Name and photo |  | button",
             "Plan |  | ",
