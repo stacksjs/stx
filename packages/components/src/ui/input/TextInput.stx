@@ -156,14 +156,16 @@ export const list = type !== 'password' && given($props.list) ? String($props.li
 export const autofocus = $bool($props.autofocus)
 
 /*
- * The field a phone app draws, for a native host ($native): 48pt tall, the
+ * The field a phone app draws, for a native host ($native): 48pt tall and
+ * taller when the reader's text size needs it (a fixed 48pt cut the words in
+ * half at the larger accessibility sizes, where 17pt is drawn at 48), the
  * 17pt body size, a filled rounded box that reads on a grouped background and
  * a plain one alike, and the system's placeholder grey. The web's rings,
  * shadow and density roles have nothing to draw on a device, and its icon
  * slot is a web flourish iOS fields do without. An invalid field gets the
  * system red outline, a disabled one dims as UIKit's do.
  */
-export const nativeFieldClasses = `h-12 px-4 text-[17px] text-[#000000] dark:text-[#ffffff] bg-[#767680]/12 dark:bg-[#767680]/24 rounded-[10px] border-0 ${inputClassName}`.trim()
+export const nativeFieldClasses = `min-h-12 px-4 text-[17px] text-[#000000] dark:text-[#ffffff] bg-[#767680]/12 dark:bg-[#767680]/24 rounded-[10px] border-0 ${inputClassName}`.trim()
 export const nativeLabelClasses = 'mb-1.5 px-4 text-[13px] uppercase text-[#6d6d72] dark:text-[#8d8d93]'
 export const nativeHelperClasses = `mt-1.5 px-4 text-[13px] ${error ? 'text-[#ff3b30] dark:text-[#ff453a]' : 'text-[#6d6d72] dark:text-[#8d8d93]'}`
 </script>
@@ -319,7 +321,7 @@ defineExpose({ value: inputValue, clear: onClear })
 
     @if(clearable)
       <button :if="!nativeClear" type="button" :show="hasValue() && !isDisabled() && !isReadonly()"
-        @click="onClear()" class="absolute top-0 right-0 h-12 w-10 items-center justify-center" aria-label="Clear input"
+        @click="onClear()" class="absolute top-0 bottom-0 right-0 w-10 items-center justify-center" aria-label="Clear input"
       ><i class="i-lucide-circle-x h-[17px] w-[17px] text-[#c4c4c7] dark:text-[#5b5b5f]"></i></button>
     @endif
   </div>

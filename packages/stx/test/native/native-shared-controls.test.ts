@@ -44,14 +44,17 @@ describe.each(['ios', 'android'] as const)('shared controls on %s', (platform) =
     const save = phone.byTestID('save')!
     expect(save.type).toBe('Pressable')
     expect(save.props.activeOpacity).toBe(0.6)
-    expect(save.style).toMatchObject({ height: 44, borderRadius: 10, backgroundColor: '#3b82f6' })
+    // Heights are floors: a button grows with the reader's text size rather
+    // than cut its label off top and bottom.
+    expect(save.style.height).toBeUndefined()
+    expect(save.style).toMatchObject({ minHeight: 44, paddingVertical: 10, borderRadius: 10, backgroundColor: '#3b82f6' })
     const label = (node: typeof save) => node.children.find((child): child is typeof save => typeof child !== 'string' && child.type === 'Text' && child.style.display !== 'none')!
     expect(label(save).style).toMatchObject({ color: '#ffffff', fontSize: 17, fontWeight: '600' })
     expect(phone.byTestID('cancel')!.style.backgroundColor).toBe('#7676801f')
     expect(label(phone.byTestID('cancel')!).style.color).toBe('#2563eb')
-    expect(phone.byTestID('delete')!.style).toMatchObject({ height: 50, borderRadius: 12, backgroundColor: '#ef4444', width: '100%' })
+    expect(phone.byTestID('delete')!.style).toMatchObject({ minHeight: 50, borderRadius: 12, backgroundColor: '#ef4444', width: '100%' })
     expect(phone.byTestID('more')!.style.backgroundColor).toBeUndefined()
-    expect(phone.byTestID('more')!.style.height).toBe(34)
+    expect(phone.byTestID('more')!.style.minHeight).toBe(34)
 
     phone.press(save)
     await phone.settle()

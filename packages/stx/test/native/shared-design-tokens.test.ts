@@ -44,7 +44,7 @@ window.probe = { compact, clear, override, theme }
     // native host (Button.stx, TextInput.stx, Select.stx): iOS's sizes and
     // corners, not the web's control tokens. Everything else that names a
     // token reads it, below.
-    const platformField = { height: 48, borderRadius: 10, paddingHorizontal: 16, fontSize: 17 }
+    const platformField = { minHeight: 48, borderRadius: 10, paddingHorizontal: 16, fontSize: 17 }
     expect(phone.all().find(node => node.props.id === 'button')!.style.borderRadius).toBe(10)
     expect(card().style.borderRadius).toBe(8)
     const control = { borderRadius: 6, paddingHorizontal: 16, paddingVertical: 8, fontSize: 16, lineHeight: 24 }

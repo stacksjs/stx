@@ -25,7 +25,7 @@ describe.each([false, true])('runnable shared-controls example (minify=%s)', (mi
       await phone.settle()
       const field = () => phone.ofType('TextInput')[0]!
       expect(field().props.value).toBe('Ada')
-      const platformField = { height: 48, borderRadius: 10, paddingHorizontal: 16, fontSize: 17 }
+      const platformField = { minHeight: 48, borderRadius: 10, paddingHorizontal: 16, fontSize: 17 }
       expect(field().style).toMatchObject(platformField)
       const light = field().style.backgroundColor
       phone.appearance('dark')

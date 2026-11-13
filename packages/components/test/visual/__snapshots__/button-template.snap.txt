@@ -169,12 +169,19 @@ const nativeVariants = {
   ghost: { box: '', text: 'text-accent' },
   danger: { box: 'bg-danger-solid', text: 'text-danger-ink' },
 }
+/*
+ * Heights are a floor, not a fixed size. A host draws text at the reader's
+ * chosen size, where 17pt becomes 48 at the largest accessibility setting,
+ * and a button held at 44pt cut its own label off top and bottom. The padding
+ * is small enough that the floor still decides the height at the default
+ * text size, so nothing moves there.
+ */
 const nativeSizes = {
-  xs: { box: 'h-7 px-2.5 gap-1 rounded-[7px]', text: 'text-[13px]' },
-  sm: { box: 'h-[34px] px-3 gap-1.5 rounded-[8px]', text: 'text-[15px]' },
-  md: { box: 'h-11 px-4 gap-2 rounded-[10px]', text: 'text-[17px]' },
-  lg: { box: 'h-[50px] px-5 gap-2 rounded-[12px]', text: 'text-[17px]' },
-  xl: { box: 'h-14 px-6 gap-2.5 rounded-[14px]', text: 'text-[19px]' },
+  xs: { box: 'min-h-7 py-1 px-2.5 gap-1 rounded-[7px]', text: 'text-[13px]' },
+  sm: { box: 'min-h-[34px] py-1.5 px-3 gap-1.5 rounded-[8px]', text: 'text-[15px]' },
+  md: { box: 'min-h-11 py-2.5 px-4 gap-2 rounded-[10px]', text: 'text-[17px]' },
+  lg: { box: 'min-h-[50px] py-3 px-5 gap-2 rounded-[12px]', text: 'text-[17px]' },
+  xl: { box: 'min-h-14 py-3.5 px-6 gap-2.5 rounded-[14px]', text: 'text-[19px]' },
 }
 const nativeVariant = nativeVariants[variant] || nativeVariants.primary
 const nativeSize = nativeSizes[size] || nativeSizes.md
@@ -678,8 +685,6 @@ gap-3
 gives
 goes
 h-10
-h-11
-h-14
 h-3
 h-4
 h-5
@@ -708,6 +713,9 @@ label
 linear
 loading
 markup
+min-h-11
+min-h-14
+min-h-7
 nativeButtonClasses
 nativeTextClasses
 nativeTintClass
@@ -724,7 +732,9 @@ px-4
 px-5
 px-6
 px-8
+py-1
 py-2
+py-3
 rather
 render
 rendering

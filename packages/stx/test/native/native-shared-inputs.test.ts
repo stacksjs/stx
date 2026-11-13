@@ -39,7 +39,9 @@ describe.each(['ios', 'android'] as const)('shared text fields on %s', (platform
     const email = phone.byTestID('email')!
     expect(email.type).toBe('TextInput')
     expect(email.props).toMatchObject({ keyboardType: 'email-address', autoCapitalize: 'none', autoCorrect: false, autoComplete: 'email', placeholderTextColor: '#8e8e93' })
-    expect(email.style).toMatchObject({ height: 48, fontSize: 17, borderRadius: 10, backgroundColor: '#7676801f' })
+    // A floor: the field grows with the reader's text size rather than clip it.
+    expect(email.style.height).toBeUndefined()
+    expect(email.style).toMatchObject({ minHeight: 48, fontSize: 17, borderRadius: 10, backgroundColor: '#7676801f' })
     // The web's envelope glyph is a web flourish: no drawing beside the field.
     expect(phone.ofType('Svg')).toHaveLength(0)
     expect(phone.texts()).toContain('Email')
