@@ -44,6 +44,7 @@ const STATE_KEYS: Record<string, string> = {
  * page dots gone. So the name of such a box is not sent: the group goes
  * unnamed and its controls stay reachable, which is the half that matters.
  * Hosts' own containers (a scroll view, a tab strip, a dialog) keep theirs.
+ * craft-native/craft#536 asks the host for a box that is both named and open.
  */
 export const READER_GROUP = 'data-stx-reader-group'
 

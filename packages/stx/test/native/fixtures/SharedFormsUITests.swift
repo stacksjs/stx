@@ -84,7 +84,7 @@ final class SharedFormsUITests: XCTestCase {
 
     /// The system's own accessibility audit of the form, all of it. What it
     /// finds is listed, so a new finding fails and a fixed one has to come off
-    /// the list (stacksjs/stx#2187 for the fields' fill and fixed height).
+    /// the list (stacksjs/stx#2187 for the placeholder grey on the dark fill).
     func testSystemAccessibilityAudit() throws {
         guard #available(iOS 17.0, *) else { throw XCTSkip("The accessibility audit needs iOS 17") }
         let app = launch()
@@ -109,8 +109,9 @@ final class SharedFormsUITests: XCTestCase {
             return true
         }
         let fields = ["form-name", "form-email", "form-password"]
-        // Each field is 48 points tall whatever the text size.
-        var known = fields.map { "textClipped \($0)" }
+        // A placeholder is one line. The password's, beside its reveal
+        // button, is too long for that line at the largest text sizes.
+        var known = ["textClipped form-password"]
         if XCUIDevice.shared.appearance == .dark {
             // The placeholder grey on the fields' dark fill.
             known += fields.map { "contrast \($0)" }

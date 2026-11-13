@@ -1,0 +1,36 @@
+{{-- The shared controls at the largest accessibility text size
+     (stacksjs/stx#2184): every word still fits the box it is drawn in, and
+     every control can still be reached and used. The iOS gate sets the size
+     before it runs this suite and puts it back afterwards. --}}
+@import('Button', '../../../../components/src/ui/button/Button.stx')
+@import('TextInput', '../../../../components/src/ui/input/TextInput.stx')
+@import('PasswordInput', '../../../../components/src/ui/input/PasswordInput.stx')
+@import('Checkbox', '../../../../components/src/ui/checkbox/Checkbox.stx')
+@import('Switch', '../../../../components/src/ui/switch/Switch.stx')
+@import('Select', '../../../../components/src/ui/select/Select.stx')
+@import('GroupedList', '../../../../components/src/ui/grouped-list/GroupedList.stx')
+@import('GroupedListRow', '../../../../components/src/ui/grouped-list/GroupedListRow.stx')
+<script client>
+const name = state('')
+const secret = state('')
+const agreed = state(false)
+const alerts = state(false)
+const sport = state('run')
+const saves = state(0)
+const opened = state(0)
+</script>
+<div data-native="ScrollView" testID="size-scroll" class="flex-1 bg-white dark:bg-black">
+  <section class="p-4 gap-3">
+    <span testID="size-heading" accessibilityRole="header" class="text-black dark:text-white">Account settings</span>
+    <TextInput testID="size-name" label="Full name" placeholder="Ada" v-model:value="name" />
+    <PasswordInput testID="size-password" label="Password" placeholder="Secret" v-model:value="secret" />
+    <Checkbox testID="size-terms" :checked="agreed" label="Accept the terms" @change="agreed.set($event)" />
+    <Switch testID="size-alerts" v-model:checked="alerts" label="Email alerts" />
+    <Select testID="size-sport" label="Sport" v-model:value="sport" :options="[{ value: 'run', label: 'Run' }, { value: 'ride', label: 'Ride' }]" />
+    <GroupedList testID="size-list" title="Account">
+      <GroupedListRow testID="size-row" title="Profile" subtitle="Name and photo" chevron @select="opened.set(opened() + 1)" />
+    </GroupedList>
+    <Button testID="size-save" @click="saves.set(saves() + 1)">Save changes</Button>
+    <span testID="size-summary" class="text-black dark:text-white" :text="'Saved ' + saves() + ', opened ' + opened() + ', ' + name() + ', ' + secret().length + ', ' + (agreed() ? 'agreed' : 'not agreed') + ', ' + (alerts() ? 'on' : 'off')"></span>
+  </section>
+</div>

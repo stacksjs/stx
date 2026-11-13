@@ -13,9 +13,13 @@ const { values } = parseArgs({ options: {
   simulator: { type: 'string' },
   appearance: { type: 'string', default: 'dark' },
   suite: { type: 'string', default: 'overlays' },
+  // The text size the simulator is set to for the run, in simctl's words
+  // (`large` is the default; `accessibility-extra-extra-extra-large` the top).
+  'content-size': { type: 'string' },
 } })
 // `support` files are compiled into the unit-test bundle beside `unitTests`.
-const suites: Record<string, { source: string, tests: string, count: number, unitTests?: string, unitCount?: number, support?: string[] }> = {
+// `contentSize` is the text size a suite is about, unless the caller names one.
+const suites: Record<string, { source: string, tests: string, count: number, unitTests?: string, unitCount?: number, support?: string[], contentSize?: string }> = {
   hud: { source: 'native-hud-device.stx', tests: 'NativeHudUITests', count: 1 },
   controls: { source: 'shared-controls-device.stx', tests: 'SharedControlsUITests', count: 3 },
   overlays: { source: 'shared-overlays-device.stx', tests: 'SharedPortabilityUITests', count: 4, unitTests: 'SharedOverlaysNativeTests', unitCount: 2, support: ['SpokenStops.swift'] },
@@ -24,11 +28,13 @@ const suites: Record<string, { source: string, tests: string, count: number, uni
   toggles: { source: 'shared-toggle-device.stx', tests: 'SharedToggleUITests', count: 2, unitTests: 'SharedToggleNativeTests', unitCount: 3 },
   accessibility: { source: 'shared-accessibility-device.stx', tests: 'SharedAccessibilityUITests', count: 4 },
   lists: { source: 'shared-lists-device.stx', tests: 'SharedListsUITests', count: 3, unitTests: 'SharedListsNativeTests', unitCount: 2, support: ['SpokenStops.swift'] },
+  'text-size': { source: 'shared-text-size-device.stx', tests: 'SharedTextSizeUITests', count: 1, unitTests: 'SharedTextSizeNativeTests', unitCount: 1, contentSize: 'accessibility-extra-extra-extra-large' },
   forms: { source: 'shared-forms-device.stx', tests: 'SharedFormsUITests', count: 3, unitTests: 'SharedFormsNativeTests', unitCount: 2, support: ['SpokenStops.swift'] },
 }
 if (!values['craft-root'] || !values.simulator || !['light', 'dark'].includes(values.appearance!) || !suites[values.suite!])
-  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|controls|hud|images|videos|toggles|accessibility|forms|lists]')
+  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|controls|hud|images|videos|toggles|accessibility|forms|lists|text-size] [--content-size large|accessibility-extra-extra-extra-large|...]')
 const suite = suites[values.suite!]
+const contentSize = values['content-size'] ?? suite.contentSize ?? 'large'
 
 function run(command: string[], cwd?: string, capture = false, allowFailure = false): string {
   const result = Bun.spawnSync(command, { cwd, stdout: capture ? 'pipe' : 'inherit', stderr: 'inherit' })
@@ -106,9 +112,10 @@ if (craftCommit !== run(['git', 'rev-parse', 'HEAD'], craft, true) || run(['git'
   throw new Error('Craft changed during generation; rerun with a stable checkout')
 const hashes = Object.fromEntries([bundle, ...compiled.dependencies, join(fixtures, `${suite.tests}.swift`), ...(suite.unitTests ? [join(fixtures, `${suite.unitTests}.swift`)] : []), ...(suite.support ?? []).map(file => join(fixtures, file))]
   .map(file => [file, createHash('sha256').update(readFileSync(file)).digest('hex')]))
-writeFileSync(join(workspace, 'provenance.json'), JSON.stringify({ craftCommit, stxCommit: run(['git', 'rev-parse', 'HEAD'], root, true), stxWorkingTree: run(['git', 'status', '--porcelain'], root, true), hashes, appearance: values.appearance, simulator: values.simulator, device }, null, 2))
+writeFileSync(join(workspace, 'provenance.json'), JSON.stringify({ craftCommit, stxCommit: run(['git', 'rev-parse', 'HEAD'], root, true), stxWorkingTree: run(['git', 'status', '--porcelain'], root, true), hashes, appearance: values.appearance, contentSize, simulator: values.simulator, device }, null, 2))
 run(['xcodegen', 'generate'], output)
 run(['xcrun', 'simctl', 'ui', values.simulator, 'appearance', values.appearance!])
+run(['xcrun', 'simctl', 'ui', values.simulator, 'content_size', contentSize])
 const results = join(workspace, 'TestResults.xcresult')
 run(['xcodebuild', '-project', 'StxPortability.xcodeproj', '-scheme', 'StxPortability',
   '-configuration', 'Debug', '-destination', `id=${values.simulator}`,
@@ -119,6 +126,8 @@ run(['xcodebuild', '-project', 'StxPortability.xcodeproj', '-scheme', 'StxPortab
   'ONLY_ACTIVE_ARCH=YES', 'SWIFT_OPTIMIZATION_LEVEL=-Onone', 'test',
   `-only-testing:SharedPortabilityUITests/${suite.tests}`,
   ...(suite.unitTests ? [`-only-testing:SharedPortabilityUnitTests/${suite.unitTests}`] : [])], output, false, true)
+// The device is the caller's: leave its text size as a fresh one has it.
+run(['xcrun', 'simctl', 'ui', values.simulator, 'content_size', 'large'], undefined, false, true)
 const summary = JSON.parse(run(['xcrun', 'xcresulttool', 'get', 'test-results', 'summary', '--path', results], undefined, true))
 writeFileSync(join(workspace, 'summary.json'), JSON.stringify(summary, null, 2))
 const expectedCount = suite.count + (suite.unitCount ?? 0)

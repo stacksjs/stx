@@ -73,7 +73,7 @@ final class SharedOverlaysNativeTests: XCTestCase {
         try await wait("the dialog is presented: \(SpokenStops.of(self.front(screen)))", {
             SpokenStops.of(self.front(screen)).contains("Open nested dialog |  | button")
         })
-        // Known gap, in the host: the dialog's name ("Outer dialog") is set
+        // Known gap, in the host (craft-native/craft#535): the dialog's name ("Outer dialog") is set
         // on the node the sheet was opened from and never reaches the sheet,
         // so a reader lands in it without being told what it is. When the
         // host carries it over, this list gains "Outer dialog |  | group".

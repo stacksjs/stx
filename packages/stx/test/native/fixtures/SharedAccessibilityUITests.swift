@@ -126,7 +126,8 @@ final class SharedAccessibilityUITests: XCTestCase {
             details.append("\(issue.compactDescription) on \(name) at \(element?.frame ?? .zero): \(issue.detailedDescription)")
             return true
         }
-        // The field is 48 points tall whatever the text size, in either appearance.
+        // A placeholder is one line, and "you@example.com" is too long for
+        // that line at the largest text sizes, in either appearance.
         var known = ["textClipped a11y-email"]
         if XCUIDevice.shared.appearance == .dark {
             // The placeholder grey on the field's dark fill.
