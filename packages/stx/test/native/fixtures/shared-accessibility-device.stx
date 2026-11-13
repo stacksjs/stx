@@ -1,0 +1,26 @@
+{{-- What a screen reader is told about the shared controls (stacksjs/stx#2184).
+     Compiled by STX and run in the maintained iOS gate, where XCUITest reads
+     the same accessibility tree VoiceOver does: each control's role, its name
+     and its state, and the order they are reached in. --}}
+@import('Button', '../../../../components/src/ui/button/Button.stx')
+@import('TextInput', '../../../../components/src/ui/input/TextInput.stx')
+@import('Checkbox', '../../../../components/src/ui/checkbox/Checkbox.stx')
+@import('Switch', '../../../../components/src/ui/switch/Switch.stx')
+<script client>
+const favourite = state(false)
+const locked = state(false)
+const email = state('')
+const agreed = state(false)
+const alerts = state(false)
+</script>
+<section class="p-4 gap-3 bg-white dark:bg-black text-black dark:text-white">
+  <span testID="a11y-heading" accessibilityRole="header">Account</span>
+  <Button testID="a11y-save" @click="locked.set(!locked())">Save changes</Button>
+  {{-- An icon button: its only name is the one the caller binds. --}}
+  <Button testID="a11y-icon" :ariaLabel="favourite() ? 'Remove from favourites' : 'Add to favourites'" @click="favourite.set(!favourite())"><span>*</span></Button>
+  <Button testID="a11y-locked" :disabled="locked()">Delete account</Button>
+  <TextInput testID="a11y-email" accessibilityLabel="Email address" placeholder="you@example.com" v-model:value="email" />
+  <Checkbox testID="a11y-terms" :checked="agreed" label="Accept the terms" @change="agreed.set($event)" />
+  <Switch testID="a11y-alerts" v-model:checked="alerts" label="Email alerts" />
+  <span testID="a11y-summary" :text="'Summary: ' + (agreed() ? 'agreed' : 'not agreed') + ', alerts ' + (alerts() ? 'on' : 'off')"></span>
+</section>

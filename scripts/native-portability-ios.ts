@@ -21,9 +21,10 @@ const suites: Record<string, { source: string, tests: string, count: number, uni
   images: { source: 'shared-image-device.stx', tests: 'SharedImageUITests', count: 1, unitTests: 'SharedImageNativeTests', unitCount: 6 },
   videos: { source: 'shared-video-device.stx', tests: 'SharedVideoUITests', count: 1, unitTests: 'SharedVideoNativeTests', unitCount: 4 },
   toggles: { source: 'shared-toggle-device.stx', tests: 'SharedToggleUITests', count: 2, unitTests: 'SharedToggleNativeTests', unitCount: 3 },
+  accessibility: { source: 'shared-accessibility-device.stx', tests: 'SharedAccessibilityUITests', count: 4 },
 }
 if (!values['craft-root'] || !values.simulator || !['light', 'dark'].includes(values.appearance!) || !suites[values.suite!])
-  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|controls|hud|images|videos|toggles]')
+  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|controls|hud|images|videos|toggles|accessibility]')
 const suite = suites[values.suite!]
 
 function run(command: string[], cwd?: string, capture = false, allowFailure = false): string {

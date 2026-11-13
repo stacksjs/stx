@@ -373,3 +373,39 @@ files pass **12 tests / 50 assertions**, without changing a deadline.
 This is unreleased source after **0.2.784**. Keep #2091 open: iOS Simulator
 checks do not certify Android/physical-device drawing, VoiceOver/TalkBack,
 keyboard navigation, broad pixel parity or native navigation chrome.
+
+## Shared accessibility acceptance: 2026-11-13
+
+What a screen reader is told about the shared Button, TextInput, Checkbox and
+Switch, for [#2184](https://github.com/stacksjs/stx/issues/2184). XCUITest
+reads the accessibility tree VoiceOver reads, so `--suite accessibility`
+asserts what would be announced rather than what was passed down as a prop:
+
+- **Role and name.** Each control is one element of the right kind, under the
+  name a reader hears. An icon button whose only name is a bound `ariaLabel`
+  is announced by it.
+- **State.** The bound name follows its signal, a disabled button is not
+  announced as usable, a switch reports 0 then 1, a checked box differs from an
+  unchecked one, and a text field reports what was typed.
+- **Order.** Every control is exposed once, and top to bottom they are in the
+  order the screen was written.
+- **Apple's audit.** `performAccessibilityAudit()` runs every audit type.
+
+iPhone 17 Pro / iOS 26.5 Simulator against Craft `c8ba180d921d` (clean when
+the host app was generated): **4 passed / 0 failed / 0 skipped in dark, and
+4 / 0 / 0 in light.**
+
+Everything the audit checks about what a reader is told came back clean. What
+it found is about drawing, and the test lists it per appearance so that a new
+finding fails and a fixed one has to come off the list:
+
+| Appearance | Finding | Where |
+| --- | --- | --- |
+| Dark | Contrast nearly passed | The shared TextInput's placeholder on its fill ([#2187](https://github.com/stacksjs/stx/issues/2187)) |
+| Both | Text may clip at larger Dynamic Type sizes | The shared TextInput, fixed at 48 points ([#2187](https://github.com/stacksjs/stx/issues/2187)) |
+| Light | Contrast failed | The host's navigation title ("main"), not a shared component |
+
+This is not VoiceOver speaking, which a simulator cannot run, and it says
+nothing about Android, TalkBack or a physical device: the machine that ran it
+has no Android SDK. Image and Video are not in this suite.
+[Exact results, hashes and limits](shared-accessibility-ios-2026-11-13.json).
