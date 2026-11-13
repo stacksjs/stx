@@ -16,6 +16,7 @@ const tab = state('first')
 const clicks = state(0)
 const helpTaps = state(0)
 const dialogTaps = state(0)
+window.overlayProbe = { outer, inner, drawer }
 function openDialog() {
   dialogTaps.set(dialogTaps() + 1)
   outer.set(true)

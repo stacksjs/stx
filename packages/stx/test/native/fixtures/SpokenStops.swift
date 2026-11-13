@@ -10,7 +10,8 @@ import UIKit
 /// is skipped, a container may list its own elements, and a modal view takes
 /// over from its siblings.
 ///
-/// Each stop is `name | value | what it is`. The name and value are the ones
+/// Each stop is `name | value | what it is`. A named group is listed where a
+/// reader enters it, as `name |  | group`, followed by the stops inside it. The name and value are the ones
 /// set on the view. Where UIKit derives them instead (a label reads its text,
 /// a field its contents) this does the same, since the accessibility runtime
 /// that would derive them is not loaded in a unit test.
@@ -24,6 +25,10 @@ enum SpokenStops {
     private static func walk(_ view: UIView, into stops: inout [String]) {
         if view.isHidden || view.alpha < 0.01 || view.accessibilityElementsHidden { return }
         if view.isAccessibilityElement { stops.append(stop(view)); return }
+        // A named container is announced on the way in, and is not a stop.
+        if view.accessibilityContainerType == .semanticGroup, let name = view.accessibilityLabel, !name.isEmpty {
+            stops.append("\(name) |  | group")
+        }
         if let elements = view.accessibilityElements {
             for element in elements {
                 if let child = element as? UIView { walk(child, into: &stops) }
@@ -44,6 +49,8 @@ enum SpokenStops {
             kinds.append(field.isSecureTextEntry ? "secure field" : "field")
         } else if let label = object as? UILabel {
             if name.isEmpty { name = label.text ?? "" }
+        } else if let button = object as? UIButton {
+            if name.isEmpty { name = button.title(for: .normal) ?? button.configuration?.title ?? "" }
         } else if let toggle = object as? UISwitch {
             if value.isEmpty { value = toggle.isOn ? "1" : "0" }
             kinds.append("switch")

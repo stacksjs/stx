@@ -43,6 +43,7 @@ final class SharedFormsNativeTests: XCTestCase {
             "Password |  | secure field",
             "Show password |  | button",
             "Sport | Select an option | button",
+            "Period |  | group",
             "This week |  | button, selected",
             "This month |  | button",
             "All time |  | button, dimmed",

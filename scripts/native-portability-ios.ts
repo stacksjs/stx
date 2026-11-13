@@ -18,15 +18,16 @@ const { values } = parseArgs({ options: {
 const suites: Record<string, { source: string, tests: string, count: number, unitTests?: string, unitCount?: number, support?: string[] }> = {
   hud: { source: 'native-hud-device.stx', tests: 'NativeHudUITests', count: 1 },
   controls: { source: 'shared-controls-device.stx', tests: 'SharedControlsUITests', count: 3 },
-  overlays: { source: 'shared-overlays-device.stx', tests: 'SharedPortabilityUITests', count: 4 },
+  overlays: { source: 'shared-overlays-device.stx', tests: 'SharedPortabilityUITests', count: 4, unitTests: 'SharedOverlaysNativeTests', unitCount: 2, support: ['SpokenStops.swift'] },
   images: { source: 'shared-image-device.stx', tests: 'SharedImageUITests', count: 1, unitTests: 'SharedImageNativeTests', unitCount: 6 },
   videos: { source: 'shared-video-device.stx', tests: 'SharedVideoUITests', count: 1, unitTests: 'SharedVideoNativeTests', unitCount: 4 },
   toggles: { source: 'shared-toggle-device.stx', tests: 'SharedToggleUITests', count: 2, unitTests: 'SharedToggleNativeTests', unitCount: 3 },
   accessibility: { source: 'shared-accessibility-device.stx', tests: 'SharedAccessibilityUITests', count: 4 },
+  lists: { source: 'shared-lists-device.stx', tests: 'SharedListsUITests', count: 3, unitTests: 'SharedListsNativeTests', unitCount: 2, support: ['SpokenStops.swift'] },
   forms: { source: 'shared-forms-device.stx', tests: 'SharedFormsUITests', count: 3, unitTests: 'SharedFormsNativeTests', unitCount: 2, support: ['SpokenStops.swift'] },
 }
 if (!values['craft-root'] || !values.simulator || !['light', 'dark'].includes(values.appearance!) || !suites[values.suite!])
-  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|controls|hud|images|videos|toggles|accessibility|forms]')
+  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|controls|hud|images|videos|toggles|accessibility|forms|lists]')
 const suite = suites[values.suite!]
 
 function run(command: string[], cwd?: string, capture = false, allowFailure = false): string {

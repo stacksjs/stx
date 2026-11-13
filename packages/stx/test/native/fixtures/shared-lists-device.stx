@@ -1,0 +1,32 @@
+{{-- What a screen reader is told about the shared lists, the pager and the
+     filter row (stacksjs/stx#2184): a row read as one thing, a pager whose
+     pages and dots can be reached, the current page and filter said to be
+     so. Compiled by STX and run in the maintained iOS gate. --}}
+@import('GroupedList', '../../../../components/src/ui/grouped-list/GroupedList.stx')
+@import('GroupedListRow', '../../../../components/src/ui/grouped-list/GroupedListRow.stx')
+@import('SectionCard', '../../../../components/src/ui/mobile/SectionCard.stx')
+@import('ListRow', '../../../../components/src/ui/mobile/ListRow.stx')
+@import('FilterChips', '../../../../components/src/ui/mobile/FilterChips.stx')
+@import('Pager', '../../../../components/src/ui/pager/Pager.stx')
+<script client>
+const opened = state(0)
+const page = state(0)
+window.listProbe = { opened, page }
+</script>
+<section class="p-4 gap-3 bg-white dark:bg-black text-black dark:text-white">
+  <FilterChips :chips="[{ label: 'People', href: '/people', active: true }, { label: 'Workouts', href: '/workouts' }]" />
+  <GroupedList testID="list-account" title="Account" footer="Signed in">
+    <GroupedListRow testID="list-profile" title="Profile" subtitle="Name and photo" chevron @select="opened.set(opened() + 1)" />
+    <GroupedListRow testID="list-plan" title="Plan" value="Pro" separator />
+  </GroupedList>
+  <SectionCard testID="list-inbox" title="Inbox">
+    <ListRow title="Welcome" detail="From HQ" href="/inbox/1" />
+    <ListRow title="Second" meta="2m" />
+  </SectionCard>
+  <Pager testID="list-tour" v-model:index="page" label="Tour">
+    <section><span testID="list-page-one">One</span></section>
+    <section><span testID="list-page-two">Two</span></section>
+    <section><span testID="list-page-three">Three</span></section>
+  </Pager>
+  <span testID="list-summary" :text="'Opened: ' + opened() + ', page ' + (page() + 1)"></span>
+</section>
