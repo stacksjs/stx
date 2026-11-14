@@ -64,6 +64,8 @@ export type TranslationDiagnosticKind =
   | 'unsupported-list-prop'
   /** A control with no supported native interaction contract. */
   | 'unsupported-control'
+  /** An end tag with nothing open to close: the parser drops it, and the element it was written after closed one tag early. */
+  | 'stray-end-tag'
   /** A theme declaration cannot be evaluated faithfully on the native target. */
   | 'unsupported-theme-rule'
   | 'unsupported-style-rule'
@@ -513,6 +515,7 @@ export async function translateHtmlToIR(
 ): Promise<TranslationResult> {
   html = await excludeNativeSubtrees(html)
   const diagnostics: TranslationDiagnostic[] = []
+  for (const tag of strayEndTags(html)) diagnostics.push({ kind: 'stray-end-tag', tag })
   const stylesheetTheme = await extractStylesheetTheme(html, name => diagnostics.push({ kind: 'unsupported-theme-rule', tag: 'style', name }))
   const stylesheetVariables = createStyleVariables(stylesheetTheme.light).computed()
   // A page carries the app's whole stylesheet: report a rule natives cannot
@@ -1037,6 +1040,45 @@ export async function translateHtmlToDocument(
     document: createDocument(root, script, { source: options.source ?? 'unknown' }),
     diagnostics,
   }
+}
+
+/** Elements that take no end tag. */
+const VOID_TAGS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'])
+
+/**
+ * End tags that close nothing, by tag name, in document order.
+ *
+ * An HTML parser forgives one extra `</div>`: every element after it closes a
+ * tag early, and the last end tag of the run has nothing left to close and is
+ * dropped. Nothing fails. The tree is simply not the one written: the rest of
+ * a conditional block is hoisted out of its `:if` and stays on screen when the
+ * block goes, and what followed the block lands outside its parent. A first-run
+ * tour kept its page dots and Continue button above every question that way.
+ *
+ * Only an end tag with no open element of its name is reported. One that skips
+ * over open elements closes them, as HTML allows for `<p>` and `<li>`.
+ */
+export function strayEndTags(html: string): string[] {
+  const blank = (text: string): string => text.replace(/[^\n]/g, ' ')
+  const markup = html
+    .replace(/<!--[\s\S]*?-->/g, blank)
+    .replace(/<(script|style|textarea|title)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, blank)
+    // An attribute value may hold `<`, `>` or `=>`; only its quotes matter here.
+    .replace(/"[^"]*"|'[^']*'/g, value => value[0] + blank(value.slice(1, -1)) + value[0])
+  const open: string[] = []
+  const stray: string[] = []
+  for (const match of markup.matchAll(/<(\/?)([a-z][\w:.-]*)[^<>]*?(\/?)>/gi)) {
+    const tag = match[2]!.toLowerCase()
+    if (VOID_TAGS.has(tag) || match[3]) continue
+    if (!match[1]) {
+      open.push(tag)
+      continue
+    }
+    const at = open.lastIndexOf(tag)
+    if (at === -1) stray.push(tag)
+    else open.length = at
+  }
+  return stray
 }
 
 /**
