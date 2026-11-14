@@ -27,7 +27,8 @@ export function nativeComponentContext(source: string, validate?: ClientMethodVa
   const properties = Object.entries(metadata.properties || metadata.props || {}).map(([name, property]) => `${JSON.stringify(name)}: ${typeForProperty(property)}`).join('; ')
   const names = [...new Set(methods.map(method => method.name))]
   const declarations = [
-    `interface __StxNativeProperties { ${properties} }`,
+    `interface __StxMetadataProperties { ${properties} }`,
+    'type __StxNativeProperties = Omit<__StxMetadataProperties, keyof HTMLElement> & Pick<HTMLElement, Extract<keyof __StxMetadataProperties, keyof HTMLElement>>;',
     hasState ? 'declare const __stxStateProperties: Pick<ComponentState, Extract<keyof ComponentState, keyof __StxNativeProperties>>;' : '',
     `type __StxNativeComponent = Omit<HTMLElement, keyof __StxNativeProperties | ${hasState ? 'keyof ComponentState | ' : ''}${names.map(name => JSON.stringify(name)).join(' | ') || 'never'}> & ${hasState ? 'Omit<__StxNativeProperties, keyof ComponentState> & ComponentState' : '__StxNativeProperties'} & {`,
     'readonly updateComplete: Promise<void>; requestUpdate(): Promise<void>; readonly renderRoot: HTMLElement | ShadowRoot;',

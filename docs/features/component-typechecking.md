@@ -73,7 +73,9 @@ A `<script component type="application/json">` declares the element properties.
 `stx typecheck` uses the same metadata/property types and method parser as the
 native element emitter. Client methods receive the element as their `this`
 context, including `HTMLElement`, `emit`, `requestUpdate`, `renderRoot`, declared
-properties and the actual authored method signatures. Generic methods retain
+properties and the actual authored method signatures. Metadata names that overlap
+`HTMLElement` (such as `style` and `onclick`) retain the native DOM property API;
+their attribute/default values are still checked against the metadata type. Generic methods retain
 their generic arguments. Server blocks and ordinary page functions receive no
 component instance context. JSON metadata is never interpreted as executable
 TypeScript; invalid JSON, invalid property kinds and mismatched defaults are

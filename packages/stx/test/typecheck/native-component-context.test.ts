@@ -168,4 +168,21 @@ function bad(): void { this.identity<number>('wrong') }
     finally { await rm(directory, { recursive: true, force: true }) }
   }, 120_000)
 
+  test('preserves the real native DOM property API beside attribute metadata', async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), 'stx-native-dom-'))
+    const file = path.join(directory, 'style.stx')
+    await Bun.write(file, `<script component type="application/json">{"tag":"typed-native-dom","properties":{"style":{"type":"string"},"onclick":{"type":"string"}}}</script>
+<script client>
+function ready() { this.style.setProperty('--color', 'red'); this.onclick = event => event.preventDefault() }
+function bad() { this.style.toUpperCase() }
+</script>`)
+    try {
+      const result = await typecheckStxFiles([file])
+      const errors = result.diagnostics.filter(item => item.category === 'error')
+      expect(errors.map(item => [item.line, item.code])).toEqual([[4, 2339]])
+      expect(errors[0]!.message).toContain('toUpperCase')
+    }
+    finally { await rm(directory, { recursive: true, force: true }) }
+  }, 120_000)
+
 })
