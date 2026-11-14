@@ -150,7 +150,25 @@ function parseComponentProps(
       resolved.staticNames[propName] = attrName
   }
 
-  for (const [rawAttrName, attrValue] of Object.entries(rawProps)) {
+  // Projected slot content can reach the recursive component renderer before
+  // the page's Vue syntax pass. Expand models at the component boundary too;
+  // otherwise v-model:value becomes a static vModel:value string and the
+  // child receives neither its value nor its update event.
+  const expandedProps = { ...rawProps }
+  for (const [name, expression] of Object.entries(rawProps)) {
+    const model = /^v-model(?::([a-zA-Z_][a-zA-Z0-9_]*))?((?:\.[a-zA-Z]+)*)$/.exec(name)
+    if (!model) continue
+    delete expandedProps[name]
+    const prop = model[1] || 'modelValue'
+    expandedProps[`:${prop}`] = expression
+    expandedProps[`@update:${prop}`] = `${expression} = $event`
+    if (model[2]) {
+      const modifiers = model[2].slice(1).split('.').map(modifier => `${modifier}: true`).join(', ')
+      expandedProps[`:${model[1] ? `${prop}Modifiers` : 'modelModifiers'}`] = `{ ${modifiers} }`
+    }
+  }
+
+  for (const [rawAttrName, attrValue] of Object.entries(expandedProps)) {
     // Normalize x-propName to :propName for component prop bindings.
     // Alpine element-level directives stay passthrough.
     const attrName = (rawAttrName.startsWith('x-')

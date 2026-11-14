@@ -2,6 +2,7 @@ import { WebView } from 'bun'
 import { expect, it } from 'bun:test'
 import { rmSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { processComponents } from '../../src/component-renderer'
 import { processDirectives } from '../../src/process'
 import { createTempDir } from '../../src/temp-dir'
 
@@ -17,17 +18,21 @@ const count = useModel('count', { default: 0 })
 defineExpose({ text, count })
 </script>
 <div><input data-text :value="text()" @input="text.input($event.target.value)" @change="text.change($event.target.value)"><button data-count @click="count.update(n => n + 1)">Add</button></div>`)
-    const html = await processDirectives(`<!doctype html><html><head></head><body>
+    await Bun.write(join(dir, 'ModelFrame.stx'), '<section><slot /></section>')
+    const source = `<!doctype html><html><head></head><body>
 <script client>
 const text = state('initial')
 const count = state(1)
 const checked = state(false)
 window.modelParent = { text, count, checked }
 </script>
-<Editor v-model.trim.lazy="text" v-model:count="count" />
+<div :if="true"><ModelFrame><Editor v-model.trim.lazy="text" v-model:count="count" /></ModelFrame></div>
 <TextInput v-model:value.trim="text" />
 <Switch v-model:checked="checked" />
-</body></html>`, {}, join(dir, 'page.stx'), {
+</body></html>`
+    const options = { componentsDir: dir, cache: false, debug: false }
+    const components = await processComponents(source, {}, join(dir, 'page.stx'), options, new Set())
+    const html = await processDirectives(components, {}, join(dir, 'page.stx'), {
       componentsDir: dir,
       cache: false,
       debug: false,
