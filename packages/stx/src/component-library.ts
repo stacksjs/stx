@@ -9,7 +9,7 @@ import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 
-interface SourceMetadata {
+export interface SourceMetadata {
   name?: string
   tag?: string
   description?: string
@@ -125,22 +125,30 @@ async function discoverStxFiles(inputDir: string): Promise<string[]> {
   return files
 }
 
-function parseMetadata(source: string, file: string): SourceMetadata {
-  const match = source.match(/<script\b(?=[^>]*(?:\bcomponent\b|\bstx:component\b))[^>]*>([\s\S]*?)<\/script>/i)
+export function componentScriptSource(source: string): string {
+  return source.replace(/<!--[\s\S]*?-->|\{\{--[\s\S]*?--\}\}/g, comment => comment.replace(/[^\n]/g, ' '))
+}
+
+export function parseMetadata(source: string, file: string): SourceMetadata {
+  const match = componentScriptSource(source).match(/<script\b(?=[^>]*(?:\bcomponent\b|\bstx:component\b))[^>]*>([\s\S]*?)<\/script>/i)
   if (!match) return {}
 
-  const raw = match[1].trim()
+  const bodyStart = match.index! + match[0].indexOf('>') + 1
+  const raw = source.slice(bodyStart, bodyStart + match[1]!.length).trim()
   if (!raw) return {}
 
   try {
-    return JSON.parse(raw) as SourceMetadata
+    const metadata: SourceMetadata = JSON.parse(raw)
+    if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) throw new Error('expected a JSON object')
+    return metadata
   }
   catch (error) {
     throw new Error(`${file}: <script component> must contain JSON metadata (${(error as Error).message})`)
   }
 }
 
-interface ClientMethod {
+export interface ClientMethod {
+  parameterOffset: number
   name: string
   header: string
   parameters: string
@@ -150,12 +158,14 @@ interface ClientMethod {
   source?: string
 }
 
+export type ClientMethodValidator = (header: string, token: '{' | ';', name: string) => boolean
+
 /** Use Bun's TS parser to distinguish a return object type from the method body. */
-function clientMethods(code: string): ClientMethod[] {
+export function clientMethods(code: string, validate?: ClientMethodValidator): ClientMethod[] {
   const masked = stripCommentsAndLiterals(code)
   const pattern = /(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/g
   const result: ClientMethod[] = []
-  const parser = new Bun.Transpiler({ loader: 'ts' })
+  const parser = validate ? undefined : new Bun.Transpiler({ loader: 'ts' })
   let match: RegExpExecArray | null
   while ((match = pattern.exec(masked))) {
     let cursor = pattern.lastIndex
@@ -173,16 +183,19 @@ function clientMethods(code: string): ClientMethod[] {
       const token = masked[cursor]
       if (token !== '{' && token !== ';') continue
       const header = code.slice(match.index, cursor).trim()
-      let compiled: string
-      try { compiled = parser.transformSync(header + (token === '{' ? '{}' : ';')) }
-      catch { continue }
-      // An overload is erased; a valid implementation retains its function.
-      if (token === '{' && !compiled.includes(`function ${match[1]}(`)) continue
-      if (token === ';' && compiled.trim()) continue
+      if (validate) { if (!validate(header, token, match[1]!)) continue }
+      else {
+        let compiled: string
+        try { compiled = parser!.transformSync(header + (token === '{' ? '{}' : ';')) }
+        catch { continue }
+        // An overload is erased; a valid implementation retains its function.
+        if (token === '{' && !compiled.includes(`function ${match[1]}(`)) continue
+        if (token === ';' && compiled.trim()) continue
+      }
       const bodyEnd = token === '{' ? skipBalanced(masked, cursor, '{', '}') : cursor + 1
       if (bodyEnd < 0) break
       result.push({
-        name: match[1]!, header, generic,
+        name: match[1]!, header, generic, parameterOffset: parameterStart + 1,
         parameters: code.slice(parameterStart + 1, parameterEnd - 1),
         returns: code.slice(parameterEnd, cursor).trim().replace(/^:\s*/, ''),
         async: /\basync\s+function/.test(match[0]),
@@ -195,7 +208,7 @@ function clientMethods(code: string): ClientMethod[] {
   return result
 }
 
-function methodDeclaration(method: ClientMethod): string {
+export function methodDeclaration(method: ClientMethod): string {
   const parameters = splitTopLevel(method.parameters, ',', true).flatMap((raw, index) => {
     const masked = stripCommentsAndLiterals(raw)
     let depth = 0, assignment = -1
@@ -221,12 +234,14 @@ function methodDeclaration(method: ClientMethod): string {
 
 function extractClientMethods(source: string, file: string): { methods: Record<string, string>, declarations: Record<string, string[]>, types: string } {
   const methods: Record<string, string> = {}, declarations: Record<string, string[]> = {}, types: string[] = [], imports: Array<{ binding: string, module: string }> = []
-  const scripts = [...source.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+  const scripts = [...componentScriptSource(source).matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
   for (const script of scripts) {
+    const bodyStart = script.index! + script[0].indexOf('>') + 1
+    const code = source.slice(bodyStart, bodyStart + script[2]!.length)
     if (/\bserver\b|\bcomponent\b|\bstx:component\b/i.test(script[1]) || /\btype=["']application\//i.test(script[1])) continue
-    try { new Bun.Transpiler({ loader: 'ts' }).transformSync(script[2]) }
+    try { new Bun.Transpiler({ loader: 'ts' }).transformSync(code) }
     catch (error) { throw new Error(`${file}: failed to transpile <script client> (${(error as Error).message})`) }
-    const extracted = /\bclient\b/i.test(script[1]) ? clientMethods(script[2]!) : []
+    const extracted = /\bclient\b/i.test(script[1]) ? clientMethods(code) : []
     const overloads = new Set(extracted.filter(method => !method.source).map(method => method.name))
     for (const method of extracted) {
       if (RESERVED_METHODS.has(method.name)) throw new Error(`${file}: client ${reservedMethodMessage(method.name)}`)
@@ -235,8 +250,8 @@ function extractClientMethods(source: string, file: string): { methods: Record<s
       }
       if (!method.source || !overloads.has(method.name)) (declarations[method.name] ??= []).push(methodDeclaration(method))
     }
-    for (const imported of script[2]!.matchAll(/^\s*import\s+(?:type\s+)?([\s\S]*?)\s+from\s*(['"])([^'"]+)\2\s*;?/gm)) imports.push({ binding: imported[1]!.trim(), module: imported[3]! })
-    const masked = stripCommentsAndLiterals(script[2]!)
+    for (const imported of code.matchAll(/^\s*import\s+(?:type\s+)?([\s\S]*?)\s+from\s*(['"])([^'"]+)\2\s*;?/gm)) imports.push({ binding: imported[1]!.trim(), module: imported[3]! })
+    const masked = stripCommentsAndLiterals(code)
     const depths = bracketDepths(masked).depths
     const typePattern = /(?:export\s+)?(interface|type)\s+[A-Za-z_$][\w$]*/g
     let match: RegExpExecArray | null
@@ -256,11 +271,11 @@ function extractClientMethods(source: string, file: string): { methods: Record<s
         else if (')]>'.includes(token) && !(token === '>' && masked[cursor - 1] === '=')) depth--
         if (match[1] === 'type' && depth === 0 && (token === ';' || token === '\n')) {
           if (token === '\n' && /^[\s]*[|&]/.test(masked.slice(cursor + 1))) continue
-          try { new Bun.Transpiler({ loader: 'ts' }).transformSync(script[2]!.slice(match.index, cursor)); break }
+          try { new Bun.Transpiler({ loader: 'ts' }).transformSync(code.slice(match.index, cursor)); break }
           catch { /* The alias continues on its next line. */ }
         }
       }
-      types.push(script[2]!.slice(match.index, cursor).replace(/^export\s+/, '').trim())
+      types.push(code.slice(match.index, cursor).replace(/^export\s+/, '').trim())
       typePattern.lastIndex = cursor + 1
     }
   }
@@ -356,6 +371,50 @@ function literalValue(fallback: string): unknown {
   catch { return undefined }
 }
 
+export function componentDirectiveExpression(source: string, open: number): { expression: string, end: number } | null {
+  if (source[open] !== '(')
+    return null
+
+  let depth = 0
+  let quote = ''
+
+  for (let index = open; index < source.length; index++) {
+    const char = source[index]
+
+    if (quote !== '') {
+      if (char === '\\')
+        index++
+      else if (char === quote)
+        quote = ''
+      continue
+    }
+
+    if (char === '\'' || char === '"' || char === '`') {
+      quote = char
+      continue
+    }
+
+    if (char === '(') {
+      depth++
+    }
+    else if (char === ')') {
+      depth--
+      if (depth === 0)
+        return { expression: source.slice(open + 1, index), end: index + 1 }
+    }
+  }
+
+  // Unbalanced. Left to the caller to treat as a directive without an
+  // expression rather than silently swallowing the rest of the template.
+  return null
+}
+
+
+export function parseNativeComponentLoop(expression: string): { iterable: string, key?: string, value: string } | undefined {
+  const pair = /^([\s\S]+?)\s+as\s+(?:([A-Za-z_$][\w$]*)\s*=>\s*)?([A-Za-z_$][\w$]*)$/.exec(expression.trim())
+  return pair ? { iterable: pair[1]!, key: pair[2], value: pair[3]! } : undefined
+}
+
 function compileTemplateToRender(template: string): string {
   const parts: string[] = []
   let cursor = 0
@@ -381,43 +440,6 @@ function compileTemplateToRender(template: string): string {
    * Quotes are tracked so a `)` inside a string is not counted, which is what
    * lets `@if(suffix === ')')` through.
    */
-  const expressionAt = (open: number): { expression: string, end: number } | null => {
-    if (source[open] !== '(')
-      return null
-
-    let depth = 0
-    let quote = ''
-
-    for (let index = open; index < source.length; index++) {
-      const char = source[index]
-
-      if (quote !== '') {
-        if (char === '\\')
-          index++
-        else if (char === quote)
-          quote = ''
-        continue
-      }
-
-      if (char === '\'' || char === '"' || char === '`') {
-        quote = char
-        continue
-      }
-
-      if (char === '(') {
-        depth++
-      }
-      else if (char === ')') {
-        depth--
-        if (depth === 0)
-          return { expression: source.slice(open + 1, index), end: index + 1 }
-      }
-    }
-
-    // Unbalanced. Left to the caller to treat as a directive without an
-    // expression rather than silently swallowing the rest of the template.
-    return null
-  }
 
   const text = (raw: string): void => {
     if (raw === '') return
@@ -445,7 +467,7 @@ function compileTemplateToRender(template: string): string {
     // `@else`, `@endif` and `@endforeach` take no expression, so a `(` that
     // happens to follow one is markup and stays markup.
     const takesExpression = match[1] === 'if' || match[1] === 'elseif' || match[1] === 'foreach'
-    const parsed = takesExpression ? expressionAt(cursor) : null
+    const parsed = takesExpression ? componentDirectiveExpression(source, cursor) : null
 
     if (parsed) {
       cursor = parsed.end
@@ -473,12 +495,12 @@ function compileTemplateToRender(template: string): string {
         // use. Written as a for-of over entries so an object iterates as
         // happily as an array; a loop that only works on arrays is a trap the
         // author finds at runtime.
-        const pair = /^([\s\S]+?)\s+as\s+(?:([A-Za-z_$][\w$]*)\s*=>\s*)?([A-Za-z_$][\w$]*)$/.exec((expression || '').trim())
+        const pair = parseNativeComponentLoop(expression || '')
         if (!pair) {
           parts.push(`out += ${JSON.stringify(match[0] + (parsed ? `(${expression})` : ''))};`)
           break
         }
-        const [, iterable, key, value] = pair
+        const { iterable, key, value } = pair
         parts.push(key
           ? `for (const [${key}, ${value}] of __entries(${iterable})) {`
           : `for (const ${value} of __values(${iterable})) {`)
@@ -1558,7 +1580,8 @@ export default ${component.name};
 `
 }
 
-function typeForProperty(property: ComponentLibraryProperty): string {
+export function typeForProperty(property: ComponentLibraryProperty): string {
+  if (!property || typeof property !== 'object') return 'unknown'
   switch (property.type) {
     case 'boolean': return 'boolean'
     case 'number': return 'number'

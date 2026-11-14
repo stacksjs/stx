@@ -51,6 +51,9 @@ import { parseLoopBinding } from './loop-binding'
 import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { componentContractChecks } from './component-contract-checks'
+import type { ClientMethodValidator } from './component-library'
+import { inheritedContextBindings, inheritedContextChecks } from './inherited-context'
+import { nativeComponentContext, nativeComponentLoops } from './native-component-context'
 import { collectSlotScopes } from './slot-scopes'
 
 export type ScriptKind = 'server' | 'client' | 'plain'
@@ -97,6 +100,7 @@ export interface TemplateExpression {
 
 /** A synthetic line's origin, for diagnostics that land outside the source. */
 export interface MappedLine {
+  diagnosticOrigin?: ScriptKind | 'component'
   line: number
   column: number
   /** Present when the line came from a template expression. */
@@ -137,6 +141,8 @@ export interface VirtualFile {
   sourceLineCount: number
   /** Width-changing script interpolation edits, indexed by authored line. */
   scriptColumns?: Map<number, ScriptColumnEdit[]>
+  /** Native component method this-parameter insertions, after interpolation projection. */
+  componentColumns?: Map<number, ScriptColumnEdit[]>
   /** Width-changing relative-specifier edits, applied after the above. */
   importColumns?: Map<number, ScriptColumnEdit[]>
 }
@@ -198,7 +204,7 @@ export function extractScriptBlocks(source: string): ScriptBlock[] {
     const body = source.slice(bodyStart, bodyEnd)
 
     // `src` scripts have no inline body to check.
-    if (/\bsrc\s*=/.test(attrs))
+    if (/\bsrc\s*=/.test(attrs) || /\b(?:stx:)?component\b/.test(attrs))
       continue
     // Skip non-TS/JS types (JSON-LD, importmap, text/template, …).
     const typeMatch = attrs.match(/\btype\s*=\s*["']([^"']+)["']/i)
@@ -502,7 +508,24 @@ export function projectScriptInterpolations(code: string, serverCode: string, ke
   const projected = chunks.join('')
   if (!expressions.length) return { code: projected, columns, declarations }
 
-  const { imports, body } = splitTopLevelImports(serverCode)
+  const { imports, aliases, body } = typeScopeImports(serverCode, prefix)
+  for (const text of imports) declarations.push({ text })
+  declarations.push({ text: `namespace ${prefix}Scope {\n${aliases.join('\n')}\nexport async function read() {\n${blankScriptDirectives(body).replace(/^[ \t]*export[ \t]+(?=(?:const|let|var|function|async|class|interface|type)\b)/gm, '')}\nreturn {` })
+  for (const [index, expression] of expressions.entries()) {
+    declarations.push({ text: `value${index}: (` })
+    declarations.push({ text: expression.code, origin: { line: expression.line, column: expression.column } })
+    declarations.push({ text: '),' })
+  }
+  declarations.push({ text: '}\n}\n}' })
+  for (let index = 0; index < expressions.length; index++) {
+    declarations.push({ text: `declare var ${prefix}_${index}: Awaited<ReturnType<typeof ${prefix}Scope.read>>['value${index}']` })
+  }
+  return { code: projected, columns, declarations }
+}
+
+export function typeScopeImports(code: string, prefix: string): { imports: string[], aliases: string[], body: string } {
+  const hoisted: string[] = []
+  const { imports, body } = splitTopLevelImports(code)
   const aliases: string[] = []
   // Imports stay at module scope under private names. Namespace aliases retain
   // both the value and type sides, while client-owned names cannot shadow them.
@@ -510,9 +533,9 @@ export function projectScriptInterpolations(code: string, serverCode: string, ke
   for (const statement of imports.split(/\n(?=import\b)/)) {
     if (!statement.trim()) continue
     const from = /^import\s+(?:type\s+)?([\s\S]+?)\s+from\s*(['"][^'"]+['"])/.exec(statement)
-    if (!from) { declarations.push({ text: statement }); continue }
+    if (!from) { hoisted.push(statement); continue }
     const module = `${prefix}Module${moduleIndex++}`
-    declarations.push({ text: `import * as ${module} from ${from[2]}` })
+    hoisted.push(`import * as ${module} from ${from[2]}`)
     const clause = from[1]
     const named = /\{([\s\S]*?)\}/.exec(clause)
     for (const entry of named?.[1].split(',') ?? []) {
@@ -528,17 +551,7 @@ export function projectScriptInterpolations(code: string, serverCode: string, ke
     // separate value/type sides (the original server block checks their use).
     if (defaultName) aliases.push(`const ${defaultName} = ${module}.default; type ${defaultName} = import(${from[2]}).default`)
   }
-  declarations.push({ text: `namespace ${prefix}Scope {\n${aliases.join('\n')}\nexport async function read() {\n${blankScriptDirectives(body).replace(/^[ \t]*export[ \t]+(?=(?:const|let|var|function|async|class|interface|type)\b)/gm, '')}\nreturn {` })
-  for (const [index, expression] of expressions.entries()) {
-    declarations.push({ text: `value${index}: (` })
-    declarations.push({ text: expression.code, origin: { line: expression.line, column: expression.column } })
-    declarations.push({ text: '),' })
-  }
-  declarations.push({ text: '}\n}\n}' })
-  for (let index = 0; index < expressions.length; index++) {
-    declarations.push({ text: `declare var ${prefix}_${index}: Awaited<ReturnType<typeof ${prefix}Scope.read>>['value${index}']` })
-  }
-  return { code: projected, columns, declarations }
+  return { imports: hoisted, aliases, body }
 }
 
 /** Map a generated script column back across all preceding edits on its line. */
@@ -2002,15 +2015,15 @@ export function rewriteRelativeSpecifiers(code: string, originDir: string): { co
  * therefore undoes the specifier rewrite before the interpolation one; doing
  * it in the other order reads the second map in coordinates it never used.
  */
-export function resolveVirtualColumn(virtual: Pick<VirtualFile, 'scriptColumns' | 'importColumns'>, line: number, column: number): number {
+export function resolveVirtualColumn(virtual: Pick<VirtualFile, 'scriptColumns' | 'importColumns' | 'componentColumns'>, line: number, column: number): number {
   const projected = resolveScriptColumn(virtual.importColumns?.get(line) ?? [], column)
-  return resolveScriptColumn(virtual.scriptColumns?.get(line) ?? [], projected)
+  return resolveScriptColumn(virtual.scriptColumns?.get(line) ?? [], resolveScriptColumn(virtual.componentColumns?.get(line) ?? [], projected))
 }
 
 /** The inverse, in pipeline order, for editor hover and completions. */
-export function projectVirtualColumn(virtual: Pick<VirtualFile, 'scriptColumns' | 'importColumns'>, line: number, column: number): number {
+export function projectVirtualColumn(virtual: Pick<VirtualFile, 'scriptColumns' | 'importColumns' | 'componentColumns'>, line: number, column: number): number {
   const projected = projectScriptColumn(virtual.scriptColumns?.get(line) ?? [], column)
-  return projectScriptColumn(virtual.importColumns?.get(line) ?? [], projected)
+  return projectScriptColumn(virtual.importColumns?.get(line) ?? [], projectScriptColumn(virtual.componentColumns?.get(line) ?? [], projected))
 }
 
 /**
@@ -2053,6 +2066,14 @@ export function collectImportedNames(code: string): string[] {
 }
 
 export interface BuildVirtualOptions {
+  declaredGlobals?: readonly string[]
+  componentMethodValidator?: ClientMethodValidator
+  /** A native element installs its client methods together; server blocks stay separate. */
+  scriptKinds?: ScriptKind[]
+  nativeChecks?: boolean
+  partialsDir?: string
+  layoutsDir?: string
+  inheritedContractsKnown?: boolean
   /** Enables component call-site checks using the renderer's file lookup. */
   filePath?: string
   componentsDir?: string
@@ -2114,14 +2135,18 @@ export function buildVirtualTypeScript(
   source: string,
   options: BuildVirtualOptions = {},
 ): VirtualFile {
-  const blocks = extractScriptBlocks(source)
+  const allBlocks = extractScriptBlocks(source)
+  const blocks = options.scriptKinds ? allBlocks.filter(block => options.scriptKinds!.includes(block.kind)) : allBlocks
+  const component = nativeComponentContext(source, options.componentMethodValidator)
+  const inherited = options.filePath && options.templateExpressions !== false ? inheritedContextChecks(source, { filePath: options.filePath, partialsDir: options.partialsDir, layoutsDir: options.layoutsDir, contractsKnown: options.inheritedContractsKnown, readTemplate: options.readComponent }) : undefined
+  const componentColumns = new Map<number, ScriptColumnEdit[]>()
   const sourceLines = source.split('\n')
   const lines: string[] = Array.from({ length: sourceLines.length }, () => '')
   const lineMap = new Map<number, MappedLine>()
   const scriptColumns = new Map<number, ScriptColumnEdit[]>()
   const importColumns = new Map<number, ScriptColumnEdit[]>()
   const scriptDeclarations: Array<{ text: string, origin?: MappedLine }> = []
-  const serverCode = interpolationScopeCode(blocks)
+  const serverCode = interpolationScopeCode(allBlocks)
   const components = options.filePath && options.templateExpressions !== false
     ? componentContractChecks(source, maskNonTemplateRegions(source), {
         filePath: options.filePath,
@@ -2146,7 +2171,9 @@ export function buildVirtualTypeScript(
       text: absolutizeRelativeSpecifiers(declaration.text, options.originDir ?? ''),
       origin: declaration.origin ? { ...declaration.origin, line: declaration.origin.line + block.startLine - 1 } : undefined,
     })
-    const code = blankScriptDirectives(projection.code)
+    const nativeProjection = block.kind === 'client' && component ? component.project(projection.code) : undefined
+    for (const [line, edits] of nativeProjection?.columns ?? []) componentColumns.set(block.startLine + line - 1, edits)
+    const code = blankScriptDirectives(nativeProjection?.code ?? projection.code)
     const rewritten = rewriteRelativeSpecifiers(code, options.originDir ?? '')
     for (const [line, edits] of rewritten.columns) importColumns.set(block.startLine + line - 1, edits)
     const bodyLines = rewritten.code.split('\n')
@@ -2185,7 +2212,11 @@ export function buildVirtualTypeScript(
     }
   }
 
+  const inheritedBindings = inheritedContextBindings(blocks.filter(block => block.kind === 'server').map(block => block.code).join('\n'))
+  if (inheritedBindings) append(inheritedBindings)
+  if (inherited?.declarations) append(inherited.declarations)
   for (const declaration of scriptDeclarations) append(declaration.text, declaration.origin)
+  if (component) { append(component.declarations); if (options.nativeChecks !== false) for (const check of component.checks) append(check.text, { line: check.line, column: check.column, diagnosticOrigin: check.origin }) }
 
   if (options.globals !== false) {
     append('')
@@ -2205,7 +2236,7 @@ export function buildVirtualTypeScript(
       ...blocks.flatMap(block => collectImportedNames(block.code)),
     ])
     const declareAny = (name: string): void => {
-      if (!bound.has(name))
+      if (!bound.has(name) && !options.declaredGlobals?.includes(name))
         append(`declare var ${name}: any`)
     }
     // Skipped when the caller supplies the package's real `stx.d.ts`. These are
@@ -2223,7 +2254,7 @@ export function buildVirtualTypeScript(
     // (`definePageMeta`, `defineStore`) is left to it: a global `var x: any`
     // beside its `function x()` is a conflict that types the name as neither.
     const contextNames = [...new Set<string>([...STX_SERVER_CONTEXT, ...BROWSER_CORE_IMPORTS, ...STX_TEMPLATE_GLOBALS])]
-      .filter(name => options.runtimeGlobals !== false || !STX_RUNTIME_GLOBALS.includes(name))
+      .filter(name => !options.declaredGlobals?.includes(name) && (options.runtimeGlobals !== false || !STX_RUNTIME_GLOBALS.includes(name)))
     if (options.contextScope === 'global') {
       append('declare global {')
       for (const name of contextNames)
@@ -2259,7 +2290,7 @@ export function buildVirtualTypeScript(
     // redeclaring it would report a collision against the author's own code.
     const declared = new Set(blocks.flatMap(block => collectBlockDeclarations(block.code)))
     append(`type ${ELEMENT_HELPER}<T> = T extends readonly (infer E)[] ? E : T extends Iterable<infer E2> ? E2 : any`)
-    for (const binding of collectTemplateBindings(source)) {
+    for (const binding of component ? [] : collectTemplateBindings(source)) {
       if (declared.has(binding.name))
         continue
       const type = binding.iterable && declared.has(binding.iterable)
@@ -2299,7 +2330,7 @@ export function buildVirtualTypeScript(
       })
       .filter((entry): entry is { expression: TemplateExpression, statement: { text: string, prefixLength: number } } =>
         entry.statement !== null)
-    statements.push(...(components?.checks || []))
+    statements.push(...(components?.checks || []), ...(inherited?.checks || []))
 
     if (statements.length > 0) {
       // Re-type the script blocks' own bindings for the template's reading of
@@ -2313,11 +2344,14 @@ export function buildVirtualTypeScript(
       // circular initialiser.
       const maskedSource = maskNonTemplateRegions(source)
       const slotScopes = collectSlotScopes(maskedSource)
+      const nativeLoops = component ? nativeComponentLoops(maskedSource) : []
+      if (component) append('type __StxNativeValue<T> = T extends readonly (infer E)[] ? E : T extends object ? T[keyof T] : never; declare function __stxEach<T>(items: T, callback: (item: __StxNativeValue<T>, key: string) => void): void;')
       const conditionAliases = collectConditionAliases(blocks.map(block => block.code))
       const declared = [...new Set(blocks.flatMap(block => collectBlockDeclarations(block.code)))]
       const shadowed = declared.filter(name => /^[A-Z_$][\w$]*$/i.test(name))
 
       let indent = 0
+      if (component) append('function __stxNativeTemplate(this: __StxNativeComponent) {')
       if (shadowed.length > 0) {
         append(UNWRAP_HELPER_DECL)
         for (const name of shadowed) {
@@ -2340,8 +2374,11 @@ export function buildVirtualTypeScript(
         const enclosingSlots = expression.offset === undefined
           ? []
           : slotScopes.filter(scope => expression.offset! >= scope.start && expression.offset! < scope.end)
-        const slotPrefix = enclosingSlots.map(scope => `;((${scope.binding.replace(/[\r\n]/g, ' ')}: any) => { `).join('')
-        const slotSuffix = ' });'.repeat(enclosingSlots.length)
+        const loopScopes = expression.offset === undefined ? [] : nativeLoops.filter(scope => expression.offset! >= scope.start && expression.offset! < scope.end)
+        const loopPrefix = loopScopes.map(scope => `;__stxEach(${scope.iterable}, (${scope.binding}) => { `).join('')
+        const loopSuffix = ' });'.repeat(loopScopes.length)
+        const slotPrefix = loopPrefix + enclosingSlots.map(scope => `;((${scope.binding.replace(/[\r\n]/g, ' ')}: any) => { `).join('')
+        const slotSuffix = ' });'.repeat(enclosingSlots.length) + loopSuffix
         /*
          * Wrapped in the `@if` / `@unless` blocks that enclose it, so a guard
          * the markup already applies narrows the expression the same way it
@@ -2371,6 +2408,7 @@ export function buildVirtualTypeScript(
 
       if (indent > 0)
         append('});')
+      if (component) append('}')
     }
   }
 
@@ -2388,7 +2426,7 @@ export function buildVirtualTypeScript(
   // lib.dom happens to claim — `name`, `status`, `length`, `close` — hits this.
   append('export {}')
 
-  return { text: lines.join('\n'), lineMap, sourceLineCount: sourceLines.length, componentDependencies: components?.dependencies, referenced, scriptColumns, importColumns }
+  return { text: lines.join('\n'), lineMap, sourceLineCount: sourceLines.length, componentDependencies: new Map([...(components?.dependencies ?? []), ...(inherited?.dependencies ?? [])]), referenced, scriptColumns, importColumns, componentColumns }
 }
 
 /** Offsets at which each 1-based line starts. */
@@ -2423,6 +2461,7 @@ export function positionToOffset(starts: readonly number[], line: number, column
 
 /** Where a diagnostic in a virtual buffer belongs in the `.stx` file. */
 export interface ResolvedPosition {
+  diagnosticOrigin?: ScriptKind | 'component'
   line: number
   column: number
   /** Set when the diagnostic came from a template expression. */
@@ -2481,6 +2520,7 @@ export function resolvePosition(
     line: mapped.line,
     column: mapped.column + within,
     expression: mapped.expression,
+    diagnosticOrigin: mapped.diagnosticOrigin,
     // 1-based column, so a hit AT guardPrefixLength is still the last character
     // of the wrapper.
     inGuard: column <= (mapped.guardPrefixLength ?? 0),

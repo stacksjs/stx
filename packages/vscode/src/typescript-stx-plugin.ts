@@ -1,6 +1,6 @@
 import type * as ts from 'typescript/lib/tsserverlibrary'
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import type { ResolvedPosition, ScriptBlock, VirtualFile } from '../../stx/src/stx-virtual-ts'
@@ -10,6 +10,7 @@ import type { ResolvedPosition, ScriptBlock, VirtualFile } from '../../stx/src/s
 import {
   buildVirtualTypeScript,
   crossScopeCollisions,
+  declaredGlobalNames,
   extractScriptBlocks,
   isTemplateArtefact,
   lineStarts,
@@ -188,11 +189,29 @@ export interface StxPluginOptions {
   declarationsDir?: string
 }
 
-function buildDocument(fileName: string, source: string, version: string, options: { declarations?: string, readComponent?: (file: string) => string | undefined, componentsDir?: string, projectRoot?: string }): StxDocument {
+export function referencedGlobalNames(file: string | undefined): string[] {
+  const names = new Set<string>(), seen = new Set<string>()
+  function read(current: string) {
+    if (seen.has(current) || !existsSync(current)) return
+    seen.add(current)
+    const text = readFileSync(current, 'utf8')
+    for (const name of declaredGlobalNames(text)) names.add(name)
+    for (const reference of text.matchAll(/<reference\s+path=["']([^"']+)["']/g)) read(path.resolve(path.dirname(current), reference[1]!))
+  }
+  if (file) read(file)
+  return [...names]
+}
+
+function buildDocument(fileName: string, source: string, version: string, options: { typescript: typeof ts, declarations?: string, readComponent?: (file: string) => string | undefined, componentsDir?: string, projectRoot?: string }): StxDocument {
   const build = (declarations: string | undefined): VirtualFile => buildVirtualTypeScript(source, {
     // Markdown is not a template: its `{{ }}` are usually documentation OF stx
     // syntax, so checking them would invent errors in every doc page.
     templateExpressions: isStx(fileName),
+    componentMethodValidator: (header, token, name) => {
+      const result = options.typescript.transpileModule(header + (token === '{' ? '{}' : ';'), { reportDiagnostics: true, compilerOptions: { target: options.typescript.ScriptTarget.ESNext } })
+      if (result.diagnostics?.some(item => item.category === options.typescript.DiagnosticCategory.Error)) return false
+      return token === '{' ? result.outputText.includes(`function ${name}(`) : !result.outputText.trim()
+    },
     originDir: path.dirname(fileName),
     filePath: fileName,
     readComponent: options.readComponent,
@@ -202,6 +221,7 @@ function buildDocument(fileName: string, source: string, version: string, option
     // line, the way an import would bring them, so only programs that hold a
     // `.stx` file ever see them.
     reference: declarations,
+    declaredGlobals: referencedGlobalNames(declarations),
     // With the typed declarations in the program, `any` copies here would
     // shadow them, exactly as in `stx typecheck` (#1889).
     runtimeGlobals: !declarations,
@@ -361,6 +381,7 @@ function init(modules: { typescript: typeof ts }, options: StxPluginOptions = {}
             ? path.resolve(projectRoot, typeof info.config?.componentsDir === 'string' ? info.config.componentsDir : 'components')
             : undefined
           const document = buildDocument(fileName, snapshot.getText(0, snapshot.getLength()), version, {
+            typescript: tsLib,
             declarations: declarationsFor(fileName),
             readComponent,
             componentsDir,

@@ -16,7 +16,7 @@ import path from 'node:path'
 const STX_PACKAGE_DIR = path.join(import.meta.dir, '..', '..', 'stx')
 
 /** The files, by name; `stx-module.d.ts` is the one a buffer references. */
-export const STX_DECLARATION_FILES = ['stx.d.ts', 'stx-module.d.ts'] as const
+export const STX_DECLARATION_FILES = ['stx.d.ts', 'stx-module.d.ts', 'browser-auto-imports.d.ts'] as const
 
 /** Write the plugin's declaration files into `dir`, returning their paths. */
 export function writeStxDeclarations(dir: string, stxPackageDir: string = STX_PACKAGE_DIR): string[] {

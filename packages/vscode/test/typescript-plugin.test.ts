@@ -19,7 +19,7 @@ import { existsSync, mkdirSync, readFileSync, rmdirSync, rmSync, writeFileSync }
 import { dirname, join } from 'node:path'
 import { buildVirtualTypeScript, lineStarts, positionToOffset } from '../../stx/src/stx-virtual-ts'
 import { writeStxDeclarations } from '../src/ts-plugin-declarations'
-import init, { declarationEntry, findInstalledStxDeclarations } from '../src/typescript-stx-plugin'
+import init, { declarationEntry, findInstalledStxDeclarations, referencedGlobalNames } from '../src/typescript-stx-plugin'
 import { createTempDir, removeAllTempDirs } from '../../stx/src/temp-dir'
 
 // No bunfig preload here when this package's tests run on their own, so
@@ -479,4 +479,22 @@ describe('the tsconfig libs', () => {
       }
     }
   })
+})
+
+
+test('native component documents use the supplied compiler and do not redeclare referenced browser globals', () => {
+  const directory = createTempDir('stx-native-editor-')
+  writeStxDeclarations(directory)
+  const file = '/native-editor.stx'
+  const source = '<script component type="application/json">{"tag":"editor-counter","properties":{"count":{"type":"number"}}}</script>\n<script client>\nfunction add(value: number) { this.count += value }\n</script>\n<template>{{ this.count }}</template>'
+  const transpiler = new Bun.Transpiler({ loader: 'ts' })
+  let parsed = 0
+  const compiler = { ...tsLib, ScriptTarget: { ESNext: 99 }, DiagnosticCategory: { Error: 1 }, transpileModule(code: string) { parsed++; try { return { outputText: transpiler.transformSync(code), diagnostics: [] } } catch { return { outputText: '', diagnostics: [{ category: 1 }] } } } } as unknown as typeof ts
+  const plugin = init({ typescript: compiler }, { declarationsDir: directory })
+  const { host } = harness(file, source, new Map(), { plugin })
+  const virtual = host.getScriptSnapshot!(file)!.getText(0, host.getScriptSnapshot!(file)!.getLength())
+  expect(parsed).toBeGreaterThan(0)
+  expect(virtual).toContain('this: __StxNativeComponent')
+  expect(virtual).not.toContain('var browserQuery:')
+  expect(referencedGlobalNames(join(directory, 'stx-module.d.ts'))).toContain('browserQuery')
 })

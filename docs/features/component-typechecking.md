@@ -66,3 +66,83 @@ directory, set `componentsDir` on the stx TypeScript plugin entry in `tsconfig.j
 Contracts are projected into virtual TypeScript; component scripts are not
 executed by this feature. Script checking remains independently available for
 both server and client blocks.
+
+## Native custom-element author programs
+
+A `<script component type="application/json">` declares the element properties.
+`stx typecheck` uses the same metadata/property types and method parser as the
+native element emitter. Client methods receive the element as their `this`
+context, including `HTMLElement`, `emit`, `requestUpdate`, `renderRoot`, declared
+properties and the actual authored method signatures. Generic methods retain
+their generic arguments. Server blocks and ordinary page functions receive no
+component instance context. JSON metadata is never interpreted as executable
+TypeScript; invalid JSON, invalid property kinds and mismatched defaults are
+reported at the metadata source.
+
+```html
+<script component type="application/json">
+{"tag":"typed-list","properties":{"rows":{"type":"array"},"count":{"type":"number"}}}
+</script>
+<script client>
+interface ComponentState {
+  rows: { title: string }[]
+  _abort?: AbortController
+}
+function onConnect() { this._abort = new AbortController() }
+function add(amount: number): void { this.count += amount }
+</script>
+<template>
+  @foreach(this.rows as row)<p>{{ row.title }}</p>@endforeach
+</template>
+```
+
+An optional `ComponentState` interface or type describes private fields and
+refines object/array element shapes. Refined metadata properties must still be
+assignable to their declared metadata type. It is a type contract, not a state
+initializer: use optional private fields until lifecycle code initializes them.
+There is no permissive index signature. Unknown properties, wrong method
+arguments and wrong property assignments remain errors. Nested native loops
+have lexical aliases, including object key/value loops; aliases cannot escape
+their loop. Synthetic `this` parameters and template wrappers retain mappings
+to the authored line and column.
+
+## Inherited server context
+
+A partial can explicitly type the lexical context that the renderer copies from
+its caller, without changing runtime behavior or converting it into props:
+
+```html
+<script server>
+interface InheritedContext {
+  pageTitle?: string
+  pageDescription?: string
+  canonicalPath?: string
+}
+const title = pageTitle || 'My site'
+</script>
+<title>{{ title }}</title>
+```
+
+Only these declared names become available to that server script. They are
+file-local contracts, not ambient globals. Check the complete author tree:
+
+```sh
+stx typecheck 'resources/**/*.stx'
+```
+
+For each leaf page, the checker follows static `@extends`, `@layout` and
+`@include` paths, using the configured layout/partial directories. It infers
+server values, layout overrides and explicit include data without executing
+scripts. Each reachable inherited contract is checked at the leaf callsite:
+a numeric `pageTitle` fails at that page's layout/include directive; a missing
+optional field is valid; a missing required field fails. Layouts and partials
+are not treated as imaginary standalone renders with no incoming context.
+Programmatic callers may set `partialsDir` and `layoutsDir` explicitly.
+
+The contract form is a locally declared object interface with named lexical
+properties. Dynamic include/layout paths, unresolved static targets and cyclic
+or deeper-than-32 graphs cannot prove an inherited contract. When a checked tree
+contains inherited contracts, these produce explicit diagnostics rather than a
+successful but incomplete check. Include the partials and layouts in the author
+program so their own scripts are checked too. Runtime-supplied context from an
+external server caller is outside the static template graph.

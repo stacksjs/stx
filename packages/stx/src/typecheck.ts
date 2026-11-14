@@ -54,6 +54,9 @@ import {
   interpolationScopeCode,
   projectScriptInterpolations,
 } from './stx-virtual-ts'
+import { inheritedContextBindings, inheritedContextContract } from './inherited-context'
+import { nativeComponentContext } from './native-component-context'
+import type { NativeComponentContext } from './native-component-context'
 import { stxImportDiagnostics } from './stx-module-imports'
 import { findStxPluginEntry } from './stx-plugin-config'
 
@@ -65,7 +68,7 @@ export {
 } from './stx-virtual-ts'
 
 /** Where a diagnostic came from: a script block, or the markup itself. */
-export type DiagnosticOrigin = ScriptKind | 'template'
+export type DiagnosticOrigin = ScriptKind | 'template' | 'component'
 
 export interface TypecheckDiagnostic {
   file: string
@@ -80,6 +83,8 @@ export interface TypecheckDiagnostic {
 }
 
 export interface TypecheckOptions {
+  partialsDir?: string
+  layoutsDir?: string
   /** Component directory, using the same lookup rules as rendering. */
   componentsDir?: string
   /** Extra ambient declaration files to include (e.g. an app's own types). */
@@ -136,7 +141,7 @@ export interface TypecheckResult {
  * against the file containing it — so without this, `../target` was looked for
  * next to `.stx/typecheck/` (#1928).
  */
-export function buildScriptVirtualFile(block: ScriptBlock, serverCode = '', originDir = '', interpolationScope = serverCode): VirtualFile {
+export function buildScriptVirtualFile(block: ScriptBlock, serverCode = '', originDir = '', interpolationScope = serverCode, component?: NativeComponentContext): VirtualFile {
   const leadingNewlines = block.startLine > 1 ? '\n'.repeat(block.startLine - 1) : ''
 
   // A block may take a server value through an interpolation. As TypeScript
@@ -151,7 +156,8 @@ export function buildScriptVirtualFile(block: ScriptBlock, serverCode = '', orig
   // the component's props (stacksjs/stx#2180); the payload declarations below
   // still read the server code alone.
   const projection = projectScriptInterpolations(firstLinePadding(block) + block.code, interpolationScope)
-  const code = blankScriptDirectives(projection.code)
+  const componentProjection = block.kind === 'client' && component ? component.project(projection.code) : undefined
+  const code = blankScriptDirectives(componentProjection?.code ?? projection.code)
 
   /*
    * A client block is checked in its own buffer, so a value reaching it through
@@ -179,13 +185,15 @@ export function buildScriptVirtualFile(block: ScriptBlock, serverCode = '', orig
       if (declaration.origin) lineMap.set(lines.length, { ...declaration.origin, line: block.startLine + declaration.origin.line - 1 + index, column: index === 0 ? declaration.origin.column : 1 })
     }
   }
-  lines.push(payload, 'export {}', '')
+  lines.push(...payload.split('\n'), ...(component?.declarations ?? '').split('\n'), ...(block.kind === 'server' ? inheritedContextBindings(block.code) : '').split('\n'))
+  lines.push('export {}', '')
   // Padding above puts a body line at its authored line number, so the rewrite's
   // own line keys are already authored ones for everything inside the block.
   const rewritten = rewriteRelativeSpecifiers(lines.join('\n'), originDir)
   return { text: rewritten.code, sourceLineCount, lineMap,
     scriptColumns: new Map([...projection.columns].map(([line, edits]) => [line + block.startLine - 1, edits])),
     importColumns: rewritten.columns,
+    componentColumns: componentProjection ? new Map([...componentProjection.columns].map(([line, edits]) => [line + block.startLine - 1, edits])) : undefined,
   }
 }
 
@@ -508,7 +516,12 @@ export async function typecheckStxFiles(
   const checkClient = options.client !== false
   const checkServer = options.server !== false
   const checkTemplates = options.templates !== false
-  const componentsDir = options.componentsDir ?? (checkTemplates ? (await loadStxConfig()).componentsDir : undefined)
+  const templateConfig = checkTemplates ? await loadStxConfig() : undefined
+  const componentsDir = options.componentsDir ?? templateConfig?.componentsDir
+  const partialsDir = options.partialsDir ?? templateConfig?.partialsDir
+  const layoutsDir = options.layoutsDir ?? templateConfig?.layoutsDir
+  const sources = new Map(await Promise.all(files.map(async file => [file, await Bun.file(file).text()] as const)))
+  const inheritedContractsKnown = [...sources.values()].some(source => inheritedContextContract(extractScriptBlocks(source).filter(block => block.kind === 'server').map(block => block.code).join('\n')))
 
   interface VirtualEntry {
     source: string
@@ -532,7 +545,7 @@ export async function typecheckStxFiles(
   const runtimeTypes = findRuntimeTypeDeclarations()
 
   for (const file of files) {
-    const source = await Bun.file(file).text()
+    const source = sources.get(file)!
     const blocks = extractScriptBlocks(source).filter((b) => {
       if (b.kind === 'server')
         return checkServer
@@ -557,6 +570,7 @@ export async function typecheckStxFiles(
       .map(block => block.code)
       .join('\n')
     const interpolationScope = interpolationScopeCode(extractScriptBlocks(source))
+    const component = nativeComponentContext(source)
 
     for (const d of stxImportDiagnostics(source, blocks)) {
       importDiagnostics.push({
@@ -587,30 +601,30 @@ export async function typecheckStxFiles(
     const originDir = path.dirname(path.resolve(file))
 
     const templateBuffer = checkTemplates
-      ? buildVirtualTypeScript(source, { runtimeGlobals: !runtimeTypes, originDir, filePath: path.resolve(file), componentsDir })
+      ? buildVirtualTypeScript(source, { runtimeGlobals: !runtimeTypes, originDir, filePath: path.resolve(file), componentsDir, partialsDir, layoutsDir, inheritedContractsKnown })
       : null
     const expressions = templateBuffer
       ? [...templateBuffer.lineMap.values()].filter(m => m.expression).length
       : 0
 
-    if (blocks.length === 0 && expressions === 0)
+    if (blocks.length === 0 && expressions === 0 && !component?.checks.length)
       continue
 
     checkedFiles.push(file)
     blockCount += blocks.length
     expressionCount += expressions
 
+    if (component && checkClient && (blocks.some(block => block.kind !== 'server') || (!checkTemplates && component.checks.length))) {
+      const virtual = buildVirtualTypeScript(source, { runtimeGlobals: false, globals: false, originDir, templateExpressions: false, scriptKinds: ['client', 'plain'], nativeChecks: !checkTemplates })
+      virtualFiles.set(virtualPathFor(file, 'client', 0), { virtual, source: virtual.text, origin: file, kind: 'client' })
+    }
     blocks.forEach((block, i) => {
+      if (component && block.kind !== 'server') return
       const virtual = buildScriptVirtualFile(block, serverCode, originDir, interpolationScope)
-      virtualFiles.set(virtualPathFor(file, block.kind, i), {
-        virtual,
-        source: virtual.text,
-        origin: file,
-        kind: block.kind,
-      })
+      virtualFiles.set(virtualPathFor(file, block.kind, i), { virtual, source: virtual.text, origin: file, kind: block.kind })
     })
 
-    if (templateBuffer && expressions > 0) {
+    if (templateBuffer && (expressions > 0 || component?.checks.length)) {
       virtualFiles.set(virtualPathFor(file, 'template', 0), {
         source: templateBuffer.text,
         origin: file,
@@ -795,6 +809,7 @@ export async function typecheckStxFiles(
     let line = Number(lineStr)
     let column = Number(colStr)
     let expression: string | undefined
+    let blockKind = entry.kind
 
     if (entry.virtual) {
       // An unfinished authored construct can make the parser complain at the
@@ -806,7 +821,7 @@ export async function typecheckStxFiles(
           : null)
       // Only template-expression errors are new in the template buffer; its
       // script errors are already covered by the mapped per-block buffers.
-      if (!at || (entry.kind === 'template' && !at.expression))
+      if (!at || (entry.kind === 'template' && !at.expression && !at.diagnosticOrigin))
         continue
 
       // The guard wrapper and TS2774 — see isTemplateArtefact.
@@ -816,6 +831,7 @@ export async function typecheckStxFiles(
       line = at.line
       column = at.column
       expression = at.expression?.code.trim()
+      blockKind = at.diagnosticOrigin ?? blockKind
     }
 
     diagnostics.push({
@@ -827,7 +843,7 @@ export async function typecheckStxFiles(
       code: Number(code),
       message,
       category: category === "error" ? "error" : "warning",
-      blockKind: entry.kind,
+      blockKind,
       expression,
     })
   }
