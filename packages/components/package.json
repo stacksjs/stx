@@ -128,13 +128,13 @@
   },
   "dependencies": {
     "@iconify-json/f7": "^1.2.2",
-    "@stacksjs/ts-css": "^0.3.11",
+    "@stacksjs/ts-css": "^0.3.26",
     "@stacksjs/stx": "workspace:*",
     "bun-plugin-stx": "workspace:*",
     "ts-syntax-highlighter": "^0.2.20",
     "ts-video-player": "^0.1.11"
   },
   "devDependencies": {
-    "better-dx": "^0.2.38"
+    "better-dx": "^0.2.40"
   }
 }

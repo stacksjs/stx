@@ -158,7 +158,7 @@ jobs:
           persist-credentials: true
 
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@362da3ef0602f51232ab9431da8d05c84c5f49ba # v0.11.197
+        uses: pantry-pm/pantry/packages/action@be9f7a5b0af91351f5c0b7ea3b2fa98e267753a8 # v0.11.207
         with:
           version: '0.11.197'
           install: 'false'
@@ -200,7 +200,7 @@ jobs:
           persist-credentials: true
 
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@362da3ef0602f51232ab9431da8d05c84c5f49ba # v0.11.197
+        uses: pantry-pm/pantry/packages/action@be9f7a5b0af91351f5c0b7ea3b2fa98e267753a8 # v0.11.207
         with:
           version: '0.11.197'
           install: 'false'
@@ -286,7 +286,7 @@ jobs:
           persist-credentials: true
 
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@362da3ef0602f51232ab9431da8d05c84c5f49ba # v0.11.197
+        uses: pantry-pm/pantry/packages/action@be9f7a5b0af91351f5c0b7ea3b2fa98e267753a8 # v0.11.207
         with:
           version: '0.11.197'
           install: 'false'
@@ -398,7 +398,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Provision managed tools through Pantry
-        uses: pantry-pm/pantry/packages/action@362da3ef0602f51232ab9431da8d05c84c5f49ba # v0.11.197
+        uses: pantry-pm/pantry/packages/action@be9f7a5b0af91351f5c0b7ea3b2fa98e267753a8 # v0.11.207
         with:
           version: '0.11.197'
           install: 'false'
