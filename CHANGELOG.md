@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.876...v0.2.877)
+
+## 🐛 Bug Fixes
+
+- preserve checked bindings and ordered module delivery ([e47554a](https://github.com/stacksjs/stx/commit/e47554a)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.877 ([f31f1d3](https://github.com/stacksjs/stx/commit/f31f1d3)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.875...v0.2.876)
 
 ## 🐛 Bug Fixes
