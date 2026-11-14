@@ -1,10 +1,10 @@
 /** Parameter bindings shadow ambient helpers only inside their function. */
 import { LRUCache } from './performance-utils'
-import { stripCommentsAndLiterals } from './strip-literals'
+import { bracketDepths, stripBindingLiterals, stripCommentsAndLiterals } from './strip-literals'
 
 interface Token { text: string, start: number, end: number }
 interface Scope { start: number, end: number, bodyStart: number, functionBody: boolean, names: Set<string> }
-interface Site { name: string, token: number, file?: boolean, functionScoped?: boolean }
+interface Site { name: string, token: number, declarationToken?: number, file?: boolean, functionScoped?: boolean }
 interface LoopScope { headStart: number, headEnd: number, start: number, end: number }
 interface Analysis { code: string, scopes: Scope[], loops: LoopScope[], declarations: Set<string>, sites: Site[], tokens: Token[], pairs: Map<number, number> }
 // Callers alternate original, stripped and bundled scripts. A one-entry cache
@@ -66,13 +66,13 @@ function analyze(source: string): Analysis {
   }
   // Where each declared name is declared, for unboundNames.
   const sites: Site[] = []
-  function pattern(start: number, end: number, names: Set<string>, functionScoped = false): void {
+  function pattern(start: number, end: number, names: Set<string>, functionScoped = false, declarationToken?: number): void {
     if (tokens[start]?.text === '...') start++
     if (start >= end) return
     const first = tokens[start].text
     if (identifier.test(first)) {
       names.add(first)
-      if (names === declarations) sites.push({ name: first, token: start, functionScoped })
+      if (names === declarations) sites.push({ name: first, token: start, functionScoped, declarationToken })
       return
     }
     if (first !== '{' && first !== '[') return
@@ -87,7 +87,7 @@ function analyze(source: string): Analysis {
           if (['(', '[', '{'].includes(tokens[index].text) && pairs.has(index)) index = pairs.get(index)!
         }
       }
-      pattern(binding, finish, names, functionScoped)
+      pattern(binding, finish, names, functionScoped, declarationToken)
     }
   }
   function parameterNames(start: number, end: number): Set<string> {
@@ -204,7 +204,7 @@ function analyze(source: string): Analysis {
         else if (at < end && inType && text === '<') angles++
         else if (at < end && inType && text === '>' && angles > 0) angles--
         else if (at === end || (text === ',' && angles === 0)) {
-          pattern(begin, at, declarations, token === 'var')
+          pattern(begin, at, declarations, token === 'var', index)
           begin = at + 1
           inType = false
           initialised = false
@@ -216,7 +216,7 @@ function analyze(source: string): Analysis {
       if (tokens[name]?.text === '*') name++
       if (tokens[name] && identifier.test(tokens[name].text) && tokens[name].text !== 'extends') {
         declarations.add(tokens[name].text)
-        sites.push({ name: tokens[name].text, token: name })
+        sites.push({ name: tokens[name].text, token: name, declarationToken: index })
       }
     }
     else if (token === 'import') {
@@ -261,6 +261,34 @@ export function parameterAnalysis(source: string): { code: string, shadows: (nam
 export function declaredNames(source: string): Set<string> {
   return new Set(analyze(source).declarations)
 }
+
+/** Module declarations only; expressions, nested bindings and literal text never export names. */
+export function topLevelDeclarationSites(source: string): Array<{ name: string, start: number }> {
+  const analysis = analyze(source)
+  const masked = stripBindingLiterals(source)
+  const { depths } = bracketDepths(masked)
+  const result: Array<{ name: string, start: number }> = []
+  for (const site of analysis.sites) {
+    if (site.file || site.declarationToken === undefined) continue
+    const keyword = analysis.tokens[site.declarationToken]!
+    if (depths[keyword.start] !== 0) continue
+    const prefix = masked.slice(0, keyword.start)
+    const tokens = [...prefix.matchAll(/[A-Za-z_$][\w$]*|\d+(?:[.]\d+)?|[^\s]/g)]
+    let previous = tokens.pop()
+    if (previous?.[0] === 'declare') continue
+    if (keyword.text === 'function' || keyword.text === 'class') {
+      while (previous && ['async', 'export', 'default', 'abstract'].includes(previous[0])) previous = tokens.pop()
+      if (previous && ![';', '}'].includes(previous[0])) {
+        const gap = prefix.slice(previous.index! + previous[0].length)
+        if (!/[\r\n]/.test(gap) || !/^(?:[\w$]+|[)\]])$/.test(previous[0]) || ['return', 'throw', 'yield', 'await', 'new'].includes(previous[0])) continue
+      }
+    }
+    result.push({ name: site.name, start: keyword.start })
+  }
+  return result
+}
+
+export function topLevelDeclaredNames(source: string): string[] { return [...new Set(topLevelDeclarationSites(source).map(site => site.name))].sort() }
 
 /**
  * Which of `candidates` the source uses without binding them itself: a
@@ -332,4 +360,17 @@ export function unboundNames(source: string, candidates: ReadonlySet<string>): S
     found.add(name)
   }
   return found
+}
+
+/** Await at module scope, using the same lexical function boundaries as binding injection. */
+export function hasTopLevelAwait(source: string): boolean {
+  const analysis = analyze(stripBindingLiterals(source))
+  return analysis.tokens.some((token, index) => {
+    if (token.text !== 'await') return false
+    if (analysis.tokens[index - 1]?.text === '.' || analysis.tokens[index + 1]?.text === ':') return false
+    // An object/class method called `await` is a property name, not an operator.
+    const next = index + 1
+    if (analysis.tokens[next]?.text === '(' && analysis.tokens[(analysis.pairs.get(next) ?? -2) + 1]?.text === '{') return false
+    return !analysis.scopes.some(scope => scope.functionBody && scope.start <= token.start && token.start < scope.end)
+  })
 }

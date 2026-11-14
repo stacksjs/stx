@@ -186,6 +186,13 @@ export function buildScriptVirtualFile(block: ScriptBlock, serverCode = '', orig
     }
   }
   lines.push(...payload.split('\n'), ...(component?.declarations ?? '').split('\n'), ...(block.kind === 'server' ? inheritedContextBindings(block.code) : '').split('\n'))
+  const inheritedContract = block.kind === 'server' ? inheritedContextContract(block.code) : undefined
+  if (inheritedContract?.unsupported) {
+    const before = block.code.slice(0, inheritedContract.offset), line = block.startLine + before.split('\n').length - 1
+    const column = inheritedContract.offset - block.code.lastIndexOf('\n', inheritedContract.offset - 1) + (line === block.startLine ? (block.startColumn ?? 1) - 1 : 0)
+    lines.push(`;({})[${JSON.stringify(inheritedContract.unsupported)}];`)
+    lineMap.set(lines.length, { line, column, anchor: true })
+  }
   lines.push('export {}', '')
   // Padding above puts a body line at its authored line number, so the rewrite's
   // own line keys are already authored ones for everything inside the block.

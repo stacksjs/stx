@@ -1,3 +1,4 @@
+import { scanHtmlScriptElements } from './html-masking'
 import type {
   ComponentLibraryBuildResult,
   ComponentLibraryComponent,
@@ -7,6 +8,8 @@ import type {
 } from './types'
 import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { scriptAttributes, scriptContainsCode } from './script-attributes'
+import { topLevelDeclarationSites } from './client-parameter-bindings'
 import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 
 export interface SourceMetadata {
@@ -129,12 +132,18 @@ export function componentScriptSource(source: string): string {
   return source.replace(/<!--[\s\S]*?-->|\{\{--[\s\S]*?--\}\}/g, comment => comment.replace(/[^\n]/g, ' '))
 }
 
-export function parseMetadata(source: string, file: string): SourceMetadata {
-  const match = componentScriptSource(source).match(/<script\b(?=[^>]*(?:\bcomponent\b|\bstx:component\b))[^>]*>([\s\S]*?)<\/script>/i)
-  if (!match) return {}
+export function componentMetadataBlock(source: string): { code: string, start: number, open: number } | undefined {
+  for (const script of scanHtmlScriptElements(componentScriptSource(source))) {
+    const attributes = scriptAttributes(script.attrs)
+    if (!attributes.has('component') && !attributes.has('stx:component')) continue
+    return { code: source.slice(script.bodyStart, script.bodyEnd), start: script.bodyStart, open: script.start }
+  }
+}
 
-  const bodyStart = match.index! + match[0].indexOf('>') + 1
-  const raw = source.slice(bodyStart, bodyStart + match[1]!.length).trim()
+export function parseMetadata(source: string, file: string): SourceMetadata {
+  const block = componentMetadataBlock(source)
+  if (!block) return {}
+  const raw = block.code.trim()
   if (!raw) return {}
 
   try {
@@ -163,11 +172,13 @@ export type ClientMethodValidator = (header: string, token: '{' | ';', name: str
 /** Use Bun's TS parser to distinguish a return object type from the method body. */
 export function clientMethods(code: string, validate?: ClientMethodValidator): ClientMethod[] {
   const masked = stripCommentsAndLiterals(code)
+  const declarations = new Set(topLevelDeclarationSites(code).map(site => site.start))
   const pattern = /(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/g
   const result: ClientMethod[] = []
   const parser = validate ? undefined : new Bun.Transpiler({ loader: 'ts' })
   let match: RegExpExecArray | null
   while ((match = pattern.exec(masked))) {
+    if (!declarations.has(match.index + match[0].indexOf('function'))) continue
     let cursor = pattern.lastIndex
     while (/\s/.test(masked[cursor] || '')) cursor++
     const genericStart = cursor
@@ -234,14 +245,14 @@ export function methodDeclaration(method: ClientMethod): string {
 
 function extractClientMethods(source: string, file: string): { methods: Record<string, string>, declarations: Record<string, string[]>, types: string } {
   const methods: Record<string, string> = {}, declarations: Record<string, string[]> = {}, types: string[] = [], imports: Array<{ binding: string, module: string }> = []
-  const scripts = [...componentScriptSource(source).matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+  const scripts = scanHtmlScriptElements(componentScriptSource(source))
   for (const script of scripts) {
-    const bodyStart = script.index! + script[0].indexOf('>') + 1
-    const code = source.slice(bodyStart, bodyStart + script[2]!.length)
-    if (/\bserver\b|\bcomponent\b|\bstx:component\b/i.test(script[1]) || /\btype=["']application\//i.test(script[1])) continue
+    const code = source.slice(script.bodyStart, script.bodyEnd)
+    const attributes = scriptAttributes(script.attrs)
+    if (attributes.has('src') || attributes.has('server') || attributes.has('component') || attributes.has('stx:component') || !scriptContainsCode(attributes)) continue
     try { new Bun.Transpiler({ loader: 'ts' }).transformSync(code) }
     catch (error) { throw new Error(`${file}: failed to transpile <script client> (${(error as Error).message})`) }
-    const extracted = /\bclient\b/i.test(script[1]) ? clientMethods(code) : []
+    const extracted = attributes.has('client') ? clientMethods(code) : []
     const overloads = new Set(extracted.filter(method => !method.source).map(method => method.name))
     for (const method of extracted) {
       if (RESERVED_METHODS.has(method.name)) throw new Error(`${file}: client ${reservedMethodMessage(method.name)}`)
@@ -967,12 +978,12 @@ function compileScriptScope(source: string, file: string, outputDir: string): {
   defaults: Record<string, string>
   declared: Record<string, string>
 } {
-  const scripts = [...source.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
-  const block = scripts.find(script => !/\bcomponent\b|\bstx:component\b|\bclient\b/i.test(script[1]))
+  const scripts = scanHtmlScriptElements(componentScriptSource(source))
+  const block = scripts.find(script => { const attrs = scriptAttributes(script.attrs); return scriptContainsCode(attrs) && !['component','stx:component','client','src'].some(name => attrs.has(name)) })
 
   if (!block) return { imports: [], body: '', propNames: [], propBindings: {}, defaults: {}, declared: {} }
 
-  let code = block[2]
+  let code = source.slice(block.bodyStart, block.bodyEnd)
   const imports: string[] = []
   const propNames: string[] = []
   const propBindings: Record<string, string> = {}

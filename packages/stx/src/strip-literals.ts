@@ -199,7 +199,12 @@ function regexEnd(code: string, start: number): number {
  * data bridge, which would have withheld it and left the client throwing on an
  * undefined name.
  */
-export function stripCommentsAndLiterals(code: string): string {
+export function stripCommentsAndLiterals(code: string): string { return stripLiterals(code, false) }
+
+/** Keep a literal terminator and template expression boundaries for binding scopes. */
+export function stripBindingLiterals(code: string): string { return stripLiterals(code, true) }
+
+function stripLiterals(code: string, bindingBoundaries: boolean): string {
   let out = ''
   let i = 0
   // The last significant token, for telling a regex `/` from division.
@@ -236,7 +241,7 @@ export function stripCommentsAndLiterals(code: string): string {
         out += code[i] === '\n' ? '\n' : ' '
         i++
       }
-      out += ' '
+      out += bindingBoundaries ? '$' : ' '
       i++
       lastSig = LITERAL_END
       lastWord = ''
@@ -256,7 +261,7 @@ export function stripCommentsAndLiterals(code: string): string {
     }
 
     if (ch === '`') {
-      out += ' '
+      out += bindingBoundaries ? '(' : ' '
       i++
       while (i < code.length && code[i] !== '`') {
         if (code[i] === '\\') {
@@ -269,17 +274,17 @@ export function stripCommentsAndLiterals(code: string): string {
         if (code[i] === '$' && code[i + 1] === '{') {
           const bodyStart = i + 2
           const bodyEnd = findInterpolationEnd(code, bodyStart)
-          out += '  '
-          out += stripCommentsAndLiterals(code.slice(bodyStart, bodyEnd))
+          out += bindingBoundaries ? ' {' : '  '
+          out += stripLiterals(code.slice(bodyStart, bodyEnd), bindingBoundaries)
           if (bodyEnd < code.length)
-            out += ' '
+            out += bindingBoundaries ? '}' : ' '
           i = bodyEnd + 1
           continue
         }
         out += code[i] === '\n' ? '\n' : ' '
         i++
       }
-      out += ' '
+      out += bindingBoundaries ? ')' : ' '
       i++
       lastSig = LITERAL_END
       lastWord = ''

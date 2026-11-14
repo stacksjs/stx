@@ -1,3 +1,4 @@
+import { scanHtmlScriptElements } from './html-masking'
 /**
  * Turn a `.stx` file into TypeScript that a real compiler can check
  * (stacksjs/stx#1852, asks 4 and 5).
@@ -43,16 +44,17 @@
  * @module stx-virtual-ts
  */
 
+import { scriptAttributes, scriptContainsCode } from './script-attributes'
 import { BROWSER_CORE_IMPORTS } from './browser-core-imports'
 import path from 'node:path'
 import { declaresClientIdentifier } from './client-declarations'
-import { unboundNames } from './client-parameter-bindings'
+import { topLevelDeclaredNames, unboundNames } from './client-parameter-bindings'
 import { parseLoopBinding } from './loop-binding'
 import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 import { STX_RUNTIME_GLOBALS } from './runtime-globals'
 import { componentContractChecks } from './component-contract-checks'
 import type { ClientMethodValidator } from './component-library'
-import { inheritedContextBindings, inheritedContextChecks } from './inherited-context'
+import { inheritedContextBindings, inheritedContextChecks, inheritedContextContract } from './inherited-context'
 import { nativeComponentContext, nativeComponentLoops } from './native-component-context'
 import { collectSlotScopes } from './slot-scopes'
 
@@ -100,6 +102,7 @@ export interface TemplateExpression {
 
 /** A synthetic line's origin, for diagnostics that land outside the source. */
 export interface MappedLine {
+  anchor?: boolean
   diagnosticOrigin?: ScriptKind | 'component'
   line: number
   column: number
@@ -147,8 +150,6 @@ export interface VirtualFile {
   importColumns?: Map<number, ScriptColumnEdit[]>
 }
 
-const SCRIPT_RE = /<script(\s[^>]*)?>([\s\S]*?)<\/script>/gi
-
 /**
  * A copy of `source` with comment CONTENTS blanked, positions preserved.
  *
@@ -192,28 +193,22 @@ export function extractScriptBlocks(source: string): ScriptBlock[] {
   // offset below still indexes the real source, and the bodies are sliced from
   // it rather than from the blanked copy (#1901).
   const scannable = blankCommentContents(source)
-  SCRIPT_RE.lastIndex = 0
-  let match: RegExpExecArray | null
-
-  while ((match = SCRIPT_RE.exec(scannable)) !== null) {
-    const attrs = (match[1] || '').trim()
-    const openLength = (match[0].match(/^<script(?:\s[^>]*)?>/i)?.[0] ?? '<script>').length
-    const closeLength = (match[0].match(/<\/script\s*>$/i)?.[0] ?? '</script>').length
-    const bodyStart = match.index + openLength
-    const bodyEnd = match.index + match[0].length - closeLength
+  for (const script of scanHtmlScriptElements(scannable)) {
+    const attrs = script.attrs.trim()
+    const attributes = scriptAttributes(attrs)
+    const { bodyStart, bodyEnd } = script
     const body = source.slice(bodyStart, bodyEnd)
 
     // `src` scripts have no inline body to check.
-    if (/\bsrc\s*=/.test(attrs) || /\b(?:stx:)?component\b/.test(attrs))
+    if (attributes.has('src') || attributes.has('component') || attributes.has('stx:component'))
       continue
     // Skip non-TS/JS types (JSON-LD, importmap, text/template, …).
-    const typeMatch = attrs.match(/\btype\s*=\s*["']([^"']+)["']/i)
-    if (typeMatch && !/^(?:module|text\/(?:javascript|typescript))$/i.test(typeMatch[1]))
+    if (!scriptContainsCode(attributes))
       continue
 
-    const kind: ScriptKind = /\bserver\b/.test(attrs)
+    const kind: ScriptKind = attributes.has('server')
       ? 'server'
-      : /\bclient\b/.test(attrs)
+      : attributes.has('client')
         ? 'client'
         : 'plain'
 
@@ -968,26 +963,7 @@ export function collectTemplateBindings(source: string): TemplateBinding[] {
  * Used to give template expressions a scope without inlining a block that
  * would collide with another one.
  */
-export function collectBlockDeclarations(code: string): string[] {
-  const names = new Set<string>()
-
-  for (const m of code.matchAll(/^\s*(?:export\s+)?(?:const|let|var)\s+([\w$]+)/gm))
-    names.add(m[1])
-  for (const m of code.matchAll(/^\s*(?:export\s+)?(?:async\s+)?function\s*\*?\s*([\w$]+)/gm))
-    names.add(m[1])
-  for (const m of code.matchAll(/^\s*(?:export\s+)?class\s+([\w$]+)/gm))
-    names.add(m[1])
-  // Destructured declarations: `const { a, b } = …`, `const [x] = …`
-  for (const m of code.matchAll(/^\s*(?:export\s+)?(?:const|let|var)\s*[[{]([^\]}]*)[\]}]/gm)) {
-    for (const part of m[1].split(',')) {
-      const name = part.split(':').pop()!.split('=')[0].replace(/^\.\.\./, '').trim()
-      if (/^[A-Z_$][\w$]*$/i.test(name))
-        names.add(name)
-    }
-  }
-
-  return [...names].sort()
-}
+export function collectBlockDeclarations(code: string): string[] { return topLevelDeclaredNames(code) }
 
 /** `import` statements, so they can be lifted out of a block-scoped body. */
 const IMPORT_LINE_RE = /^\s*import\s[\s\S]*?(?:$|;)/
@@ -2214,9 +2190,16 @@ export function buildVirtualTypeScript(
 
   const inheritedBindings = inheritedContextBindings(blocks.filter(block => block.kind === 'server').map(block => block.code).join('\n'))
   if (inheritedBindings) append(inheritedBindings)
+  for (const block of blocks.filter(block => block.kind === 'server')) {
+    const contract = inheritedContextContract(block.code)
+    if (!contract?.unsupported) continue
+    const before = block.code.slice(0, contract.offset), line = block.startLine + before.split('\n').length - 1
+    const column = contract.offset - block.code.lastIndexOf('\n', contract.offset - 1) + (line === block.startLine ? (block.startColumn ?? 1) - 1 : 0)
+    append(`;({})[${JSON.stringify(contract.unsupported)}];`, { line, column, anchor: true })
+  }
   if (inherited?.declarations) append(inherited.declarations)
   for (const declaration of scriptDeclarations) append(declaration.text, declaration.origin)
-  if (component) { append(component.declarations); if (options.nativeChecks !== false) for (const check of component.checks) append(check.text, { line: check.line, column: check.column, diagnosticOrigin: check.origin }) }
+  if (component) { append(component.declarations); if (options.nativeChecks !== false) for (const check of component.checks) append(check.text, { line: check.line, column: check.column, diagnosticOrigin: check.origin, anchor: true }) }
 
   if (options.globals !== false) {
     append('')
@@ -2515,7 +2498,7 @@ export function resolvePosition(
     return line <= virtual.sourceLineCount ? { line, column: resolveVirtualColumn(virtual, line, column) } : null
   }
 
-  const within = mapped.expression?.anchor ? 0 : Math.max(0, column - 1 - (mapped.prefixLength ?? 0))
+  const within = mapped.anchor || mapped.expression?.anchor || mapped.diagnosticOrigin === 'component' ? 0 : Math.max(0, column - 1 - (mapped.prefixLength ?? 0))
   return {
     line: mapped.line,
     column: mapped.column + within,

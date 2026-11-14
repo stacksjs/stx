@@ -1,7 +1,10 @@
+import { scanHtmlScriptElements } from './html-masking'
 /** The author checker uses the same metadata and method parser as the element emitter. */
-import { clientMethods, componentScriptSource, componentDirectiveExpression, parseMetadata, parseNativeComponentLoop, typeForProperty } from './component-library'
+import { clientMethods, componentScriptSource, componentMetadataBlock, componentDirectiveExpression, parseMetadata, parseNativeComponentLoop, typeForProperty } from './component-library'
 import type { SourceMetadata, ClientMethodValidator } from './component-library'
-import { stripCommentsAndLiterals } from './strip-literals'
+import { scriptAttributes, scriptContainsCode } from './script-attributes'
+import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
+import { collectImportedNames, extractTypeDeclarations } from './stx-virtual-ts'
 import type { ScriptColumnEdit } from './stx-virtual-ts'
 
 export interface NativeComponentContext {
@@ -12,25 +15,37 @@ export interface NativeComponentContext {
 
 export function nativeComponentContext(source: string, validate?: ClientMethodValidator): NativeComponentContext | undefined {
   const scannable = componentScriptSource(source)
-  if (!/<script\b(?=[^>]*(?:\bcomponent\b|\bstx:component\b))/i.test(scannable)) return
+  const metadataBlock = componentMetadataBlock(source)
+  if (!metadataBlock) return
   let metadata: SourceMetadata
   try { metadata = parseMetadata(source, 'component') }
   catch (error) {
-    const at = source.search(/<script\b(?=[^>]*\bcomponent\b)/i)
+    const at = metadataBlock.open
     const message = error instanceof Error ? error.message : 'Invalid component metadata'
     return { declarations: '', checks: [{ text: `({})[${JSON.stringify(message)}];`, line: source.slice(0, at).split('\n').length, column: at - source.lastIndexOf('\n', at - 1), origin: 'component' }], project: code => ({ code, columns: new Map() }) }
   }
-  const blocks = [...scannable.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)].filter(block => /\bclient\b/.test(block[1]!) && !/\bcomponent\b/.test(block[1]!))
-  const script = blocks.map(block => { const at = block.index! + block[0].indexOf('>') + 1; return source.slice(at, at + block[2]!.length) }).join('\n')
+  const blocks = scanHtmlScriptElements(scannable).filter(block => { const attributes = scriptAttributes(block.attrs); return scriptContainsCode(attributes) && attributes.has('client') && !attributes.has('server') && !attributes.has('component') && !attributes.has('stx:component') && !attributes.has('src') })
+  const script = blocks.map(block => source.slice(block.bodyStart, block.bodyEnd)).join('\n')
   const methods = clientMethods(script, validate)
-  const hasState = /\b(?:interface|type)\s+ComponentState\b/.test(stripCommentsAndLiterals(script))
+  const hasState = extractTypeDeclarations(script).some(type => type.name === 'ComponentState') || collectImportedNames(script).includes('ComponentState')
   const properties = Object.entries(metadata.properties || metadata.props || {}).map(([name, property]) => `${JSON.stringify(name)}: ${typeForProperty(property)}`).join('; ')
   const names = [...new Set(methods.map(method => method.name))]
   const declarations = [
     `interface __StxMetadataProperties { ${properties} }`,
     'type __StxNativeProperties = Omit<__StxMetadataProperties, keyof HTMLElement> & Pick<HTMLElement, Extract<keyof __StxMetadataProperties, keyof HTMLElement>>;',
-    hasState ? 'declare const __stxStateProperties: Pick<ComponentState, Extract<keyof ComponentState, keyof __StxNativeProperties>>;' : '',
-    `type __StxNativeComponent = Omit<HTMLElement, keyof __StxNativeProperties | ${hasState ? 'keyof ComponentState | ' : ''}${names.map(name => JSON.stringify(name)).join(' | ') || 'never'}> & ${hasState ? 'Omit<__StxNativeProperties, keyof ComponentState> & ComponentState' : '__StxNativeProperties'} & {`,
+    'type __StxAny<T> = 0 extends (1 & T) ? true : false;',
+    'type __StxAnyFields<T> = { [K in keyof T]-?: __StxAny<T[K]> extends true ? K : never }[keyof T];',
+    'type __StxSpecific<T> = __StxAny<T> extends true ? false : T extends object ? string extends keyof T ? false : number extends keyof T ? false : symbol extends keyof T ? false : __StxAnyFields<T> extends never ? true : false : false;',
+    hasState ? 'type __StxState = __StxSpecific<ComponentState> extends true ? ComponentState : {};' : 'type __StxState = {};',
+    hasState ? 'declare function __stxSpecificState(value: __StxSpecific<ComponentState> extends true ? true : "ComponentState requires named explicit fields without any or index signatures"): void;' : '',
+    hasState ? 'declare const __stxStateProperties: Pick<ComponentState, Extract<keyof ComponentState, keyof __StxInstanceProperties>>;' : '',
+    hasState ? 'declare function __stxStateMethods(value: Extract<keyof ComponentState, __StxMethodNames | "emit" | "requestUpdate" | "updateComplete" | "renderRoot"> extends never ? true : "ComponentState cannot redeclare component methods"): void;' : '',
+    `type __StxMethodNames = ${names.map(name => JSON.stringify(name)).join(' | ') || 'never'};`,
+    'type __StxInstanceProperties = Omit<HTMLElement, __StxMethodNames | keyof __StxNativeProperties> & __StxNativeProperties;',
+    'type __StxPrivateKeys<T> = Exclude<keyof T, keyof HTMLElement | keyof __StxNativeProperties | __StxMethodNames | "emit" | "updateComplete" | "requestUpdate" | "renderRoot">;',
+    hasState ? 'declare function __stxOptionalPrivate(value: { [K in __StxPrivateKeys<ComponentState>]-?: {} extends Pick<ComponentState, K> ? never : K }[__StxPrivateKeys<ComponentState>] extends never ? true : "Private ComponentState fields must be optional until initialized"): void;' : '',
+    'type __StxRefinedProperties = { [K in keyof __StxNativeProperties]: K extends keyof __StxState ? __StxAny<__StxState[K]> extends true ? __StxNativeProperties[K] : __StxState[K] extends __StxNativeProperties[K] ? __StxState[K] : __StxNativeProperties[K] : __StxNativeProperties[K] };',
+    'type __StxNativeComponent = Omit<HTMLElement, keyof __StxNativeProperties | __StxMethodNames> & __StxRefinedProperties & Partial<Pick<__StxState, __StxPrivateKeys<__StxState>>> & {',
     'readonly updateComplete: Promise<void>; requestUpdate(): Promise<void>; readonly renderRoot: HTMLElement | ShadowRoot;',
     'emit<T = unknown>(name: string, detail?: T, options?: CustomEventInit<T>): boolean;',
     ...names.map(name => `${JSON.stringify(name)}: typeof ${name};`),
@@ -38,13 +53,25 @@ export function nativeComponentContext(source: string, validate?: ClientMethodVa
   ].filter(Boolean).join('\n')
   let stateOffset = -1
   for (const block of blocks) {
-    const bodyStart = block.index! + block[0].indexOf('>') + 1
-    const found = /\b(?:interface|type)\s+ComponentState\b/.exec(stripCommentsAndLiterals(source.slice(bodyStart, bodyStart + block[2]!.length)))
+    const bodyStart = block.bodyStart
+    const code = source.slice(bodyStart, block.bodyEnd), masked = stripCommentsAndLiterals(code), depths = bracketDepths(masked).depths
+    const found = [...masked.matchAll(/\b(?:interface|type)\s+ComponentState\b/g)].find(match => depths[match.index!] === 0)
+      ?? (collectImportedNames(code).includes('ComponentState') ? /\bComponentState\b/.exec(masked) : undefined)
     if (found) { stateOffset = bodyStart + found.index; break }
   }
-  const checks: NativeComponentContext['checks'] = hasState && stateOffset >= 0 ? [{ origin: 'client', text: '__stxStateProperties satisfies Pick<__StxNativeProperties, Extract<keyof ComponentState, keyof __StxNativeProperties>>;', line: source.slice(0, stateOffset).split('\n').length, column: stateOffset - source.lastIndexOf('\n', stateOffset - 1) }] : []
+  const checks: NativeComponentContext['checks'] = hasState && stateOffset >= 0 ? [{ origin: 'client', text: '__stxSpecificState(true); __stxStateMethods(true); __stxOptionalPrivate(true); __stxStateProperties satisfies Pick<__StxInstanceProperties, Extract<keyof ComponentState, keyof __StxInstanceProperties>>;', line: source.slice(0, stateOffset).split('\n').length, column: stateOffset - source.lastIndexOf('\n', stateOffset - 1) }] : []
+  const metadataStart = metadataBlock.start
+  const raw = metadataBlock.code, maskedMetadata = stripCommentsAndLiterals(raw), metadataDepths = bracketDepths(maskedMetadata).depths
+  const positions = new Map<string, number>()
+  let inProperties = false
+  for (const token of raw.matchAll(/"(?:\\.|[^"\\])*"\s*:/g)) {
+    const key: string = JSON.parse(token[0].slice(0, token[0].lastIndexOf(':')).trim())
+    if (metadataDepths[token.index!] === 1 && ['properties', 'props'].includes(key)) { inProperties = true; continue }
+    if (inProperties && metadataDepths[token.index!] === 1) inProperties = false
+    if (inProperties && metadataDepths[token.index!] === 2 && !positions.has(key)) positions.set(key, metadataStart + token.index!)
+  }
   for (const [name, property] of Object.entries(metadata.properties || metadata.props || {})) {
-    const at = source.indexOf(JSON.stringify(name), source.indexOf('<script'))
+    const at = positions.get(name) ?? metadataStart
     const line = source.slice(0, at).split('\n').length, column = at - source.lastIndexOf('\n', at - 1)
     if (!property || typeof property !== 'object' || !['string', 'number', 'boolean', 'object', 'array'].includes(property.type)) checks.push({ text: `({})[${JSON.stringify(`Property ${name} must declare string, number, boolean, object or array`)}];`, line, column, origin: 'component' })
     if (property && property.default !== undefined) checks.push({ text: `const __stxDefault${checks.length}: ${typeForProperty(property)} = ${JSON.stringify(property.default)};`, line, column, origin: 'component' })

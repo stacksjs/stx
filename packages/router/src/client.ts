@@ -107,10 +107,13 @@ function minifyRouterScript(source: string, mangle = false): string {
      * router script is within a kilobyte of its size budget.
      */
     const transpiler = new Bun.Transpiler(mangle
-      ? { loader: 'js', minify: { whitespace: true, identifiers: true } } as ConstructorParameters<typeof Bun.Transpiler>[0]
+      ? { loader: 'js', minify: { whitespace: true, identifiers: true, syntax: true } } as ConstructorParameters<typeof Bun.Transpiler>[0]
       : { loader: 'js', minifyWhitespace: true })
     return transpiler.transformSync(source)
       .replace(/\}(var |let |const |function )/g, '};$1')
+      // Syntax folding can join protected string fragments into a closing
+      // script tag. Keep the result safe both inline and as an external file.
+      .replace(/<\/script/gi, '<\\/script')
       .trim()
   }
   catch {
@@ -468,11 +471,13 @@ function routerSource(): string {
   // with no animation) until they all have, capped so it can never hang.
   var scriptsPending=0;
   var hydrateWaiters=[];
-  window.__stxScriptRan=function(){
+  var moduleCompletions={},moduleCompletionId=0;
+  window.__stxScriptRan=function(token){
+    if(token&&moduleCompletions[token]){var done=moduleCompletions[token];delete moduleCompletions[token];done();}
     if(scriptsPending>0)scriptsPending--;
     if(!scriptsPending){var w=hydrateWaiters;hydrateWaiters=[];w.forEach(function(f){f()})}
   };
-  function markRan(code){scriptsPending++;return code+String.fromCharCode(10)+';window.__stxScriptRan&&window.__stxScriptRan();'}
+  function markRan(code,complete){scriptsPending++;var token=complete?'module-'+(++moduleCompletionId):'';if(complete)moduleCompletions[token]=complete;return code+String.fromCharCode(10)+';window.__stxScriptRan&&window.__stxScriptRan('+(token?JSON.stringify(token):'')+');'}
   function whenHydrated(capMs){
     return new Promise(function(resolve){
       var done=false;
@@ -1185,7 +1190,7 @@ function routerSource(): string {
     var el=source;
     if(typeof source==='string')el=new DOMParser().parseFromString('<scr'+'ipt '+source+'></scr'+'ipt>','text/html').querySelector('script');
     var attrs={};
-    if(el)['src','type','integrity','crossorigin','referrerpolicy','nonce','nomodule','defer','fetchpriority','blocking'].forEach(function(name){
+    if(el)['src','type','integrity','crossorigin','referrerpolicy','nonce','nomodule','defer','fetchpriority','blocking','data-stx-module-job'].forEach(function(name){
       if(el.hasAttribute(name))attrs[name]=name==='nonce'?(el.nonce||el.getAttribute(name)||''):(el.getAttribute(name)||'');
     });
     return attrs;
@@ -1226,6 +1231,25 @@ function routerSource(): string {
   // Waits for the files a swap loads, then runs its scripts -- or, when one
   // of them was a module bundle that did not load, recovers the page instead
   // of running a setup that can only throw.
+  // Classic entries stay synchronous. Once an ESM entry starts, execute the
+  // rest only after its load event (which includes top-level await) completes.
+  function runPageScriptEntries(entries,execute,complete,ctx){
+    function current(){return !ctx||!ctx.id||ctx.id===navSeq}
+    function run(entry){if(current())return execute(entry)}
+    var pending=null;
+    entries.forEach(function(entry){
+      if(pending)pending=pending.then(function(){return run(entry)});
+      else {var result=run(entry);if(result)pending=Promise.resolve(result)}
+    });
+    function finish(){
+      if(!current())return;
+      var ready=window.__stxPageModulesReady;
+      if(ready){window.__stxPageModulesReady=null;return ready.then(function(){if(current())complete()},function(error){console.error('[router] page initialization failed',error)})}
+      complete();
+    }
+    if(pending)return pending.then(finish,function(error){console.error('[router] page module failed',error)});
+    return finish();
+  }
   function afterExternalScripts(pending,run,url,ctx){
     if(!pending.length){run();return}
     var failed=false;
@@ -1938,7 +1962,7 @@ else {
   // incoming page's scripts register next (see beginSwap in the runtime).
   // Called after the outgoing page is put aside and before any incoming
   // script runs. Absent on an older runtime, which drains as it always has.
-  function beginPageSwap(){if(window.stx&&typeof window.stx._beginSwap==='function')window.stx._beginSwap()}
+  function beginPageSwap(){window.__stxPageModulesReady=null;if(window.stx&&typeof window.stx._beginSwap==='function')window.stx._beginSwap()}
   function swap(html,url,pushState,hash){
     var fragMark=/^<!--stx-fragment(?: rt=([01]))?-->/.exec(html);
     var isFragment=!!fragMark;
@@ -2011,7 +2035,7 @@ else {
             var ownerDecl=(attrs.match(/data-stx-owner\\s*=\\s*["']([^"']+)["']/i)||[])[1]||'';
             var registry=/(?:^|\\s)data-stx-modules(?:\\s|=|$)/i.test(attrs)||REGISTRY_TEXT.test(code);
             var composables=/(?:^|\\s)data-stx-(?:framework-)?composables(?:\\s|=|$)/i.test(attrs)||COMPOSABLES_TEXT.test(code);
-            fragScripts.push({text:code,slot:slot,setupName:generatedSetupName(code),scoped:scoped,run:runDecl?runDecl.toLowerCase():'',owner:ownerDecl,registry:registry,composables:composables});
+            fragScripts.push({text:code,slot:slot,setupName:generatedSetupName(code),scoped:scoped,run:runDecl?runDecl.toLowerCase():'',owner:ownerDecl,registry:registry,composables:composables,module:scriptType==='module',moduleJob:externalAttrs['data-stx-module-job']||''});
             // Retain scoped setup code in its inert placeholder. A placeholder
             // inside template.content is unreachable through document, so the
             // repeated component runtime must execute it for each clone.
@@ -2019,6 +2043,7 @@ else {
               +(scoped?' data-stx-scoped':'')
               +(runDecl?' data-stx-run="'+runDecl.toLowerCase()+'"':'')
               +(ownerDecl?' data-stx-owner="'+ownerDecl+'"':'')
+              +(externalAttrs['data-stx-module-job']?' data-stx-module-job="'+externalAttrs['data-stx-module-job']+'"':'')
               +'>'+code+'<\\/scr'+'ipt>';
           }
           return '';
@@ -2106,7 +2131,7 @@ else {
         function fragOrder(entry){return entry.registry?0:entry.composables?1:entry.setupName?3:2}
         fragScripts.sort(function(a,b){return fragOrder(a)-fragOrder(b)});
         function runFragScripts(){
-        fragScripts.forEach(function(entry){
+        return runPageScriptEntries(fragScripts,function(entry){
           var code=entry.text;
           log('[router] exec script len:', code.length, 'has __stx_setup:', code.indexOf('__stx_setup')>-1);
           if(branchSlots&&branchSlots[entry.slot]){
@@ -2152,11 +2177,14 @@ else {
           }
           executedScriptHashes[h]=1;
           var ns=ce('script');
-          var hasImport=hasStaticImport(code);
+          var hasImport=entry.module||hasStaticImport(code);
           if(hasImport){
             ns.type='module';
           }
-          ns.textContent=markRan((hasImport||isAlreadyScoped)?code:'{'+code+'}');
+          var moduleDone;
+          var modulePending=hasImport?new Promise(function(resolve,reject){moduleDone=resolve;ns.onerror=reject}):null;
+          if(entry.moduleJob)ns.setAttribute('data-stx-module-job',entry.moduleJob);
+          ns.textContent=markRan((hasImport||isAlreadyScoped)?code:'{'+code+'}',moduleDone);
           ns.setAttribute('data-stx-page','');
           if(placeholder&&placeholder.parentNode){
             ns.setAttribute('data-stx-positioned','');
@@ -2164,7 +2192,8 @@ else {
           }else{
             document.body.appendChild(ns);
           }
-        });
+          return modulePending;
+        },function(){
         // Guarded: the router ships on every page, the signals runtime only on
         // pages that have a client script. log() is debug-gated but its
         // ARGUMENTS are evaluated at the call site regardless, so an unguarded
@@ -2173,6 +2202,7 @@ else {
         log('[router] scripts done. _latestSetup:', !!(window.stx&&window.stx._latestSetup));
         // THEN fire stx:load — now _latestSetup is set and processElement has the right scope
         window.dispatchEvent(new Event('stx:load'));
+        },ctx);
         }
         // The container's own files first, for the same reason as the
         // full-document path: the inline scripts call into them. Only awaited
@@ -2399,7 +2429,7 @@ else {
           var slot='document-'+(++routedBodyScriptId);
           var setupName=generatedSetupName(text);
           if(setupName)incomingSetupName=setupName;
-          routedBodyScripts.push({text:text,runAlways:true,slot:slot,setupName:setupName,run:s.getAttribute('data-stx-run')||'',owner:s.getAttribute('data-stx-owner')||'',registry:isModuleRegistryScript(s),composables:isComposablesScript(s)});
+          routedBodyScripts.push({text:text,runAlways:true,slot:slot,setupName:setupName,run:s.getAttribute('data-stx-run')||'',owner:s.getAttribute('data-stx-owner')||'',registry:isModuleRegistryScript(s),composables:isComposablesScript(s),module:type==='module',moduleJob:s.getAttribute('data-stx-module-job')||''});
           s.textContent='';
           s.setAttribute('type','application/stx-pending');
           s.setAttribute('data-stx-route-script',slot);
@@ -2475,8 +2505,8 @@ else {
       qsa('script[data-stx-page]').forEach(function(s){s.remove()});
 
       var scripts=routedBodyScripts.slice();
-      function addScript(text, runAlways, slot, owner){
-        scripts.push({text:text,runAlways:!!runAlways,slot:slot||'',owner:owner||'',registry:REGISTRY_TEXT.test(text),composables:COMPOSABLES_TEXT.test(text)});
+      function addScript(text, runAlways, slot, owner, module, moduleJob, registry, composables){
+        scripts.push({text:text,runAlways:!!runAlways,slot:slot||'',owner:owner||'',registry:!!registry||REGISTRY_TEXT.test(text),composables:!!composables||COMPOSABLES_TEXT.test(text),module:!!module,moduleJob:moduleJob||''});
       }
       if(isLayoutChange){
         // Also collect setup functions from <head>, and the page's module
@@ -2492,7 +2522,7 @@ else {
           if(s.hasAttribute('src'))return;
           if(!text.trim())return;
           if(isSignalsRuntimeScript(s,text))return;
-          if(isModuleRegistryScript(s)||isComposablesScript(s))addScript(text,true,'','');
+          if(isModuleRegistryScript(s)||isComposablesScript(s))addScript(text,true,'','',s.type==='module',s.getAttribute('data-stx-module-job'),isModuleRegistryScript(s),isComposablesScript(s));
           else if(text.indexOf('__stx_setup_')!==-1)addScript(text,true);
         });
       } else {
@@ -2501,7 +2531,7 @@ else {
         // in <head>. Without this, SPA navigation on static sites never
         // runs the setup and reactive data stays empty.
         var seenSetups={};
-        scripts.forEach(function(entry){var t=entry.text;if(t.indexOf('__stx_setup_')!==-1)seenSetups[t.substring(0,80)]=1});
+        scripts.forEach(function(entry){var t=entry.text;if(t.indexOf('__stx_setup_')!==-1)seenSetups[t]=1});
         doc.querySelectorAll('script').forEach(function(s){
           var text=s.textContent||'';
           if(s.hasAttribute('src'))return;
@@ -2523,12 +2553,12 @@ else {
           // incoming page's content (#1958). Fragments leave these out.
           if(s.hasAttribute('data-stx-instance'))return;
           if(text.indexOf('__stx_setup_')===-1&&!s.hasAttribute('data-stx-scoped')&&!s.hasAttribute('data-stx-page')&&!s.hasAttribute('data-stx-route-params'))return;
-          var key=text.substring(0,80);
+          var key=text;
           if(seenSetups[key])return;
           seenSetups[key]=1;
           // A layout component outside the container carries its owner, so
           // execScripts skips it when it stayed on the page (#1958).
-          addScript(text,true,'',s.getAttribute('data-stx-owner')||'');
+          addScript(text,true,'',s.getAttribute('data-stx-owner')||'',s.type==='module',s.getAttribute('data-stx-module-job'),isModuleRegistryScript(s),isComposablesScript(s));
         });
       }
       // Component setup scripts also assign window.stx._latestSetup. Run the
@@ -2611,7 +2641,7 @@ else {
         // onMount -- HQ's calendar wrote ?athlete_id into /relax. Fragments
         // never hit this only because the server prepends the same clear.
         if(window.stx)window.stx._latestSetup=null;
-        scripts.forEach(function(entry){
+        return runPageScriptEntries(scripts,function(entry){
           var text=typeof entry==='string'?entry:entry.text;
           var runAlways=typeof entry==='string'?false:entry.runAlways;
           if(typeof entry!=='string'&&ownerStays(entry.owner))return;
@@ -2623,7 +2653,7 @@ else {
           // need special handling.
           var h=hashScript(text);
           var isSetup=text.indexOf('__stx_setup_')!==-1;
-          var hasImport=hasStaticImport(text);
+          var hasImport=entry.module||hasStaticImport(text);
           if(!runAlways&&!isSetup&&executedScriptHashes[h])return;
           executedScriptHashes[h]=1;
           // Wrap scripts with import statements as modules (Bug 3 fix)
@@ -2638,7 +2668,10 @@ else {
           // ESM, and top-level 'import' is illegal inside a block, which
           // would throw SyntaxError before the script ever runs.
           var alreadyScoped=runsAlways(typeof entry==='string'?'':entry.run,text);
-          ns.textContent=markRan((hasImport||alreadyScoped)?text:'{'+text+republishTopLevel(text)+'}');
+          var moduleDone;
+          var modulePending=hasImport?new Promise(function(resolve,reject){moduleDone=resolve;ns.onerror=reject}):null;
+          if(entry.moduleJob)ns.setAttribute('data-stx-module-job',entry.moduleJob);
+          ns.textContent=markRan((hasImport||alreadyScoped)?text:'{'+text+republishTopLevel(text)+'}',moduleDone);
           ns.setAttribute('data-stx-page','');
           var placeholder=entry.slot?qs('script[data-stx-route-script="'+entry.slot+'"]'):null;
           if(placeholder&&placeholder.parentNode){
@@ -2647,9 +2680,11 @@ else {
           }else{
             document.body.appendChild(ns);
           }
-        });
+          return modulePending;
+        },function(){
         // THEN fire stx:load — now _latestSetup is set and processElement has the right scope
         window.dispatchEvent(new Event('stx:load'));
+        },ctx);
       }
 
       afterExternalScripts(extPromises,execScripts,url+(hash||''),ctx);
@@ -2898,9 +2933,9 @@ else {
   // reach the other.
   var retagSeq=0;
   function retagCollisions(html){
-    var ids={},any=false;
-    html.replace(/data-stx-scope="([^"]+)"/g,function(m,id){ids[id]=1;any=true;return m});
-    if(!any)return;
+    var ids={},found=false;
+    html.replace(/data-stx-scope="([^"]+)"/g,function(m,id){ids[id]=1;found=true;return m});
+    if(!found)return;
     var scopes=window.stx&&window.stx._scopes;
     eachEntry(function(e){
       if(!e.el)return;

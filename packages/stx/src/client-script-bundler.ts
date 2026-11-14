@@ -1,3 +1,4 @@
+import { requiresAsyncBody } from './module-syntax'
 /**
  * Client Script Bundler
  *
@@ -32,7 +33,8 @@ import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 // them, because the key is the source and that did not change.
 // 8: server API sources must not survive in an older browser bundle cache.
 // 11: bundle namespaces preserve live exports assigned by lifecycle hooks.
-const BUNDLE_CACHE_VERSION = 11
+// 12: top-level await stays asynchronous through the bundle namespace.
+const BUNDLE_CACHE_VERSION = 12
 
 function isPrivateClientSource(file: string, root: string, serverApi: boolean | ServerApiOptions | undefined): boolean {
   return /^(?:(?:stx|ui)\.config\.[cm]?[jt]s|runtime-config-(?:server|loader)\.[cm]?[jt]s)$/.test(path.basename(file))
@@ -1466,6 +1468,7 @@ async function buildBundle(
       }
     }
 
+    const asynchronous = requiresAsyncBody(bundled)
     const namespace = `__stxBundle_${hash}`
     const mutableBindings = new Set(scopeExports(code, true).split(',').map(name => name.trim()))
     const returnedBindings = exposedBindings
@@ -1486,7 +1489,7 @@ async function buildBundle(
 
     bundled = `${externalImports.join('\n')}
 ${publicDeclarations}
-var ${namespace} = (function() {
+var ${namespace} = ${asynchronous ? 'await (async function' : '(function'}() {
 ${registryReads.join('\n')}
 ${bundled}
 return { ${returnedBindings} };

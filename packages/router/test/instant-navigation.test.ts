@@ -108,13 +108,14 @@ describe('instant navigation', () => {
     // of its animation.
     expect(instant).toEqual([true])
     const inserted = [...window.document.querySelectorAll('script[data-stx-page]')].map(node => node.textContent || '')
-    expect(inserted.some(text => text.includes('__page') && text.trimEnd().endsWith('window.__stxScriptRan&&window.__stxScriptRan();'))).toBe(true)
+    const completion = inserted.find(text => text.includes('__page'))?.match(/window\.__stxScriptRan\(("module-\d+")\);$/)
+    expect(completion).toBeTruthy()
     let settled = false
     void updates[0]!.then(() => { settled = true })
     await sleep(40)
     expect(settled).toBe(false)
     const reported = Date.now()
-    ;(window as any).__stxScriptRan()
+    ;(window as any).__stxScriptRan(JSON.parse(completion![1]!))
     await updates[0]
     expect(Date.now() - reported).toBeLessThan(100)
   })

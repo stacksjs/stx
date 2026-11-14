@@ -1,3 +1,5 @@
+import { requiresAsyncBody } from './module-syntax'
+import { orderPageModules, usesImportMeta } from './page-module-order'
 /* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Core Template Processing Pipeline
@@ -332,7 +334,7 @@ function findScriptBlockByAttribute(html: string, attribute: string): ScriptBloc
  */
 const EXTERNAL_BUNDLE_MIN_BYTES = 4096
 async function externalBundleTag(attrs: string, code: string, options: StxOptions): Promise<string | null> {
-  if (options.buildMode !== 'serve' || code.length < EXTERNAL_BUNDLE_MIN_BYTES)
+  if (usesImportMeta(code) || requiresAsyncBody(code) || options.buildMode !== 'serve' || code.length < EXTERNAL_BUNDLE_MIN_BYTES)
     return null
   const { registerServeModuleBundle } = await import('./caching')
   return `<script ${attrs} src="${registerServeModuleBundle(code)}"></script>`
@@ -372,7 +374,7 @@ export async function buildModulesTag(
     // adapter answers immutably (see registerServeModuleBundle), so it is
     // downloaded once rather than with every page and SPA fragment. A static
     // build has no server to answer that URL and keeps it inline.
-    if (options.buildMode === 'serve') {
+    if (options.buildMode === 'serve' && !usesImportMeta(code) && !requiresAsyncBody(code)) {
       const { registerServeModuleBundle } = await import('./caching')
       return `<script data-stx-scoped data-stx-run="always" data-stx-modules src="${registerServeModuleBundle(code)}"></script>`
     }
@@ -528,7 +530,7 @@ async function buildPageBundles(
         // navigation carries it and the router runs it: the next page may
         // call a composable this one never loaded.
         built.composableTag = (await externalBundleTag('data-stx-scoped data-stx-run="always" data-stx-composables', composableCode, options))
-          ?? `<script data-stx-scoped data-stx-run="always" data-stx-composables>${composableCode}</script>`
+          ?? `<script data-stx-scoped data-stx-run="always" data-stx-composables>${composableCode.replace(/<\/script/gi, '<\\/script')}</script>`
       }
     }
     catch {
@@ -1065,7 +1067,7 @@ export async function processDirectives(
           result = result.slice(0, at) + dataTag + result.slice(at)
         }
       }
-      return result
+      return isTopLevel ? orderPageModules(result) : result
     })
   }
   catch (error: unknown) {

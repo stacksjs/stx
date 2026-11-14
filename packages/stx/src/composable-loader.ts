@@ -24,6 +24,10 @@
  */
 
 import path from 'node:path'
+import { scanHtmlScriptElements } from './html-masking'
+import { requiresAsyncBody } from './module-syntax'
+import { extractTemplateExpressions } from './stx-virtual-ts'
+import { scriptAttributes } from './script-attributes'
 import { unboundNames } from './client-parameter-bindings'
 import { bundleClientScript, clientBundleDependencies, hasUserImports, moduleSubstitutionKey } from './client-script-bundler'
 import { loadStxConfig } from './config'
@@ -274,8 +278,8 @@ function isScriptType(type: string | undefined): boolean {
 }
 
 /**
- * Which composable names a rendered page uses: its markup by mention (an
- * expression in an attribute, `{{ }}`), its scripts by what they use without
+ * Which composable names a rendered page uses: actual template expressions
+ * and script references, excluding static prose, URLs and classes. Scripts use
  * binding it themselves (`composableUses`).
  *
  * The page's scripts used to be read by mention like the markup. A component
@@ -292,13 +296,13 @@ function pageUses(page: string, names: Iterable<string>): Set<string> {
   let markup = ''
   let last = 0
   const used = new Set<string>()
-  for (const match of page.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
-    markup += page.slice(last, match.index!)
-    last = match.index! + match[0].length
-    const attrs = match[1] ?? ''
-    const body = match[2] ?? ''
-    const type = /\btype\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(attrs)
-    const typeName = type ? (type[1] ?? type[2] ?? type[3] ?? '').trim() : undefined
+  for (const script of scanHtmlScriptElements(page)) {
+    markup += page.slice(last, script.start)
+    last = script.end
+    const attrs = scriptAttributes(script.attrs)
+    const body = page.slice(script.bodyStart, script.bodyEnd)
+    const type = attrs.get('type')
+    const typeName = typeof type === 'string' ? type.trim() : undefined
     if (!isScriptType(typeName)) {
       // A template kept in a script element is markup; data is not read.
       if (!/json/i.test(typeName ?? '')) markup += ` ${body} `
@@ -316,7 +320,9 @@ function pageUses(page: string, names: Iterable<string>): Set<string> {
     for (const name of uses) used.add(name)
   }
   markup += page.slice(last)
-  for (const name of mentionedNames(markup, all)) used.add(name)
+  for (const expression of extractTemplateExpressions(markup)) {
+    for (const name of composableUses(expression.code, all)) used.add(name)
+  }
   return used
 }
 
@@ -344,9 +350,8 @@ function selectReachable(
   }
 
   const selected = new Set<string>()
-  // The page itself is markup as much as script ({{ fmt(x) }}, @click="…"),
-  // so its markup keeps the loose word scan; its scripts, and what ships
-  // beside it, are plain script.
+  // Markup contributes executable expressions, never ordinary words. A URL
+  // such as /support.css must not evaluate an exported `support` singleton.
   let frontier = pageSources.flatMap((source, index) => index === 0
     ? [...pageUses(source, fileForName.keys())].map(name => fileForName.get(name)!)
     : filesUsedBy(source))
@@ -582,10 +587,14 @@ export async function getComposableScript(
   // published is skipped without the "already defines" warning, which is about
   // someone else's property, not our own from a previous page.
   const bundleKey = JSON.stringify(new Bun.CryptoHasher('md5').update(`${globalNames}\0${joinedChunks}`).digest('hex').slice(0, 12))
-  const assembled = `;(function(){
+  const asynchronous = requiresAsyncBody(joinedChunks)
+  const assembled = `;${asynchronous ? 'await (async function' : '(function'}(){
 var __bundles = window.__stxComposableBundles || (window.__stxComposableBundles = {});
-if (__bundles[${bundleKey}]) return;
-__bundles[${bundleKey}] = true;
+if (__bundles[${bundleKey}]) { ${asynchronous ? 'await __bundles[' + bundleKey + '];' : ''} return; }
+${asynchronous ? `var __resolveBundle, __rejectBundle;
+__bundles[${bundleKey}]=new Promise(function(resolve,reject){__resolveBundle=resolve;__rejectBundle=reject;});
+__bundles[${bundleKey}].catch(function(){});
+try {` : `__bundles[${bundleKey}] = true;`}
 var __published = window.__stxComposableGlobals || (window.__stxComposableGlobals = {});
 window.__composables = window.__composables || {};
 var __c = window.__composables;
@@ -607,6 +616,8 @@ ${assignments}
     window[__n] = __c[__n];
     __published[__n] = true;
   }
+${asynchronous ? `__resolveBundle();
+} catch(error) { delete __bundles[${bundleKey}]; __rejectBundle(error); throw error; }` : ''}
 })();`
 
   // Production ships it minified, as one script.

@@ -1,3 +1,4 @@
+import { requiresAsyncBody } from './module-syntax'
 /**
  * Page-level module registry (stacksjs/stx#1957).
  *
@@ -239,13 +240,19 @@ export async function buildModuleRegistryScript(
   code = transformStoreImports(autoImports.code)
 
   const bundleKey = JSON.stringify(new Bun.CryptoHasher('md5').update(entry).digest('hex').slice(0, 12))
+  const asynchronous = requiresAsyncBody(code)
   return [
-    ';(function() {',
+    asynchronous ? ';await (async function() {' : ';(function() {',
     `  var __stxBundles = globalThis.__stxModuleBundles || (globalThis.__stxModuleBundles = {});`,
-    `  if (__stxBundles[${bundleKey}]) return;`,
-    `  __stxBundles[${bundleKey}] = true;`,
+    `  if (__stxBundles[${bundleKey}]) { ${asynchronous ? 'await __stxBundles[' + bundleKey + '];' : ''} return; }`,
+    asynchronous ? `var __resolveBundle, __rejectBundle;
+__stxBundles[${bundleKey}]=new Promise(function(resolve,reject){__resolveBundle=resolve;__rejectBundle=reject;});
+__stxBundles[${bundleKey}].catch(function(){});
+try {` : `__stxBundles[${bundleKey}] = true;`,
     prelude,
     code,
+    asynchronous ? `__resolveBundle();
+} catch(error) { delete __stxBundles[${bundleKey}]; __rejectBundle(error); throw error; }` : '',
     '})();',
   ].join('\n')
 }

@@ -10,6 +10,12 @@ export const SIGNALS_DOM_READY_RUNTIME = `  // =================================
     document.removeEventListener('DOMContentLoaded', window.__stxDomReadyHandler);
   }
   const stxDomReadyHandler = () => {
+    const modulesReady = window.__stxPageModulesReady;
+    if (modulesReady) {
+      window.__stxPageModulesReady = null;
+      modulesReady.then(stxDomReadyHandler, function(error) { console.error('[stx] hydration blocked by a failed module', error); });
+      return;
+    }
     console.log('[stx] DOMContentLoaded fired — processing scopes');
     // Track which scoped elements have been processed
     const processedScopes = new Set();

@@ -1,3 +1,4 @@
+import { minifyClassicScript } from './env'
 /* eslint-disable prefer-const, style/max-statements-per-line, no-super-linear-backtracking, regexp/no-unused-capturing-group */
 /**
  * Static Site Generation (SSG) with Incremental Static Regeneration (ISR)
@@ -927,8 +928,9 @@ function minifyHtml(html: string): string {
     let scriptBody = match[2]
     const closeTag = match[3]
 
-    // Strip single-line comments (// ...) but not URLs (://), sourcemaps, or regex
-    scriptBody = scriptBody.replace(/([^:"\\'`])\/\/(?!\/)(?![*!])([^\n]*)/g, '$1')
+    // JavaScript strings, templates and regex literals can contain `//`. The
+    // compiler parser knows those boundaries; a line-comment regex does not.
+    scriptBody = minifyClassicScript(scriptBody).replace(/<\/script/gi, '<\\/script')
 
     parts.push(openTag + scriptBody + closeTag)
     cursor = match.index + match[0].length

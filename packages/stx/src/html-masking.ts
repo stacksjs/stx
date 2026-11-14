@@ -578,3 +578,14 @@ export function restoreStashedScripts(html: string, scripts: string[]): string {
     return html
   return html.replace(/\x00STX_SCRIPT_(\d+)\x00/g, (_, idx) => scripts[+idx] ?? '')
 }
+
+/** Shared script boundaries for the compiler, author checker and composable discovery. */
+export function scanHtmlScriptElements(html: string): Array<{ start: number, end: number, bodyStart: number, bodyEnd: number, attrs: string }> {
+  const tags = scanHtmlTags(html), result: Array<{ start: number, end: number, bodyStart: number, bodyEnd: number, attrs: string }> = []
+  for (let index = 0; index < tags.length; index++) {
+    const tag = tags[index]!, close = tags[index + 1]
+    if (tag.name.toLowerCase() !== 'script' || tag.closing || close?.name.toLowerCase() !== 'script' || !close.closing) continue
+    result.push({ start: tag.start, end: close.end, bodyStart: tag.end, bodyEnd: close.start, attrs: tag.attributes })
+  }
+  return result
+}

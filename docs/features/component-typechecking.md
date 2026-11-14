@@ -98,11 +98,11 @@ function add(amount: number): void { this.count += amount }
 </template>
 ```
 
-An optional `ComponentState` interface or type describes private fields and
+An optional `ComponentState` interface or object type describes private fields and
 refines object/array element shapes. Refined metadata properties must still be
 assignable to their declared metadata type. It is a type contract, not a state
 initializer: use optional private fields until lifecycle code initializes them.
-There is no permissive index signature. Unknown properties, wrong method
+Private fields must be optional until initialized. Callable/scalar/`any` state aliases, index signatures, `any` fields and method redeclarations are rejected; they cannot erase the native metadata or method contract. Unknown properties, wrong method
 arguments and wrong property assignments remain errors. Nested native loops
 have lexical aliases, including object key/value loops; aliases cannot escape
 their loop. Synthetic `this` parameters and template wrappers retain mappings
@@ -141,8 +141,11 @@ optional field is valid; a missing required field fails. Layouts and partials
 are not treated as imaginary standalone renders with no incoming context.
 Programmatic callers may set `partialsDir` and `layoutsDir` explicitly.
 
-The contract form is a locally declared object interface with named lexical
-properties. Dynamic include/layout paths, unresolved static targets and cyclic
+The contract form is a locally declared, non-generic object interface or object
+type alias with named lexical properties. Callable/`any`/generic aliases are
+explicit errors. Nested declarations, named function expressions, comments and
+literals never supply caller bindings; imported values and destructuring aliases
+do, while type-only imports do not. Dynamic include/layout paths, unresolved static targets and cyclic
 or deeper-than-32 graphs cannot prove an inherited contract. When a checked tree
 contains inherited contracts, these produce explicit diagnostics rather than a
 successful but incomplete check. Include the partials and layouts in the author

@@ -65,7 +65,7 @@ else {
     mount: function(setupFn) {
       console.log('[mount] called');
       // Capture script reference synchronously (only valid during execution)
-      var scriptEl = document.currentScript;
+      var scriptEl = document.currentScript || window.__stxExecutingScript;
 
       function doMount() {
         // Auto-mount scripts are emitted after their component template. Other
