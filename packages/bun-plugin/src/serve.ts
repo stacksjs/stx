@@ -327,6 +327,26 @@ export interface ServeRequestContext {
 export const CSRF_COOKIE = 'X-CSRF-Token'
 
 /**
+ * The answer to a request whose URL cannot be parsed, or null for any other.
+ *
+ * Bun builds `req.url` from the request line and the Host header. A request
+ * with no usable host (a scanner sending `Host:` empty, or raw bytes) arrives
+ * with a bare path such as `/`, and the first `new URL(req.url)` in the
+ * handler throws. That was logged as "[stx] Request failed" with a stack and
+ * answered 500, as if the server had broken, when the request was simply
+ * malformed. It is the client's error and gets a 400, without a log line an
+ * operator would chase.
+ */
+export function malformedRequestResponse(req: Pick<Request, 'url'>): Response | null {
+  if (URL.canParse(req.url))
+    return null
+  return new Response('Bad Request', {
+    status: 400,
+    headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' },
+  })
+}
+
+/**
  * A token to mint for this request, or null to leave it alone.
  *
  * Safe methods only, and only when the request carries none already: anything
@@ -4176,6 +4196,10 @@ function __stxOverlay(errs){
         })
       },
       async fetch(req, server) {
+        const malformed = malformedRequestResponse(req)
+        if (malformed)
+          return malformed
+
         // See `awaitImageWarmup`: the port is already bound, and this is
         // where the wait belongs — before anything renders, not before
         // anything listens. Bounded, because answering beats answering with
