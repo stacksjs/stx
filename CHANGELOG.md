@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.886...v0.2.887)
+
+## 🐛 Bug Fixes
+
+- **components**: draw a built-in on the web, not the native primitive of its name ([b8901ce](https://github.com/stacksjs/stx/commit/b8901ce)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.887 ([26ae113](https://github.com/stacksjs/stx/commit/26ae113)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.885...v0.2.886)
 
 ## ✨ Features
