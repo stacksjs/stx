@@ -11,7 +11,7 @@ describe('component library style metadata', () => {
     const root = createTempDir('stx-library-styles-')
     try {
       const input = path.join(root, 'source')
-      await Bun.write(path.join(input, 'Card.stx'), `<template><p>Card</p></template><style>\n${styles.split('\n\n')[0]}\n</style><style>${styles.split('\n\n')[1]}</style>`)
+      await Bun.write(path.join(input, 'Card.stx'), `<template><p>Card</p></template><style>\r\n${styles.split('\n\n')[0].replaceAll('\n', '\r\n')}\r</style><style>${styles.split('\n\n')[1]}</style>`)
       await Bun.write(path.join(input, 'Empty.stx'), '<template><p>No styles</p></template>')
       for (const [index, mode] of ([false, true, 'open', 'closed'] as const).entries()) {
         const output = path.join(root, `dist-${index}`)

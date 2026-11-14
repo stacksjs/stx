@@ -164,7 +164,7 @@ export interface ComponentLibraryBuildResult {
     tag: string
     source: string
     module: string
-    /** Exact emitted definition.styles text, before external CSS scoping/minification; empty when absent. */
+    /** Exact emitted definition.styles text with HTML newlines normalized to LF, before external CSS scoping/minification; empty when absent. */
     styles: string
     /** Resolved rendering mode: true normalizes to "open", and Light DOM is false. */
     shadowMode: false | 'open' | 'closed'

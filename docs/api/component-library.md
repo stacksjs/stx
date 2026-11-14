@@ -108,7 +108,7 @@ Set `components` for an explicit allow-list and to override `name`, `tag`, props
 
 Each `result.components` entry includes `name`, `tag`, `source`, `module`, and:
 
-- `styles`: the exact string emitted as the component's `definition.styles`, or `''` when absent. This is the compiled style-block text, before the separate CSS files are scoped or minified. It remains available with `css: false` and `minify: true`.
+- `styles`: the exact string emitted as the component's `definition.styles`, or `''` when absent. The compiler normalizes CRLF and lone CR newlines to LF, matching HTML parsing before inline styles are checked against CSP. This is the compiled style-block text, before the separate CSS files are scoped or minified. It remains available with `css: false` and `minify: true`.
 - `shadowMode`: the resolved mode, `false`, `'open'`, or `'closed'`. A `shadowDOM: true` configuration resolves to `'open'`; the default is `false`.
 
 Build tools can obtain this metadata without importing generated browser modules or executing authored imports. For a hash-based Content Security Policy, hash each nonempty `styles` string as UTF-8 (for example, `createHash('sha256').update(component.styles, 'utf8').digest('base64')` from `node:crypto`). Shadow rendering and the generated SSR helpers embed that string in a `<style>` element. Light DOM uses the separate scoped CSS files and does not inject a style element. The metadata is independent of those files, which can have different bytes due to scoping, minification, and their final newline. Include any other inline styles used by the host page in its policy separately.

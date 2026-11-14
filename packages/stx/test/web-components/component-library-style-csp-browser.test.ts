@@ -16,12 +16,13 @@ test('build-result style hashes authorize exact runtime styles under a browser h
     await Bun.write(join(input, 'browser.ts'), "export { title } from './browser-leaf'")
     const modes = [false, 'open', 'closed'] as const
     for (const [index, mode] of modes.entries()) {
-      await Bun.write(join(input, `Card${index}.stx`), `<script component type="application/json">${JSON.stringify({ tag: `csp-card-${index}`, shadowDOM: mode, properties: { count: { type: 'number', default: 0 } } })}</script>
+      const source = `<script component type="application/json">${JSON.stringify({ tag: `csp-card-${index}`, shadowDOM: mode, properties: { count: { type: 'number', default: 0 } } })}</script>
 <script>import { title as browserTitle } from './browser'
 const title = browserTitle</script>
 <template><p>{{ title }} {{ count }}</p></template>
 <style>/* Preserve café, spacing and \`quotes\` ${index} */
-p { color: rgb(12, 34, 56); }</style>`)
+p { color: rgb(12, 34, 56); }\r/* lone carriage return */</style>`
+      await Bun.write(join(input, `Card${index}.stx`), source.replaceAll('\n', '\r\n'))
     }
     const result = await buildComponentLibrary({ inputDir: input, outputDir: output, css: false, minify: true })
     const hashes = result.components.filter(component => component.styles).map(component => `'sha256-${createHash('sha256').update(component.styles, 'utf8').digest('base64')}'`)
@@ -58,6 +59,9 @@ p { color: rgb(12, 34, 56); }</style>`)
     })()`
     const observed = JSON.parse(await fixture.view.evaluate<string>(inspect))
     expect(observed).toEqual(result.components.map(component => ({ styles: component.shadowMode ? component.styles : null, color: component.shadowMode ? 'rgb(12, 34, 56)' : 'rgb(0, 0, 0)', text: 'HTML 1' })))
+    for (const [index, component] of result.components.entries()) {
+      expect(component.styles).toBe(`/* Preserve café, spacing and \`quotes\` ${index} */\np { color: rgb(12, 34, 56); }\n/* lone carriage return */`)
+    }
     expect(await fixture.view.evaluate('JSON.stringify(violations)')).toBe('[]')
     // A different inline style proves the response really enforces the hashes.
     await fixture.view.evaluate("(()=>{const blocked=document.createElement('style');blocked.textContent='p { color: rgb(200, 0, 0); }';document.querySelector('csp-card-1').renderRoot.appendChild(blocked);return true})()")
