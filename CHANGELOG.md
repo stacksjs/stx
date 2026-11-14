@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.885...v0.2.886)
+
+## ✨ Features
+
+- **i18n**: preload switching languages without loading another page ([b872eae](https://github.com/stacksjs/stx/commit/b872eae)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.886 ([2358a83](https://github.com/stacksjs/stx/commit/2358a83)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.884...v0.2.885)
 
 ## ✨ Features
