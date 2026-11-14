@@ -144,6 +144,28 @@ describe('the colour scheme', () => {
   })
 
   it('changes when the prop changes, without reloading the page where the engine allows it', async () => {
+    // Ask two ordinary sandboxed frames, independently of PreviewFrame's
+    // implementation. Engine capabilities can change without the OS changing.
+    const followsScheme = await page.json<boolean>(`
+      return new Promise((resolve, reject) => {
+        const frames = [], seen = new Map()
+        const cleanup = () => { clearTimeout(timer); removeEventListener('message', receive); frames.forEach(frame => frame.remove()) }
+        const receive = event => {
+          if (!['native-probe-dark','native-probe-light'].includes(event.data?.from) || typeof event.data.dark !== 'boolean') return
+          seen.set(event.data.from,event.data.dark)
+          if (seen.size === 2) { cleanup(); resolve(seen.get('native-probe-dark') === true && seen.get('native-probe-light') === false) }
+        }
+        const timer = setTimeout(() => { cleanup(); reject(new Error('Sandboxed colour-scheme probe timed out')) }, 2500)
+        addEventListener('message', receive)
+        for (const [scheme, html] of ${JSON.stringify([['dark', report('native-probe-dark')], ['light', report('native-probe-light')]])}) {
+          const frame = document.createElement('iframe')
+          frame.setAttribute('sandbox','allow-scripts')
+          frame.style.cssText = 'width:1px;height:1px;position:absolute;opacity:0;color-scheme:' + scheme
+          frame.srcdoc = html
+          frames.push(frame); document.body.appendChild(frame)
+        }
+      })
+    `)
     const result = await page.json(on(`
       const before = frame('scripted')
       const loads = probe.events.load.length
@@ -157,9 +179,9 @@ describe('the colour scheme', () => {
     expect(result.page).toBe(false)
     expect(result.style).toBe('light')
     expect(result.event).toMatchObject({ scheme: 'light', effectiveScheme: 'light' })
-    // Chromium tells the page in place: the same frame, its media query
-    // changed under it. WebKit has to be given the page again.
-    expect({ same: result.same, loaded: result.loaded }).toEqual(page.apple ? { same: false, loaded: 1 } : { same: true, loaded: 0 })
+    // An engine that forwards the scheme must keep the same frame. Only an
+    // engine needing the document fallback may load the replacement page.
+    expect({ same: result.same, loaded: result.loaded }).toEqual(followsScheme ? { same: true, loaded: 0 } : { same: false, loaded: 1 })
   })
 
   it('toggles from the toolbar, and says which it is', async () => {

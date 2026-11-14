@@ -102,7 +102,7 @@ An optional `ComponentState` interface or object type describes private fields a
 refines object/array element shapes. Refined metadata properties must still be
 assignable to their declared metadata type. It is a type contract, not a state
 initializer: use optional private fields until lifecycle code initializes them.
-Private fields must be optional until initialized. Callable/scalar/`any` state aliases, index signatures, `any` fields and method redeclarations are rejected; they cannot erase the native metadata or method contract. Unknown properties, wrong method
+Private fields must be optional until initialized. Scalar/`any` state aliases, index signatures, `any` fields and method redeclarations are rejected; they cannot erase the native metadata or method contract. Unknown properties, wrong method
 arguments and wrong property assignments remain errors. Nested native loops
 have lexical aliases, including object key/value loops; aliases cannot escape
 their loop. Synthetic `this` parameters and template wrappers retain mappings

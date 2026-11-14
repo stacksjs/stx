@@ -1201,6 +1201,8 @@ const escapeHTML = (value) => String(value ?? '')
 
 const valueAt = (host, path) => {
   const parts = path.trim().split('.');
+  if (parts[0] === 'this') parts.shift();
+  if (!parts.length) return host;
   const first = parts.shift();
   // Render bindings read declared props, including attributes whose names
   // also belong to the native DOM API. The public element keeps that API.
@@ -1395,8 +1397,12 @@ export class StxElement extends HTMLElementBase {
     const definition = this.constructor.definition;
     const root = this.renderRoot;
     const active = root.activeElement || (root.contains?.(globalThis.document?.activeElement) ? globalThis.document.activeElement : null);
-    const focusKey = active && (active.getAttribute?.('data-key') || active.id || active.getAttribute?.('name'));
-    const selection = active && 'selectionStart' in active ? [active.selectionStart, active.selectionEnd] : null;
+    const focusAttribute = active?.getAttribute?.('data-key') ? 'data-key' : active?.id ? 'id' : 'name';
+    const focusKey = active?.getAttribute?.(focusAttribute);
+    const focusValue = focusAttribute === 'name' && active?.type === 'radio' ? active.value : null;
+    const selectionStart = active?.selectionStart, selectionEnd = active?.selectionEnd;
+    const selection = Number.isInteger(selectionStart) && Number.isInteger(selectionEnd)
+      ? [selectionStart, selectionEnd, active.selectionDirection] : null;
     // A compiled component renders itself: the control flow and the derived
     // values were turned into JavaScript at build time, so there is nothing to
     // interpret here and nothing that needs an eval the page's CSP forbids.
@@ -1412,9 +1418,15 @@ export class StxElement extends HTMLElementBase {
     this._bindEvents();
     if (focusKey) {
       const escaped = globalThis.CSS?.escape ? globalThis.CSS.escape(focusKey) : focusKey.replace(/["\\\\]/g, '\\$&');
-      const next = root.querySelector('[data-key="' + escaped + '"],#' + escaped + ',[name="' + escaped + '"]');
+      const selector = '[' + focusAttribute + '="' + escaped + '"]';
+      // Name-only radio groups share a name, but their chosen member must stay focused.
+      const next = focusValue === null ? root.querySelector(selector)
+        : [...root.querySelectorAll(selector)].find(element => element.type === 'radio' && element.value === focusValue);
       next?.focus?.();
-      if (selection && next?.setSelectionRange) next.setSelectionRange(selection[0], selection[1]);
+      // Several input types expose this method but reject text selection. A
+      // rerender can also change a text input into one of those types.
+      if (selection && Number.isInteger(next?.selectionStart) && Number.isInteger(next?.selectionEnd) && typeof next?.setSelectionRange === 'function')
+        next.setSelectionRange(selection[0], selection[1], selection[2] || 'none');
     }
     this.dispatchEvent?.(new CustomEvent('stx:updated', { bubbles: false }));
   }

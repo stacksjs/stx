@@ -32,6 +32,7 @@
  * through the real router.
  */
 import { afterAll, afterEach, beforeAll, describe, expect, it, setDefaultTimeout } from 'bun:test'
+import { Window } from 'very-happy-dom'
 import { extractContainerContent } from '../../src/app-shell'
 import type { Browser, Counters, ServeMode, SpaApp } from './spa-harness'
 import { boot, closeBrowser, counts, dispatch, find, layout, page, renderApp, settle, shown, sleep, text } from './spa-harness'
@@ -768,12 +769,16 @@ for (const serve of MODES) {
 
 describe('what a fragment carries', () => {
   const fragment = (route: string) => extractContainerContent(app.documents.get(route)!, 'main')
-  const stamps = (html: string) => Array.from(html.matchAll(/<script\b[^>]*>/gi))
-    .flatMap(([tag]) => tag.match(/data-stx-(?:owner|instance)="[^"]*"/g) ?? [])
+  const stamps = (html: string) => {
+    const document = new Window().document
+    document.write(html)
+    return [...document.querySelectorAll('script')].flatMap(script => ['data-stx-owner','data-stx-instance'].filter(name => script.hasAttribute(name)).map(name => `${name}="${script.getAttribute(name)}"`))
+  }
 
   it('counts script attributes, not matching source text inside scripts', () => {
     const html = '<script data-stx-owner="real">const attr = \'data-stx-owner="source"\'</script>'
     expect(stamps(html)).toEqual(['data-stx-owner="real"'])
+    expect(stamps(`<script>const tag = '<script data-stx-owner="source">'</script>`)).toEqual([])
   })
 
   it('leaves out the layout components\' own scripts', () => {

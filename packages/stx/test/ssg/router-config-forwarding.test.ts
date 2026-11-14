@@ -14,6 +14,8 @@
  * These tests are the thing that was missing — they read the built HTML, so an
  * inert fix cannot pass them.
  */
+import { runInNewContext } from 'node:vm'
+import { Window } from 'very-happy-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { existsSync, readFileSync } from 'node:fs'
 import { rm } from 'node:fs/promises'
@@ -50,10 +52,15 @@ async function build(options: Record<string, unknown> = {}): Promise<string> {
   return existsSync(out) ? readFileSync(out, 'utf8') : ''
 }
 
-/** The one line the page carries the config on. */
+/** Read the config a browser executes, independent of JSON/minifier spelling. */
 function routerConfig(html: string): Record<string, unknown> | null {
-  const match = html.match(/window\.__stxRouterConfig\s*=\s*(\{.*?\});/s)
-  return match ? JSON.parse(match[1]) : null
+  const document = new Window().document
+  document.write(html)
+  const script = [...document.querySelectorAll('script')].find(script => /^\s*window\.__stxRouterConfig\s*=/.test(script.textContent || ''))
+  if (!script) return null
+  const scope: {window:{__stxRouterConfig?: Record<string,unknown>}} = {window:{}}
+  runInNewContext(script.textContent || '', scope)
+  return scope.window.__stxRouterConfig || null
 }
 
 describe('the static build forwards router config', () => {
