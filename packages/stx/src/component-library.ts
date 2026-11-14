@@ -1882,6 +1882,8 @@ export async function buildComponentLibrary(config: ComponentLibraryConfig): Pro
       tag: component.tag,
       source: component.sourcePath,
       module: path.join(outputDir, `${component.tag}.js`),
+      styles: component.styles,
+      shadowMode: component.shadowMode,
     })),
     files,
     manifest,
