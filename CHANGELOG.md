@@ -1,5 +1,26 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.884...v0.2.885)
+
+## ✨ Features
+
+- expose component library style metadata ([fdcf483](https://github.com/stacksjs/stx/commit/fdcf483)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- **native**: share the host signal runtime with app module imports ([29ad059](https://github.com/stacksjs/stx/commit/29ad059)) _(by Chris Breuer <chris@stacksjs.com>)_
+- normalize NUL in component style metadata ([1c58d24](https://github.com/stacksjs/stx/commit/1c58d24)) _(by Chris Breuer <chris@stacksjs.com>)_
+- normalize component styles before CSP hashing ([c703a69](https://github.com/stacksjs/stx/commit/c703a69)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.885 ([2edb33e](https://github.com/stacksjs/stx/commit/2edb33e)) _(by Chris Breuer <chris@stacksjs.com>)_
+- integrate native component library style metadata ([cb7b2c2](https://github.com/stacksjs/stx/commit/cb7b2c2)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.883...v0.2.884)
 
 ## ✨ Features
