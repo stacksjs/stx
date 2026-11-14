@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.882...v0.2.883)
+
+## 🐛 Bug Fixes
+
+- expand component models before resolving projected props ([bf8fe58](https://github.com/stacksjs/stx/commit/bf8fe58)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.883 ([0aeb793](https://github.com/stacksjs/stx/commit/0aeb793)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.881...v0.2.882)
 
 ## 🐛 Bug Fixes
