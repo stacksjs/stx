@@ -781,14 +781,41 @@ export function getExpressionSafetyReason(expression: string): string | null {
  * @param context - Variables available during evaluation
  * @returns Boolean result, defaults to false on error
  */
+/** Conditions already reported for reading a withheld name, so each is said once. */
+const reportedWithheldConditions = new Set<string>()
+
+/**
+ * Say so when a condition reads a `__` name the page did declare.
+ *
+ * Every `__`-prefixed key is withheld from expressions, and a name a condition
+ * cannot see fails closed. Both are deliberate. Together they were silent:
+ * `@if (__rows.length)` and `@unless (__rows.length)` each rendered nothing,
+ * with no error, while `@foreach (__rows as row)` beside them rendered the
+ * rows. An upgrade turned a dashboard's lists, panels and a two-factor card
+ * into empty space that way and nothing reported it. The condition still
+ * fails closed; it now names the variable and the way out.
+ */
+function reportWithheldConditionName(expression: string, name: string, context: Record<string, unknown>): void {
+  if (!name.startsWith('__') || !(name in context))
+    return
+  const key = `${name}\u0000${expression}`
+  if (reportedWithheldConditions.has(key))
+    return
+  reportedWithheldConditions.add(key)
+  if (reportedWithheldConditions.size > 500)
+    reportedWithheldConditions.clear()
+  console.warn(`[stx] a condition reads \`${name}\`, which conditions cannot see, so \`${expression.trim()}\` is false and nothing it guards is rendered. Names starting with \`__\` are withheld from @if, @elseif and @unless. Derive a plain value in the server script (for example \`const hasRows = ${name}.length > 0\`) and test that instead.`)
+}
+
 export function safeEvaluateCondition(expression: string, context: Record<string, unknown>): boolean {
   try {
     const safeContext = createSafeContext(context)
     const keys = Object.keys(safeContext)
     const values = Object.values(safeContext)
     let readMissingIdentifier = false
-    const func = createSafeFunction(expression, keys, () => {
+    const func = createSafeFunction(expression, keys, (name) => {
       readMissingIdentifier = true
+      reportWithheldConditionName(expression, name, context)
     })
     const result = func(...values)
 
