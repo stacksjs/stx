@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.873...v0.2.874)
+
+## 🐛 Bug Fixes
+
+- **serve**: answer a request with an unparseable URL 400 instead of throwing ([5c0c110](https://github.com/stacksjs/stx/commit/5c0c110)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.874 ([1b7d352](https://github.com/stacksjs/stx/commit/1b7d352)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.872...v0.2.873)
 
 ## 🐛 Bug Fixes
