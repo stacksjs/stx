@@ -95,6 +95,8 @@ let isBuilding = false
 // real app's distinct page shapes; trims unbounded growth in long-lived
 // dev sessions where every navigation adds a new class signature.
 const MAX_CACHE = 256
+/** How generation is ordered. Part of every cache key, so a change to the order reads no older entry. */
+const CSS_ORDER = 'sorted'
 const cssByClassSet = new Map<string, string>()
 let diskCacheRoot: string | null = null
 let configFingerprint: string | null = null
@@ -795,8 +797,17 @@ async function generateCssUncached(htmlContent: string, appDir?: string): Promis
     // safelist, shortcuts) needs a different cache slot even with the
     // same class set, otherwise a stale CSS file outlives the config
     // edit that produced it.
-    const classSetKey = [...classes].sort().join(' ')
-    const cacheKey = `${cssEngineStamp}::${rootConfig.fingerprint || 'default'}::${classSetKey}`
+    //
+    // The sorted list is also the order the classes are generated in below.
+    // The engine keeps rules of equal weight in generation order, so a key
+    // that ignores order has to stand for one order only: generated in the
+    // page's own order, moving a class between elements changed a fresh
+    // build's stylesheet while every cached one kept the order of whichever
+    // page wrote the entry first. `CSS_ORDER` retires the entries written
+    // before that held.
+    const orderedClasses = [...classes].sort()
+    const classSetKey = orderedClasses.join(' ')
+    const cacheKey = `${CSS_ORDER}::${cssEngineStamp}::${rootConfig.fingerprint || 'default'}::${classSetKey}`
     const cached = cssByClassSet.get(cacheKey)
     if (cached !== undefined) {
       // LRU bump — re-insert to mark as most-recently-used.
@@ -870,7 +881,7 @@ async function generateCssUncached(htmlContent: string, appDir?: string): Promis
         generator.generate(cls)
     }
 
-    for (const className of classes) {
+    for (const className of orderedClasses) {
       if (!shortcuts[className])
         generator.generate(className)
     }

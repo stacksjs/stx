@@ -3093,7 +3093,11 @@ function __stxOverlay(errs){
       // Cache key — sorted class names plus the safelist (already folded in
       // above). Same set → same CSS, so we can short-circuit the entire
       // generator pipeline below for repeat renders of the same template.
-      const cacheKey = [...classes].sort().join(' ')
+      // The sorted list is the generation order too: the engine keeps rules
+      // of equal weight in the order they were generated, so the key has to
+      // stand for one order, not for whichever page asked first.
+      const orderedClasses = [...classes].sort()
+      const cacheKey = orderedClasses.join(' ')
       const cached = cssCssCache.read(cacheKey)
       if (cached !== undefined)
         return cached
@@ -3104,7 +3108,7 @@ function __stxOverlay(errs){
       // wants at runtime — the cast names that gap instead of hiding it behind
       // an `any` on the module type, which is what the old stub did.
       const generator = new cw.CSSGenerator(generatorConfig as CssConfig)
-      for (const className of classes) {
+      for (const className of orderedClasses) {
         generator.generate(className)
       }
 
