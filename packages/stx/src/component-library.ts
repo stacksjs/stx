@@ -310,10 +310,10 @@ function extractTemplate(source: string): string {
 
 function extractStyles(source: string): string {
   return [...source.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)]
-    // Runtime innerHTML and SSR parsing normalize HTML newlines before CSP
-    // checks a style. Emit those same bytes so the public metadata can be
-    // hashed directly, including when the source uses CRLF or a lone CR.
-    .map(match => match[1].replace(/\r\n?/g, '\n').trim())
+    // Runtime innerHTML and SSR parsing normalize HTML newlines and replace
+    // NUL before CSP checks a style. Emit those same bytes so the public
+    // metadata can be hashed directly, including CRLF, lone CR and NUL input.
+    .map(match => match[1].replace(/\r\n?/g, '\n').replaceAll('\u0000', '\uFFFD').trim())
     .filter(Boolean)
     .join('\n\n')
 }
