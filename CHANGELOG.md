@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.881...v0.2.882)
+
+## 🐛 Bug Fixes
+
+- **conditionals**: say so when a condition reads a withheld double-underscore name ([d24fdbe](https://github.com/stacksjs/stx/commit/d24fdbe)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.882 ([591578d](https://github.com/stacksjs/stx/commit/591578d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.880...v0.2.881)
 
 ## 🐛 Bug Fixes
