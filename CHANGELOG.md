@@ -1,5 +1,28 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.871...v0.2.872)
+
+## 🐛 Bug Fixes
+
+- preserve compiled element method types ([cb23754](https://github.com/stacksjs/stx/commit/cb23754)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 📝 Documentation
+
+- **native**: record the iOS acceptance of the shared components, all of it (#2184) ([80ee38d](https://github.com/stacksjs/stx/commit/80ee38d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184))
+
+## 🔧 Chores
+
+- release v0.2.872 ([ae8b646](https://github.com/stacksjs/stx/commit/ae8b646)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'refs/remotes/origin/main' ([47ff59d](https://github.com/stacksjs/stx/commit/47ff59d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.870...v0.2.871)
 
 ## 🐛 Bug Fixes
