@@ -402,3 +402,38 @@ For purely client-driven loops (data fetched after mount, or where the row count
 ```
 
 See [Components Guide](../guide/components.md) for the full lifecycle and props story.
+
+### Public method declarations
+
+Client methods retain authored TypeScript parameters, generics, overloads and
+return annotations in the emitted custom-element declarations. Default arguments
+become optional parameters. Annotate public methods as you would a package API:
+
+```html
+<script client>
+interface SessionOptions {
+  url: string
+  token?: string
+}
+
+async function boot(options: SessionOptions): Promise<void> {
+  // Establish the component's customer session.
+}
+
+function close(): void {
+  // Update the component's reactive properties.
+}
+</script>
+```
+
+A consumer can call `element.boot({ url: 'https://support.example' })` without
+pretending the options are a DOM Event. Local interfaces and type aliases travel
+with the declaration. Types from published dependencies retain type-only imports.
+A public type imported from a relative source file fails the build with a packaging
+diagnostic, because that source file does not ship with the generated component
+package. Declare the type in the component or expose it from a package dependency.
+
+For an unannotated parameter or return value, declarations use `unknown` rather
+than inventing an event contract. Scalar default arguments retain their scalar
+type, and an unannotated async method returns `Promise<unknown>`. Explicit `this`
+parameters describe the implementation and are omitted from the consumer method.

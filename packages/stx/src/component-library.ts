@@ -7,6 +7,7 @@ import type {
 } from './types'
 import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 
 interface SourceMetadata {
   name?: string
@@ -33,6 +34,8 @@ interface CompiledComponent {
   properties: Record<string, ComponentLibraryProperty>
   events: Record<string, ComponentLibraryEvent>
   methods: Record<string, string>
+  methodDeclarations: Record<string, string[]>
+  declarationTypes: string
   eventTypes: string[]
   bindings: Array<{ id: number, name: string, expression: string }>
   slots: Array<{ name: string, description?: string }>
@@ -137,52 +140,137 @@ function parseMetadata(source: string, file: string): SourceMetadata {
   }
 }
 
-function extractClientMethods(source: string, file: string): Record<string, string> {
-  const methods: Record<string, string> = {}
-  const scripts = [...source.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+interface ClientMethod {
+  name: string
+  header: string
+  parameters: string
+  generic: string
+  returns: string
+  async: boolean
+  source?: string
+}
 
-  for (const script of scripts) {
-    if (!/\bclient\b/i.test(script[1]) || /\bcomponent\b|\bstx:component\b/i.test(script[1])) continue
-    let code: string
-    try {
-      code = new Bun.Transpiler({ loader: 'ts' }).transformSync(script[2])
-    }
-    catch (error) {
-      throw new Error(`${file}: failed to transpile <script client> (${(error as Error).message})`)
-    }
-    const functionPattern = /(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(([^)]*)\)\s*\{/g
-    let match: RegExpExecArray | null
-    while ((match = functionPattern.exec(code))) {
-      const name = match[1]
-      if (RESERVED_METHODS.has(name)) throw new Error(`${file}: client ${reservedMethodMessage(name)}`)
-      const bodyStart = functionPattern.lastIndex
-      let depth = 1
-      let quote = ''
-      let escaped = false
-      let cursor = bodyStart
-      for (; cursor < code.length && depth > 0; cursor++) {
-        const char = code[cursor]
-        if (escaped) {
-          escaped = false
-          continue
-        }
-        if (quote) {
-          if (char === '\\') escaped = true
-          else if (char === quote) quote = ''
-          continue
-        }
-        if (char === '"' || char === "'" || char === '`') quote = char
-        else if (char === '{') depth++
-        else if (char === '}') depth--
-      }
-      if (depth !== 0) throw new Error(`${file}: unterminated client function "${name}"`)
-      const asyncPrefix = match[0].includes('async') ? 'async ' : ''
-      methods[name] = `${asyncPrefix}${name}(${match[2]}) {${code.slice(bodyStart, cursor - 1)}}`
-      functionPattern.lastIndex = cursor
+/** Use Bun's TS parser to distinguish a return object type from the method body. */
+function clientMethods(code: string): ClientMethod[] {
+  const masked = stripCommentsAndLiterals(code)
+  const pattern = /(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/g
+  const result: ClientMethod[] = []
+  const parser = new Bun.Transpiler({ loader: 'ts' })
+  let match: RegExpExecArray | null
+  while ((match = pattern.exec(masked))) {
+    let cursor = pattern.lastIndex
+    while (/\s/.test(masked[cursor] || '')) cursor++
+    const genericStart = cursor
+    if (masked[cursor] === '<') cursor = skipBalanced(masked, cursor, '<', '>')
+    if (cursor < 0) continue
+    const generic = code.slice(genericStart, cursor).trim()
+    while (/\s/.test(masked[cursor] || '')) cursor++
+    if (masked[cursor] !== '(') continue
+    const parameterStart = cursor
+    const parameterEnd = skipBalanced(masked, cursor, '(', ')')
+    if (parameterEnd < 0) continue
+    for (cursor = parameterEnd; cursor < code.length; cursor++) {
+      const token = masked[cursor]
+      if (token !== '{' && token !== ';') continue
+      const header = code.slice(match.index, cursor).trim()
+      let compiled: string
+      try { compiled = parser.transformSync(header + (token === '{' ? '{}' : ';')) }
+      catch { continue }
+      // An overload is erased; a valid implementation retains its function.
+      if (token === '{' && !compiled.includes(`function ${match[1]}(`)) continue
+      if (token === ';' && compiled.trim()) continue
+      const bodyEnd = token === '{' ? skipBalanced(masked, cursor, '{', '}') : cursor + 1
+      if (bodyEnd < 0) break
+      result.push({
+        name: match[1]!, header, generic,
+        parameters: code.slice(parameterStart + 1, parameterEnd - 1),
+        returns: code.slice(parameterEnd, cursor).trim().replace(/^:\s*/, ''),
+        async: /\basync\s+function/.test(match[0]),
+        ...(token === '{' ? { source: code.slice(match.index, bodyEnd) } : {}),
+      })
+      pattern.lastIndex = bodyEnd
+      break
     }
   }
+  return result
+}
 
-  return methods
+function methodDeclaration(method: ClientMethod): string {
+  const parameters = splitTopLevel(method.parameters, ',', true).flatMap((raw, index) => {
+    const masked = stripCommentsAndLiterals(raw)
+    let depth = 0, assignment = -1
+    for (let i = 0; i < masked.length; i++) {
+      const token = masked[i]!
+      if ('([{<'.includes(token)) depth++
+      else if (')]}>' .includes(token) && !(token === '>' && masked[i - 1] === '=')) depth--
+      if (token === '=' && depth === 0 && masked[i + 1] !== '>') { assignment = i; break }
+    }
+    const declaration = (assignment < 0 ? raw : raw.slice(0, assignment)).trim()
+    const parts = splitTopLevel(declaration, ':', true)
+    const binding = parts.shift()!.trim()
+    if (binding === 'this') return []
+    const name = /^[A-Za-z_$]|^\.\.\./.test(binding) ? binding : `argument${index}`
+    const fallback = assignment < 0 ? '' : raw.slice(assignment + 1).trim()
+    const inferred = fallback === 'true' || fallback === 'false' ? 'boolean' : /^-?\d+(?:\.\d+)?$/.test(fallback) ? 'number' : /^['"`]/.test(fallback) ? 'string' : name.startsWith('...') ? 'unknown[]' : 'unknown'
+    const type = parts.join(':').trim() || inferred
+    const optional = assignment >= 0 && !name.endsWith('?') && !name.startsWith('...') ? '?' : ''
+    return [`${name}${optional}: ${type}`]
+  }).join(', ')
+  return `${method.name}${method.generic}(${parameters}): ${method.returns || (method.async ? 'Promise<unknown>' : 'unknown')}`
+}
+
+function extractClientMethods(source: string, file: string): { methods: Record<string, string>, declarations: Record<string, string[]>, types: string } {
+  const methods: Record<string, string> = {}, declarations: Record<string, string[]> = {}, types: string[] = [], imports: Array<{ binding: string, module: string }> = []
+  const scripts = [...source.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+  for (const script of scripts) {
+    if (/\bserver\b|\bcomponent\b|\bstx:component\b/i.test(script[1]) || /\btype=["']application\//i.test(script[1])) continue
+    try { new Bun.Transpiler({ loader: 'ts' }).transformSync(script[2]) }
+    catch (error) { throw new Error(`${file}: failed to transpile <script client> (${(error as Error).message})`) }
+    const extracted = /\bclient\b/i.test(script[1]) ? clientMethods(script[2]!) : []
+    const overloads = new Set(extracted.filter(method => !method.source).map(method => method.name))
+    for (const method of extracted) {
+      if (RESERVED_METHODS.has(method.name)) throw new Error(`${file}: client ${reservedMethodMessage(method.name)}`)
+      if (method.source) {
+        methods[method.name] = new Bun.Transpiler({ loader: 'ts' }).transformSync(method.source).trim().replace(/^(?:export\s+)?(async\s+)?function\s+/, '$1')
+      }
+      if (!method.source || !overloads.has(method.name)) (declarations[method.name] ??= []).push(methodDeclaration(method))
+    }
+    for (const imported of script[2]!.matchAll(/^\s*import\s+(?:type\s+)?([\s\S]*?)\s+from\s*(['"])([^'"]+)\2\s*;?/gm)) imports.push({ binding: imported[1]!.trim(), module: imported[3]! })
+    const masked = stripCommentsAndLiterals(script[2]!)
+    const depths = bracketDepths(masked).depths
+    const typePattern = /(?:export\s+)?(interface|type)\s+[A-Za-z_$][\w$]*/g
+    let match: RegExpExecArray | null
+    while ((match = typePattern.exec(masked))) {
+      if (depths[match.index] !== 0) continue
+      let cursor = typePattern.lastIndex, depth = 0
+      for (; cursor < masked.length; cursor++) {
+        const token = masked[cursor]!
+        if (token === '{') {
+          const end = skipBalanced(masked, cursor, '{', '}')
+          if (end < 0) break
+          cursor = end - 1
+          if (match[1] === 'interface' && depth === 0) { cursor++; break }
+          continue
+        }
+        if ('([<'.includes(token)) depth++
+        else if (')]>'.includes(token) && !(token === '>' && masked[cursor - 1] === '=')) depth--
+        if (match[1] === 'type' && depth === 0 && (token === ';' || token === '\n')) {
+          if (token === '\n' && /^[\s]*[|&]/.test(masked.slice(cursor + 1))) continue
+          try { new Bun.Transpiler({ loader: 'ts' }).transformSync(script[2]!.slice(match.index, cursor)); break }
+          catch { /* The alias continues on its next line. */ }
+        }
+      }
+      types.push(script[2]!.slice(match.index, cursor).replace(/^export\s+/, '').trim())
+      typePattern.lastIndex = cursor + 1
+    }
+  }
+  const referenced = Object.values(declarations).flat().join('\n') + '\n' + types.join('\n')
+  const usedImports = imports.filter(imported => (imported.binding.match(/[A-Za-z_$][\w$]*/g) || []).filter(name => !['type', 'as'].includes(name)).some(name => new RegExp(`\\b${name}\\b`).test(referenced)))
+  for (const imported of usedImports) {
+    if (imported.module.startsWith('.') || path.isAbsolute(imported.module)) throw new Error(`${file}: public method types import ${JSON.stringify(imported.module)} outside the generated package; declare these types in the component or import them from a published dependency`)
+  }
+  const typeImports = [...new Set(usedImports.map(imported => `import type ${imported.binding.replace(/\btype\s+/g, '')} from ${JSON.stringify(imported.module)}`))]
+  return { methods, declarations, types: [...typeImports, ...types].join('\n\n') }
 }
 
 function extractTemplate(source: string): string {
@@ -517,7 +605,7 @@ function splitTopLevel(body: string, separators: string, angles: boolean): strin
     }
     if (opening.includes(char))
       depth++
-    else if (closing.includes(char))
+    else if (closing.includes(char) && !(angles && char === '>' && body[i - 1] === '='))
       depth--
     if (depth === 0 && separators.includes(char)) {
       parts.push(current)
@@ -1057,7 +1145,9 @@ async function compileComponent(
     progressive: entry.progressive ?? metadata.progressive ?? defaults.progressive ?? true,
     properties,
     events: entry.events || metadata.events || {},
-    methods: { ...metadataMethods, ...configuredMethods, ...extractedMethods },
+    methods: { ...metadataMethods, ...configuredMethods, ...extractedMethods.methods },
+    methodDeclarations: extractedMethods.declarations,
+    declarationTypes: extractedMethods.types,
     eventTypes: eventCompilation.eventTypes,
     bindings: bindingCompilation.bindings,
     slots: extractSlots(bindingCompilation.template),
@@ -1484,9 +1574,9 @@ function componentDeclaration(component: CompiledComponent): string {
   ).join('\n')
   const events = Object.entries(component.events).map(([name, event]) =>
     `  ${JSON.stringify(name)}: CustomEvent<${event.detailType || 'unknown'}>`).join('\n')
-  const methods = Object.keys(component.methods).map(name => `  ${name}($event?: Event): unknown`).join('\n')
+  const methods = Object.keys(component.methods).flatMap(name => component.methodDeclarations[name] || [`${name}($event?: Event): unknown`]).map(signature => `  ${signature}`).join('\n')
 
-  return `export interface ${component.name}Props {
+  return `${component.declarationTypes ? `${component.declarationTypes}\n\n` : ''}export interface ${component.name}Props {
 ${props}
 }
 
