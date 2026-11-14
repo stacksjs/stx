@@ -50,6 +50,13 @@ export const iconOnly = $bool($props.iconOnly)
 const slotWords = String($slots?.default ?? '').trim()
 const titleWords = !$props.label && !slotWords ? ($props.title || '') : ''
 export const label = $props.label || titleWords
+/*
+ * The other half of the sentence above: a `title` beside content is the
+ * tooltip, and it has to reach the <button>. Reading `$props.title` declares
+ * it, and a declared prop is no longer forwarded to the root, so without this
+ * line the tooltip was recorded in data-stx-props and never rendered.
+ */
+export const tooltip = titleWords ? '' : String($props.title || '')
 export const hasLabel = label !== ''
 
 /*
@@ -265,6 +272,7 @@ function onClick(event) {
   :aria-busy="isLoading() ? 'true' : 'false'"
   @if(ariaLabel)aria-label="{{ ariaLabel }}"@endif
   :aria-label="String(ariaLabelProp() ?? '') || null"
+  @if(tooltip)title="{{ tooltip }}"@endif
   @click="onClick($event)"
 >
   <span :show="isLoading()" @if(!loading)x-cloak@endif class="stx-mac-button-spinner" aria-hidden="true"></span>
@@ -297,6 +305,7 @@ function onClick(event) {
   :aria-busy="isLoading() ? 'true' : 'false'"
   @if(ariaLabel)aria-label="{{ ariaLabel }}"@endif
   :aria-label="String(ariaLabelProp() ?? '') || null"
+  @if(tooltip)title="{{ tooltip }}"@endif
   @click="onClick($event)"
 >
   {{-- The spinner is always in the DOM so `loading` can turn it on after render;

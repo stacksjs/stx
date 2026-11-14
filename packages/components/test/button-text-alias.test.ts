@@ -11,6 +11,25 @@ describe('Button native text compatibility uses the shared label behavior', () =
     expect(validateButtonProps({ text: 42 }).valid).toBe(false)
   })
 
+  it('writes a title beside content as the tooltip, and a lone title as the words', async () => {
+    const app = await renderApp({
+      'layouts/app.stx': layout(''),
+      'components/Button.stx': await Bun.file(join(import.meta.dir, '../src/ui/button/Button.stx')).text(),
+      'pages/index.stx': page('app', `<Button id="tip" title="Send the invite again">Resend</Button><Button id="mac" appearance="mac" title="Revoke">Remove</Button><Button id="words" title="Only words" />`),
+    }, { '/': 'pages/index.stx' })
+    try {
+      const browser = await boot(app, '/')
+      await settle()
+      expect(find(browser, '#tip').getAttribute('title')).toBe('Send the invite again')
+      expect(find(browser, '#tip').textContent).toContain('Resend')
+      expect(find(browser, '#mac').getAttribute('title')).toBe('Revoke')
+      expect(find(browser, '#words').textContent).toContain('Only words')
+      expect(find(browser, '#words').getAttribute('title')).toBeNull()
+      expect(browser.errors).toEqual([])
+    }
+    finally { await app.dispose() }
+  })
+
   it('tracks text, gives label precedence, and retains the spinner and slot fallback', async () => {
     const app = await renderApp({
       'layouts/app.stx': layout(''),
