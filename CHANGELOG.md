@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.872...v0.2.873)
+
+## 🐛 Bug Fixes
+
+- **components**: a Button's title beside content reaches the button as its tooltip ([6e36687](https://github.com/stacksjs/stx/commit/6e36687)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **components**: refresh the Button template snapshot for the tooltip attribute ([24aea6e](https://github.com/stacksjs/stx/commit/24aea6e)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.873 ([be0cfe0](https://github.com/stacksjs/stx/commit/be0cfe0)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.871...v0.2.872)
 
 ## 🐛 Bug Fixes
