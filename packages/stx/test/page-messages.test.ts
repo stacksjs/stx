@@ -89,6 +89,21 @@ describe('message catalogs, a language at a time', () => {
     expect(pageLanguages('<html lang="fr">', known)).toEqual(['en', 'de'])
   })
 
+  it('preloads configured switching languages while retaining area splitting', async () => {
+    process.env.STX_PAGE_MESSAGES = '1'
+    const html = await render('en', { messages: { ...messages, preload: 'all' } })
+    const filled = tagged(html, 'data-stx-messages')
+    expect(filled).toContain('EN_AUTH_TITLE')
+    expect(filled).toContain('DE_AUTH_TITLE')
+    expect(filled).not.toContain('BILLING')
+    expect(tagged(html, 'data-stx-modules')).not.toContain('DE_AUTH_TITLE')
+    const specific = await loadPageMessages(APP, { ...messages, preload: ['de'] })
+    expect(pageLanguages('<html lang="en">', specific)).toEqual(['en', 'de'])
+    const ordinary = await loadPageMessages(APP, messages)
+    expect(pageLanguages('<html lang="en">', ordinary)).toEqual(['en'])
+    await expect(loadPageMessages(APP, { ...messages, preload: ['fr'] })).rejects.toThrow('messages.preload')
+  })
+
   it('fills each area once, into the object its importers already hold', async () => {
     const collected = await loadPageMessages(APP, messages)
     expect(messageAreasIn('x"stx-messages:de:auth"y', 'z "stx-messages:en:server/errors"')).toEqual(new Set(['auth', 'server/errors']))

@@ -49,6 +49,8 @@ export interface PageMessagesOptions extends MessageCatalogsOptions {
    * first of `languages`.
    */
   fallback?: string
+  /** Additional languages available for in-place switching, without fetching a page. */
+  preload?: 'all' | string[]
 }
 
 export interface CollectedMessages {
@@ -107,6 +109,7 @@ export interface PageMessages extends CollectedMessages {
   stubs: Map<string, string>
   languages: string[]
   fallback: string
+  preload?: string[]
 }
 
 const collected = new Map<string, { signature: string, messages: PageMessages }>()
@@ -146,7 +149,7 @@ export async function loadPageMessages(root: string, options: PageMessagesOption
     try { return `${language}:${statSync(path.join(dir, language)).mtimeMs}` }
     catch { return `${language}:-` }
   }).join('|')
-  const cacheKey = `${dir}\0${options.languages.join(',')}\0${options.fallback ?? ''}`
+  const cacheKey = `${dir}\0${options.languages.join(',')}\0${options.fallback ?? ''}\0${JSON.stringify(options.preload ?? [])}`
   const cached = collected.get(cacheKey)
   if (cached && cached.signature === signature) return cached.messages
   const catalogs = await collectMessageCatalogs(root, options)
@@ -157,7 +160,11 @@ export async function loadPageMessages(root: string, options: PageMessagesOption
   }
   const fallback = options.fallback ?? options.languages[0]!
   if (!options.languages.includes(fallback)) throw new Error(`messages.fallback "${fallback}" is not one of messages.languages`)
-  const messages = { ...catalogs, stubs, languages: [...options.languages], fallback }
+  const preload = options.preload === 'all' ? [...options.languages] : [...(options.preload ?? [])]
+  for (const language of preload) {
+    if (!options.languages.includes(language)) throw new Error(`messages.preload "${language}" is not one of messages.languages`)
+  }
+  const messages = { ...catalogs, stubs, languages: [...options.languages], fallback, preload }
   collected.set(cacheKey, { signature, messages })
   return messages
 }
@@ -178,14 +185,14 @@ export function messageAreasIn(...codes: Array<string | null | undefined>): Set<
  * Every language when the page names none of them, since nothing then says
  * which one its scripts will read.
  */
-export function pageLanguages(html: string, messages: Pick<PageMessages, 'languages' | 'fallback'>): string[] {
+export function pageLanguages(html: string, messages: Pick<PageMessages, 'languages' | 'fallback' | 'preload'>): string[] {
   const htmlTag = /<html\b[^>]*>/i.exec(html)?.[0] ?? ''
   const lang = /\slang\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(htmlTag)
   const value = (lang ? (lang[1] ?? lang[2] ?? lang[3] ?? '') : '').trim().toLowerCase()
   const known = new Map(messages.languages.map(language => [language.toLowerCase(), language]))
   const language = known.get(value) ?? known.get(value.split(/[-_]/)[0] ?? '')
   if (!language) return [...messages.languages]
-  return [...new Set([language, messages.fallback])]
+  return [...new Set([language, messages.fallback, ...(messages.preload ?? [])])]
 }
 
 /**
