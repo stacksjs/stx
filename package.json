@@ -112,13 +112,13 @@
     "packages/benchmarks/js-framework-benchmark"
   ],
   "dependencies": {
-    "@stacksjs/ts-css": "^0.3.21",
+    "@stacksjs/ts-css": "^0.3.26",
     "very-happy-dom": "^0.4.1"
   },
   "devDependencies": {
-    "@iconify/json": "^2.2.535",
-    "@stacksjs/bumpx": "0.2.32",
-    "better-dx": "^0.2.38"
+    "@iconify/json": "^2.2.556",
+    "@stacksjs/bumpx": "0.2.35",
+    "better-dx": "^0.2.40"
   },
   "overrides": {
     "bunfig": "0.15.21",
