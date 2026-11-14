@@ -639,6 +639,14 @@ When the host advertises the `fetch` capability (Craft's iOS host does), the bun
 
 Native screens use the ordinary stx signal primitives. A binding effect runs when a signal it reads changes; there is no second native-only redraw or reactivity model.
 
+Shared TypeScript helpers imported by the native app lifecycle may import runtime
+functions such as `state`, `derived` and `effect` from `@stacksjs/stx` or `stx`.
+The native bundler forwards those functions to the host's existing runtime,
+sharing its signal graph instead of loading server rendering and filesystem
+modules. Keep initialization inside the app module's default lifecycle function:
+its imports are evaluated before the host starts the runtime. Screen client
+scripts continue to use their usual auto-imports.
+
 ```stx
 <script client lang="ts">
 import { sportStyle } from '../functions/mobile'

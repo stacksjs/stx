@@ -15,11 +15,19 @@ async function generate(): Promise<string> {
   bundle ??= (async () => {
     const root = createTempDir('stx-native-app-')
     await Bun.write(path.join(root, 'Home.stx'), '<script client></script><View><Text>Home</Text></View>')
-    await Bun.write(path.join(root, 'helper.ts'), 'export function where(craft: any): string { return craft.app.url + "/api" }\n')
+    await Bun.write(path.join(root, 'helper.ts'), `import { state, effect } from '@stacksjs/stx'
+export function where(craft: any): string { return craft.app.url + "/api" }
+export function reactiveWords() {
+  const locale = state('en')
+  effect(() => { globalThis.__appLocaleWord = locale() === 'de' ? 'Bestätigt' : 'Verified' })
+  locale.set('de')
+}\n`)
     await Bun.write(path.join(root, 'app.ts'), `
-import { where } from './helper'
+import { where, reactiveWords } from './helper'
+import { batch } from 'stx'
 globalThis.__appModuleLoaded = (globalThis.__appModuleLoaded || 0) + 1
 export default function app(craft: any) {
+  batch(reactiveWords)
   globalThis.__appRan = { route: craft.route.name, api: where(craft), version: craft.app.version }
   const opened = (event: any) => craft.navigation.open(event.detail.href)
   globalThis.addEventListener('craftNotificationResponse', opened)
@@ -63,6 +71,7 @@ async function run(route: string | undefined, capabilities: string[] = ['backgro
 describe('the app script', () => {
   it('runs its default export with craft, and draws nothing', async () => {
     const { scope, sent } = await run(NATIVE_APP_ROUTE)
+    expect(scope.__appLocaleWord).toBe('Bestätigt')
     expect(scope.__appRan).toEqual({ route: NATIVE_APP_ROUTE, api: 'https://app.example/api', version: '1.2.0' })
     expect(sent.some(message => message.type === 'RENDER')).toBe(false)
     expect(scope.craft.app).toEqual({ url: 'https://app.example', version: '1.2.0', build: '7' })

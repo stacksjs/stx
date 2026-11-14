@@ -33,6 +33,7 @@ import { shareComponentScripts, type SharedScripts } from './shared-scripts'
 import { compactDocument, compactManifest } from '../runtime/compact-document'
 import { buildSharedModuleRegistries, registeredModuleIdsIn, registeredModuleNamesIn, type SharedRegistries } from '../../client-module-registry'
 import type { BrowserScreenOptions } from '../runtime/browser-screen'
+import { STX_RUNTIME_GLOBALS } from '../../runtime-globals'
 
 export interface CompileNativeBundleOptions {
   /** Screen name to `.stx` path, relative to `root`. */
@@ -208,6 +209,30 @@ function nativeRuntimeModule(name: 'jsc-globals' | 'shared-screen' | 'browser-sc
 }
 
 /**
+ * Imported app helpers use the host's existing signal graph, just like screen
+ * scripts. Resolving the server package root here would pull filesystem and
+ * build tools into a JavaScriptCore/browser bundle. Forward lazily: app module
+ * imports run before the host installs its runtime; their default function runs
+ * after it. Module bodies must keep work inside that lifecycle function.
+ */
+function nativeAuthoringRuntime(): BunPlugin {
+  return {
+    name: 'stx-native-authoring-runtime',
+    setup(builder) {
+      builder.onResolve({ filter: /^(?:stx|@stacksjs\/stx)$/ }, () => ({ path: 'api', namespace: 'stx-native-authoring-runtime' }))
+      builder.onLoad({ filter: /.*/, namespace: 'stx-native-authoring-runtime' }, () => ({
+        loader: 'js',
+        contents: STX_RUNTIME_GLOBALS.map(name => `export function ${name}(...args) {
+  const runtime = globalThis.stx;
+  if (typeof runtime?.${name} !== 'function') throw new Error('STX native runtime is not ready for ${name}');
+  return runtime.${name}(...args);
+}`).join('\n'),
+      }))
+    },
+  }
+}
+
+/**
  * Bun takes the first `onLoad` that matches a file, so the inputs are
  * tracked, and a module's stand-in (`substitutes`, by absolute path) handed
  * in, by one hook.
@@ -225,7 +250,7 @@ async function build(entry: string, plugins: BunPlugin[], minify: boolean, depen
     target: 'browser',
     format: 'iife',
     minify,
-    plugins: [track, ...plugins],
+    plugins: [track, nativeAuthoringRuntime(), ...plugins],
     define: { 'process.env.NODE_ENV': JSON.stringify(minify ? 'production' : 'development') },
   })
   if (!result.success) {
