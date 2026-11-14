@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.878...v0.2.879)
+
+## 🐛 Bug Fixes
+
+- preserve native control focus and explicit property bindings ([c972416](https://github.com/stacksjs/stx/commit/c972416)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.879 ([97ea979](https://github.com/stacksjs/stx/commit/97ea979)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.877...v0.2.878)
 
 ## 🐛 Bug Fixes
