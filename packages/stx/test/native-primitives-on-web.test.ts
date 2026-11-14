@@ -46,6 +46,21 @@ it('an app component of the same name wins over the primitive', async () => {
   finally { clearComponentCache(); await rm(root, { recursive: true, force: true }) }
 })
 
+it('a built-in of the same name is the web page\'s, not the primitive', async () => {
+  const root = await realpath(createTempDir('stx-web-primitives-builtin-'))
+  try {
+    await Bun.write(path.join(root, 'stx.config.ts'), 'export default {}')
+    clearComponentCache()
+    const config = await loadStxConfig(root)
+    const html = await render(root, '<button><Icon name="plus" size="15" /> New plan</button>', config)
+    // The built-in Icon draws the picture; the primitive of last resort left an empty span.
+    expect(html).toContain('<svg')
+    expect(html).toContain('width="15"')
+    expect(html).not.toContain('data-native="Icon"')
+  }
+  finally { clearComponentCache(); await rm(root, { recursive: true, force: true }) }
+})
+
 it('leaves ordinary HTML elements of the same spelling alone', async () => {
   const root = await realpath(createTempDir('stx-web-primitives-html-'))
   try {

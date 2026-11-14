@@ -1184,9 +1184,16 @@ async function processCustomElementTags(
       // A project-authored component file of the same name takes precedence so
       // users can override built-ins (e.g. a custom `components/Icon.stx`
       // shadowing the built-in Lucide `Icon`).
+      //
+      // The native primitives are components of last resort and nobody's
+      // override: a built-in is the web's own implementation of its name.
+      // Counted as a user file, the primitive `Icon` took every `<Icon>` on a
+      // web page from the built-in's SVG and drew an empty
+      // `<span data-native="Icon">`. A render target that owns the name (a
+      // native screen's `_targetComponentDirs`) still takes it.
       const builtinDef = registry.getBuiltin(tag.tagName)
       const overriddenByUser = builtinDef
-        ? await userComponentFileExists(tag.tagName, componentsDir, context, filePath, options)
+        ? await userComponentFileExists(tag.tagName, componentsDir, context, filePath, { ...options, _nativePrimitivesFallback: undefined })
         : false
       const sharedImage = tag.tagName === 'Image'
         && usesSharedImageApi([
