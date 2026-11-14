@@ -61,6 +61,15 @@ export const iconOnly = $bool($props.iconOnly)
 const slotWords = String($slots?.default ?? '').trim()
 const titleWords = !$props.label && !slotWords ? ($props.title || '') : ''
 export const label = $props.label || titleWords
+/*
+ * The other half of the sentence above: a `title` beside content is the
+ * tooltip, and it has to reach the
+        <button>
+          . Reading `$props.title` declares
+ * it, and a declared prop is no longer forwarded to the root, so without this
+ * line the tooltip was recorded in data-stx-props and never rendered.
+ */
+export const tooltip = titleWords ? '' : String($props.title || '')
 export const hasLabel = label !== ''
 
 /*
@@ -68,8 +77,8 @@ export const hasLabel = label !== ''
  *
  * `:label` is client-categorised, so the server cannot see it: a
  * `
-        <Button :label="confirmLabel()" />
-        ` with no slot content has no text and no
+          <Button :label="confirmLabel()" />
+          ` with no slot content has no text and no
  * name in the markup actually served, and assistive technology reaching it
  * before hydration finds an unlabelled button. On a destructive confirmation
  * that is the worst case (stacksjs/stx#2034). Slot content is the better
@@ -92,8 +101,8 @@ export const className = $props.className || ''
  * a call site can control.
  *
  * `bg-accent-solid` is `var(--stx-accent-solid,
-        <blue-500>
-          )`, so an app sets
+          <blue-500>
+            )`, so an app sets
  * one variable and primary buttons follow, dark mode included and with no
  * `dark:` anywhere. The solid/hover/ink triple exists because all three have
  * to move together: a themed fill needs its own hover step, and white text on
@@ -189,9 +198,9 @@ export const nativeButtonClasses = `flex-row items-center justify-center ${nativ
 export const nativeTextClasses = `font-semibold ${nativeSize.text} ${nativeVariant.text}`
 export const legacyNativeTint = variant === 'primary' || variant === 'danger' ? '#ffffff' : '#007aff'
 export const nativeTintClass = nativeVariant.text
-        </script>
-        <script client>
-          const emit = defineEmits()
+          </script>
+          <script client>
+            const emit = defineEmits()
 const platformControls = typeof craft !== 'undefined' && craft.capabilities.nativePlatformControls === true
 const legacyNativeTint = {{ $native ? legacyNativeTint : '' }}
 
@@ -203,10 +212,10 @@ const legacyNativeTint = {{ $native ? legacyNativeTint : '' }}
  * of button state in an application could not be expressed:
  *
  *
-          <Button :disabled="saving()" @click="save">
-            Save
-          </Button>
-          *
+            <Button :disabled="saving()" @click="save">
+              Save
+            </Button>
+            *
  * `saving()` is a signal. On the server it is not yet meaningful, so the button
  * shipped enabled and STAYED enabled for the life of the page — through the
  * exact async action it was there to guard. Double submits, destructive
@@ -244,9 +253,9 @@ function onClick(event) {
   }
   emit('click', event)
 }
-        </script>
-        @if($native)
-        <button
+          </script>
+          @if($native)
+          <button
   type="{{ type }}"
   class="{{ nativeButtonClasses }}"
   activeOpacity="0.6"
@@ -260,27 +269,27 @@ function onClick(event) {
   :aria-label="String(ariaLabelProp() ?? '') || null"
   @click="onClick($event)"
 >
-          <div data-native="ActivityIndicator" :show="isLoading()" class="{{ nativeTintClass }}" :color="platformControls ? null : legacyNativeTint" role="status">
-          </div>
-          @if(leftIcon)
-          <span :show="!isLoading()" class="{{ iconClasses }} {{ nativeTextClasses }}">
-            {!! leftIcon !!}
-          </span>
-          @endif
-          <span :if="!labelText()" class="{{ nativeTextClasses }}">
-            <slot />
-          </span>
-          <span :if="labelText()" class="{{ nativeTextClasses }}" :text="labelText()">
-            {{ label }}
-          </span>
-          @if(rightIcon)
-          <span :show="!isLoading()" class="{{ iconClasses }} {{ nativeTextClasses }}">
-            {!! rightIcon !!}
-          </span>
-          @endif
-        </button>
-        @elseif(mac)
-        <button
+            <div data-native="ActivityIndicator" :show="isLoading()" class="{{ nativeTintClass }}" :color="platformControls ? null : legacyNativeTint" role="status">
+            </div>
+            @if(leftIcon)
+            <span :show="!isLoading()" class="{{ iconClasses }} {{ nativeTextClasses }}">
+              {!! leftIcon !!}
+            </span>
+            @endif
+            <span :if="!labelText()" class="{{ nativeTextClasses }}">
+              <slot />
+            </span>
+            <span :if="labelText()" class="{{ nativeTextClasses }}" :text="labelText()">
+              {{ label }}
+            </span>
+            @if(rightIcon)
+            <span :show="!isLoading()" class="{{ iconClasses }} {{ nativeTextClasses }}">
+              {!! rightIcon !!}
+            </span>
+            @endif
+          </button>
+          @elseif(mac)
+          <button
   type="{{ type }}"
   class="stx-mac-button {{ fullWidth ? 'stx-mac-button-full' : '' }} {{ className }}"
   data-intent="{{ macIntent }}"
@@ -290,36 +299,37 @@ function onClick(event) {
   :aria-busy="isLoading() ? 'true' : 'false'"
   @if(ariaLabel)aria-label="{{ ariaLabel }}"@endif
   :aria-label="String(ariaLabelProp() ?? '') || null"
+  @if(tooltip)title="{{ tooltip }}"@endif
   @click="onClick($event)"
 >
-          <span :show="isLoading()" @if(!loading)x-cloak@endif class="stx-mac-button-spinner" aria-hidden="true">
-          </span>
-          @if(leftIcon)
-          <span :show="!isLoading()" @if(loading)x-cloak@endif class="stx-mac-button-icon">
-            {!! leftIcon !!}
-          </span>
-          @endif
+            <span :show="isLoading()" @if(!loading)x-cloak@endif class="stx-mac-button-spinner" aria-hidden="true">
+            </span>
+            @if(leftIcon)
+            <span :show="!isLoading()" @if(loading)x-cloak@endif class="stx-mac-button-icon">
+              {!! leftIcon !!}
+            </span>
+            @endif
 
   {{-- The slot is the label's fallback and the label is decided on the
        client, exactly as in the default look below. --}}
-          <span style="display:contents" :if="!labelText()">
-            <slot />
-          </span>
-          <span
+            <span style="display:contents" :if="!labelText()">
+              <slot />
+            </span>
+            <span
     :if="labelText()"
     @if(!hasLabel)x-cloak@endif
     :text="labelText()"
   >
-            {{ label }}
-          </span>
-          @if(rightIcon)
-          <span :show="!isLoading()" @if(loading)x-cloak@endif class="stx-mac-button-icon">
-            {!! rightIcon !!}
-          </span>
-          @endif
-        </button>
-        @else
-        <button
+              {{ label }}
+            </span>
+            @if(rightIcon)
+            <span :show="!isLoading()" @if(loading)x-cloak@endif class="stx-mac-button-icon">
+              {!! rightIcon !!}
+            </span>
+            @endif
+          </button>
+          @else
+          <button
   type="{{ type }}"
   class="{{ buttonClasses }}"
   @if(isDisabled)disabled@endif
@@ -328,14 +338,15 @@ function onClick(event) {
   :aria-busy="isLoading() ? 'true' : 'false'"
   @if(ariaLabel)aria-label="{{ ariaLabel }}"@endif
   :aria-label="String(ariaLabelProp() ?? '') || null"
+  @if(tooltip)title="{{ tooltip }}"@endif
   @click="onClick($event)"
 >
-          {{-- The spinner is always in the DOM so `loading` can turn it on after render;
+            {{-- The spinner is always in the DOM so `loading` can turn it on after render;
        it was inside an @if, which meant the only way to see it was to have been
        loading when the page was built. x-cloak only when the server says we are
        NOT loading, so a button rendered loading shows its spinner on first
        paint rather than waiting for hydration. --}}
-          <svg
+            <svg
     :show="isLoading()"
     @if(!loading)x-cloak@endif
     class="{{ spinnerClasses }}"
@@ -343,35 +354,35 @@ function onClick(event) {
     fill="none"
     viewBox="0 0 24 24"
   >
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-            </circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-            </path>
-          </svg>
-          @if(leftIcon)
-          <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
-            {!! leftIcon !!}
-          </span>
-          @endif
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+              </circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+              </path>
+            </svg>
+            @if(leftIcon)
+            <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
+              {!! leftIcon !!}
+            </span>
+            @endif
 
   {{-- The slot is the label's FALLBACK, not its sibling (stacksjs/stx#2034).
 
        A reactive label is invisible to the server, so the only text a
        `
-          <Button :label="confirmLabel()">
-            Confirm
-          </Button>
-          ` can serve is the slot
+            <Button :label="confirmLabel()">
+              Confirm
+            </Button>
+            ` can serve is the slot
        content -- and it used to render it NEXT TO the label span, so once
        labelText() resolved the button read "ConfirmDelete project". An author
        had to choose between a server-rendered accessible name and a reactive
        one, which is why the reporting app kept a plain
-          <button>
-            .
+            <button>
+              .
 
        Wrapped rather than put on the slot itself: `
-            <slot :if="...">
-              ` does not
+              <slot :if="...">
+                ` does not
        work, because the slot is replaced by the caller's markup at render time
        and the attribute goes with it. display:contents so the wrapper is not a
        box -- slot children stay direct flex items of the button, so the gap
@@ -379,10 +390,10 @@ function onClick(event) {
 
        `:if` rather than `:show` for the same reason: `:show` writes
        style.display, which would fight the display:contents this needs. --}}
-              <span style="display:contents" :if="!labelText()">
-                <slot />
-              </span>
-              {{-- The label span is decided on the CLIENT, because the server cannot see a
+                <span style="display:contents" :if="!labelText()">
+                  <slot />
+                </span>
+                {{-- The label span is decided on the CLIENT, because the server cannot see a
        reactive prop at all: `:label="rotateLabel()"` is categorised as client
        reactive, so `$props.label` is undefined during render and only the
        root's data-stx-parent-bindings records that a binding exists.
@@ -392,22 +403,22 @@ function onClick(event) {
        trailing gap to every button that uses the slot. x-cloak while the
        server has no label, so that gap is not visible for the frame before
        hydration - the same pairing the spinner above uses. --}}
-              <span
+                <span
     :if="labelText()"
     @if(!hasLabel)x-cloak@endif
     :text="labelText()"
   >
-                {{ label }}
-              </span>
-              @if(rightIcon)
-              <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
-                {!! rightIcon !!}
-              </span>
+                  {{ label }}
+                </span>
+                @if(rightIcon)
+                <span :show="!isLoading()" @if(loading)x-cloak@endif class="{{ iconClasses }}">
+                  {!! rightIcon !!}
+                </span>
+                @endif
+              </button>
               @endif
-            </button>
-            @endif
-            <style data-native-exclude>
-              :where(:root) {
+              <style data-native-exclude>
+                :where(:root) {
   --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
   --stx-mac-font-size: 13px;
   --stx-mac-font-size-small: 11px;
@@ -605,7 +616,7 @@ function onClick(event) {
     box-shadow: inset 0 0 0 1px var(--stx-mac-control-line), var(--stx-mac-focus-ring);
   }
 }
-            </style>
+              </style>
 
 === Extracted Classes ===
 ''
