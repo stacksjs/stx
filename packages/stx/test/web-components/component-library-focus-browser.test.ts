@@ -1,7 +1,7 @@
 import { WebView } from 'bun'
 import { expect, test } from 'bun:test'
 import { rmSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, relative, sep } from 'node:path'
 import { buildComponentLibrary } from '../../src/component-library'
 import { createTempDir } from '../../src/temp-dir'
 import { createBrowserFixture } from '../../test-utils/browser-fixture'
@@ -22,15 +22,22 @@ function choose(event: Event) { if(event.target instanceof HTMLInputElement) thi
 <input id="checkbox" type="checkbox"><input id="number" type="number" value="12"><input id="email" type="email" value="test@example.test"><input id="date" type="date" value="2026-11-14">
 <input id="text" type="text" value="abcdef"><textarea id="textarea">abcdef</textarea>@if(this.mode==='text')<input id="switch" type="text" value="abcdef">@else<input id="switch" type="email" value="abcdef">@endif<output>{{ this.count }}</output>
 </template>`)
-    await buildComponentLibrary({inputDir:input,outputDir:output,prefix:'native',bundle:false,minify:true})
+    const compiled=await buildComponentLibrary({inputDir:input,outputDir:output,prefix:'native',bundle:false,minify:true})
+    const emitted=new Map<string,string>()
+    for(const file of compiled.files)if(file.endsWith('.js'))emitted.set('/'+relative(output,file).split(sep).join('/'),file)
     fixture=createBrowserFixture({
       createServer:()=>Bun.serve({hostname:'127.0.0.1',port:0,async fetch(request){
         const path=new URL(request.url).pathname
-        if(path==='/')return new Response('<!doctype html><script>window.proofErrors=[];addEventListener("error",event=>proofErrors.push(event.message));addEventListener("unhandledrejection",event=>proofErrors.push(String(event.reason)))</script><script type="module" src="/index.js"></script><native-input-probe></native-input-probe>',{headers:{'Content-Type':'text/html'}})
-        return new Response(Bun.file(join(output,path)),{headers:{'Content-Type':'text/javascript'}})
+        if(path==='/')return new Response('<!doctype html><link rel="icon" href="/favicon.ico"><script>window.proofErrors=[];addEventListener("error",event=>proofErrors.push(event.message));addEventListener("unhandledrejection",event=>proofErrors.push(String(event.reason)))</script><script type="module" src="/index.js"></script><native-input-probe></native-input-probe>',{headers:{'Content-Type':'text/html'}})
+        if(path==='/favicon.ico')return new Response(null,{status:204})
+        const file=emitted.get(path)
+        if(!file)return new Response('Not found',{status:404})
+        return new Response(Bun.file(file),{headers:{'Content-Type':'text/javascript'}})
       }}),
       createView:()=>browser=new WebView({headless:true,backend:{type:'chrome',url:false}}),
     })
+    expect((await fetch(new URL('/favicon.ico',fixture.url))).status).toBe(204)
+    expect((await fetch(new URL('/missing.js',fixture.url))).status).toBe(404)
     await fixture.view.navigate(fixture.url)
     expect(await fixture.waitFor(`!!document.querySelector('native-input-probe')?.shadowRoot?.querySelector('input[name=score][value="1"]')`, value=>value===true)).toBe(true)
     expect(await fixture.view.evaluate(`JSON.stringify([...document.querySelector('native-input-probe').shadowRoot.querySelectorAll('button')].map(button=>button.disabled))`)).toBe('[true,true]')
