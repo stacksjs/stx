@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.874...v0.2.875)
+
+## 🐛 Bug Fixes
+
+- typecheck native component and inherited author contexts ([5e15d95](https://github.com/stacksjs/stx/commit/5e15d95)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.875 ([4e11a71](https://github.com/stacksjs/stx/commit/4e11a71)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🎉 Miscellaneous
+
+- Merge remote-tracking branch 'origin/main' into codex/support-element-method-types ([08e7144](https://github.com/stacksjs/stx/commit/08e7144)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.873...v0.2.874)
 
 ## 🐛 Bug Fixes
