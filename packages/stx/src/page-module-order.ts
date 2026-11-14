@@ -64,9 +64,16 @@ export function orderPageModules(html: string): string {
     if (typeof src === 'string') {
       attrs.delete('src')
       attrs.set('data-stx-source-url', src)
-      body = type === 'module'
-        ? `await import(new URL(globalThis.__stxExecutingScript.getAttribute('data-stx-source-url'), document.baseURI).href);`
-        : `return new Promise(function(resolve,reject){var script=document.createElement('script');for(var attr of __stxSource.attributes){if(!['type','src'].includes(attr.name))script.setAttribute(attr.name,attr.value);}script.src=new URL(__stxSource.getAttribute('data-stx-source-url'),document.baseURI).href;script.onload=resolve;script.onerror=reject;__stxSource.parentNode.insertBefore(script,__stxSource);});`
+      body = `${module ? 'await' : 'return'} new Promise(function(resolve,reject){
+var source=globalThis.__stxExecutingScript,script=document.createElement('script');
+for(var attr of source.attributes)if(!['type','src','data-stx-module-job'].includes(attr.name))script.setAttribute(attr.name,attr.value);
+${module ? "script.type='module';" : ''}
+if(source.nonce)script.nonce=source.nonce;
+script.src=new URL(source.getAttribute('data-stx-source-url'),document.baseURI).href;
+script.onload=function(){${module ? '' : 'globalThis.__stxExecutingScript=__stxPreviousScript;'}resolve();};
+script.onerror=function(error){${module ? '' : 'globalThis.__stxExecutingScript=__stxPreviousScript;'}reject(error);};
+source.parentNode.insertBefore(script,source);
+});`
     }
     if (module) {
       const job = `${batch}-${index++}`, key = JSON.stringify(job)

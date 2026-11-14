@@ -111,8 +111,8 @@ function minifyRouterScript(source: string, mangle = false): string {
       : { loader: 'js', minifyWhitespace: true })
     return transpiler.transformSync(source)
       .replace(/\}(var |let |const |function )/g, '};$1')
-      // Syntax folding can join protected string fragments into a closing
-      // script tag. Keep the result safe both inline and as an external file.
+    // Syntax folding can join protected string fragments into a closing
+    // script tag. Keep the result safe both inline and as an external file.
       .replace(/<\/script/gi, '<\\/script')
       .trim()
   }

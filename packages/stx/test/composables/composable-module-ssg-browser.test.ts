@@ -99,3 +99,25 @@ test('SSG keeps unused modules out and awaits real ESM dependencies on cold and 
   }
   finally { process.chdir(previous); fixture?.close(); rmSync(root, { recursive: true, force: true }) }
 }, 45_000)
+
+/** Nonces are hidden from Attr.value/getAttribute after a script enters the document. */
+test('ordered external classic and ESM scripts retain their nonce under strict CSP', async () => {
+  const { orderPageModules } = await import('../../src/page-module-order')
+  const nonce = 'stx-order-proof'
+  const html = orderPageModules(`<!doctype html><html><head><script nonce="${nonce}">globalThis.violations=[];addEventListener('securitypolicyviolation',event=>violations.push(event.violatedDirective))</script><script data-stx-scoped nonce="${nonce}" type="module">await new Promise(resolve=>setTimeout(resolve,20));globalThis.firstReady=true;</script><script data-stx-scoped nonce="${nonce}" src="/classic.js"></script><script data-stx-scoped nonce="${nonce}" type="module" src="/module.js"></script></head><body><h1>Ordered external scripts</h1></body></html>`)
+  const fixture = createBrowserFixture({
+    createServer: () => Bun.serve({ hostname:'127.0.0.1',port:0,fetch(request) {
+      const path = new URL(request.url).pathname
+      if (path === '/classic.js') return new Response('globalThis.classicReady=globalThis.firstReady;', {headers:{'Content-Type':'text/javascript'}})
+      if (path === '/module.js') return new Response('await new Promise(resolve=>setTimeout(resolve,20));globalThis.externalModuleReady=globalThis.classicReady;', {headers:{'Content-Type':'text/javascript'}})
+      return new Response(html, {headers:{'Content-Type':'text/html','Content-Security-Policy':`script-src 'nonce-${nonce}'`}})
+    } }),
+    createView: () => new WebView({headless:true,backend:{type:'chrome',url:false}}),
+  })
+  try {
+    await fixture.view.navigate(fixture.url)
+    expect(await fixture.waitFor('globalThis.externalModuleReady', value => value === true)).toBe(true)
+    expect(await fixture.view.evaluate('JSON.stringify(violations)')).toBe('[]')
+  }
+  finally {fixture.close()}
+},30_000)
