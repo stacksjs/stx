@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.880...v0.2.881)
+
+## 🐛 Bug Fixes
+
+- **css**: generate a class set in one order, so a cache never changes the stylesheet ([1e45d88](https://github.com/stacksjs/stx/commit/1e45d88)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.881 ([4313d1c](https://github.com/stacksjs/stx/commit/4313d1c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.879...v0.2.880)
 
 ## ✅ Tests
