@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.879...v0.2.880)
+
+## ✅ Tests
+
+- bound native focus browser fixture routes ([61332da](https://github.com/stacksjs/stx/commit/61332da)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.880 ([f43d7fe](https://github.com/stacksjs/stx/commit/f43d7fe)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.878...v0.2.879)
 
 ## 🐛 Bug Fixes
