@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.877...v0.2.878)
+
+## 🐛 Bug Fixes
+
+- retain ordered external script CSP nonces ([1f04807](https://github.com/stacksjs/stx/commit/1f04807)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.878 ([5266e78](https://github.com/stacksjs/stx/commit/5266e78)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.876...v0.2.877)
 
 ## 🐛 Bug Fixes
