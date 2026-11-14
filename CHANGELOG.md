@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.875...v0.2.876)
+
+## 🐛 Bug Fixes
+
+- preserve native DOM types in component author contexts ([5f0ea24](https://github.com/stacksjs/stx/commit/5f0ea24)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.876 ([bef3757](https://github.com/stacksjs/stx/commit/bef3757)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.874...v0.2.875)
 
 ## 🐛 Bug Fixes
