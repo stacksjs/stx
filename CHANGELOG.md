@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.883...v0.2.884)
+
+## ✨ Features
+
+- **native**: report an end tag that closes nothing ([496d6c7](https://github.com/stacksjs/stx/commit/496d6c7)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.884 ([5be0980](https://github.com/stacksjs/stx/commit/5be0980)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.882...v0.2.883)
 
 ## 🐛 Bug Fixes
