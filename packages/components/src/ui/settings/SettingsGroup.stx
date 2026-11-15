@@ -1,4 +1,6 @@
 <script server>
+import { SETTINGS_NATIVE } from './native-theme'
+
 /*
  * <SettingsGroup>: the rounded inset card a Settings pane is made of, with an
  * optional heading above it and a footnote below.
@@ -18,6 +20,10 @@
  * `footer` is text, or a named slot when the footnote carries a link:
  *
  *   <template #footer>Read the <a href="/privacy">privacy notes</a>.</template>
+ *
+ * On a native host ($native) there is no sibling selector, so each row
+ * carries its own hairline (`data-settings-row-rule`) and the group shows it
+ * on every row but the first, again whenever its rows change.
  */
 export const header = $props.header || ''
 export const footer = $props.footer || ''
@@ -25,14 +31,59 @@ export const hasFooterSlot = Boolean($slots && $slots.footer)
 export const groupId = $props.id || `settings-section-${$uid}`
 export const headerId = `${groupId}-header`
 export const className = $props.className || ''
+export const T = SETTINGS_NATIVE
 </script>
 
 <script client>
 const heading = useReactiveProp('header', {{ header }})
 const note = useReactiveProp('footer', {{ footer }})
 const headerId = {{ headerId }}
+
+// A native host: the hairline above every row but the first.
+const native = {{ $native }}
+const cardRef = useRef('card')
+let stopObserving = null
+
+function ruleRows() {
+  const tree = window.stx._host
+  const card = cardRef()
+  if (!card) return
+  let first = true
+  for (const node of tree.descendants(card)) {
+    if (tree.getAttribute(node, 'data-settings-row-rule') == null) continue
+    // Served hidden by class, so no card draws a rule above its first row for a frame.
+    const classes = String(tree.getAttribute(node, 'class') || '').split(/\s+/).filter(name => name && name !== 'hidden')
+    tree.setAttribute(node, 'class', (first ? [...classes, 'hidden'] : classes).join(' '))
+    first = false
+  }
+}
+
+if (native) {
+  onMount(() => {
+    ruleRows()
+    const card = cardRef()
+    if (card) stopObserving = window.stx._host.observeChildren(card, ruleRows)
+  })
+  onDestroy(() => {
+    if (stopObserving) stopObserving()
+    stopObserving = null
+  })
+}
 </script>
 
+@if($native)
+<section id="{{ groupId }}" data-settings-section class="{{ T.section }} {{ className }}">
+  <h3 :show="heading()" :text="heading()" class="{{ T.sectionHeader }}">{{ header }}</h3>
+  <div ref="card" class="{{ T.card }}" role="group" data-settings-card>
+    <slot />
+  </div>
+  @if(hasFooterSlot)
+    <div class="{{ T.sectionFooter }}"><slot name="footer" /></div>
+  @else
+    <p :show="note()" :text="note()" class="{{ T.sectionFooter }}">{{ footer }}</p>
+  @endif
+</section>
+@else
 <section id="{{ groupId }}" data-settings-section class="stx-settings-section {{ className }}">
   <h3 id="{{ headerId }}" :show="heading()" :text="heading()" class="stx-settings-section-header">{{ header }}</h3>
   <div class="stx-settings-card" role="group" @if(header)aria-labelledby="{{ headerId }}"@endif :aria-labelledby="heading() ? headerId : null">
@@ -44,6 +95,7 @@ const headerId = {{ headerId }}
     <p :show="note()" :text="note()" class="stx-settings-section-footer">{{ footer }}</p>
   @endif
 </section>
+@endif
 
 <style data-native-exclude>
 :where(:root) {

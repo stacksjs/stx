@@ -1,4 +1,6 @@
 <script server>
+import { SETTINGS_NATIVE, SETTINGS_NATIVE_TONES, settingsNativeGlyph } from './native-theme'
+
 /*
  * <SettingsPaneHeader>: the card at the top of a pane that says what the pane
  * is. A large icon tile, the pane's name, and a sentence about it.
@@ -7,6 +9,9 @@
  *     description="Manage your overall setup and preferences." />
  *
  * Anything in the slot goes under the description: a link, a button.
+ *
+ * On a native host ($native) the glyph is the SF Symbol named by `symbol`;
+ * `icon`, an Iconify class, is the web's.
  */
 const TONES = ['grey', 'blue', 'red', 'orange', 'yellow', 'green', 'indigo', 'purple', 'pink', 'ink']
 export const icon = $props.icon || ''
@@ -14,6 +19,11 @@ export const tone = TONES.includes($props.tone) ? $props.tone : 'grey'
 export const title = $props.title || ''
 export const description = $props.description || ''
 export const className = $props.className || ''
+export const symbol = $props.symbol || ''
+export const T = SETTINGS_NATIVE
+export const tileFill = SETTINGS_NATIVE_TONES[tone]
+export const glyphInk = settingsNativeGlyph(tone)
+export const hasExtra = Boolean($slots && $slots.default)
 </script>
 
 <script client>
@@ -21,6 +31,19 @@ const heading = useReactiveProp('title', {{ title }})
 const detail = useReactiveProp('description', {{ description }})
 </script>
 
+@if($native)
+{{-- A div: a native build reads <header> as the safe-area view. --}}
+<div data-settings-pane-header class="{{ T.hero }} {{ className }}">
+  @if(symbol)
+    <div class="{{ T.heroTile }} {{ tileFill }}" data-settings-tile="{{ tone }}"><span data-native="Icon" symbol="{{ symbol }}" class="{{ T.heroGlyph }} {{ glyphInk }}"></span></div>
+  @endif
+  <h2 :text="heading()" class="{{ T.heroTitle }}">{{ title }}</h2>
+  <p :show="detail()" :text="detail()" class="{{ T.heroDescription }}">{{ description }}</p>
+  @if(hasExtra)
+    <div class="{{ T.heroExtra }}"><slot /></div>
+  @endif
+</div>
+@else
 <header data-settings-pane-header class="stx-settings-hero {{ className }}">
   @if(icon)
     <span class="stx-settings-hero-tile" data-tone="{{ tone }}" aria-hidden="true"><i class="{{ icon }}"></i></span>
@@ -29,6 +52,7 @@ const detail = useReactiveProp('description', {{ description }})
   <p :show="detail()" :text="detail()" class="stx-settings-hero-description">{{ description }}</p>
   <div class="stx-settings-hero-extra"><slot /></div>
 </header>
+@endif
 
 <style data-native-exclude>
 :where(:root) {

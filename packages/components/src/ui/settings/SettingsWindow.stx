@@ -1,4 +1,6 @@
 <script server>
+import { SETTINGS_NATIVE, SETTINGS_NATIVE_SYMBOLS } from './native-theme'
+
 export const title = $props.title || 'Settings'
 export const pane = $props.pane || ''
 export const searchable = $bool($props.searchable, true)
@@ -21,6 +23,19 @@ export const rootStyle = [
   sidebarWidth > 0 ? `--stx-settings-sidebar-width: ${sidebarWidth}px` : '',
   height ? `--stx-settings-height: ${height}` : '',
 ].filter(Boolean).join('; ')
+
+/*
+ * On a native host ($native) the window is two columns of the host's own
+ * views, drawn from the class lists in ./native-theme: the sidebar on the
+ * system's sidebar material with the system's search field, and the detail
+ * column under back, forward and the pane's name. The window fills what it is
+ * given, so `presentation` and `height` are the window's own business there.
+ */
+export const T = SETTINGS_NATIVE
+export const SYMBOLS = SETTINGS_NATIVE_SYMBOLS
+export const nativeSidebarWidth = sidebarWidth > 0 ? sidebarWidth : SETTINGS_NATIVE.sidebarWidth
+export const hasAccount = Boolean($slots && $slots.account)
+export const wash = SETTINGS_NATIVE.rowWash
 </script>
 
 <script client>
@@ -29,11 +44,14 @@ export const rootStyle = [
  * items under a search field, and beside it the open pane under a toolbar
  * with back, forward and the pane's name.
  *
- * What it decides is in ./core and what it does to the page in ./view; this
- * is the wiring. The items, panes and rows are other components, found by the
+ * What it decides is in ./core. What it does to the page is in ./view, and
+ * what it does to a native host's tree of views in ./native; this is the
+ * wiring. The items, panes and rows are other components, found by the
  * attributes they carry.
  */
+import { SettingsWindowTree } from './native'
 import { SettingsWindowView } from './view'
+import { registerComponentApi } from '../../utils/component-api'
 
 const emit = defineEmits(['pane', 'search', 'navigate'])
 
@@ -43,22 +61,104 @@ const openPane = useModel('pane', { default: {{ pane }}, parse: asText })
 const rootRef = useRef('settings')
 let settings = null
 
+// A native host has no DOM: the window is ./native's, and what the shell
+// draws itself comes from these.
+const native = {{ $native }}
+const settingsId = {{ settingsId }}
+const wash = {{ $native ? wash : null }}
+const paneTitle = state('')
+const canGoBack = state(false)
+const canGoForward = state(false)
+const query = state('')
+const results = state([])
+const noResults = state(false)
+const searchFocus = state(false)
+let stopCommands = null
+let unregister = null
+
+/** The app's own storage on a native host, which stx serves as localStorage. */
+const nativeStorage = {
+  get: name => (typeof localStorage === 'undefined' ? null : localStorage.getItem(name)),
+  set: (name, value) => { if (typeof localStorage !== 'undefined') localStorage.setItem(name, value) },
+}
+
+function onSearchInput(event) {
+  if (settings) settings.search(asText(event.text ?? event.target?.value))
+}
+
+function chooseResult(position) {
+  if (settings) settings.chooseResult(position)
+}
+
+function back() {
+  if (settings) settings.back()
+}
+
+function forward() {
+  if (settings) settings.forward()
+}
+
+/*
+ * The AppKit host gives a field the keyboard when its `autoFocus` turns on,
+ * so focusing is turning it off and on again.
+ */
+function focusSearch() {
+  if (!settings) return
+  if (!native) { settings.focusSearch(); return }
+  searchFocus.set(false)
+  setTimeout(() => searchFocus.set(true), 0)
+}
+
+const callbacks = {
+  onPane(detail) {
+    openPane.set(detail.id)
+    emit('pane', detail)
+  },
+  onSearch(detail) { emit('search', detail) },
+  onNavigate(detail) { emit('navigate', detail) },
+}
+
 onMount(() => {
   const root = rootRef()
   if (!root) return
 
-  settings = new SettingsWindowView(root, {
-    pane: asText(openPane()),
-    storageKey: {{ storageKey }},
-    globalKeys: {{ globalKeys }},
-  }, {
-    onPane(detail) {
-      openPane.set(detail.id)
-      emit('pane', detail)
-    },
-    onSearch(detail) { emit('search', detail) },
-    onNavigate(detail) { emit('navigate', detail) },
-  })
+  if (native) {
+    const craftHost = typeof craft === 'undefined' ? null : craft
+    settings = new SettingsWindowTree(window.stx._host, root, {
+      pane: asText(openPane()),
+      storageKey: {{ storageKey }},
+      storage: nativeStorage,
+      wash: () => (craftHost && craftHost.appearance && craftHost.appearance.colorScheme() === 'dark' ? wash.dark : wash.light),
+    }, {
+      ...callbacks,
+      onState(next) {
+        batch(() => {
+          paneTitle.set(next.title)
+          canGoBack.set(next.canGoBack)
+          canGoForward.set(next.canGoForward)
+          query.set(next.query)
+          results.set(next.results)
+          noResults.set(next.empty)
+        })
+      },
+    })
+    // Escape in the search field clears it, as on the web: the host reports
+    // the key as a desktop command.
+    if (craftHost && craftHost.desktop && typeof craftHost.desktop.onCommand === 'function') {
+      stopCommands = craftHost.desktop.onCommand((id) => {
+        if (id === 'escape' && settings && query() !== '') settings.search('')
+      })
+    }
+    // No DOM to find the window in: componentApi(id) reads it from here.
+    unregister = registerComponentApi(settingsId, api)
+  }
+  else {
+    settings = new SettingsWindowView(root, {
+      pane: asText(openPane()),
+      storageKey: {{ storageKey }},
+      globalKeys: {{ globalKeys }},
+    }, callbacks)
+  }
 
   // The first run finds the pane the view just opened, which may be a stored
   // one; only a later change of the prop is an instruction.
@@ -69,20 +169,86 @@ onMount(() => {
 })
 
 onDestroy(() => {
+  if (stopCommands) stopCommands()
+  if (unregister) unregister()
+  stopCommands = null
+  unregister = null
   if (settings) settings.destroy()
   settings = null
 })
 
-defineExpose({
+const api = {
   showPane: id => (settings ? settings.showPane(asText(id)) : false),
   revealSetting: id => (settings ? settings.revealSetting(asText(id)) : false),
-  back: () => { if (settings) settings.back() },
-  forward: () => { if (settings) settings.forward() },
-  focusSearch: () => { if (settings) settings.focusSearch() },
+  back,
+  forward,
+  focusSearch,
   getPane: () => (settings ? settings.getPane() : ''),
-})
+}
+
+defineExpose(api)
 </script>
 
+@if($native)
+<div
+  ref="settings"
+  id="{{ settingsId }}"
+  data-stx-settings
+  data-presentation="{{ presentation }}"
+  role="group"
+  aria-label="{{ title }}"
+  class="{{ T.shell }} {{ className }}"
+>
+  <div class="{{ T.sidebar }}" style="width: {{ nativeSidebarWidth }}px" material="{{ T.sidebarMaterial }}" data-settings-sidebar>
+    <div class="{{ T.sidebarTop }}">
+      @if(searchable)
+        <input
+          type="search"
+          class="{{ T.search }}"
+          placeholder="{{ searchPlaceholder }}"
+          aria-label="{{ searchPlaceholder }}"
+          selectTextOnFocus="true"
+          :value="query()"
+          :autoFocus="searchFocus()"
+          @input="onSearchInput($event)"
+          @blur="searchFocus.set(false)"
+          data-settings-search-input
+        >
+      @endif
+    </div>
+
+    <div data-native="ScrollView" class="{{ T.nav }}" data-settings-nav>
+      @if(hasAccount)
+        <div class="{{ T.account }}" data-settings-account><slot name="account" /></div>
+      @endif
+      <div class="{{ T.list }}" role="tablist" aria-label="{{ title }}" data-settings-list><slot name="sidebar" /></div>
+      <div class="{{ T.results }}" :show="results().length > 0" data-settings-results>
+        <div
+          data-native="Pressable"
+          :for="hit in results()"
+          :key="hit.position"
+          class="{{ T.result }}"
+          :data-settings-result="hit.position"
+          @click="chooseResult(hit.position)"
+        ><span class="{{ T.resultLabel }}" numberOfLines="1" :text="hit.label"></span><span class="{{ T.resultPane }}" numberOfLines="1" :text="hit.pane"></span></div>
+      </div>
+      <p class="{{ T.empty }}" :show="noResults()" data-settings-empty>No Results</p>
+    </div>
+  </div>
+
+  <div class="{{ T.detail }}" data-settings-detail>
+    <div class="{{ T.toolbar }}" data-settings-toolbar>
+      <div class="{{ T.history }}" role="group" aria-label="History">
+        <button data-native="Button" variant="toolbar" symbol="{{ SYMBOLS.back }}" iconOnly="true" class="{{ T.historyButton }}" aria-label="Back" :disabled="!canGoBack()" @click="back()" data-settings-back></button>
+        <button data-native="Button" variant="toolbar" symbol="{{ SYMBOLS.forward }}" iconOnly="true" class="{{ T.historyButton }}" aria-label="Forward" :disabled="!canGoForward()" @click="forward()" data-settings-forward></button>
+      </div>
+      <span class="{{ T.title }}" role="heading" numberOfLines="1" :text="paneTitle()" data-settings-title></span>
+    </div>
+
+    <div class="{{ T.body }}" data-settings-body><slot /></div>
+  </div>
+</div>
+@else
 <div
   ref="settings"
   id="{{ settingsId }}"
@@ -148,6 +314,7 @@ defineExpose({
     </div>
   </div>
 </div>
+@endif
 
 <style data-native-exclude>
 :where(:root) {

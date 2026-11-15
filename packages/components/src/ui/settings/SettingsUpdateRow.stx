@@ -1,0 +1,143 @@
+<script server>
+import { SETTINGS_NATIVE } from './native-theme'
+import { settingsUpdateView } from './update'
+
+/*
+ * <SettingsUpdateRow>: the row every app that updates itself needs. The app
+ * and its version, a sentence about where the update stands, and the one
+ * button that moves it on: Check Now, Download and Install (with its
+ * progress), or Restart to Update.
+ *
+ *   <SettingsGroup header="Software Update">
+ *     <SettingsUpdateRow appName="Library" :status="status()"
+ *       @check="craft.updater.check()" @install="craft.updater.install()"
+ *       @relaunch="craft.updater.relaunch()" />
+ *   </SettingsGroup>
+ *
+ * `status` is what the updater reports (`craft.updater`'s `UpdateStatus`, or
+ * a web app's own of the same shape). The row does nothing on its own: it
+ * says what the status says and emits `check`, `install` or `relaunch`. What
+ * it says for each state is `settingsUpdateView` in ./update.
+ *
+ * It is a <SettingsRow> holding <Button appearance="mac">, so it is the same
+ * row on the web and on a native host, and the window's search finds it
+ * (`setting`, default `software-update`).
+ */
+export const appName = $props.appName || ''
+export const status = $props.status && typeof $props.status === 'object' ? $props.status : null
+export const setting = $props.setting || 'software-update'
+export const keywords = Array.isArray($props.keywords) ? $props.keywords.join(' ') : ($props.keywords || 'update version upgrade release')
+export const className = $props.className || ''
+export const served = settingsUpdateView(status, appName)
+export const progressClasses = $native ? SETTINGS_NATIVE.updateProgress : 'stx-settings-update-progress'
+</script>
+
+<script client>
+import { settingsUpdateView } from './update'
+
+const emit = defineEmits(['check', 'install', 'relaunch'])
+const current = useReactiveProp('status', {{ status }})
+const name = useReactiveProp('appName', {{ appName }})
+const view = derived(() => settingsUpdateView(current(), name()))
+
+function act(action) {
+  // The status may have moved on since the button was drawn.
+  if (view().action === action && !view().busy) emit(action)
+}
+
+defineExpose({ view })
+</script>
+
+<SettingsRow
+  label="{{ served.title }}"
+  :label="view().title"
+  description="{{ served.sentence }}"
+  :description="view().sentence"
+  setting="{{ setting }}"
+  keywords="{{ keywords }}"
+  multiline
+  className="{{ className }}"
+>
+  <span :show="view().progress" :text="view().progress" class="{{ progressClasses }}" data-settings-update-progress>{{ served.progress }}</span>
+  <Button :if="view().action === 'check'" appearance="mac" :label="view().actionLabel" :loading="view().busy" @click="act('check')" />
+  <Button :if="view().action === 'install'" appearance="mac" variant="primary" :label="view().actionLabel" :loading="view().busy" @click="act('install')" />
+  <Button :if="view().action === 'relaunch'" appearance="mac" variant="primary" :label="view().actionLabel" @click="act('relaunch')" />
+</SettingsRow>
+
+<style data-native-exclude>
+:where(:root) {
+  --stx-mac-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui, Roboto, 'Helvetica Neue', sans-serif;
+  --stx-mac-font-size: 13px;
+  --stx-mac-font-size-small: 11px;
+  --stx-mac-hairline: 0.5px;
+  --stx-mac-focus-ring: 0 0 0 3px color-mix(in srgb, var(--stx-mac-accent) 35%, transparent);
+  --stx-mac-card-radius: 12px;
+  --stx-mac-control-radius: 6px;
+  --stx-mac-row-height: 38px;
+  --stx-mac-row-inset: 10px;
+  --stx-mac-sidebar-width: 226px;
+  --stx-mac-accent: var(--stx-accent, rgb(0, 122, 255));
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(0, 0, 0, 0.85);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-tertiary: rgba(0, 0, 0, 0.26);
+  --stx-mac-window: #ffffff;
+  --stx-mac-sidebar: #f2f1f0;
+  --stx-mac-card: rgba(0, 0, 0, 0.04);
+  --stx-mac-separator: rgba(0, 0, 0, 0.1);
+  --stx-mac-hover: rgba(0, 0, 0, 0.05);
+  --stx-mac-selection-inactive: rgba(0, 0, 0, 0.08);
+  --stx-mac-well: rgba(0, 0, 0, 0.07);
+  --stx-mac-control: #ffffff;
+  --stx-mac-control-line: rgba(0, 0, 0, 0.12);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --stx-mac-switch-on: #34c759;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff3b30;
+}
+:where(.dark) {
+  --stx-mac-accent: var(--stx-accent, #0a84ff);
+  --stx-mac-accent-ink: #ffffff;
+  --stx-mac-ink: rgba(255, 255, 255, 0.85);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.55);
+  --stx-mac-ink-tertiary: rgba(255, 255, 255, 0.25);
+  --stx-mac-window: #1e1e1e;
+  --stx-mac-sidebar: #2a2a2a;
+  --stx-mac-card: rgba(255, 255, 255, 0.05);
+  --stx-mac-separator: rgba(255, 255, 255, 0.1);
+  --stx-mac-hover: rgba(255, 255, 255, 0.06);
+  --stx-mac-selection-inactive: rgba(255, 255, 255, 0.1);
+  --stx-mac-well: rgba(255, 255, 255, 0.1);
+  --stx-mac-control: rgba(255, 255, 255, 0.14);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.06);
+  --stx-mac-control-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.4), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+  --stx-mac-switch-on: #30d158;
+  --stx-mac-knob: #ffffff;
+  --stx-mac-danger: #ff453a;
+}
+@media (max-resolution: 1.5dppx) {
+:where(:root) {
+  --stx-mac-hairline: 1px;
+}
+}
+@media (prefers-contrast: more) {
+:where(:root) {
+  --stx-mac-separator: rgba(0, 0, 0, 0.4);
+  --stx-mac-control-line: rgba(0, 0, 0, 0.5);
+  --stx-mac-ink-secondary: rgba(0, 0, 0, 0.75);
+  --stx-mac-hairline: 1px;
+}
+:where(.dark) {
+  --stx-mac-separator: rgba(255, 255, 255, 0.45);
+  --stx-mac-control-line: rgba(255, 255, 255, 0.5);
+  --stx-mac-ink-secondary: rgba(255, 255, 255, 0.8);
+}
+}
+
+.stx-settings-update-progress {
+  color: var(--stx-mac-ink-secondary);
+  font-size: var(--stx-mac-font-size-small);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+</style>

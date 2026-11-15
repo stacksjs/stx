@@ -1,3 +1,5 @@
+import type { SettingsUpdateStatus } from './update'
+
 export * from './core'
 export { default as SettingsGroup } from './SettingsGroup.stx'
 export { default as SettingsPane } from './SettingsPane.stx'
@@ -5,7 +7,11 @@ export { default as SettingsPaneHeader } from './SettingsPaneHeader.stx'
 export { default as SettingsRow } from './SettingsRow.stx'
 export { default as SettingsSidebarGroup } from './SettingsSidebarGroup.stx'
 export { default as SettingsSidebarItem } from './SettingsSidebarItem.stx'
+export { default as SettingsUpdateRow } from './SettingsUpdateRow.stx'
 export { default as SettingsWindow } from './SettingsWindow.stx'
+export * from './native'
+export * from './native-theme'
+export * from './update'
 export * from './view'
 
 /** The colour of an icon tile, in the sidebar or leading a row. */
@@ -20,7 +26,7 @@ export interface SettingsWindowProps {
   searchable?: boolean
   /** Default `Search`. */
   searchPlaceholder?: string
-  /** Remembers the last pane in local storage under `stx:settings:<key>`. */
+  /** Remembers the last pane under `stx:settings:<key>`: in local storage, which on a native host is the app's storage. */
   storageKey?: string
   /** `window` fills a titlebar-less window and clears its buttons; `sheet` is a rounded panel inside another window. Default `window`. */
   presentation?: 'window' | 'sheet'
@@ -42,8 +48,10 @@ export interface SettingsSidebarItemProps {
   /** The id of the pane this row opens. */
   id: string
   label: string
-  /** An Iconify class, drawn white in the tile: `i-f7-gear-alt-fill`. */
+  /** An Iconify class, drawn white in the tile: `i-f7-gear-alt-fill`. The web's. */
   icon?: string
+  /** An SF Symbol name, drawn in the tile on a native host: `gearshape.fill`. */
+  symbol?: string
   /** Default `grey`. */
   tone?: SettingsTone
   /** A count at the trailing edge. */
@@ -80,8 +88,10 @@ export interface SettingsRowProps {
   label: string
   /** A second line under the label. */
   description?: string
-  /** An Iconify class for a leading tile. */
+  /** An Iconify class for a leading tile. The web's. */
   icon?: string
+  /** An SF Symbol name for the leading tile on a native host. */
+  symbol?: string
   tone?: SettingsTone
   /** Names the setting, for `revealSetting(id)` and for its label's id. */
   setting?: string
@@ -103,9 +113,27 @@ export interface SettingsRowProps {
 }
 
 export interface SettingsPaneHeaderProps {
+  /** An Iconify class for the tile. The web's. */
   icon?: string
+  /** An SF Symbol name for the tile on a native host. */
+  symbol?: string
   tone?: SettingsTone
   title: string
   description?: string
   className?: string
+}
+
+export interface SettingsUpdateRowProps {
+  /** The app's name, shown before its version. */
+  appName?: string
+  /** What the updater reports: `craft.updater`'s status, or a web app's own of the same shape. */
+  status?: Partial<SettingsUpdateStatus> | null
+  /** The row's id, for search and `revealSetting`. Default `software-update`. */
+  setting?: string
+  /** More words the search finds this row by. */
+  keywords?: string
+  className?: string
+  onCheck?: () => void
+  onInstall?: () => void
+  onRelaunch?: () => void
 }

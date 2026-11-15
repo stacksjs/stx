@@ -15,7 +15,9 @@
  * ```
  *
  * The target is the component's own element, or its id, or a selector, or any
- * element around exactly one component. Null where there is nothing to find:
+ * element around exactly one component. On a native screen, which has no
+ * elements, it is the id of a component that registered itself
+ * (`registerComponentApi`; `<SettingsWindow>` does). Null where there is nothing to find:
  * on the server, before the component has mounted, or for an element that is
  * not a component. A component mounts after the page's own script has run, so
  * ask for its methods when they are needed, not at the top of the script.
@@ -46,14 +48,45 @@ function find(target: Element | string | null | undefined): Element | null {
   }
 }
 
+/**
+ * Where a component on a host with no DOM answers by id.
+ *
+ * A native screen (Craft's AppKit and phone hosts) has no document to find an
+ * element in, so a component that wants to be reached there registers what it
+ * exposes under its id, and `componentApi('settings')` reads it back. Kept on
+ * the global object, not in this module: the app imports this file from the
+ * built package and a component from its source, and the two must agree.
+ */
+const REGISTRY = '__stxComponentApis'
+
+function registry(): Record<string, unknown> {
+  const host = globalThis as unknown as Record<string, Record<string, unknown> | undefined>
+  return host[REGISTRY] ?? (host[REGISTRY] = Object.create(null) as Record<string, unknown>)
+}
+
+/** Answer `componentApi(id)` with `api` on a host that has no DOM. Returns the undo. */
+export function registerComponentApi(id: string, api: unknown): () => void {
+  if (!id)
+    return () => {}
+  const known = registry()
+  known[id] = api
+  return () => {
+    if (known[id] === api)
+      delete known[id]
+  }
+}
+
 /** What a component exposes when nothing more precise is known: methods by name. */
 // eslint-disable-next-line ts/no-explicit-any
 export type ExposedMethods = Record<string, (..._arguments: any[]) => any>
 
 export function componentApi<T = ExposedMethods>(target: Element | string | null | undefined): T | null {
   const element = find(target) as ExposingElement | null
-  if (!element || typeof element.closest !== 'function')
-    return null
+  if (!element || typeof element.closest !== 'function') {
+    // No element to find it on: a native screen, where it registered by id.
+    const id = typeof target === 'string' ? target.replace(/^#/, '') : ''
+    return id && id in registry() ? registry()[id] as T : null
+  }
 
   if (element.__stx_exposed)
     return element.__stx_exposed as T

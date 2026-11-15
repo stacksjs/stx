@@ -1,19 +1,36 @@
 <script server>
+import { SETTINGS_NATIVE } from './native-theme'
+
 /*
  * <SettingsSidebarGroup>: a run of sidebar items, set a little apart from the
  * next. System Settings gives its groups no headings; `label` is there for
  * the window that needs one.
+ *
+ * On a native host ($native) the gap above the group is a view of its own
+ * (`data-settings-group-gap`), which the window shows above every group but
+ * the first one showing: there is no sibling selector to do it.
  */
 export const label = $props.label || ''
 export const className = $props.className || ''
+export const T = SETTINGS_NATIVE
 </script>
 
+@if($native)
+<div data-settings-group class="{{ T.group }} {{ className }}">
+  <div data-settings-group-gap class="{{ T.groupGap }} hidden"></div>
+  @if(label)
+    <span class="{{ T.groupLabel }}">{{ label }}</span>
+  @endif
+  <slot />
+</div>
+@else
 <div data-settings-group role="presentation" class="stx-settings-group {{ className }}">
   @if(label)
     <div class="stx-settings-group-label" role="presentation">{{ label }}</div>
   @endif
   <slot />
 </div>
+@endif
 
 <style data-native-exclude>
 :where(:root) {

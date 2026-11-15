@@ -1,4 +1,6 @@
 <script server>
+import { SETTINGS_NATIVE } from './native-theme'
+
 /*
  * <SettingsPane>: one screen of a Settings window. Its `id` is the id its
  * sidebar item carries; a pane with a `parent` is a sub-pane, reached by a
@@ -6,6 +8,9 @@
  *
  * Every pane is in the page from the start and all but one are hidden. The
  * shell shows the open one; `active` leaves this one showing before it has.
+ *
+ * On a native host ($native) a pane is a scroll view of its own, so each pane
+ * keeps its place when the window moves between them.
  */
 export const paneId = $props.id || ''
 export const title = $props.title || paneId
@@ -14,9 +19,23 @@ export const parent = $props.parent || ''
 export const active = $bool($props.active)
 export const role = parent ? 'region' : 'tabpanel'
 export const className = $props.className || ''
+export const T = SETTINGS_NATIVE
 </script>
 
-@if(active)
+@if($native)
+  <section
+    data-native="ScrollView"
+    data-settings-pane="{{ paneId }}"
+    data-title="{{ title }}"
+    data-keywords="{{ keywords }}"
+    data-parent="{{ parent }}"
+    @if(active)data-active@endif
+    aria-label="{{ title }}"
+    class="{{ T.pane }} {{ active ? '' : 'hidden' }} {{ className }}"
+  >
+    <div class="{{ T.paneContent }}"><slot /></div>
+  </section>
+@elseif(active)
   <section
     data-settings-pane="{{ paneId }}"
     data-title="{{ title }}"

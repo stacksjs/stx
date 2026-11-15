@@ -1,4 +1,6 @@
 <script server>
+import { SETTINGS_NATIVE, SETTINGS_NATIVE_SYMBOLS, SETTINGS_NATIVE_TONES, settingsNativeGlyph } from './native-theme'
+
 /*
  * <SettingsRow>: one setting in a <SettingsGroup>. Its name at the leading
  * edge, a description under it, and the control (whatever is in the slot) at
@@ -25,6 +27,12 @@
  * `layout="stacked"` puts the control under the label at full width;
  * `destructive` paints the label as a destructive action. `icon` is an
  * Iconify class on a tile of `tone`.
+ *
+ * On a native host ($native) the tile's glyph is the SF Symbol named by
+ * `symbol` (`icon` is CSS, which a native host has none of), the chevron is
+ * the system's, and a navigation row is one press target: the whole row opens
+ * the pane, so a control in its slot is not pressed for itself there. The
+ * hairline above the row is the row's own view, shown by its group.
  */
 const TONES = ['grey', 'blue', 'red', 'orange', 'yellow', 'green', 'indigo', 'purple', 'pink', 'ink']
 export const label = $props.label || ''
@@ -45,6 +53,21 @@ export const rowId = $props.id || (settingSlug ? `settings-row-${settingSlug}` :
 export const labelId = `${rowId}-label`
 export const descriptionId = `${rowId}-description`
 export const className = $props.className || ''
+
+export const symbol = $props.symbol || ''
+export const T = SETTINGS_NATIVE
+export const chevron = SETTINGS_NATIVE_SYMBOLS.disclosure
+export const tileFill = SETTINGS_NATIVE_TONES[tone]
+export const glyphInk = settingsNativeGlyph(tone)
+export const hasControl = Boolean($slots && $slots.default)
+const stacked = layout === 'stacked'
+export const nativeRowClasses = (stacked
+  ? T.rowStacked
+  : `${T.row} ${navigates && symbol ? T.rowTall : ''} ${multiline ? T.rowMultiline : ''} ${navigates ? T.rowPressed : ''}`).replace(/\s+/g, ' ').trim()
+export const nativeTextClasses = stacked ? T.rowTextStacked : multiline ? T.rowTextMultiline : T.rowText
+export const nativeControlClasses = stacked ? T.rowControlStacked : multiline ? T.rowControlMultiline : T.rowControl
+export const nativeLabelClasses = destructive ? T.rowLabelDestructive : T.rowLabel
+export const nativeTileClasses = `${T.rowTile} ${tileFill} ${multiline ? T.rowTileMultiline : ''}`.trim()
 </script>
 
 <script client>
@@ -78,6 +101,8 @@ function isNamed(control) {
 
 /** Name the slot's first control after the row, unless it has a name. */
 function nameControl() {
+  // A native host has no elements to query: its controls carry their own names.
+  if ({{ $native }}) return null
   const row = rowRef()
   const slot = row ? row.querySelector('.stx-settings-row-control') : null
   const control = slot ? slot.querySelector(CONTROLS) : null
@@ -94,6 +119,43 @@ onMount(() => {
 defineExpose({ labelId, descriptionId, nameControl })
 </script>
 
+@if($native)
+<div class="flex-col {{ className }}">
+  <div data-settings-row-rule class="{{ T.rowRule }} hidden"></div>
+  <div
+    @if(navigates)data-native="Pressable"@endif
+    ref="row"
+    id="{{ rowId }}"
+    data-settings-row
+    @if(setting)data-setting="{{ setting }}"@endif
+    data-label="{{ label }}"
+    :data-label="heading()"
+    data-keywords="{{ keywords }}"
+    data-layout="{{ layout }}"
+    @if(navigates)data-navigate="{{ to }}" role="button" aria-label="{{ label }}"@endif
+    @if(disabled)aria-disabled="true"@endif
+    :aria-disabled="isDisabled() ? 'true' : null"
+    class="{{ nativeRowClasses }}"
+    :class="{ '{{ T.rowDisabled }}': isDisabled() }"
+  >
+    @if(symbol)
+      <div class="{{ nativeTileClasses }}" data-settings-tile="{{ tone }}"><span data-native="Icon" symbol="{{ symbol }}" class="{{ T.rowGlyph }} {{ glyphInk }}"></span></div>
+    @endif
+    {{-- Divs hold views and spans are words: a span around spans is read as one run of text. --}}
+    <div class="{{ nativeTextClasses }}">
+      <span :text="heading()" class="{{ nativeLabelClasses }}" @if(!multiline)numberOfLines="1"@endif>{{ label }}</span>
+      <span :show="detail()" :text="detail()" class="{{ T.rowDescription }}">{{ description }}</span>
+    </div>
+    @if(hasControl)
+      <div class="{{ nativeControlClasses }}" data-settings-row-control><slot /></div>
+    @endif
+    @if(navigates)
+      <span :show="trailing()" :text="trailing()" class="{{ T.rowValue }}" numberOfLines="1">{{ value }}</span>
+      <span data-native="Icon" symbol="{{ chevron }}" class="{{ T.rowChevron }}"></span>
+    @endif
+  </div>
+</div>
+@else
 <div
   ref="row"
   id="{{ rowId }}"
@@ -125,6 +187,7 @@ defineExpose({ labelId, descriptionId, nameControl })
     <span class="stx-settings-row-chevron" aria-hidden="true"></span>
   @endif
 </div>
+@endif
 
 <style data-native-exclude>
 :where(:root) {

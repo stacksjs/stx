@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
-import { componentApi } from '../../src/utils/component-api'
+import { componentApi, registerComponentApi } from '../../src/utils/component-api'
 
 /** A component as stx renders one: a scope wrapper holding the methods, around the component's own root. */
 function mount(id: string, api: Record<string, unknown> | null): { wrapper: HTMLElement, root: HTMLElement } {
@@ -74,5 +74,29 @@ describe('componentApi', () => {
     expect(componentApi(null)).toBeNull()
     expect(componentApi(undefined)).toBeNull()
     expect(componentApi('')).toBeNull()
+  })
+
+  it('answers by id for a component that registered itself, where there is no element to find', () => {
+    const api = { showPane: (id: string) => id === 'general' }
+    const undo = registerComponentApi('native-settings', api)
+
+    expect(componentApi('native-settings')).toBe(api)
+    expect(componentApi('#native-settings')).toBe(api)
+    expect(componentApi('other')).toBeNull()
+
+    // An element of that id wins: on the web the component is found where it is.
+    const drawn = { showPane: () => true }
+    mount('native-settings', drawn)
+    expect(componentApi('native-settings')).toBe(drawn)
+    document.body.innerHTML = ''
+
+    // A later registration replaces it, and an old undo does not remove the new one.
+    const next = { showPane: () => false }
+    const undoNext = registerComponentApi('native-settings', next)
+    undo()
+    expect(componentApi('native-settings')).toBe(next)
+    undoNext()
+    expect(componentApi('native-settings')).toBeNull()
+    expect(registerComponentApi('', api)()).toBeUndefined()
   })
 })

@@ -1,4 +1,6 @@
 <script server>
+import { SETTINGS_NATIVE, SETTINGS_NATIVE_TONES, settingsNativeGlyph } from './native-theme'
+
 /*
  * <SettingsSidebarItem>: one row of the sidebar, opening the pane whose id it
  * carries. The icon is an Iconify class, drawn white on a rounded tile in one
@@ -6,6 +8,11 @@
  *
  * It only draws. The shell selects it, gives it its place in the tab order
  * and links it to its pane.
+ *
+ * On a native host ($native) the glyph is an SF Symbol, named by `symbol`
+ * (`gearshape.fill`): an Iconify class is CSS, which a native host has none
+ * of. `icon` stays the web's. The selected row is the blue pill, drawn from
+ * `aria-selected`, which the window sets on the row and on what is inside it.
  */
 const TONES = ['grey', 'blue', 'red', 'orange', 'yellow', 'green', 'indigo', 'purple', 'pink', 'ink']
 export const paneId = $props.id || ''
@@ -16,8 +23,32 @@ export const badge = $props.badge == null || $props.badge === false ? '' : Strin
 /* Words a search should find this item by, beyond its label. */
 export const keywords = $props.keywords || ''
 export const className = $props.className || ''
+export const symbol = $props.symbol || ''
+export const T = SETTINGS_NATIVE
+export const tileFill = SETTINGS_NATIVE_TONES[tone]
+export const glyphInk = settingsNativeGlyph(tone)
 </script>
 
+@if($native)
+<div
+  data-native="Pressable"
+  role="tab"
+  aria-selected="false"
+  aria-label="{{ label }}"
+  data-settings-item="{{ paneId }}"
+  data-label="{{ label }}"
+  data-keywords="{{ keywords }}"
+  class="{{ T.item }} {{ className }}"
+>
+  @if(symbol)
+    <div class="{{ T.itemTile }} {{ tileFill }}" data-settings-tile="{{ tone }}"><span data-native="Icon" symbol="{{ symbol }}" class="{{ T.itemGlyph }} {{ glyphInk }}"></span></div>
+  @endif
+  <span class="{{ T.itemLabel }}" numberOfLines="1">{{ label }}</span>
+  @if(badge)
+    <span class="{{ T.itemBadge }}">{{ badge }}</span>
+  @endif
+</div>
+@else
 <button
   type="button"
   role="tab"
@@ -35,6 +66,7 @@ export const className = $props.className || ''
     <span class="stx-settings-item-badge">{{ badge }}</span>
   @endif
 </button>
+@endif
 
 <style data-native-exclude>
 :where(:root) {

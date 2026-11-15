@@ -1,4 +1,6 @@
 <script server>
+import { SETTINGS_NATIVE } from '../settings/native-theme'
+
 /*
  * <AppearancePicker>: light, dark, or whatever the system is, picked from
  * three small pictures of a desktop, as System Settings offers it.
@@ -13,6 +15,11 @@
  *
  * A radio group: one tab stop, arrow keys move the choice. The pictures are
  * drawn in CSS and say nothing to a screen reader; the captions do.
+ *
+ * On a native host ($native) each choice is a pressable picture drawn from
+ * views (a light half, a dark half, both for Auto) with the chosen one ringed
+ * in the accent, from the class lists in ../settings/native-theme. There are
+ * no arrow keys there: a native host reports no key presses to a screen.
  */
 const MODES = ['light', 'dark', 'auto']
 export const value = MODES.includes($props.value) ? $props.value : 'auto'
@@ -21,6 +28,7 @@ export const label = $props.label || ''
 export const disabled = $bool($props.disabled)
 export const pickerId = $props.id || `appearance-picker-${$uid}`
 export const className = $props.className || ''
+export const T = SETTINGS_NATIVE
 </script>
 
 <script client>
@@ -89,8 +97,44 @@ function onKey(event, mode) {
   if (picture) picture.focus()
 }
 
+// A native host: which half of the picture is light and which dark.
+const lightHalf = {{ $native ? T.appearanceLight : '' }}
+const darkHalf = {{ $native ? T.appearanceDark : '' }}
+
 defineExpose({ value: chosen })
 </script>
+
+@if($native)
+<div
+  id="{{ pickerId }}"
+  role="radiogroup"
+  data-stx-appearance-picker
+  @if(label)aria-label="{{ label }}"@endif
+  :aria-label="groupLabel() || null"
+  class="{{ T.appearance }} {{ className }}"
+  :class="{ 'opacity-50': isDisabled() }"
+>
+  <div
+    data-native="Pressable"
+    :for="mode in modes()"
+    :key="mode.value"
+    role="radio"
+    class="{{ T.appearanceOption }}"
+    :data-mode="mode.value"
+    :aria-label="mode.label"
+    :aria-checked="isOn(mode) ? 'true' : 'false'"
+    @click="choose(mode)"
+  >
+    <div class="{{ T.appearanceFrame }}" :aria-checked="isOn(mode) ? 'true' : 'false'">
+      <div class="{{ T.appearanceThumb }}">
+        <div :class="mode.value === 'dark' ? darkHalf : lightHalf"></div>
+        <div :class="mode.value === 'light' ? lightHalf : darkHalf"></div>
+      </div>
+    </div>
+    <span class="{{ T.appearanceCaption }}" :text="mode.label"></span>
+  </div>
+</div>
+@else
 
 <div
   id="{{ pickerId }}"
@@ -116,6 +160,7 @@ defineExpose({ value: chosen })
     @keydown="onKey($event, mode)"
   ><span class="stx-appearance-frame" aria-hidden="true"><span class="stx-appearance-thumb"><span class="stx-appearance-scene" data-scheme="light"></span><span class="stx-appearance-scene" data-scheme="dark"></span></span></span><span class="stx-appearance-caption" :text="mode.label"></span></button>
 </div>
+@endif
 
 <style data-native-exclude>
 :where(:root) {

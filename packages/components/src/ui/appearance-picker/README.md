@@ -59,3 +59,7 @@ Each picture is 67 by 44 points: wallpaper under a menu bar, a small window with
 | `--stx-appearance-ring`, `--stx-appearance-ring-gap` | `2.5px`, `2px` |
 | `--stx-appearance-ring-color` | the accent |
 | `--stx-appearance-caption-gap` | `5px` |
+
+## On a native host
+
+On a native host (Craft's AppKit host) each choice is a pressable picture drawn from the host's views: a light half and a dark half, both light for `light`, both dark for `dark`, with the chosen one ringed in the system blue and its caption beneath. `value`, `v-model:value`, `options`, `label`, `disabled` and `@change` are the same. There are no arrow keys there, since a native host reports no key presses to a screen, and the picture is two flat halves rather than the web's drawing. Its sizes and colours are the `appearance*` entries of `settings/native-theme.ts`.
