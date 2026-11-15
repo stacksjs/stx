@@ -135,6 +135,9 @@ export const form = $props.form || ''
 // Validity is live, for the same reason `disabled` is: a form posted with
 // fetch learns it after the submit, and nothing re-renders (#2047).
 const isError = useReactiveProp('error', {{ error }})
+const macDesktop = {{ $native && mac }} && typeof craft !== 'undefined' && craft.platform === 'macos'
+// Live on a native host, where the picker is told so rather than styled so.
+const isDisabled = useReactiveProp('disabled', {{ disabled }})
 /*
  * Two-way, like TextInput (stacksjs/stx#2059): `v-model:value="group"` keeps
  * the page's signal in step, so a call site no longer pairs `:value` with an
@@ -192,20 +195,28 @@ defineExpose({ value: selectedValue, options: optionList })
      picker holds, so slotted
       <option>
         s are a web-only spelling. --}}
-        <div class="w-full {{ className }}">
+{{-- A phone's picker fills its row. `variant="mac"` on Craft's AppKit host
+     is the pop-up button, as wide as its longest choice at the end of a
+     settings row; which host this is is known only on the device. --}}
+        <div class="{{ className }}" :class="{ 'w-full': !macDesktop }">
           @if(label)
           <label for="{{ selectId }}" class="mb-1.5 px-4 text-[13px] uppercase text-[#6d6d72] dark:text-[#8d8d93]">
             {{ label }}
           </label>
           @endif
+  {{-- The choices under both names a host reads them by: the phone hosts'
+       `items`, and `options` for Craft's AppKit host (an NSPopUpButton). --}}
           <div
     data-native="Picker"
     data-stx-native-host-root
     id="{{ selectId }}"
     :items="nativeItems()"
+    :options="nativeItems()"
     :value="selectedValue()"
     @if(disabled)disabled@endif
-    class="w-full disabled:opacity-50"
+    :disabled="isDisabled()"
+    class="disabled:opacity-50"
+    :class="{ 'w-full': !macDesktop }"
     @change="onChange($event)"
     aria-invalid="{{ error ? 'true' : 'false' }}"
     :aria-invalid="isError() ? 'true' : 'false'"
@@ -565,10 +576,12 @@ defineExpose({ value: selectedValue, options: optionList })
 
 === Extracted Classes ===
 !isError()
+!macDesktop
 ''
 'mt-2'
 'text-[#6d6d72]
 'text-[#ff3b30]
+'w-full':
 '{{
 -
 --
@@ -576,6 +589,7 @@ defineExpose({ value: selectedValue, options: optionList })
 --stx-control-text
 :
 ?
+AppKit
 Helvetica
 It
 M
@@ -600,6 +614,7 @@ app
 are
 around
 as
+at
 background-color
 bg-field
 bg-surface
@@ -609,6 +624,7 @@ box
 button
 by
 change
+choice
 chosen
 className
 const
@@ -622,12 +638,14 @@ dark:text-[#ff453a]'
 declared
 default
 density
+disabled
 disabled:opacity-50
 disc
 down
 draws
 duration-200
 each
+end
 error
 every
 fallbacks
@@ -642,6 +660,7 @@ form
 h-10
 helperClasses
 holding
+host
 hover:ring-line-hover
 in
 inset
@@ -652,12 +671,14 @@ isError(),
 it
 its
 keys
+known
 label
 labelClasses
 lands
 leading-6
 line-height
 list
+longest
 mb-1.5
 md
 menu
@@ -671,6 +692,7 @@ nothing
 o
 of
 on
+only
 opacity-50
 options
 own
@@ -692,8 +714,10 @@ ring-danger-line
 ring-inset
 ring-line-strong
 rounded-control
+s
 selectClasses
 sets
+settings
 shadow-sm
 size
 sizeClasses
@@ -725,6 +749,7 @@ text-lg
 text-sm
 that
 the
+this
 ties
 transition-colors
 true
@@ -736,6 +761,8 @@ uses
 value
 w-full
 were
+which
+wide
 with
 work
 {

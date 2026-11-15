@@ -180,6 +180,17 @@ export const autofocus = $bool($props.autofocus)
  * system red outline, a disabled one dims as UIKit's do.
  */
 export const nativeFieldClasses = `min-h-12 px-4 text-[17px] text-[#000000] dark:text-[#ffffff] bg-[#767680]/12 dark:bg-[#767680]/24 rounded-[10px] border-0 ${inputClassName}`.trim()
+/*
+ * `variant="mac"` on Craft's AppKit host is AppKit's text field (the host
+ * draws an NSTextField): 22pt tall at 13pt, with the bezel and the fill the
+ * system gives it, so the phone's fill, corners and padding come off. It is a
+ * field at the end of a settings row, 170pt wide; `className="w-full"` (or
+ * any width) makes it something else. Which host this is is known only on
+ * the device, so these are classes the client script adds there.
+ */
+export const nativeMac = mac && $native
+export const nativeMacFieldClasses = 'min-h-0 h-[22px] px-0 text-[13px] bg-[#00000000] dark:bg-[#00000000] rounded-none'
+export const nativeMacWrapClasses = 'w-[170px]'
 export const nativeLabelClasses = 'mb-1.5 px-4 text-[13px] uppercase text-[#6d6d72] dark:text-[#8d8d93]'
 export const nativeHelperClasses = `mt-1.5 px-4 text-[13px] ${error ? 'text-[#ff3b30] dark:text-[#ff453a]' : 'text-[#6d6d72] dark:text-[#8d8d93]'}`
     </script>
@@ -190,6 +201,8 @@ const emit = defineEmits(['input', 'clear', 'focus', 'blur', 'submit', 'submit-e
 // Validity is live, for the same reason `disabled` is: a form posted with
 // fetch learns it after the submit, and nothing re-renders (#2047).
 const nativeClear = typeof craft !== 'undefined' && craft.capabilities.nativePlatformControls === true
+// `variant="mac"` on Craft's AppKit host: AppKit's own field (see the server script).
+const macDesktop = {{ nativeMac }} && typeof craft !== 'undefined' && craft.platform === 'macos'
 const isError = useReactiveProp('error', {{ error }})
 // Keep the physical control and its affordances live on both web and native.
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
@@ -292,7 +305,7 @@ const charCount = derived(() => `${String(inputValue()).length} / {{ maxLength |
 defineExpose({ value: inputValue, clear: onClear })
     </script>
     @if($native)
-    <div class="w-full {{ className }}">
+    <div class="{{ className }}" :class="macDesktop ? '{{ nativeMacWrapClasses }}' : 'w-full'">
       @if(label)
       <label for="{{ inputId }}" class="{{ nativeLabelClasses }}">
         {{ label }}
@@ -329,7 +342,7 @@ defineExpose({ value: inputValue, clear: onClear })
       @end-editing="onNativeEndEditing($event)"
       aria-invalid="{{ error ? 'true' : 'false' }}"
       :aria-invalid="isError() ? 'true' : 'false'"
-      :class="{ 'border border-[#ff3b30] dark:border-[#ff453a]': isError(), 'opacity-50': isDisabled() }"
+      :class="{ 'border border-[#ff3b30] dark:border-[#ff453a]': isError(), 'opacity-50': isDisabled(), '{{ nativeMacFieldClasses }}': macDesktop }"
       @if(clearable):clearButtonMode="nativeClear ? 'while-editing' : 'never'" :style="nativeClear ? null : { paddingRight: 40 }"@endif
     />
         @if(clearable)
@@ -790,11 +803,14 @@ defineExpose({ value: inputValue, clear: onClear })
 'cursor-default':
 'opacity-50
 'opacity-50':
+'w-full'
 '{{
 -
 --
 --stx-control-leading
 --stx-control-text
+:
+?
 Helvetica
 Neue
 Pro
@@ -898,9 +914,11 @@ leading-6
 left-0
 line-height
 loads
+macDesktop
 macFieldClasses
 mb-2
 md
+min-h-0
 min-h-12
 ml-1
 month
@@ -910,6 +928,8 @@ mt-2
 nativeFieldClasses
 nativeHelperClasses
 nativeLabelClasses
+nativeMacFieldClasses
+nativeMacWrapClasses
 nearly
 needed
 nothing
@@ -928,6 +948,7 @@ placeholder-fg-soft
 pointer-events-none
 pr-10
 pr-3
+px-0
 px-4
 px-5
 px-control-x
@@ -943,6 +964,7 @@ ring-danger-line
 ring-inset
 ring-line-strong
 rounded-control
+rounded-none
 s
 search
 sets
@@ -1012,4 +1034,5 @@ with
 ||
 }
 }}
+}}'
 }}':

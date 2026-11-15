@@ -1438,6 +1438,22 @@ function forwardHostAttrs(html: string, props: ResolvedProps, declaredProps = ne
   if (!root)
     return html
 
+  // A component that draws a different control per host (a push button on a
+  // Mac, a pressable row on a phone) marks each as a host root and keeps one
+  // on the device. What the caller wrote belongs on whichever is kept, so it
+  // goes on all of them. Last first, so an earlier one's offsets still hold.
+  // The search starts at the component's outermost element, since the
+  // alternates are siblings and the first of them is `root` itself.
+  const outer = nativeTarget ? findRenderedComponentRoot(html) : null
+  if (outer) {
+    const alternates = findOwnedNativeHostRoots(html, outer).filter(other => other.insertPos > root.insertPos)
+    for (let index = alternates.length - 1; index >= 0; index--)
+      html = forwardHostAttrsTo(html, alternates[index]!, props, declaredProps, consumedProps, nativeTarget)
+  }
+  return forwardHostAttrsTo(html, root, props, declaredProps, consumedProps, nativeTarget)
+}
+
+function forwardHostAttrsTo(html: string, root: { insertPos: number, tagEnd: number }, props: ResolvedProps, declaredProps: Set<string>, consumedProps: Set<string>, nativeTarget: boolean): string {
   let openingTag = html.slice(root.insertPos, root.tagEnd)
   // A native caller's utility classes must survive switching from a primitive
   // that explicitly reads $props.class to an ordinary shared host root.
@@ -1571,7 +1587,18 @@ function findRenderedComponentHostRoot(html: string, nativeTarget = false): { in
  * not element boundaries.
  */
 function findOwnedNativeHostRoot(html: string, root: { insertPos: number, tagEnd: number }): { insertPos: number, tagEnd: number } | null {
-  if (!html.includes('data-stx-native-host-root')) return null
+  return findOwnedNativeHostRoots(html, root)[0] ?? null
+}
+
+/**
+ * Every host root the component marked, in document order. More than one is a
+ * component that draws a different control per host and keeps one of them on
+ * the device (Button: the system's push button on a Mac, a pressable on a
+ * phone); nested ones are skipped, since a marked root does not hold another.
+ */
+function findOwnedNativeHostRoots(html: string, root: { insertPos: number, tagEnd: number }): Array<{ insertPos: number, tagEnd: number }> {
+  const found: Array<{ insertPos: number, tagEnd: number }> = []
+  if (!html.includes('data-stx-native-host-root')) return found
   const voidTags = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'])
   let cursor = html.lastIndexOf('<', root.insertPos)
   let depth = 0
@@ -1579,7 +1606,7 @@ function findOwnedNativeHostRoot(html: string, root: { insertPos: number, tagEnd
   while (cursor >= 0 && cursor < html.length) {
     if (html.startsWith('<!--', cursor)) {
       const end = html.indexOf('-->', cursor + 4)
-      if (end < 0) return null
+      if (end < 0) return found
       cursor = html.indexOf('<', end + 3)
       continue
     }
@@ -1591,29 +1618,31 @@ function findOwnedNativeHostRoot(html: string, root: { insertPos: number, tagEnd
     if (tag[1]) {
       depth--
       if (foreignDepth !== undefined && depth < foreignDepth) foreignDepth = undefined
-      if (depth <= 0) return null
+      if (depth <= 0) return found
     }
     else if (name === 'script' || name === 'style') {
       const close = new RegExp(`</${name}\\s*>`, 'gi')
       close.lastIndex = tagEnd + 1
-      if (!close.exec(html)) return null
+      if (!close.exec(html)) return found
       cursor = html.indexOf('<', close.lastIndex)
       continue
     }
     else {
       const attributes = parseAllAttributes(html.slice(insertPos, tagEnd))
       const foreign = depth > 0 && (Object.hasOwn(attributes, 'data-stx-component-wrapper') || Object.hasOwn(attributes, 'data-stx-native-host-owner'))
-      if (foreignDepth === undefined && !foreign && Object.hasOwn(attributes, 'data-stx-native-host-root'))
-        return { insertPos, tagEnd }
+      const marked = foreignDepth === undefined && !foreign && Object.hasOwn(attributes, 'data-stx-native-host-root')
+      if (marked)
+        found.push({ insertPos, tagEnd })
       if (!voidTags.has(name) && html[tagEnd - 1] !== '/') {
         depth++
-        if (foreignDepth === undefined && foreign) foreignDepth = depth
+        // What a marked root holds is its own: nothing inside it is another root of this component.
+        if (foreignDepth === undefined && (foreign || marked)) foreignDepth = depth
       }
-      else if (depth === 0) return null
+      else if (depth === 0) return found
     }
     cursor = html.indexOf('<', tagEnd + 1)
   }
-  return null
+  return found
 }
 
 /** Find the first real element at or after an offset, skipping raw text. */

@@ -36,6 +36,8 @@ const NATIVE_PROP_NAMES = [
   'dragData', 'dragURL', 'dropTypes', 'dropInside',
   // A field that selects all it holds when it takes focus (an address bar).
   'selectTextOnFocus',
+  // A button drawn as its glyph alone, its words kept as its name.
+  'iconOnly',
 ]
 
 /**
@@ -49,7 +51,7 @@ export const NATIVE_BOOLEAN_PROPS = new Set([
   'refreshing', 'scrollEnabled', 'secureTextEntry', 'selectTextOnFocus', 'showsHorizontalScrollIndicator',
   'showsVerticalScrollIndicator', 'transparent', 'visible', 'nonModal', 'dismissOnOutsideTap',
   'fitToBounds', 'showsUserLocation', 'zoomEnabled', 'rotateEnabled', 'pitchEnabled', 'showsCompass', 'showsScale',
-  'pictureInPicture', 'grabberVisible',
+  'pictureInPicture', 'grabberVisible', 'iconOnly',
 ])
 
 const nativePropNames = new Map(

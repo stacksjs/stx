@@ -198,6 +198,21 @@ export const nativeButtonClasses = `flex-row items-center justify-center ${nativ
 export const nativeTextClasses = `font-semibold ${nativeSize.text} ${nativeVariant.text}`
 export const legacyNativeTint = variant === 'primary' || variant === 'danger' ? '#ffffff' : '#007aff'
 export const nativeTintClass = nativeVariant.text
+/*
+ * On a Mac (Craft's AppKit host) a button is the system's push button, an
+ * NSButton the host draws, not the phone's filled one: 13pt words on the
+ * standard bezel. The host knows four looks by name and only a written
+ * `variant` asks for one: `primary` is the default (accent) button, `danger`
+ * the destructive one, `ghost` a borderless one, `toolbar` the toolbar's.
+ * Anything else, and no variant at all, is the plain push button, as
+ * `appearance="mac"` has it on the web, because on a Mac most buttons are.
+ * Which host this is is only known on the device, so both are in the screen
+ * and the client script keeps one.
+ */
+const desktopVariants = ['primary', 'danger', 'ghost', 'toolbar']
+export const desktopVariant = desktopVariants.includes($props.variant) ? $props.variant : ''
+/** `title` names the button only when nothing in the slot does: beside content it is the tooltip. */
+export const titleNames = !slotWords
           </script>
           <script client>
             const emit = defineEmits()
@@ -232,7 +247,18 @@ const labelProp = useReactiveProp('label', {{ label }}, { parse: value => value 
 // Preserve native Button's text prop when the same shared file is selected.
 // Read it as a prop, not a root text binding that would erase icons/spinners.
 const textProp = useReactiveProp('text', '', { parse: value => value == null ? '' : String(value) })
-const labelText = derived(() => labelProp() || textProp())
+/*
+ * `title` is the desktop spelling of the words (stacksjs/stx#2091), and it is
+ * live as `label` is: `:title="busy() ? 'One moment' : 'Sign In'"` is a
+ * binding the server never sees, so read once there it was no words at all
+ * and the button drew empty. Beside slot content it stays the tooltip.
+ */
+const titleNames = {{ titleNames }}
+const titleProp = useReactiveProp('title', {{ titleWords }}, { parse: value => value == null ? '' : String(value) })
+const labelText = derived(() => labelProp() || textProp() || (titleNames ? titleProp() : ''))
+const symbolProp = useReactiveProp('symbol', {{ symbol }}, { parse: value => value == null ? '' : String(value) })
+// Craft's AppKit host: the button is the system's own (see the server script).
+const desktop = typeof craft !== 'undefined' && craft.platform === 'macos'
 const isLoading = useReactiveProp('loading', {{ loading }})
 // The accessible name is live too. Read once on the server, a bound one
 // (:ariaLabel="action.label" in a row of icon buttons) stayed on the boxless
@@ -255,11 +281,40 @@ function onClick(event) {
 }
           </script>
           @if($native)
+{{-- A Mac: the host's push button. Its words are `title` (the label, or the
+     slot's text when there is no label), its glyph `symbol`. A caller's
+     `class` and `style` land on it, so a font size and a colour are the
+     button's own. --}}
           <button
+  :if="desktop"
+  data-native="Button"
+  data-stx-native-host-root
+  type="{{ type }}"
+  class="text-accent {{ fullWidth ? 'w-full' : '' }} {{ className }}"
+  @if(desktopVariant)variant="{{ desktopVariant }}"@endif
+  @if(symbol)symbol="{{ symbol }}"@endif
+  :symbol="symbolProp() || null"
+  @if(iconOnly)iconOnly="true"@endif
+  @if(label)title="{{ label }}"@endif
+  :title="labelText() || null"
+  @if(isDisabled)disabled@endif
+  :disabled="isDisabled()"
+  aria-busy="{{ loading ? 'true' : 'false' }}"
+  :aria-busy="isLoading() ? 'true' : 'false'"
+  @if(ariaLabel)aria-label="{{ ariaLabel }}"@endif
+  :aria-label="String(ariaLabelProp() ?? '') || null"
+  @click="onClick($event)"
+>
+            <slot />
+          </button>
+          <button
+  :if="!desktop"
+  data-stx-native-host-root
   type="{{ type }}"
   class="{{ nativeButtonClasses }}"
   activeOpacity="0.6"
   @if(symbol)symbol="{{ symbol }}"@endif
+  :symbol="symbolProp() || null"
   @if(iconOnly)iconOnly="true"@endif
   @if(isDisabled)disabled@endif
   :disabled="isDisabled()"
@@ -621,6 +676,7 @@ function onClick(event) {
 === Extracted Classes ===
 ''
 'stx-mac-button-full'
+'w-full'
 -
 --
 :
@@ -629,6 +685,7 @@ A
 ActivityIndicator
 Helvetica
 Neue
+One
 Pro
 SF
 Segoe
@@ -664,6 +721,7 @@ children
 className
 click
 container
+danger
 default
 destructive
 direct
@@ -693,6 +751,7 @@ gap
 gap-1
 gap-2
 gap-3
+ghost
 gives
 goes
 h-10
@@ -727,6 +786,7 @@ markup
 min-h-11
 min-h-14
 min-h-7
+moment
 nativeButtonClasses
 nativeTextClasses
 nativeTintClass
@@ -767,6 +827,7 @@ stx-mac-button-full
 stx-mac-button-icon
 stx-mac-button-spin
 stx-mac-button-spinner
+symbol
 system-blue
 text
 text-accent
@@ -784,6 +845,7 @@ that
 the
 them
 time
+title
 to
 trailing
 transition-all

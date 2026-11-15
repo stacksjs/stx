@@ -60,6 +60,13 @@ const sizeClasses = {
 // of a phone broke in two ("Breakfa / st").
 const stretchedPadding = { sm: 'px-1', md: 'px-1.5', lg: 'px-1.5' }
 export const sizing = sizeClasses[size]
+/*
+ * `variant="mac"` on Craft's AppKit host (known only on the device) is
+ * AppKit's segmented control: 24pt tall whatever `size` says, as the web's
+ * Mac look has one size. The host has no segmented control of its own, so
+ * the segments are drawn there as they are where a phone has none.
+ */
+export const macNative = $props.variant === 'mac' && $native
 
 // A block flex box already fills its column, so `stretch` needs no `w-full` -
 // which beside a margin (`mx-4`) ran the track off the screen's edge.
@@ -91,7 +98,8 @@ const groupLabel = useReactiveProp('label', {{ label }})
 const selected = useModel('value', { default: {{ value }}, parse: v => v == null ? '' : String(v) })
 const choices = useReactiveProp('options', {{ options }})
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
-const segmentBase = {{ segmentBase }}
+const macDesktop = {{ macNative }} && typeof craft !== 'undefined' && craft.platform === 'macos'
+const segmentBase = macDesktop ? {{ segmentBase }}.replace(/\bmin-h-\S+/, 'min-h-[24px]').replace(/\bpy-\S+/, 'py-0.5') : {{ segmentBase }}
 const textSize = {{ sizing.text }}
 const groupID = {{ testID }}
 const nativeSegments = typeof craft !== 'undefined' && craft.capabilities.nativePlatformControls === true

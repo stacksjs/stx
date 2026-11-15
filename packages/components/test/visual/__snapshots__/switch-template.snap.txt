@@ -98,13 +98,16 @@ function thumbClasses() {
   return `${thumbBase} ${pos} ${config.thumb}`.trim()
 }
 
+// `variant="mac"` on Craft's AppKit host: the label at AppKit's 13pt beside the NSSwitch.
+const macDesktop = {{ $native && mac }} && typeof craft !== 'undefined' && craft.platform === 'macos'
+
 defineExpose({ isChecked, toggle })
     </script>
     @if($native)
 {{-- On a native host the control is the platform's own switch (UISwitch,
      Android's Switch), at the end of its row as a settings row puts it. --}}
     <label class="flex-row items-center justify-between gap-3 {{ className }}">
-      <span :if="currentLabel()" :text="currentLabel()" class="flex-1 text-[17px] text-[#000000] dark:text-[#ffffff]">
+      <span :if="currentLabel()" :text="currentLabel()" class="flex-1 text-[17px] text-[#000000] dark:text-[#ffffff]" :class="{ 'text-[13px]': macDesktop }">
         {{ label }}
       </span>
       @if(name)
@@ -385,6 +388,7 @@ defineExpose({ isChecked, toggle })
     </style>
 
 === Extracted Classes ===
+'text-[13px]':
 A
 Helvetica
 Neue
@@ -436,6 +440,7 @@ its
 justify-between
 key
 label
+macDesktop
 mini
 not
 pointer-events-none
@@ -471,5 +476,7 @@ w-4
 w-9
 window
 without
+{
 {{
+}
 }}

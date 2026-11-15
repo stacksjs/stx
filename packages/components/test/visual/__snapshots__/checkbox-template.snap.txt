@@ -30,7 +30,14 @@ export const switchAppearance = $props.appearance === 'switch'
   <style>
     block draws from the `--stx-mac-*` tokens.
  */
-export const mac = $props.variant === 'mac'
+export const mac = $props.variant === 'mac' && !$native
+/*
+ * The Mac look is a stylesheet, and a native host has none: there the box is
+ * the platform's own control whatever `variant` says. On a Mac (Craft's
+ * AppKit host, known only on the device) `variant="mac"` also sets the words
+ * at AppKit's sizes, 13pt over 11pt; a phone keeps its own.
+ */
+export const macNative = $props.variant === 'mac' && $native
 
 const sizeClasses = { sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6' }
 const baseClasses = 'rounded border-line-strong text-accent focus:ring-accent focus:ring-2 focus:ring-offset-2 focus:ring-offset-panel transition-colors'
@@ -100,6 +107,9 @@ const isIndeterminate = useReactiveProp('indeterminate', {{ indeterminate }})
 // See stacksjs/stx#1704.
 const isChecked = useReactiveProp('checked', {{ checked }})
 const currentLabel = useReactiveProp('label', {{ label }}, { parse: value => value ?? '' })
+
+// `variant="mac"` on Craft's AppKit host: the words at AppKit's sizes.
+const macDesktop = {{ macNative }} && typeof craft !== 'undefined' && craft.platform === 'macos'
 
 function onInputChange(event) {
   if (isDisabled()) {
@@ -196,7 +206,7 @@ defineExpose({ isChecked })
         </div>
         <div :if="currentLabel() || {{ !!description }}" class="ml-3 text-sm leading-6">
           <label :if="currentLabel()" for="{{ inputId }}" class="{{ labelClasses }} inline-flex flex-row items-center" :class="{ 'opacity-50 cursor-not-allowed': isDisabled(), 'cursor-pointer': !isDisabled() }">
-            <span :text="currentLabel()">
+            <span :text="currentLabel()"@if($native) :class="{ 'text-[13px]': macDesktop }"@endif>
               {{ label }}
             </span>
             @if(required)
@@ -206,7 +216,7 @@ defineExpose({ isChecked })
             @endif
           </label>
           @if(description)
-          <p id="{{ descriptionId }}" class="{{ descriptionClasses }}">
+          <p id="{{ descriptionId }}" class="{{ descriptionClasses }}"@if($native) :class="{ 'text-[11px]': macDesktop }"@endif>
             {{ description }}
           </p>
           @endif
@@ -437,6 +447,8 @@ defineExpose({ isChecked })
 !isDisabled()
 'cursor-pointer':
 'opacity-50
+'text-[11px]':
+'text-[13px]':
 '{{
 A
 Helvetica
@@ -488,6 +500,7 @@ key
 label
 labelClasses
 leading-6
+macDesktop
 ml-1
 ml-3
 not

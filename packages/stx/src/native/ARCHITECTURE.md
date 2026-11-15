@@ -464,3 +464,19 @@ binding/setup extraction and chrome collection. It is separate from
 `data-native-chrome`, which declares app navigation. Put website-only component
 calls and their scoped scripts inside the excluded subtree. A page-level shared
 script outside it still runs on both hosts and must use host-aware composables.
+
+## One component, a different control per host
+
+Which host a screen runs on (`craft.platform`) is known only on the device: the
+compile is the same for a phone and a Mac. A shared component that is a
+different control on each (Button: the host's push button on Craft's AppKit
+host, a pressable on a phone) puts both in its native branch, each behind an
+`:if` its client script decides, and marks each `data-stx-native-host-root`.
+What the caller wrote on the tag (`testID`, `class`, `style`, any host prop) is
+forwarded to every marked root at compile time, and a caller's bound attribute
+is delivered to each at run time, so whichever the device keeps has it. A
+component with one marked root behaves as it always did.
+
+A look that only differs in size on a Mac (`variant="mac"` on TextInput,
+Select, Checkbox, Switch, SegmentedControl) is the same node with classes its
+client script adds there, so a phone's first render is unchanged.

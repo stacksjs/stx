@@ -964,25 +964,36 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     return true
   }
 
-  function forwardedHostRoot(node: NativeNode, name: string): NativeNode | undefined {
-    if (!isBindingNode(node)) return
+  /**
+   * The component's host roots a caller's binding is delivered to. One, for
+   * nearly every component; several for one that draws a different control per
+   * host and keeps one of them (Button: a push button on a Mac, a pressable on
+   * a phone). Which is kept is the component's `:if`, decided after the
+   * caller's binding first runs, so each is given the value and the one that
+   * is shown has it.
+   */
+  function forwardedHostRoots(node: NativeNode, name: string): NativeNode[] {
+    const found: NativeNode[] = []
+    if (!isBindingNode(node)) return found
     const forward = node.getAttribute('data-stx-native-forward')
     if (!forward || !words(forward).includes(name))
-      return
-    const find = (candidate: NativeNode): NativeNode | undefined => {
+      return found
+    const find = (candidate: NativeNode): void => {
       if (candidate !== node && isBindingNode(candidate) && candidate.hasAttribute('data-stx-native-host-owner'))
         return
-      if (isBindingNode(candidate) && candidate.hasAttribute('data-stx-native-host-root'))
-        return candidate
+      if (isBindingNode(candidate) && candidate.hasAttribute('data-stx-native-host-root')) {
+        found.push(candidate)
+        return
+      }
       for (const child of recordOf(candidate).children) {
         // Another component owns its own forwarding policy.
         if (isBindingNode(child) && child.hasAttribute('data-stx-component-wrapper'))
           continue
-        const match = find(child)
-        if (match) return match
+        find(child)
       }
     }
-    return find(node)
+    find(node)
+    return found
   }
 
   /** Whether `name` is one of the caller's bindings a component wrapper holds for its component. */
@@ -1524,7 +1535,13 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     },
 
     setAttribute(node, name, value) {
-      const forwarded = forwardedHostRoot(node, name)
+      const [forwarded, ...alternates] = forwardedHostRoots(node, name)
+      for (const alternate of alternates) {
+        if (alternate === node) continue
+        reflectAttribute(alternate, name, value)
+        // A caller's class and style are a layer over the root's own, not an attribute of it.
+        if (!applyForwardedStyle(alternate, name, value)) this.setAttribute(alternate, name, value)
+      }
       // Binding metadata is the shared runtime's read side. Keep it in step
       // with the typed renderer prop, as DOM getAttribute follows a write.
       reflectAttribute(node, name, value)
@@ -1606,7 +1623,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     },
 
     removeAttribute(node, name) {
-      const forwarded = forwardedHostRoot(node, name)
+      const [forwarded, ...alternates] = forwardedHostRoots(node, name)
+      for (const alternate of alternates) {
+        if (alternate === node) continue
+        reflectAttribute(alternate, name, undefined, true)
+        if (!applyForwardedStyle(alternate, name, undefined)) this.removeAttribute(alternate, name)
+      }
       reflectAttribute(node, name, undefined, true)
       if (forwarded) {
         reflectAttribute(forwarded, name, undefined, true)
