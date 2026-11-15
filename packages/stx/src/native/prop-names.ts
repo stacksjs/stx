@@ -24,8 +24,9 @@ const NATIVE_PROP_NAMES = [
   'autoScrollBottom', 'scrollKey',
   // An inline completion drawn after the caret of a multi-line TextInput.
   'ghostText',
-  // A Sidebar's row height and label size.
-  'rowHeight', 'labelFontSize',
+  // A Sidebar's row height, its label size and weight, and how far the
+  // selection pill stands in from the edges and a row's content from the pill.
+  'rowHeight', 'labelFontSize', 'labelFontWeight', 'selectionInset', 'contentInset',
   // A video floating in Picture in Picture, and one element across an
   // animated change (craft.animation.next).
   'pictureInPicture', 'transitionID',

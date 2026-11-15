@@ -29,5 +29,8 @@ it('knows the other props and events the macOS host added for text editing and t
   const { NATIVE_EVENT_NAMES } = await import('../../src/native/event-names')
   expect(nativePropName('rowheight')).toBe('rowHeight')
   expect(nativePropName('label-font-size')).toBe('labelFontSize')
+  expect(nativePropName('labelfontweight')).toBe('labelFontWeight')
+  expect(nativePropName('selection-inset')).toBe('selectionInset')
+  expect(nativePropName('contentinset')).toBe('contentInset')
   expect(NATIVE_EVENT_NAMES['selection-change']).toBe('onSelectionChange')
 })
