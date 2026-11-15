@@ -1078,7 +1078,10 @@ ${signals ? `  _beginScope() {
   }
 
   _callScopeMethod(name, args) {
-    if (!this._scopeMethods || this._updatePending) this.render(RENDER_HELPERS);
+    // Template calls already have this render's current prop closures. Refresh
+    // pending props only for an outside call, otherwise a public helper in the
+    // template would recursively render while the queued update is pending.
+    if (!this._scopeRenderDepth && (!this._scopeMethods || this._updatePending)) this.render(RENDER_HELPERS);
     return this._scopeMethods[name].apply(this, args);
   }
 
@@ -1321,8 +1324,13 @@ function componentModule(component: CompiledComponent, runtimeImport = './runtim
 
     renderMethod = `
   render(__helpers) {
-    const { escape: __escape, raw: __raw, values: __values, entries: __entries } = __helpers;
-${indent(compiled.trim())}
+    this._scopeRenderDepth = (this._scopeRenderDepth || 0) + 1;
+    try {
+      const { escape: __escape, raw: __raw, values: __values, entries: __entries } = __helpers;
+${indent(indent(compiled.trim()))}
+    } finally {
+      this._scopeRenderDepth--;
+    }
   }
 `
   }
