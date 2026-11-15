@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.889...v0.2.890)
+
+## 🐛 Bug Fixes
+
+- preserve native component scope ownership ([e2300dc](https://github.com/stacksjs/stx/commit/e2300dc)) _(by Chris Breuer <chris@stacksjs.com>)_
+- compile native typed emit closures ([69a2805](https://github.com/stacksjs/stx/commit/69a2805)) _(by Chris <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.890 ([df5a7f4](https://github.com/stacksjs/stx/commit/df5a7f4)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris <chris@stacksjs.com>_
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.888...v0.2.889)
 
 ## 🐛 Bug Fixes
