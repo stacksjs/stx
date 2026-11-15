@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.892...v0.2.893)
+
+## 🐛 Bug Fixes
+
+- make distributed element chunks reproducible ([fbca874](https://github.com/stacksjs/stx/commit/fbca874)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.893 ([4629604](https://github.com/stacksjs/stx/commit/4629604)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.891...v0.2.892)
 
 ## 🐛 Bug Fixes
