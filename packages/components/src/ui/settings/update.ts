@@ -94,26 +94,26 @@ export function settingsUpdateView(status: Partial<SettingsUpdateStatus> | null 
 
   switch (status.state) {
     case 'unavailable':
-      return view(why || `${app} cannot update itself.`, null)
+    return view(why || `${app} cannot update itself.`, null)
     case 'idle':
-      return view('Check for a newer version.', 'check')
+    return view('Check for a newer version.', 'check')
     case 'checking':
-      return view('Checking for updates...', 'check', { busy: true })
+    return view('Checking for updates...', 'check', { busy: true })
     case 'current':
-      return view(`${app} is up to date.`, 'check')
+    return view(`${app} is up to date.`, 'check')
     case 'available':
-      return canInstall
-        ? view(`${update} is available.`, 'install')
-        : view(`${update} is available. ${why || `${app} cannot update itself.`}`, 'check')
+    return canInstall
+      ? view(`${update} is available.`, 'install')
+      : view(`${update} is available. ${why || `${app} cannot update itself.`}`, 'check')
     case 'downloading':
-      return view(`Downloading ${next ? `version ${next}` : 'the update'}...`, 'install', { busy: true, progress: percent(status.progress) })
+    return view(`Downloading ${next ? `version ${next}` : 'the update'}...`, 'install', { busy: true, progress: percent(status.progress) })
     case 'installing':
-      return view(`Installing ${next ? `version ${next}` : 'the update'}...`, 'install', { busy: true })
+    return view(`Installing ${next ? `version ${next}` : 'the update'}...`, 'install', { busy: true })
     case 'installed':
-      return view(`${update} is installed. Restart ${app} to finish updating.`, 'relaunch')
+    return view(`${update} is installed. Restart ${app} to finish updating.`, 'relaunch')
     case 'error':
-      return view(String(status.error || '').trim() || 'The update could not be completed.', 'check', { failed: true })
+    return view(String(status.error || '').trim() || 'The update could not be completed.', 'check', { failed: true })
     default:
-      return view('', null)
+    return view('', null)
   }
 }
