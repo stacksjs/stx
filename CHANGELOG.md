@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.893...v0.2.894)
+
+## ✨ Features
+
+- **native**: say how a path is opened, and type a DatePicker's locale ([531e03d](https://github.com/stacksjs/stx/commit/531e03d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([craft-native/craft#526](https://github.com/craft-native/craft/issues/526), [craft-native/craft#546](https://github.com/craft-native/craft/issues/546))
+
+## 🐛 Bug Fixes
+
+- **native**: hand a node the props its classes imply on the first draw too (#2195) ([a7d3273](https://github.com/stacksjs/stx/commit/a7d3273)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2195](https://github.com/stacksjs/stx/issues/2195))
+
+## 🔧 Chores
+
+- release v0.2.894 ([704e64b](https://github.com/stacksjs/stx/commit/704e64b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.892...v0.2.893)
 
 ## 🐛 Bug Fixes
