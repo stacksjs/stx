@@ -6,8 +6,9 @@ import type {
   ComponentLibraryEvent,
   ComponentLibraryProperty,
 } from './types'
-import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, realpath, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { builtinModules } from 'node:module'
 import { scriptAttributes, scriptContainsCode } from './script-attributes'
 import { topLevelDeclarationSites } from './client-parameter-bindings'
 import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
@@ -77,6 +78,7 @@ const RESERVED_METHODS = new Set([
   'attributeChangedCallback',
   'adoptedCallback',
 ])
+const SERVER_MODULES = new Set(builtinModules)
 
 function toPascalCase(value: string): string {
   return value
@@ -973,6 +975,32 @@ export function parseDefaults(object: string): Array<[string, string]> {
   return pairs
 }
 
+/** Keep real module imports from every authored script, including method blocks. */
+function hoistScriptImports(code: string, file: string, outputDir: string): { imports: string[], body: string } {
+  const masked = stripCommentsAndLiterals(code)
+  const depths = bracketDepths(masked).depths
+  const imports: string[] = []
+  const spans: Array<{ start: number, end: number }> = []
+  for (const match of masked.matchAll(/\bimport\b/g)) {
+    const start = match.index!
+    if (depths[start] !== 0) continue
+    // Dynamic import() and import.meta are expressions, not declarations.
+    const declaration = /^import\s*(?:[^'";]*?\bfrom\s*)?(['"])([^'"\r\n]+)\1(?:\s+with\s*\{[^}]*\})?\s*;?/.exec(code.slice(start))
+    if (!declaration) continue
+    const statement = declaration[0]
+    spans.push({ start, end: start + statement.length })
+    if (declaration[2] === 'stx') continue
+    const specifier = declaration[2]!
+    const target = specifier.startsWith('.') ? path.resolve(path.dirname(file), specifier) : undefined
+    const rewritten = target ? path.relative(outputDir, target).split(path.sep).join('/') : specifier
+    const offset = statement.indexOf(declaration[1]! + specifier + declaration[1]!) + 1
+    imports.push(statement.slice(0, offset) + (target && !rewritten.startsWith('.') ? `./${rewritten}` : rewritten) + statement.slice(offset + specifier.length))
+  }
+  let body = code
+  for (const span of spans.reverse()) body = body.slice(0, span.start) + body.slice(span.end)
+  return { imports, body }
+}
+
 function compileScriptScope(source: string, file: string, outputDir: string): {
   imports: string[]
   body: string
@@ -994,22 +1022,9 @@ function compileScriptScope(source: string, file: string, outputDir: string): {
   /** Prop name to the TypeScript type the component declared for it. */
   const declared: Record<string, string> = {}
 
-  // Hoist imports, minus stx's own compile-time helpers, which have no runtime
-  // meaning once the props they declare have become element properties.
-  code = code.replace(/^\s*import\s+[\s\S]*?from\s*['"][^'"]+['"];?\s*$/gm, (statement) => {
-    if (/from\s*['"]stx['"]/.test(statement)) return ''
-
-    // A relative specifier was written against the component's own directory,
-    // and the generated module lives in the output one. Left alone it resolves
-    // to nothing and the bundle fails with a path the author never typed, so
-    // it is rewritten to mean the same file from where it now sits.
-    imports.push(statement.trim().replace(/(from\s*['"])(\.[^'"]*)(['"])/, (_all, open, specifier, close) => {
-      const target = path.resolve(path.dirname(file), specifier)
-      const rewritten = path.relative(outputDir, target)
-      return `${open}${rewritten.startsWith('.') ? rewritten : `./${rewritten}`}${close}`
-    }))
-    return ''
-  })
+  const hoisted = hoistScriptImports(code, file, outputDir)
+  imports.push(...hoisted.imports)
+  code = hoisted.body
 
   // The props declaration tells us the public surface and the defaults, in
   // whichever form it is written, and is then removed rather than compiled: it
@@ -1148,6 +1163,12 @@ async function compileComponent(
   const eventCompilation = compileEventDirectives(extractTemplate(source))
   const bindingCompilation = compileDynamicBindings(eventCompilation.template)
   const scope = compileScriptScope(source, sourcePath, path.resolve(defaults.outputDir))
+  for (const script of scanHtmlScriptElements(componentScriptSource(source))) {
+    const attrs = scriptAttributes(script.attrs)
+    if (!attrs.has('client') || ['server', 'component', 'stx:component', 'src'].some(name => attrs.has(name)) || !scriptContainsCode(attrs)) continue
+    scope.imports.push(...hoistScriptImports(source.slice(script.bodyStart, script.bodyEnd), sourcePath, path.resolve(defaults.outputDir)).imports)
+  }
+  scope.imports = [...new Set(scope.imports)]
   const render = compileTemplateToRender(bindingCompilation.template)
 
   // A prop declared with defineProps is part of the element's public surface,
@@ -1806,10 +1827,11 @@ export async function buildComponentLibrary(config: ComponentLibraryConfig): Pro
 
   await mkdir(outputDir, { recursive: true })
   const files: string[] = []
-  const emit = async (filename: string, content: string): Promise<string> => {
+  const emit = async (filename: string, content: string | Uint8Array): Promise<string> => {
     const target = path.join(outputDir, filename)
-    await writeFile(target, content.endsWith('\n') ? content : `${content}\n`, 'utf8')
-    files.push(target)
+    await mkdir(path.dirname(target), { recursive: true })
+    await writeFile(target, typeof content === 'string' && !content.endsWith('\n') ? `${content}\n` : content)
+    if (!files.includes(target)) files.push(target)
     return target
   }
 
@@ -1821,6 +1843,31 @@ export async function buildComponentLibrary(config: ComponentLibraryConfig): Pro
       const css = component.shadowMode ? component.styles : scopeLightDomCss(component)
       await emit(`${component.tag}.css`, config.minify ? minifyCss(css) : css)
     }
+  }
+
+  if (components.some(component => component.scope.imports.length)) {
+    // Resolve TS/npm/transitive browser dependencies before distribution. A
+    // single split build preserves shared module identity between elements;
+    // separately bundling each entry would duplicate imported stores/effects.
+    const entrypoints = components.map(component => path.join(outputDir, `${component.tag}.js`))
+    const canonicalEntries = new Set(await Promise.all(entrypoints.map(file => realpath(file))))
+    const built = await Bun.build({
+      entrypoints, outdir: outputDir, root: outputDir,
+      target: 'browser', format: 'esm', splitting: true,
+      naming: { entry: '[name].js', chunk: 'chunks/[name]-[hash].js' },
+      minify: false, loader: { '.js': 'ts' },
+      plugins: [{ name: 'stx-element-runtime', setup(builder) {
+        builder.onResolve({ filter: /.*/ }, args => {
+          if (args.path === 'bun' || args.path.startsWith('bun:') || args.path.startsWith('node:') || SERVER_MODULES.has(args.path)) throw new Error(`Server-only import ${JSON.stringify(args.path)} is not available in a browser component (${args.importer})`)
+          if (args.path === './runtime.js' && canonicalEntries.has(args.importer)) return { path: './runtime.js', external: true }
+        })
+      } }],
+    }).catch(error => {
+      const details = (error instanceof AggregateError ? error.errors : [error]).map(String).join('\n')
+      throw new Error(`Failed to bundle browser component imports\n${details}`)
+    })
+    if (!built.success) throw new Error(`Failed to bundle component imports\n${built.logs.map(String).join('\n')}`)
+    for (const output of built.outputs) await emit(path.relative(outputDir, output.path), new Uint8Array(await output.arrayBuffer()))
   }
 
   const indexSource = components.map(component =>

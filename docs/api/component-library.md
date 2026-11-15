@@ -23,6 +23,7 @@ Given `src/components/Button.stx`, this infers `<acme-button>` and emits:
 |--------|---------|
 | `acme-button.js` / `.d.ts` / `.css` | Tree-shakeable component entry, types, and CSS |
 | `runtime.js` | Shared, zero-dependency web-platform runtime |
+| `chunks/*.js` (when needed) | Shared authored browser dependencies used by ESM component entries |
 | `index.js` / `index.d.ts` | Library exports |
 | `bundle.js` / `bundle.css` | Single-file distribution builds |
 | `custom-elements.json` | Custom Elements Manifest for IDEs and ecosystem tools |
@@ -78,6 +79,10 @@ button {
 ```
 
 Client functions become element methods. Event directives accept a method name and the familiar `.prevent` and `.stop` modifiers. Simple STX bindings such as `:disabled="disabled"`, `:class="variant"`, and `{{ label }}` react to property changes. `{{ value }}` is HTML-escaped; `{!! trustedHtml !!}` is the explicit raw-HTML escape hatch.
+
+Client methods can explicitly import browser helpers from relative TypeScript modules or installed packages. Named, aliased, default, namespace and side-effect imports are resolved during the build, including their transitive dependencies. Type-only imports have no runtime effect. Helpers declare their own imports; no STX page globals are supplied by the custom-element host. Use `this` for per-element state, and `onConnect` / `onDisconnect` for setup and cleanup. Authored browser modules retain ordinary shared module identity across elements.
+
+Distribute the complete emitted directory, including any `chunks/` files. Both individual ESM entries and `bundle.js` work without the author's source tree. `bundle: false` disables only the standalone bundle; browser dependencies are still compiled into the ESM distribution. Server-only modules such as `node:fs` fail the browser build. Component metadata and SSR helper generation do not execute these browser dependencies.
 
 Property types are `string`, `number`, `boolean`, `object`, and `array`. Properties reflect to kebab-case attributes by default. Use `"attribute": false` for property-only values, a string for a custom attribute name, or `"reflect": false` to accept attribute input without reflecting later property writes.
 

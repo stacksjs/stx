@@ -134,7 +134,7 @@ const { unit, invert, scale } = withDefaults(defineProps<Props>(), { unit: 'numb
     expect(renderOf(source)).toContain('scale = 2')
   })
 
-  it('hoists a helper import and points it at the built module', async () => {
+  it('bundles helper imports into the distributed element module', async () => {
     const source = await build(`
 <script>
 import { defineProps } from 'stx'
@@ -147,9 +147,9 @@ const { value } = defineProps<Props>()
 
     // Sharing helpers with the rest of a codebase is the reason to write the
     // component in stx rather than restating it in the consuming language. The
-    // specifier is rewritten because the module now lives in the output tree.
-    expect(source).toContain('import { format } from')
-    expect(source).toContain('../src/helpers')
+    // dependency must be shipped rather than pointing back into author source.
+    expect(source).toContain('String(n)')
+    expect(source).not.toMatch(/from ['"]\.\.\/src\/helpers/)
     // stx's own compile-time helpers have no runtime meaning and must not survive.
     expect(source).not.toContain("from 'stx'")
   })
