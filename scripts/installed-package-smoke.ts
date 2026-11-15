@@ -66,6 +66,19 @@ writeFileSync(join(smokeRoot, '.npmrc'), [`registry=${registry.url}`, 'always-au
 // that adds a file, installed the first run's copy and failed here on the
 // missing file, although the archive in hand was right.
 const installCache = join(smokeRoot, '.bun-install-cache')
+copyFileSync(join(root, 'packages/stx/test-utils/happy-dom.ts'), join(smokeRoot, 'happy-dom.ts'))
+// Shared emit authoring is qualified from exactly the archives being released.
+// Only test harnesses are copied; compiler and native signal code stay installed.
+copyFileSync(join(root, 'packages/stx/test-utils/browser-fixture.ts'), join(smokeRoot, 'browser-fixture.ts'))
+for (const fixture of ['component-library-emits.test.ts', 'component-library-emits-browser.test.ts']) {
+  const test = readFileSync(join(root, 'packages/stx/test/web-components', fixture), 'utf8')
+    .replaceAll("'../../src/component-library'", "'@stacksjs/stx/component-library'")
+    .replaceAll("'../../src/process'", "'@stacksjs/stx/process'")
+    .replaceAll("'../../src/temp-dir'", "'@stacksjs/stx/temp-dir'")
+    .replaceAll("'../../test-utils/browser-fixture'", "'./browser-fixture'")
+    .replace("const buildComponentLibrary = process.env.STX_LIBRARY_DIST ? (await import('../../dist/component-library.js')).buildComponentLibrary : sourceBuild", 'const buildComponentLibrary = sourceBuild')
+  writeFileSync(join(smokeRoot, fixture), test)
+}
 let normalLock: string | undefined
 for (const flags of [[], ['--frozen-lockfile']]) {
   await run([process.execPath, '--no-env-file', 'install', `--registry=${registry.url}`, ...flags], smokeRoot, { BUN_INSTALL_CACHE_DIR: installCache })
@@ -74,6 +87,8 @@ for (const flags of [[], ['--frozen-lockfile']]) {
   if (normalLock) assert.equal(lock, normalLock, 'Frozen install changed the qualified lockfile')
   else normalLock = lock
   await verifyPublicTypes(smokeRoot, publicTypeArchives, flags.length ? 'frozen' : 'normal', { kind: 'prepublication-original-archives', url: registry.url, requests: registry.requests })
+  await run([process.execPath, '--no-env-file', 'test', '--preload', './happy-dom.ts', './component-library-emits.test.ts', './component-library-emits-browser.test.ts'])
+  console.log(`native emits original-archive ${flags.length ? 'frozen' : 'normal'} consumer passed`)
 }
 
 // Public prop projection must come from the untouched compiler archive, with

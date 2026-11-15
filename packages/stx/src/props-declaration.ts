@@ -2,6 +2,7 @@
 import { topLevelDeclarationSites } from './client-parameter-bindings'
 import { Tokenizer } from './parser/tokenizer'
 import { parseStringLiteral } from './directive-arguments'
+import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 
 function withoutComments(source: string): string {
   const tokens = new Tokenizer(source, 'javascript').tokenize()
@@ -482,4 +483,29 @@ export function literalValue(source: string): unknown {
     return cursor === tokens.length ? result : undefined
   }
   catch { return undefined }
+}
+
+/** Resolve local macro-support types with the same balanced scanner as props. */
+export function localType(code: string, name: string): string | undefined {
+  const masked = stripCommentsAndLiterals(code)
+  const depths = bracketDepths(masked).depths
+  const pattern = /\b(interface|type)\s+([A-Za-z_$][\w$]*)\b/g
+  for (const match of masked.matchAll(pattern)) {
+    if (match[2] !== name || depths[match.index!] !== 0) continue
+    const start = match.index! + match[0].length
+    const open = masked.indexOf('{', start)
+    if (match[1] === 'interface' && open >= 0) {
+      const end = skipBalanced(masked, open, '{', '}')
+      if (end >= 0) return code.slice(open, end)
+    }
+    if (match[1] === 'type') {
+      const equal = masked.indexOf('=', start)
+      if (equal < 0) continue
+      const rest = code.slice(equal + 1).trimStart()
+      if (rest[0] === '{') {
+        const end = skipBalanced(rest, 0, '{', '}')
+        if (end >= 0) return rest.slice(0, end)
+      }
+    }
+  }
 }

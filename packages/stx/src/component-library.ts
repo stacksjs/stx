@@ -1,4 +1,5 @@
 import { scanHtmlScriptElements } from './html-masking'
+import { parseEmitsDeclaration } from './emits-declaration'
 import type {
   ComponentLibraryBuildResult,
   ComponentLibraryComponent,
@@ -13,7 +14,7 @@ import { scriptAttributes, scriptContainsCode } from './script-attributes'
 import { topLevelDeclarationSites } from './client-parameter-bindings'
 import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 import { Tokenizer } from './parser/tokenizer'
-import { literalValue, parseDefaults, parsePropsDeclaration, skipBalanced, splitTopLevel } from './props-declaration'
+import { literalValue, localType, parseDefaults, parsePropsDeclaration, skipBalanced, splitTopLevel } from './props-declaration'
 export { parseDefaults } from './props-declaration'
 
 export interface SourceMetadata {
@@ -44,11 +45,13 @@ interface CompiledComponent {
   methodDeclarations: Record<string, string[]>
   declarationTypes: string
   eventTypes: string[]
+  handlers: string[]
+  scopeMethods: string[]
   bindings: Array<{ id: number, name: string, expression: string }>
   slots: Array<{ name: string, description?: string }>
   cssProperties: Array<{ name: string, description?: string }>
   /** The component's script, compiled: hoisted imports and the derived scope. */
-  scope: { imports: string[], body: string, propNames: string[], propBindings: Record<string, string>, defaults: Record<string, string> }
+  scope: { imports: string[], body: string, propNames: string[], propBindings: Record<string, string>, defaults: Record<string, string>, apis: string[] }
   /** The template's control flow, compiled into a render function body. */
   render: string
 }
@@ -254,17 +257,19 @@ function extractClientMethods(source: string, file: string): { methods: Record<s
     code: source.slice(script.bodyStart, script.bodyEnd),
     attributes: scriptAttributes(script.attrs),
   })).filter(({ attributes }) => !['src', 'server', 'component', 'stx:component'].some(name => attributes.has(name)) && scriptContainsCode(attributes))
+  const combined = scripts.map(script => script.code).join('\n')
+  const publicProps = parsePropsDeclaration(combined)
+  const publicEmits = parseEmitsDeclaration(combined)
   for (const script of scripts) {
-    const { code, attributes } = script
+    const { code } = script
     try { new Bun.Transpiler({ loader: 'ts' }).transformSync(code) }
     catch (error) { throw new Error(`${file}: failed to transpile <script client> (${(error as Error).message})`) }
-    const props = attributes.has('client') ? null : parsePropsDeclaration(code)
-    const extracted = attributes.has('client') ? clientMethods(code) : []
+    const extracted = clientMethods(code)
     const overloads = new Set(extracted.filter(method => !method.source).map(method => method.name))
     for (const method of extracted) {
       if (RESERVED_METHODS.has(method.name)) throw new Error(`${file}: client ${reservedMethodMessage(method.name)}`)
       if (method.source) {
-        methods[method.name] = new Bun.Transpiler({ loader: 'ts' }).transformSync(method.source).trim().replace(/^(?:export\s+)?(async\s+)?function\s+/, '$1')
+        methods[method.name] = `${method.name}(...args) { return this._callScopeMethod(${JSON.stringify(method.name)}, args); }`
       }
       if (!method.source || !overloads.has(method.name)) (declarations[method.name] ??= []).push(methodDeclaration(method))
     }
@@ -304,15 +309,21 @@ function extractClientMethods(source: string, file: string): { methods: Record<s
       // in a separate client block can still need this props-support type.
       const remaining = scripts.map(other => {
         const body = other === script ? code.slice(0, declarationStart) + code.slice(cursor) : other.code
-        return stripCommentsAndLiterals(body.replace(parsePropsDeclaration(other.code)?.text ?? '\0', ''))
+        return stripCommentsAndLiterals(body.replace(parsePropsDeclaration(other.code)?.text ?? '\0', '').replace(parseEmitsDeclaration(other.code)?.text ?? '\0', ''))
       }).join('\n')
-      const macroOnly = props?.typeName === name && !/^export\s/.test(declaration) && name && !new RegExp(`\\b${name}\\b`).test(remaining)
+      const macroOnly = (publicProps?.typeName === name || publicEmits?.typeName === name) && !/^export\s/.test(declaration) && name && !new RegExp(`\\b${name}\\b`).test(remaining)
       if (!macroOnly) types.push(declaration.replace(/^export\s+/, '').trim())
       typePattern.lastIndex = cursor + 1
     }
   }
-  const referenced = Object.values(declarations).flat().join('\n') + '\n' + types.join('\n')
-  const usedImports = imports.filter(imported => (imported.binding.match(/[A-Za-z_$][\w$]*/g) || []).filter(name => !['type', 'as'].includes(name)).some(name => new RegExp(`\\b${name}\\b`).test(referenced)))
+  const referenced = Object.values(declarations).flat().join('\n') + '\n' + types.join('\n') + '\n' + Object.values(publicEmits?.events || {}).map(event => event.detailType).join('\n')
+  const referenceTokens = new Tokenizer(referenced, 'javascript').tokenize().filter(token => !['WHITESPACE', 'COMMENT'].includes(token.type))
+  const typeReferences = new Set(referenceTokens.filter((token, index) => {
+    if (referenceTokens[index - 1]?.value === '.') return false
+    const next = referenceTokens[index + 1]?.value
+    return next !== ':' && !(next === '?' && referenceTokens[index + 2]?.value === ':')
+  }).map(token => token.value))
+  const usedImports = imports.filter(imported => (imported.binding.match(/[A-Za-z_$][\w$]*/g) || []).filter(name => !['type', 'as'].includes(name)).some(name => typeReferences.has(name)))
   for (const imported of usedImports) {
     if (imported.module.startsWith('.') || path.isAbsolute(imported.module)) throw new Error(`${file}: public method types import ${JSON.stringify(imported.module)} outside the generated package; declare these types in the component or import them from a published dependency`)
   }
@@ -577,7 +588,7 @@ function hoistScriptImports(code: string): { imports: string[], body: string } {
     if (tokens[last + 1]?.value === ';') last++
     const end = start + tokens[last]!.end
     spans.push({ start, end })
-    if (specifier.value.slice(1, -1) !== 'stx') imports.push(code.slice(start, end))
+    if (!['stx', '@stacksjs/stx'].includes(specifier.value.slice(1, -1))) imports.push(code.slice(start, end))
   }
   let body = code
   for (const span of spans.reverse()) body = body.slice(0, span.start) + body.slice(span.end)
@@ -609,13 +620,14 @@ function compileScriptScope(source: string): {
   propBindings: Record<string, string>
   defaults: Record<string, string>
   declared: Record<string, string>
+  apis: string[]
 } {
   const scripts = scanHtmlScriptElements(componentScriptSource(source))
-  const block = scripts.find(script => { const attrs = scriptAttributes(script.attrs); return scriptContainsCode(attrs) && !['component','stx:component','client','server','src'].some(name => attrs.has(name)) })
+  const blocks = scripts.filter(script => { const attrs = scriptAttributes(script.attrs); return scriptContainsCode(attrs) && !['component', 'stx:component', 'server', 'src'].some(name => attrs.has(name)) })
 
-  if (!block) return { imports: [], body: '', propNames: [], propBindings: {}, defaults: {}, declared: {} }
+  if (!blocks.length) return { imports: [], body: '', propNames: [], propBindings: {}, defaults: {}, declared: {}, apis: [] }
 
-  let code = source.slice(block.bodyStart, block.bodyEnd)
+  let code = blocks.map(block => source.slice(block.bodyStart, block.bodyEnd)).join('\n')
   const imports: string[] = []
   const propNames: string[] = []
   const propBindings: Record<string, string> = Object.create(null)
@@ -654,50 +666,55 @@ function compileScriptScope(source: string): {
    * "Revenue" was then JSON-parsed, failed, and rendered as [object Object] on
    * the page. The interface says `string`; there is no reason to guess.
    */
-  const interfaceMembers: Record<string, string[]> = {}
-  for (const block of code.matchAll(/(?:export\s+)?interface\s+([A-Za-z_$][\w$]*)\s*\{([\s\S]*?)\n\}/g)) {
-    const members: string[] = []
-    for (const member of block[2].matchAll(/^\s*(?:\/\*\*[\s\S]*?\*\/\s*)?([A-Za-z_$][\w$]*)\??\s*:\s*([^\n;]+)/gm)) {
-      declared[member[1]] = member[2].trim()
-      members.push(member[1])
-    }
-    interfaceMembers[block[1]] = members
-  }
-
-  // `defineProps<Props>()` states its surface in an interface rather than
-  // inline, so the names are only in hand once those are scanned. Without this
-  // the type is read and the properties are not, which is the shape that makes
-  // a component compile and then render undefined for everything.
-  if (props && props.propNames.length === 0 && props.typeName) {
-    for (const name of interfaceMembers[props.typeName] ?? []) {
-      if (!propNames.includes(name))
-        propNames.push(name)
+  if (props?.typeName) {
+    const type = localType(code, props.typeName)
+    if (type) {
+      for (const member of splitTopLevel(type.slice(1, -1), ';,\n', true)) {
+        const parsed = /^(?:readonly\s+)?([A-Za-z_$][\w$]*)\??\s*:\s*([\s\S]+)$/.exec(member)
+        if (!parsed) continue
+        declared[parsed[1]!] = parsed[2]!.trim()
+        if (!propNames.includes(parsed[1]!)) propNames.push(parsed[1]!)
+      }
     }
   }
 
-  // The interface that typed the props has no runtime form.
-  code = code.replace(/(?:export\s+)?interface\s+[A-Za-z_$][\w$]*\s*\{[\s\S]*?\n\}/g, '')
+  const emits = parseEmitsDeclaration(code)
+  if (emits) code = code.replace(emits.text, 'this._emitScope.bind(this)')
+  // Public script exports become declarations in the generated lexical scope.
+  const publicMask = stripCommentsAndLiterals(code)
+  const publicDepths = bracketDepths(publicMask).depths
+  for (const match of [...publicMask.matchAll(/\bexport\s+(?=(?:interface|type|const|let|var|async|function)\b)/g)].reverse()) {
+    if (publicDepths[match.index!] === 0) code = code.slice(0, match.index!) + ' '.repeat(match[0].length) + code.slice(match.index! + match[0].length)
+  }
 
   // Returned as TypeScript, deliberately unbuilt. Transpiling the script on its
   // own hands the compiler a set of declarations nothing reads, and it removes
   // them as dead: the template that uses them has not been attached yet. The
   // two are built together further down, where `const doubled = total * 2` is
   // visibly used by the line that prints it and survives.
-  return { imports, body: code.trim(), propNames, propBindings, defaults, declared }
+  const locals = new Set(topLevelDeclarationSites(code).map(site => site.name))
+  const masked = stripCommentsAndLiterals(code)
+  const apis = ['state', 'derived', 'effect', 'batch', 'onMount', 'onDestroy'].filter(name => !locals.has(name) && new RegExp(`\\b${name}\\s*(?:<|\\()`).test(masked))
+  return { imports, body: code.trim(), propNames, propBindings, defaults, declared, apis }
 }
 
-function compileEventDirectives(template: string): { template: string, eventTypes: string[] } {
+function compileEventDirectives(template: string): { template: string, eventTypes: string[], handlers: string[] } {
   const eventTypes = new Set<string>()
+  const handlers: string[] = []
   const compiled = template.replace(
-    /\s@([a-z][\w:-]*)(\.[\w.-]+)?\s*=\s*(["'])([A-Za-z_$][\w$]*)\3/gi,
-    (_match, eventName: string, modifiers: string | undefined, _quote: string, method: string) => {
+    /\s@([a-z][\w:-]*)(\.[\w.-]+)?\s*=\s*(["'])([\s\S]*?)\3/gi,
+    (_match, eventName: string, modifiers: string | undefined, _quote: string, expression: string) => {
       const event = eventName.toLowerCase()
       eventTypes.add(event)
       const normalizedModifiers = (modifiers || '').split('.').filter(Boolean).join(' ')
-      return ` data-stx-on-${event}="${method}"${normalizedModifiers ? ` data-stx-mod-${event}="${normalizedModifiers}"` : ''}`
+      const id = handlers.length
+      // Expressions are compiled here, never read back and executed as strings.
+      handlers.push(/^[A-Za-z_$][\w$]*$/.test(expression.trim())
+        ? `($event) => (typeof ${expression} === 'function' ? ${expression} : this[${JSON.stringify(expression.trim())}]).call(this, $event)` : `($event) => { ${expression} }`)
+      return ` data-stx-on-${event}="${id}"${normalizedModifiers ? ` data-stx-mod-${event}="${normalizedModifiers}"` : ''}`
     },
   )
-  return { template: compiled, eventTypes: [...eventTypes].sort() }
+  return { template: compiled, eventTypes: [...eventTypes].sort(), handlers }
 }
 
 function compileDynamicBindings(template: string): {
@@ -802,11 +819,13 @@ async function compileComponent(
     shadowMode: normalizeShadowMode(entry.shadowDOM ?? metadata.shadowDOM ?? defaults.shadowDOM),
     progressive: entry.progressive ?? metadata.progressive ?? defaults.progressive ?? true,
     properties,
-    events: entry.events || metadata.events || {},
+    events: { ...(parseEmitsDeclaration(scanHtmlScriptElements(componentScriptSource(source)).filter(script => { const attrs = scriptAttributes(script.attrs); return scriptContainsCode(attrs) && !['server', 'component', 'stx:component', 'src'].some(name => attrs.has(name)) }).map(script => source.slice(script.bodyStart, script.bodyEnd)).join('\n'))?.events || {}), ...(entry.events || metadata.events || {}) },
     methods: { ...metadataMethods, ...configuredMethods, ...extractedMethods.methods },
     methodDeclarations: extractedMethods.declarations,
     declarationTypes: extractedMethods.types,
     eventTypes: eventCompilation.eventTypes,
+    handlers: eventCompilation.handlers,
+    scopeMethods: Object.keys(extractedMethods.methods),
     bindings: bindingCompilation.bindings,
     slots: extractSlots(bindingCompilation.template),
     cssProperties: extractCssProperties(extractStyles(source)),
@@ -815,10 +834,10 @@ async function compileComponent(
   }
 }
 
-function runtimeModule(): string {
+function runtimeModule(signals = false): string {
   const rawInterpolation = JSON.stringify('\\{!!\\s*([\\w$.]+)\\s*!!\\}')
   const escapedInterpolation = JSON.stringify('\\{\\{\\s*([\\w$.]+)\\s*\\}\\}')
-  return `const HTMLElementBase = globalThis.HTMLElement || class {};
+  return `${signals ? `import { state as nativeState, derived as nativeDerived, effect as nativeEffect, batch as nativeBatch } from './signals.js';\n` : ''}const HTMLElementBase = globalThis.HTMLElement || class {};
 
 const escapeHTML = (value) => String(value ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
@@ -880,6 +899,13 @@ export class StxElement extends HTMLElementBase {
     this._initializing = false;
     this._updatePending = false;
     this._listeners = new Map();
+    this._scopeStates = [];
+    this._scopeDerived = [];
+    this._scopeEffects = [];
+    this._scopeSubscriptions = [];
+    this._scopeMounts = [];
+    this._scopeDestroys = [];
+    this._scopeMountCleanups = [];
     const definition = this.constructor.definition;
     for (const [name, property] of Object.entries(definition.properties || {})) {
       this._values[name] = defaultFor(property);
@@ -910,7 +936,10 @@ export class StxElement extends HTMLElementBase {
     const hasMarkup = [...(root.childNodes || [])].some(node => node.nodeType !== 3 || node.textContent.trim());
     const firstConnection = !this._hasConnected;
     if (!(firstConnection && definition.progressive && hasMarkup)) this._render();
-    else this._upgradeDeclarativeEvents();
+    else {
+      if (typeof this.render === 'function') this.render(RENDER_HELPERS);
+      this._upgradeDeclarativeEvents();
+    }
     this._bindEvents();
     if (firstConnection) {
       this._hasConnected = true;
@@ -920,6 +949,7 @@ export class StxElement extends HTMLElementBase {
     // Called last, so a component that acquires something sees its own rendered
     // markup and its events already bound. Reported rather than rethrown: a
     // component that fails to set up must not take the element down with it.
+    this._runScopeMounts();
     try { this.onConnect?.(); }
     catch (error) { console.error('[stx] onConnect failed', error); }
   }
@@ -932,6 +962,11 @@ export class StxElement extends HTMLElementBase {
     try { this.onDisconnect?.(); }
     catch (error) { console.error('[stx] onDisconnect failed', error); }
     finally {
+      this._disposeScopeEffects();
+      for (const dispose of this._scopeSubscriptions.splice(0)) dispose?.();
+      for (const cleanup of [...this._scopeDestroys, ...this._scopeMountCleanups.splice(0)]) {
+        try { cleanup(); } catch (error) { console.error('[stx] scope cleanup failed', error); }
+      }
       for (const [event, listener] of this._listeners) this.renderRoot.removeEventListener(event, listener);
       this._listeners.clear();
     }
@@ -980,6 +1015,62 @@ export class StxElement extends HTMLElementBase {
     }));
   }
 
+  _disposeScopeEffects() {
+    for (const dispose of this._scopeEffects.splice(0)) dispose();
+  }
+
+  _runScopeMounts() {
+    for (const mount of this._scopeMounts) {
+      try { const cleanup = mount(); if (typeof cleanup === 'function') this._scopeMountCleanups.push(cleanup); }
+      catch (error) { console.error('[stx] onMount failed', error); }
+    }
+  }
+
+${signals ? `  _beginScope() {
+    this._disposeScopeEffects();
+    this._scopeMounts = [];
+    this._scopeDestroys = [];
+    let stateIndex = 0, derivedIndex = 0;
+    return {
+      state: (initial) => {
+        const index = stateIndex++;
+        const value = this._scopeStates[index] ||= nativeState(initial);
+        if (this._connected && !this._scopeSubscriptions[index]) this._scopeSubscriptions[index] = value.subscribe(() => this.requestUpdate());
+        return value;
+      },
+      derived: (compute, options) => {
+        const index = derivedIndex++;
+        let entry = this._scopeDerived[index];
+        if (!entry) {
+          entry = { compute, revision: nativeState(0) };
+          entry.value = nativeDerived(() => { entry.revision(); return entry.compute(); }, options);
+          this._scopeDerived[index] = entry;
+        } else {
+          entry.compute = compute;
+          entry.revision.update(value => value + 1);
+        }
+        return entry.value;
+      },
+      effect: (callback, options) => {
+        const dispose = nativeEffect(callback, options);
+        this._scopeEffects.push(dispose);
+        return dispose;
+      },
+      batch: nativeBatch,
+      onMount: callback => this._scopeMounts.push(callback),
+      onDestroy: callback => this._scopeDestroys.push(callback),
+    };
+  }
+
+` : ''}  _emitScope(name, ...args) {
+    return this.emit(name, args.length === 1 ? args[0] : args, { cancelable: true });
+  }
+
+  _callScopeMethod(name, args) {
+    if (!this._scopeMethods || this._updatePending) this.render(RENDER_HELPERS);
+    return this._scopeMethods[name].apply(this, args);
+  }
+
   _upgradeProperty(name) {
     if (!Object.prototype.hasOwnProperty.call(this, name)) return;
     const value = this[name];
@@ -1008,10 +1099,12 @@ export class StxElement extends HTMLElementBase {
         const target = $event.target?.closest?.(selector);
         if (!target || !this.renderRoot.contains(target)) return;
         const modifiers = (target.getAttribute('data-stx-mod-' + event) || '').split(' ');
+        if (modifiers.includes('self') && target !== $event.target) return;
         if (modifiers.includes('prevent')) $event.preventDefault();
         if (modifiers.includes('stop')) $event.stopPropagation();
         const method = target.getAttribute('data-stx-on-' + event);
-        if (typeof this[method] === 'function') this[method]($event);
+        if (this._handlers?.[method]) this._handlers[method]($event);
+        else if (typeof this[method] === 'function') this[method]($event);
       };
       this.renderRoot.addEventListener(event, listener);
       this._listeners.set(event, listener);
@@ -1182,8 +1275,11 @@ function componentModule(component: CompiledComponent, runtimeImport = './runtim
 
   if (component.render.trim() !== '' || scope.body !== '' || destructured !== '') {
     const inner = [
+      scope.apis.length ? `const { ${scope.apis.join(', ')} } = this._beginScope();` : '',
       destructured ? `const { ${destructured} } = this._props();` : '',
       scope.body,
+      component.scopeMethods.length ? `this._scopeMethods = { ${component.scopeMethods.join(', ')} };` : '',
+      component.handlers.length ? `this._handlers = [${component.handlers.join(', ')}];` : '',
       `let out = '';`,
       component.render,
       'return out;',
@@ -1259,6 +1355,12 @@ export interface ${component.name} extends Required<Pick<${component.name}Props,
 
 export declare class ${component.name} extends HTMLElement {
 ${methods}
+  addEventListener<K extends keyof ${component.name}EventMap>(type: K, listener: (this: ${component.name}, event: ${component.name}EventMap[K]) => unknown, options?: boolean | AddEventListenerOptions): void
+  addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, event: HTMLElementEventMap[K]) => unknown, options?: boolean | AddEventListenerOptions): void
+  addEventListener(type: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions): void
+  removeEventListener<K extends keyof ${component.name}EventMap>(type: K, listener: (this: ${component.name}, event: ${component.name}EventMap[K]) => unknown, options?: boolean | EventListenerOptions): void
+  removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, event: HTMLElementEventMap[K]) => unknown, options?: boolean | EventListenerOptions): void
+  removeEventListener(type: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | EventListenerOptions): void
   readonly updateComplete: Promise<void>
   requestUpdate(): Promise<void>
   emit<T = unknown>(name: string, detail?: T, options?: CustomEventInit<T>): boolean
@@ -1280,7 +1382,7 @@ function customElementsDeclaration(components: CompiledComponent[]): string {
       `      ${JSON.stringify(name)}?: ${typeForProperty(property)}`).join('\n')
     const events = Object.keys(component.events).map((event) => {
       const handler = `on${event.split(/[-:]/).map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('')}`
-      return `      ${handler}?: (event: CustomEvent<${component.events[event].detailType || 'unknown'}>) => void`
+      return `      ${handler}?: (event: import('./${component.tag}.js').${component.name}EventMap[${JSON.stringify(event)}]) => void`
     }).join('\n')
     return `    ${JSON.stringify(component.tag)}: {
 ${props}
@@ -1436,7 +1538,17 @@ export async function buildComponentLibrary(config: ComponentLibraryConfig): Pro
     return target
   }
 
-  await emit('runtime.js', runtimeModule())
+  const signals = components.some(component => component.scope.apis.length)
+  if (signals) {
+    // Bundle the native primitives once. Generated elements need no ambient
+    // runtime and share the same dependency tracker as their emitted helpers.
+    const extension = import.meta.url.endsWith('.ts') ? '.ts' : '.js'
+    const nativeSignals = new URL(`./signals-api${extension}`, import.meta.url).pathname
+    const built = await Bun.build({ entrypoints: [nativeSignals], target: 'browser', format: 'esm', minify: true })
+    if (!built.success) throw new Error(`Failed to bundle native component signals: ${built.logs.map(String).join('\n')}`)
+    await emit('signals.js', await built.outputs[0]!.text())
+  }
+  await emit('runtime.js', runtimeModule(signals))
   for (const component of components) {
     await emit(`${component.tag}.js`, componentModule(component))
     if (config.declarations !== false) await emit(`${component.tag}.d.ts`, componentDeclaration(component))

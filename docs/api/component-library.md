@@ -167,6 +167,46 @@ import 'my-design-system/acme-button.js'
 </template>
 ```
 
+## Shared typed events in compiled libraries
+
+Shared and client scripts can declare events with `defineEmits` and use ordinary
+functions or direct expressions in event directives:
+
+```html
+<script>
+interface SaveButtonProps { id: string }
+const { id } = defineProps<SaveButtonProps>()
+const emit = defineEmits<{ save: [detail: { id: string }] }>()
+function save(): void { emit('save', { id }) }
+</script>
+<template>
+  <button @click="save">Save</button>
+  <button @click="emit('save', { id })">Save directly</button>
+</template>
+```
+
+The native library compiler emits lexical handlers and dispatches through the
+element's existing `emit` API. Props remain data, including quoted IDs and old
+handler strings. No handler string is evaluated in the browser. Emitted modules
+resolve their imports at build time and run without an ambient stx runtime.
+Server scripts stay excluded from the browser package. Ordinary stx SSR projects
+the public props without executing shared client setup or creating emitters.
+
+Tuple event maps, callable overload interfaces, and payload maps produce
+`CustomEvent` detail types in the element's event map, typed DOM listeners, JSX
+handlers, and custom-elements manifest. One emitted argument becomes `detail`;
+zero or multiple arguments become a tuple. Runtime arrays and object declarations
+supply event names with `unknown` detail types. Existing explicit event metadata
+can provide or override their public descriptions and detail types.
+
+Functions close over the current rendered props. Top-level native `state` and
+`derived` values belong to each element and survive updates and reconnects.
+Rendering recalculates shared derived expressions, replaces handler closures,
+and disposes the previous render's effects. `onMount` runs on each connection;
+its returned cleanup and `onDestroy` callbacks run on disconnect, along with
+native effect and state-subscription cleanup. Browser signal primitives are
+bundled once into the library instead of depending on page globals.
+
 ## JSX-Tag Syntax
 
 The tag form reads naturally for the common case and looks like every other modern templating engine.

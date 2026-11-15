@@ -194,6 +194,12 @@ export function setGlobalProvide<T>(key: string | symbol, value: T): void {
 // eslint-disable-next-line pickier/no-unused-vars
 export type EmitFn<T extends string = string> = (event: T, ...args: any[]) => void
 
+/** Tuple maps, payload maps and callable overload contracts share one emitter. */
+export type ComponentEmit<T> = T extends (...args: never[]) => unknown ? T : <K extends Extract<keyof T, string>>(
+  event: K,
+  ...args: T[K] extends readonly unknown[] ? T[K] : [payload: T[K]]
+) => void
+
 /**
  * Define the events a component can emit.
  * Returns a typed emit function.
@@ -210,7 +216,9 @@ export type EmitFn<T extends string = string> = (event: T, ...args: any[]) => vo
  * emit('change', 'newValue')
  * ```
  */
-export function defineEmits<T extends Record<string, any[]> = Record<string, any[]>>(events?: string[] | T): EmitFn<Extract<keyof T, string>> {
+export function defineEmits<const T extends readonly string[]>(events: T): EmitFn<T[number]>
+export function defineEmits<T extends object = Record<string, any[]>>(events?: T): ComponentEmit<T>
+export function defineEmits(events?: readonly string[] | object): EmitFn {
   const instance = currentInstance
   const element = instance?.el as (HTMLElement & { __stx_component_emits?: Record<string, boolean> }) | undefined
   const declaredEvents = Array.isArray(events)
@@ -245,7 +253,7 @@ export function defineEmits<T extends Record<string, any[]> = Record<string, any
     instance.emit = emit
   }
 
-  return emit as EmitFn<Extract<keyof T, string>>
+  return emit
 }
 
 // =============================================================================

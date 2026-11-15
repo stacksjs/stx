@@ -1,4 +1,4 @@
-import { stripCommentsAndLiterals } from './strip-literals'
+import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 
 export interface ComponentContract {
   declarations: string
@@ -35,10 +35,12 @@ function argumentsOf(source: string): string[] {
   return args
 }
 
-function macroCall(code: string, names: string[]): { type: string, args: string[] } | null {
+export function macroCall(code: string, names: string[], topLevel = false): { type: string, args: string[], start: number, end: number } | null {
   const masked = stripCommentsAndLiterals(code)
   const pattern = new RegExp(`\\b(?:${names.map(name => name.replace(/[$]/g, '\\$&')).join('|')})\\s*(?=[<(])`, 'g')
+  const depths = topLevel ? bracketDepths(masked).depths : undefined
   for (const match of masked.matchAll(pattern)) {
+    if (depths && depths[match.index!] !== 0) continue
     let at = match.index! + match[0].length
     let type = ''
     if (masked[at] === '<') {
@@ -50,7 +52,7 @@ function macroCall(code: string, names: string[]): { type: string, args: string[
     }
     if (masked[at] !== '(') continue
     const close = closeAt(masked, at, '(', ')')
-    if (close >= 0) return { type, args: argumentsOf(code.slice(at + 1, close)) }
+    if (close >= 0) return { type, args: argumentsOf(code.slice(at + 1, close)), start: match.index!, end: close + 1 }
   }
   return null
 }
