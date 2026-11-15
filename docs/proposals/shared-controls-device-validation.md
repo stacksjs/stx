@@ -539,8 +539,11 @@ and the pin has to be turned into the real expectation.
 - **VoiceOver speaking.** A simulator cannot run VoiceOver. `SpokenStops` and
   XCUITest check what it is handed, which is everything it reads from, not the
   sentence it composes.
-- **A physical iPhone.** Not run. It needs the phone unlocked, a development
-  team to sign with and the gate taught to target a device; nothing in these
+- **A physical iPhone.** Not run, and dropped from #2184 on 2026-11-15. One
+  attempt was made with the gate pointed at a paired, unlocked phone and a
+  signing team: both builds stopped at `codesign` with
+  `errSecInternalComponent` before any test started, so nothing here has been
+  seen on hardware. The gate still takes a simulator only. Nothing in these
   suites is simulator-specific except how the appearance and text size are
   set.
 - **Picture in picture, background audio, interruption, DRM, provider
