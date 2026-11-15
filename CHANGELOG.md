@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.888...v0.2.889)
+
+## 🐛 Bug Fixes
+
+- decode shared prop numeric literals safely ([ef1829d](https://github.com/stacksjs/stx/commit/ef1829d)) _(by Chris Breuer <chris@stacksjs.com>)_
+- preserve shared prop literals and public method types ([63d56ea](https://github.com/stacksjs/stx/commit/63d56ea)) _(by Chris Breuer <chris@stacksjs.com>)_
+- share public prop declarations across component renderers ([63a7bd7](https://github.com/stacksjs/stx/commit/63a7bd7)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.889 ([85a5f40](https://github.com/stacksjs/stx/commit/85a5f40)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.887...v0.2.888)
 
 ## 🐛 Bug Fixes
