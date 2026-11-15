@@ -70,13 +70,16 @@ copyFileSync(join(root, 'packages/stx/test-utils/happy-dom.ts'), join(smokeRoot,
 // Shared emit authoring is qualified from exactly the archives being released.
 // Only test harnesses are copied; compiler and native signal code stay installed.
 copyFileSync(join(root, 'packages/stx/test-utils/browser-fixture.ts'), join(smokeRoot, 'browser-fixture.ts'))
-for (const fixture of ['component-library-emits.test.ts', 'component-library-emits-browser.test.ts']) {
+copyFileSync(join(root, 'packages/stx/test-utils/component-method-scope.ts'), join(smokeRoot, 'component-method-scope.ts'))
+for (const fixture of ['component-library-emits.test.ts', 'component-library-emits-browser.test.ts', 'component-library-method-scope.test.ts', 'component-library-method-scope-browser.test.ts']) {
   const test = readFileSync(join(root, 'packages/stx/test/web-components', fixture), 'utf8')
     .replaceAll("'../../src/component-library'", "'@stacksjs/stx/component-library'")
     .replaceAll("'../../src/process'", "'@stacksjs/stx/process'")
     .replace("new URL('../../src/signals-api.ts', import.meta.url).pathname", "new URL(import.meta.resolve('@stacksjs/stx/signals-api')).pathname")
+    .replace("new URL('../../dist/signals-api.js', import.meta.url).pathname", "new URL(import.meta.resolve('@stacksjs/stx/signals-api')).pathname")
     .replaceAll("'../../src/temp-dir'", "'@stacksjs/stx/temp-dir'")
     .replaceAll("'../../test-utils/browser-fixture'", "'./browser-fixture'")
+    .replaceAll("'../../test-utils/component-method-scope'", "'./component-method-scope'")
     .replace("const buildComponentLibrary = process.env.STX_LIBRARY_DIST ? (await import('../../dist/component-library.js')).buildComponentLibrary : sourceBuild", 'const buildComponentLibrary = sourceBuild')
   writeFileSync(join(smokeRoot, fixture), test)
 }
@@ -88,10 +91,10 @@ for (const flags of [[], ['--frozen-lockfile']]) {
   if (normalLock) assert.equal(lock, normalLock, 'Frozen install changed the qualified lockfile')
   else normalLock = lock
   await verifyPublicTypes(smokeRoot, publicTypeArchives, flags.length ? 'frozen' : 'normal', { kind: 'prepublication-original-archives', url: registry.url, requests: registry.requests })
-  await run([process.execPath, '--no-env-file', 'test', '--preload', './happy-dom.ts', './component-library-emits.test.ts'])
+  await run([process.execPath, '--no-env-file', 'test', '--preload', './happy-dom.ts', './component-library-emits.test.ts', './component-library-method-scope.test.ts'])
   // Bun's Chrome bridge discovers its executable through the real desktop HOME;
   // archive installation and strict/SSR consumers retain their isolated HOME.
-  await run([process.execPath, '--no-env-file', 'test', '--preload', './happy-dom.ts', './component-library-emits-browser.test.ts'], smokeRoot,
+  await run([process.execPath, '--no-env-file', 'test', '--preload', './happy-dom.ts', './component-library-emits-browser.test.ts', './component-library-method-scope-browser.test.ts'], smokeRoot,
     process.env.STX_BROWSER_HOME ? { HOME: process.env.STX_BROWSER_HOME } : {})
   console.log(`native emits original-archive ${flags.length ? 'frozen' : 'normal'} consumer passed`)
 }

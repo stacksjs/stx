@@ -344,7 +344,9 @@ for (const publicImport of [false, true]) test(`element effects and ${publicImpo
   const root = createTempDir('stx-module-emits-')
   roots.push(root)
   const inputDir = join(root, 'components'), outputDir = join(root, 'dist')
-  const signals = publicImport ? '@stacksjs/stx/signals-api' : new URL('../../src/signals-api.ts', import.meta.url).pathname
+  const signals = publicImport ? '@stacksjs/stx/signals-api' : process.env.STX_LIBRARY_DIST
+    ? new URL('../../dist/signals-api.js', import.meta.url).pathname
+    : new URL('../../src/signals-api.ts', import.meta.url).pathname
   await Bun.write(join(inputDir, 'helper.ts'), `import { state } from ${JSON.stringify(signals)}; export const shared = state(0); export function bumpShared() { shared.update(value => value + 1) }`)
   for (const name of ['First', 'Second']) await Bun.write(join(inputDir, `${name}.stx`), `<script>
 import { shared, bumpShared } from './helper'
