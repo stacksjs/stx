@@ -385,7 +385,7 @@ export class Tokenizer {
     }
 
     // Decimal part
-    if (this.source[this.pos] === '.' && /\d/.test(this.peek(1) || '')) {
+    if (this.source[this.pos] === '.' && (this.context === 'javascript' || /\d/.test(this.peek(1) || ''))) {
       this.advance()
       while (this.pos < this.source.length && /[\d_]/.test(this.source[this.pos])) {
         this.advance()

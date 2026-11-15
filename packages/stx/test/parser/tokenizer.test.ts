@@ -27,6 +27,14 @@ describe('Tokenizer', () => {
       expect(tokens.filter(t => t.type === 'NUMBER').map(t => t.value)).toEqual(['123', '45.67', '0xFF', '1e10'])
     })
 
+    it('keeps trailing decimal dots inside JavaScript numbers without consuming member dots', () => {
+      const tokens = new Tokenizer('1. 1.e2 .5 1..toString()', 'javascript').tokenize()
+      expect(tokens.filter(t => t.type === 'NUMBER').map(t => t.value)).toEqual(['1.', '1.e2', '.5', '1.'])
+      expect(tokens.filter(t => !['NUMBER', 'WHITESPACE', 'EOF'].includes(t.type)).map(t => t.value)).toEqual(['.', 'toString', '(', ')'])
+      // Template token boundaries retain their established behavior.
+      expect(new Tokenizer('{{ 1. }}').tokenize().filter(t => !['WHITESPACE', 'EOF'].includes(t.type)).map(t => t.value)).toEqual(['{{', '1', '.', '}}'])
+    })
+
     it('should tokenize strings', () => {
       const tokenizer = new Tokenizer('"hello" \'world\'')
       const tokens = tokenizer.tokenize()

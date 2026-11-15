@@ -30,6 +30,35 @@ globalThis.__stxSharedBody = true
 
 const compactSource = String.raw`<script>const { data, label = '\u0041\x42\u{1F600}' } = withDefaults(defineProps<{ data?: object, label?: string }>(), { data: {"nested":{"value":7},"deep":{"nested":{"inside":{"value":9}}},"braces":"}} {{{"} })</script><template><p>{{ data.nested.value }}|{{ data.deep.nested.inside.value }}|{{ data.braces }}</p><span>{{ label }}</span></template>`
 
+const numericSource = `<script>const { count = 1_000, negative = -1_000, trailing = 1., half = .5, exponent = +1_2.5_0e-1, hex = -0xFF_FF, binary = +0b1010_0101, octal = 0o7_7 } = defineProps<{ count?: number, negative?: number, trailing?: number, half?: number, exponent?: number, hex?: number, binary?: number, octal?: number }>()</script><template><output>{{ count }}|{{ negative }}|{{ trailing }}|{{ half }}|{{ exponent }}|{{ hex }}|{{ binary }}|{{ octal }}</output></template>`
+const numericOutput = '1000|-1000|1|0.5|1.25|-65535|165|63'
+const numericKeysSource = `<script>const { data = {1e3:'exponent',0x10:'hex',1_000:'last',1.:'dot',.5:'half','0x10':'quoted'} } = defineProps<{ data?: object }>()</script><template><output>@foreach(data as key => value)[{{ key }}={{ value }}]@endforeach</output></template>`
+const numericKeysOutput = '[1=dot][16=hex][1000=last][0.5=half][0x10=quoted]'
+
+test('shared public props preserve JavaScript numeric literals in SSR and compiled elements', async () => {
+  const inputDir = join(root, 'numeric-source'), outputDir = join(root, 'numeric-dist')
+  await Bun.write(join(inputDir, 'Numeric.stx'), numericSource)
+  const html = await processDirectives('<Numeric/>', {}, join(root, 'numeric.stx'), { componentsDir: inputDir, root, cache: false }, new Set())
+  expect(html.match(/<output>(.*?)<\/output>/)?.[1]).toBe(numericOutput)
+  await buildComponentLibrary({ inputDir, outputDir, prefix: 'shared', bundle: false })
+  const { Numeric } = await import(join(outputDir, 'index.js'))
+  const element = new Numeric()
+  element.connectedCallback()
+  expect(element.querySelector('output')?.textContent).toBe(numericOutput)
+})
+
+test('shared public props canonicalize numeric object keys but preserve quoted keys', async () => {
+  const inputDir = join(root, 'numeric-keys-source'), outputDir = join(root, 'numeric-keys-dist')
+  await Bun.write(join(inputDir, 'NumericKeys.stx'), numericKeysSource)
+  const html = await processDirectives('<NumericKeys/>', {}, join(root, 'numeric-keys.stx'), { componentsDir: inputDir, root, cache: false }, new Set())
+  expect(html.match(/<output>(.*?)<\/output>/)?.[1]).toBe(numericKeysOutput)
+  await buildComponentLibrary({ inputDir, outputDir, prefix: 'shared', bundle: false })
+  const { NumericKeys } = await import(join(outputDir, 'index.js'))
+  const element = new NumericKeys()
+  element.connectedCallback()
+  expect(element.querySelector('output')?.textContent).toBe(numericKeysOutput)
+})
+
 test('shared public props project defaults and aliases into SSR without running client setup or imports', async () => {
   await Bun.write(join(root, 'Field.stx'), source)
   await Bun.write(join(root, 'browser-only.ts'), `if (typeof window === 'undefined') throw new Error('Client import executed during SSR'); globalThis.__stxSharedImport = true`)
@@ -66,12 +95,14 @@ test('the same shared component renders and updates defaults, aliases and lists 
   const inputDir = join(root, 'browser-source'), outputDir = join(root, 'browser-dist')
   await Bun.write(join(inputDir, 'Field.stx'), source)
   await Bun.write(join(inputDir, 'Literal.stx'), compactSource)
+  await Bun.write(join(inputDir, 'Numeric.stx'), numericSource)
+  await Bun.write(join(inputDir, 'NumericKeys.stx'), numericKeysSource)
   await Bun.write(join(inputDir, 'browser-only.ts'), `globalThis.__stxSharedImport = true`)
   const result = await buildComponentLibrary({ inputDir, outputDir, prefix: 'shared', bundle: false })
   for (const file of result.files.filter(file => /\.(?:js|ts)$/.test(file))) expect(await Bun.file(file).text()).not.toContain('PRIVATE-shared-props-server')
   const server = Bun.serve({ hostname: '127.0.0.1', port: 0, fetch(request) {
     const path = new URL(request.url).pathname
-    if (path === '/') return new Response('<!doctype html><link rel="icon" href="data:,"><shared-field label="Default"></shared-field><shared-literal></shared-literal><script type="module" src="/index.js"></script>', { headers: { 'Content-Type': 'text/html' } })
+    if (path === '/') return new Response('<!doctype html><link rel="icon" href="data:,"><shared-field label="Default"></shared-field><shared-literal></shared-literal><shared-numeric></shared-numeric><shared-numeric-keys></shared-numeric-keys><script type="module" src="/index.js"></script>', { headers: { 'Content-Type': 'text/html' } })
     return new Response(Bun.file(join(outputDir, path)))
   } })
   const view = new WebView({ headless: true, backend: { type: 'chrome', url: false } })
@@ -83,6 +114,8 @@ test('the same shared component renders and updates defaults, aliases and lists 
     }
     expect(await view.evaluate(`(() => { const el = document.querySelector('shared-field'); return { label: el.querySelector('label')?.textContent, type: el.querySelector('input')?.type, className: el.querySelector('input')?.className, output: el.querySelector('output')?.textContent, items: [...el.querySelectorAll('li')].map(item => item.textContent), body: globalThis.__stxSharedBody, imported: globalThis.__stxSharedImport } })()`)).toEqual({ label: 'Default', type: 'text', className: 'field-input', output: '4|true', items: ['first', 'second, item'], body: true, imported: true })
     expect(await view.evaluate(`({ text: document.querySelector('shared-literal p')?.textContent, escaped: document.querySelector('shared-literal span')?.textContent })`)).toEqual({ text: '7|9|}} {{{', escaped: 'AB😀' })
+    expect(await view.evaluate(`document.querySelector('shared-numeric output')?.textContent`)).toBe(numericOutput)
+    expect(await view.evaluate(`document.querySelector('shared-numeric-keys output')?.textContent`)).toBe(numericKeysOutput)
     expect(await view.evaluate(`(async () => { const el = document.querySelector('shared-field'); el.label = 'Override'; el.type = 'password'; el.classList.add('custom'); el.count = 0; el.enabled = false; el.items = []; await el.updateComplete; return { label: el.querySelector('label').textContent, type: el.querySelector('input').type, className: el.querySelector('input').className, output: el.querySelector('output').textContent, items: el.querySelectorAll('li').length, nativeClassList: el.classList instanceof DOMTokenList } })()`)).toEqual({ label: 'Override', type: 'password', className: 'custom', output: '0|false', items: 0, nativeClassList: true })
   }
   finally { view.close(); server.stop(true) }

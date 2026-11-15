@@ -424,6 +424,17 @@ export function parseDefaults(object: string): Array<[string, string]> {
   return pairs
 }
 
+/** Decode a strict JavaScript Number literal, not Number's looser string grammar. */
+function numberLiteral(source: string): number {
+  // Separators belong between digits of the same part. Reject legacy leading
+  // zero forms and BigInt too: stripping underscores before validation would
+  // silently accept malformed source such as 1__0, 0x_FF or 1e_2.
+  const decimal = /^(?:(?:0|[1-9](?:_?\d)*)(?:\.(?:\d(?:_?\d)*)?)?|\.\d(?:_?\d)*)(?:[eE][+-]?\d(?:_?\d)*)?$/
+  const radix = /^(?:0[xX][\da-fA-F](?:_?[\da-fA-F])*|0[bB][01](?:_?[01])*|0[oO][0-7](?:_?[0-7])*)$/
+  if (!decimal.test(source) && !radix.test(source)) throw new Error('Invalid prop number')
+  return Number(source.replaceAll('_', ''))
+}
+
 /** Literal defaults only: no client functions, imports, identifiers or getters run in SSR. */
 export function literalValue(source: string): unknown {
   const tokens = new Tokenizer(source, 'javascript').tokenize().filter(token => !['COMMENT', 'WHITESPACE', 'EOF'].includes(token.type))
@@ -437,11 +448,11 @@ export function literalValue(source: string): unknown {
       if (value === null) throw new Error('Dynamic prop string')
       return value
     }
-    if (token.type === 'NUMBER') return Number(token.value)
+    if (token.type === 'NUMBER') return numberLiteral(token.value)
     if (token.value === '-' || token.value === '+') {
       const number = tokens[cursor++]
       if (number?.type !== 'NUMBER') throw new Error('Dynamic prop number')
-      return Number(token.value + number.value)
+      return (token.value === '-' ? -1 : 1) * numberLiteral(number.value)
     }
     if (token.value === 'true') return true
     if (token.value === 'false') return false
@@ -456,7 +467,7 @@ export function literalValue(source: string): unknown {
       else {
         const key = tokens[cursor++]
         if (!key || !['STRING', 'IDENTIFIER', 'NUMBER'].includes(key.type)) throw new Error('Dynamic prop key')
-        const name = key.type === 'STRING' ? parseStringLiteral(key.value) : key.value
+        const name = key.type === 'STRING' ? parseStringLiteral(key.value) : key.type === 'NUMBER' ? String(numberLiteral(key.value)) : key.value
         if (name === null || tokens[cursor++]?.value !== ':') throw new Error('Dynamic prop key')
         entries.push([name, read(depth + 1)])
       }
