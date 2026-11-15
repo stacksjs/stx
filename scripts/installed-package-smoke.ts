@@ -52,7 +52,7 @@ writeFileSync(join(smokeRoot, 'package.json'), JSON.stringify({
   type: 'module',
   private: true,
   dependencies,
-  devDependencies: { typescript: '7.0.2', '@types/bun': '1.4.4' },
+  devDependencies: { typescript: '7.0.2', '@types/bun': '1.4.4', 'very-happy-dom': '0.4.1' },
 }, null, 2))
 writeFileSync(join(smokeRoot, 'bunfig.toml'), '[install]\nlinker = "hoisted"\n')
 // Install the actual publishable archives. Checkout symlinks accidentally make
@@ -78,12 +78,15 @@ for (const flags of [[], ['--frozen-lockfile']]) {
 
 // Public prop projection must come from the untouched compiler archive, with
 // no source checkout or application shim supplying SSR defaults or DOM types.
-const sharedPropsTest = readFileSync(join(root, 'packages/stx/test/components/shared-props-ssr.test.ts'), 'utf8')
-  .replaceAll("'../../src/component-library'", "'@stacksjs/stx/component-library'")
-  .replaceAll("'../../src/process'", "'@stacksjs/stx/process'")
-  .replaceAll("'../../src/temp-dir'", "'@stacksjs/stx/temp-dir'")
-writeFileSync(join(smokeRoot, 'shared-props-ssr.test.ts'), sharedPropsTest)
-await run([process.execPath, '--no-env-file', 'test', './shared-props-ssr.test.ts', '--test-name-pattern', 'shared public props|macro-only|SSR reads'])
+copyFileSync(join(root, 'packages/stx/test-utils/happy-dom.ts'), join(smokeRoot, 'happy-dom.ts'))
+for (const fixture of ['shared-props-ssr.test.ts', 'shared-props-review-regressions.test.ts']) {
+  const test = readFileSync(join(root, 'packages/stx/test/components', fixture), 'utf8')
+    .replaceAll("'../../src/component-library'", "'@stacksjs/stx/component-library'")
+    .replaceAll("'../../src/process'", "'@stacksjs/stx/process'")
+    .replaceAll("'../../src/temp-dir'", "'@stacksjs/stx/temp-dir'")
+  writeFileSync(join(smokeRoot, fixture), test)
+}
+await run([process.execPath, '--no-env-file', 'test', '--preload', './happy-dom.ts', './shared-props-ssr.test.ts', './shared-props-review-regressions.test.ts', '--test-name-pattern', 'shared public props|macro-only|SSR reads|literal strings|prototype-named|each SSR instance|unsupported expressions|literal defaults compile|public method in a client block'])
 
 // #2109: public native exports and shared imports must work from the archives,
 // not only from the source tree. Only test fixtures/assertions are copied;

@@ -172,19 +172,44 @@ export function parseStringLiteral(raw: string): string | null {
     return null
 
   let value = ''
+  const escapes: Record<string, string> = { b: '\b', f: '\f', n: '\n', r: '\r', t: '\t', v: '\v', 0: '\0' }
   for (let i = 1; i < text.length - 1; i++) {
-    const char = text[i]
-    if (char === '\\' && i + 1 < text.length - 1) {
-      const next = text[++i]
-      value += next === 'n' ? '\n' : next === 't' ? '\t' : next
+    const char = text[i]!
+    if (char === '\\') {
+      if (++i >= text.length - 1) return null
+      const next = text[i]!
+      // Strict JavaScript strings reject legacy octal and decimal escapes.
+      if (/[1-9]/.test(next) || (next === '0' && /\d/.test(text[i + 1] ?? ''))) return null
+      if (next === '\n' || next === '\u2028' || next === '\u2029') continue
+      if (next === '\r') {
+        if (text[i + 1] === '\n') i++
+        continue
+      }
+      if (next === 'x' || next === 'u') {
+        const point = next === 'u' && text[i + 1] === '{'
+        const end = point ? text.indexOf('}', i + 2) : i + (next === 'x' ? 2 : 4) + 1
+        const digits = text.slice(i + (point ? 2 : 1), end)
+        if (end < 0 || end >= text.length || !/^[\da-f]+$/i.test(digits)
+          || (!point && digits.length !== (next === 'x' ? 2 : 4))) return null
+        const code = Number.parseInt(digits, 16)
+        if (code > 0x10FFFF) return null
+        value += String.fromCodePoint(code)
+        i = point ? end : end - 1
+        continue
+      }
+      value += Object.hasOwn(escapes, next) ? escapes[next] : next
       continue
     }
     // An unescaped quote closes the literal before the end: `'a' + 'b'`.
-    if (char === quote)
+    if (char === quote || (quote !== '`' && (char === '\n' || char === '\r')))
       return null
     if (quote === '`' && char === '$' && text[i + 1] === '{')
       return null
-    value += char
+    if (quote === '`' && char === '\r') {
+      if (text[i + 1] === '\n') i++
+      value += '\n'
+    }
+    else value += char
   }
 
   return value

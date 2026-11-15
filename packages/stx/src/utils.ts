@@ -669,15 +669,15 @@ function applyPublicProps(componentContent: string, ctx: Record<string, unknown>
     if (['server', 'src', 'component', 'stx:component'].some(name => attrs.has(name)) || !scriptContainsCode(attrs)) continue
     const declaration = parsePropsDeclaration(componentContent.slice(script.bodyStart, script.bodyEnd))
     if (!declaration) continue
-    const props = { ...supplied }
+    const props: Record<string, unknown> = Object.assign(Object.create(null), supplied)
     for (const [name, expression] of Object.entries(declaration.defaults)) {
       if (props[name] === undefined) props[name] = literalValue(expression)
     }
     for (const name of new Set([...declaration.propNames, ...Object.keys(declaration.defaults)])) {
       const local = declaration.localBindings[name] ?? (declaration.propBindings[name] ? undefined : name)
-      if (local) ctx[local] = props[name]
+      if (local) Object.defineProperty(ctx, local, { value: props[name], writable: true, enumerable: true, configurable: true })
     }
-    if (declaration.identifier) ctx[declaration.identifier] = props
+    if (declaration.identifier) Object.defineProperty(ctx, declaration.identifier, { value: props, writable: true, enumerable: true, configurable: true })
   }
 }
 

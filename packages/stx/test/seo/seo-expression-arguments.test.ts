@@ -575,3 +575,13 @@ const seo = { title: 'Declared' }
     expect(warnings()).toContain('broken.stx')
   })
 })
+
+it('static string arguments decode strict JavaScript escapes and reject malformed literals', () => {
+  expect(parseStringLiteral(String.raw`'\u0041\x42\u{1F600}'`)).toBe('AB😀')
+  expect(parseStringLiteral(String.raw`'\u{00000041}'`)).toBe('A')
+  expect(parseStringLiteral(String.raw`'\b\f\n\r\t\v\0'`)).toBe('\b\f\n\r\t\v\0')
+  expect(parseStringLiteral("'first\\\nsecond'")).toBe('firstsecond')
+  for (const invalid of [String.raw`'\xG0'`, String.raw`'\x4'`, String.raw`'\u041'`, String.raw`'\u{}'`, String.raw`'\u{110000}'`, String.raw`'\1'`, String.raw`'\08'`, "'raw\nnewline'"]) {
+    expect(parseStringLiteral(invalid)).toBeNull()
+  }
+})

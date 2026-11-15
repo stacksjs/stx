@@ -250,11 +250,12 @@ export function methodDeclaration(method: ClientMethod): string {
 
 function extractClientMethods(source: string, file: string): { methods: Record<string, string>, declarations: Record<string, string[]>, types: string } {
   const methods: Record<string, string> = {}, declarations: Record<string, string[]> = {}, types: string[] = [], imports: Array<{ binding: string, module: string }> = []
-  const scripts = scanHtmlScriptElements(componentScriptSource(source))
+  const scripts = scanHtmlScriptElements(componentScriptSource(source)).map(script => ({
+    code: source.slice(script.bodyStart, script.bodyEnd),
+    attributes: scriptAttributes(script.attrs),
+  })).filter(({ attributes }) => !['src', 'server', 'component', 'stx:component'].some(name => attributes.has(name)) && scriptContainsCode(attributes))
   for (const script of scripts) {
-    const code = source.slice(script.bodyStart, script.bodyEnd)
-    const attributes = scriptAttributes(script.attrs)
-    if (attributes.has('src') || attributes.has('server') || attributes.has('component') || attributes.has('stx:component') || !scriptContainsCode(attributes)) continue
+    const { code, attributes } = script
     try { new Bun.Transpiler({ loader: 'ts' }).transformSync(code) }
     catch (error) { throw new Error(`${file}: failed to transpile <script client> (${(error as Error).message})`) }
     const props = attributes.has('client') ? null : parsePropsDeclaration(code)
@@ -297,8 +298,14 @@ function extractClientMethods(source: string, file: string): { methods: Record<s
       // generated `export interface FieldProps` creates an invalid declaration
       // merge (and wrongly joins required source props to optional DOM props).
       const declaration = code.slice(match.index, cursor)
+      const declarationStart = match.index
       const name = /(?:interface|type)\s+([A-Za-z_$][\w$]*)/.exec(match[0])?.[1]
-      const remaining = stripCommentsAndLiterals((code.slice(0, match.index) + code.slice(cursor)).replace(props?.text ?? '\0', ''))
+      // All public scripts share the component's declaration scope. A method
+      // in a separate client block can still need this props-support type.
+      const remaining = scripts.map(other => {
+        const body = other === script ? code.slice(0, declarationStart) + code.slice(cursor) : other.code
+        return stripCommentsAndLiterals(body.replace(parsePropsDeclaration(other.code)?.text ?? '\0', ''))
+      }).join('\n')
       const macroOnly = props?.typeName === name && !/^export\s/.test(declaration) && name && !new RegExp(`\\b${name}\\b`).test(remaining)
       if (!macroOnly) types.push(declaration.replace(/^export\s+/, '').trim())
       typePattern.lastIndex = cursor + 1
@@ -611,10 +618,10 @@ function compileScriptScope(source: string): {
   let code = source.slice(block.bodyStart, block.bodyEnd)
   const imports: string[] = []
   const propNames: string[] = []
-  const propBindings: Record<string, string> = {}
-  const defaults: Record<string, string> = {}
+  const propBindings: Record<string, string> = Object.create(null)
+  const defaults: Record<string, string> = Object.create(null)
   /** Prop name to the TypeScript type the component declared for it. */
-  const declared: Record<string, string> = {}
+  const declared: Record<string, string> = Object.create(null)
 
   const hoisted = hoistScriptImports(code)
   imports.push(...hoisted.imports)

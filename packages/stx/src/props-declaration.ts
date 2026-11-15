@@ -4,7 +4,7 @@ import { Tokenizer } from './parser/tokenizer'
 import { parseStringLiteral } from './directive-arguments'
 
 function withoutComments(source: string): string {
-  const tokens = new Tokenizer(source).tokenize()
+  const tokens = new Tokenizer(source, 'javascript').tokenize()
   let code = source
   for (const token of tokens.reverse()) {
     if (token.type === 'COMMENT') code = code.slice(0, token.start) + token.value.replace(/[^\r\n]/g, ' ') + code.slice(token.end)
@@ -219,11 +219,11 @@ export function parsePropsDeclaration(source: string): PropsDeclaration | null {
 }
 
 function parsePropsAt(code: string, start: number): PropsDeclaration | null {
-  const declared: Record<string, string> = {}
-  const defaults: Record<string, string> = {}
+  const declared: Record<string, string> = Object.create(null)
+  const defaults: Record<string, string> = Object.create(null)
   const propNames: string[] = []
-  const propBindings: Record<string, string> = {}
-  const localBindings: Record<string, string> = {}
+  const propBindings: Record<string, string> = Object.create(null)
+  const localBindings: Record<string, string> = Object.create(null)
   let cursor = start + (/^(?:const|let|var)\s+/.exec(code.slice(start))?.[0].length ?? 0)
   const skipSpace = (): void => {
     while (cursor < code.length && /\s/.test(code[cursor]!)) cursor++
@@ -426,7 +426,7 @@ export function parseDefaults(object: string): Array<[string, string]> {
 
 /** Literal defaults only: no client functions, imports, identifiers or getters run in SSR. */
 export function literalValue(source: string): unknown {
-  const tokens = new Tokenizer(source).tokenize().filter(token => !['COMMENT', 'WHITESPACE', 'EOF'].includes(token.type))
+  const tokens = new Tokenizer(source, 'javascript').tokenize().filter(token => !['COMMENT', 'WHITESPACE', 'EOF'].includes(token.type))
   let cursor = 0
   function read(depth: number): unknown {
     if (depth > 64) throw new Error('Prop literal too deep')

@@ -59,7 +59,7 @@ export class Tokenizer {
   private column: number = 0
   private tokens: Token[] = []
 
-  constructor(source: string) {
+  constructor(source: string, private context: 'template' | 'javascript' = 'template') {
     this.source = source
   }
 
@@ -136,7 +136,7 @@ export class Tokenizer {
     }
 
     // Template expression markers
-    if (char === '{') {
+    if (this.context === 'template' && char === '{') {
       if (this.peek(1) === '{' && this.peek(2) === '{') {
         this.advance(3)
         return { type: 'RAW_START', value: '{{{', start, end: this.pos, line: startLine, column: startColumn }
@@ -151,7 +151,7 @@ export class Tokenizer {
       }
     }
 
-    if (char === '}') {
+    if (this.context === 'template' && char === '}') {
       if (this.peek(1) === '}' && this.peek(2) === '}') {
         this.advance(3)
         return { type: 'RAW_END', value: '}}}', start, end: this.pos, line: startLine, column: startColumn }
@@ -162,7 +162,7 @@ export class Tokenizer {
       }
     }
 
-    if (char === '!' && this.peek(1) === '!' && this.peek(2) === '}') {
+    if (this.context === 'template' && char === '!' && this.peek(1) === '!' && this.peek(2) === '}') {
       this.advance(3)
       return { type: 'RAW_END', value: '!!}', start, end: this.pos, line: startLine, column: startColumn }
     }

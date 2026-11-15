@@ -28,6 +28,8 @@ globalThis.__stxSharedBody = true
 </script>
 <template><section><label>{{ label }}</label><input type="{{ type }}" class="{{ inputClass }}"><output>{{ count }}|{{ enabled }}</output><ul>@foreach(items as item)<li>{{ item }}</li>@endforeach</ul></section></template>`
 
+const compactSource = String.raw`<script>const { data, label = '\u0041\x42\u{1F600}' } = withDefaults(defineProps<{ data?: object, label?: string }>(), { data: {"nested":{"value":7},"deep":{"nested":{"inside":{"value":9}}},"braces":"}} {{{"} })</script><template><p>{{ data.nested.value }}|{{ data.deep.nested.inside.value }}|{{ data.braces }}</p><span>{{ label }}</span></template>`
+
 test('shared public props project defaults and aliases into SSR without running client setup or imports', async () => {
   await Bun.write(join(root, 'Field.stx'), source)
   await Bun.write(join(root, 'browser-only.ts'), `if (typeof window === 'undefined') throw new Error('Client import executed during SSR'); globalThis.__stxSharedImport = true`)
@@ -63,12 +65,13 @@ export const props: FieldProps = { label: 'Provided', class: 'custom', enabled: 
 test('the same shared component renders and updates defaults, aliases and lists in ordinary Chrome', async () => {
   const inputDir = join(root, 'browser-source'), outputDir = join(root, 'browser-dist')
   await Bun.write(join(inputDir, 'Field.stx'), source)
+  await Bun.write(join(inputDir, 'Literal.stx'), compactSource)
   await Bun.write(join(inputDir, 'browser-only.ts'), `globalThis.__stxSharedImport = true`)
   const result = await buildComponentLibrary({ inputDir, outputDir, prefix: 'shared', bundle: false })
   for (const file of result.files.filter(file => /\.(?:js|ts)$/.test(file))) expect(await Bun.file(file).text()).not.toContain('PRIVATE-shared-props-server')
   const server = Bun.serve({ hostname: '127.0.0.1', port: 0, fetch(request) {
     const path = new URL(request.url).pathname
-    if (path === '/') return new Response('<!doctype html><link rel="icon" href="data:,"><shared-field label="Default"></shared-field><script type="module" src="/index.js"></script>', { headers: { 'Content-Type': 'text/html' } })
+    if (path === '/') return new Response('<!doctype html><link rel="icon" href="data:,"><shared-field label="Default"></shared-field><shared-literal></shared-literal><script type="module" src="/index.js"></script>', { headers: { 'Content-Type': 'text/html' } })
     return new Response(Bun.file(join(outputDir, path)))
   } })
   const view = new WebView({ headless: true, backend: { type: 'chrome', url: false } })
@@ -79,6 +82,7 @@ test('the same shared component renders and updates defaults, aliases and lists 
       await Bun.sleep(20)
     }
     expect(await view.evaluate(`(() => { const el = document.querySelector('shared-field'); return { label: el.querySelector('label')?.textContent, type: el.querySelector('input')?.type, className: el.querySelector('input')?.className, output: el.querySelector('output')?.textContent, items: [...el.querySelectorAll('li')].map(item => item.textContent), body: globalThis.__stxSharedBody, imported: globalThis.__stxSharedImport } })()`)).toEqual({ label: 'Default', type: 'text', className: 'field-input', output: '4|true', items: ['first', 'second, item'], body: true, imported: true })
+    expect(await view.evaluate(`({ text: document.querySelector('shared-literal p')?.textContent, escaped: document.querySelector('shared-literal span')?.textContent })`)).toEqual({ text: '7|9|}} {{{', escaped: 'AB😀' })
     expect(await view.evaluate(`(async () => { const el = document.querySelector('shared-field'); el.label = 'Override'; el.type = 'password'; el.classList.add('custom'); el.count = 0; el.enabled = false; el.items = []; await el.updateComplete; return { label: el.querySelector('label').textContent, type: el.querySelector('input').type, className: el.querySelector('input').className, output: el.querySelector('output').textContent, items: el.querySelectorAll('li').length, nativeClassList: el.classList instanceof DOMTokenList } })()`)).toEqual({ label: 'Override', type: 'password', className: 'custom', output: '0|false', items: 0, nativeClassList: true })
   }
   finally { view.close(); server.stop(true) }
@@ -124,4 +128,17 @@ const { title: caption = 'inline', enabled = false, count = 0, dangerous, data }
   expect(html.match(/<em>false\|0<\/em>/g)).toHaveLength(2)
   expect(html).toContain('<span>a,b</span>')
   expect((globalThis as any).__stxDefaultExecuted).toBeUndefined()
+})
+
+test('shared public props preserve compact nested literal objects in SSR and compiled elements', async () => {
+  const inputDir = join(root, 'compact-source'), outputDir = join(root, 'compact-dist')
+  const component = compactSource
+  await Bun.write(join(inputDir, 'Compact.stx'), component)
+  const html = await processDirectives('<Compact/>', {}, join(root, 'compact.stx'), { componentsDir: inputDir, root, cache: false }, new Set())
+  expect(html.match(/<p>(.*?)<\/p>/)?.[1]).toBe('7|9|}} &#123;&#8288;&#123;&#8288;&#123;')
+  await buildComponentLibrary({ inputDir, outputDir, prefix: 'shared', bundle: false })
+  const { Compact } = await import(join(outputDir, 'index.js'))
+  const element = new Compact()
+  element.connectedCallback()
+  expect(element.querySelector('p')?.textContent).toBe('7|9|}} {{{')
 })
