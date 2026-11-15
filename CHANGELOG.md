@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.887...v0.2.888)
+
+## 🐛 Bug Fixes
+
+- **components**: distribute dynamic-only browser imports ([37fb343](https://github.com/stacksjs/stx/commit/37fb343)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **components**: preserve source imports and server boundary ([d903ce5](https://github.com/stacksjs/stx/commit/d903ce5)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **components**: bundle client imports in published elements ([1ebda4f](https://github.com/stacksjs/stx/commit/1ebda4f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.888 ([2c37fdf](https://github.com/stacksjs/stx/commit/2c37fdf)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.886...v0.2.887)
 
 ## 🐛 Bug Fixes
