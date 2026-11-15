@@ -4372,6 +4372,11 @@ function __stxOverlay(errs){
 
               // Handle CORS preflight
               if (req.method === 'OPTIONS') {
+                // API proxies own their CORS policy. Their onRequest response
+                // must reach the browser before the generic STX asset policy.
+                const hookResult = await options.onRequest?.(req, server)
+                if (hookResult instanceof Response)
+                  return hookResult
                 return new Response(null, { headers: corsHeaders })
               }
 

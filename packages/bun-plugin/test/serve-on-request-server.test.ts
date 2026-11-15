@@ -17,6 +17,7 @@ import { createTempDir } from '../../stx/src/temp-dir'
 setDefaultTimeout(60_000)
 
 const PORT = freePort()
+const API_PORT = freePort()
 const BASE = `http://127.0.0.1:${PORT}`
 const SERVE_SRC = path.join(import.meta.dir, '..', 'src', 'serve.ts')
 
@@ -29,10 +30,25 @@ beforeAll(async () => {
   await Bun.write(path.join(dir, 'views', 'index.stx'), '<h1>home</h1>')
   await Bun.write(path.join(dir, 'driver.ts'), `import { serve } from ${JSON.stringify(SERVE_SRC)}
 
+Bun.serve({
+  port: ${API_PORT},
+  fetch(request) {
+    if (request.headers.get('origin') !== 'https://lsu.example')
+      return new Response('Origin refused', { status: 403 })
+    return new Response(null, { status: 204, headers: {
+      'Access-Control-Allow-Origin': 'https://lsu.example',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Authorization, X-HQ-Day, X-Org-Id',
+      'Vary': 'Origin',
+    } })
+  },
+})
 serve({
   patterns: ['views'],
   port: ${PORT},
-  onRequest(req, server) {
+  async onRequest(req, server) {
+    if (new URL(req.url).pathname.startsWith('/api/'))
+      return fetch('http://127.0.0.1:${API_PORT}' + new URL(req.url).pathname, { method: req.method, headers: req.headers })
     if (new URL(req.url).pathname !== '/__peer')
       return null
     return Response.json({ peer: server.requestIP(req)?.address ?? null })
@@ -75,4 +91,29 @@ describe('serve onRequest', () => {
 
     expect(await res.text()).toContain('home')
   })
+
+  it('forwards API preflight to its proxy with the configured origin and headers', async () => {
+    const res = await fetch(`${BASE}/api/health/metrics`, { method: 'OPTIONS', headers: {
+      Origin: 'https://lsu.example',
+      'Access-Control-Request-Method': 'GET',
+      'Access-Control-Request-Headers': 'authorization,x-hq-day,x-org-id',
+    } })
+    expect(res.status).toBe(204)
+    expect(res.headers.get('access-control-allow-origin')).toBe('https://lsu.example')
+    expect(res.headers.get('access-control-allow-headers')).toContain('X-HQ-Day')
+    expect(res.headers.get('vary')).toBe('Origin')
+  })
+
+  it('keeps the upstream refusal instead of granting a wildcard preflight', async () => {
+    const res = await fetch(`${BASE}/api/health/metrics`, { method: 'OPTIONS', headers: { Origin: 'https://foreign.example' } })
+    expect(res.status).toBe(403)
+    expect(res.headers.get('access-control-allow-origin')).toBeNull()
+  })
+
+  it('retains the generic asset preflight when the hook does not answer', async () => {
+    const res = await fetch(`${BASE}/`, { method: 'OPTIONS' })
+    expect(res.status).toBe(200)
+    expect(res.headers.get('access-control-allow-origin')).toBe('*')
+  })
+
 })
