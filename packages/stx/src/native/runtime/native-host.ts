@@ -1071,21 +1071,38 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       }
       record.reportedClasses = unsupported
     }
+    const derived = classProps(id, record, classes)
+    if (derived) {
+      Object.assign(record.props, derived)
+      if (record.materialized) emit({ op: 'updateNode', id, patch: { props: derived } })
+    }
+  }
+
+  /**
+   * What a node's classes say about its props rather than its style: an
+   * icon's symbol, a line limit (`truncate`, `line-clamp-2`), how an image
+   * fills its box (`object-cover`). Undefined when they say nothing.
+   *
+   * A host reads these as props, so every way a node comes to exist has to
+   * hand them over: created later (materialize), drawn with the screen
+   * (adopt) and redrawn after a refused batch (snapshot). The last two used
+   * to resolve the style alone. An `object-cover` image that was on screen at
+   * the first draw reached the host with no resizeMode and was drawn fitted
+   * between two bars, while the same image inside a loop, created a moment
+   * later, filled its box (stacksjs/stx#2195).
+   */
+  function classProps(id: string, record: NodeRecord, classes: ReturnType<typeof classStylesOf>): Record<string, unknown> | undefined {
+    let derived: Record<string, unknown> | undefined
     if (record.type === 'Icon' && classes.icon) {
       const icon = resolveNodeIcon(id, record, classes.icon)
-      record.props.symbol = icon.symbol
-      record.props.iconify = icon.iconify
-      if (record.materialized) emit({ op: 'updateNode', id, patch: { props: { symbol: record.props.symbol, iconify: icon.iconify } } })
+      derived = { symbol: icon.symbol, iconify: icon.iconify }
     }
-    if (classes.numberOfLines !== undefined) {
-      record.props.numberOfLines = classes.numberOfLines
-      if (record.materialized) emit({ op: 'updateNode', id, patch: { props: { numberOfLines: classes.numberOfLines } } })
-    }
+    if (classes.numberOfLines !== undefined)
+      (derived ??= {}).numberOfLines = classes.numberOfLines
     // `object-cover` on an <img> or <video>: how it fills its box.
-    if (classes.resizeMode && (record.type === 'Image' || record.type === 'ImageBackground' || record.type === 'Video') && record.props.resizeMode !== classes.resizeMode) {
-      record.props.resizeMode = classes.resizeMode
-      if (record.materialized) emit({ op: 'updateNode', id, patch: { props: { resizeMode: classes.resizeMode } } })
-    }
+    if (classes.resizeMode && (record.type === 'Image' || record.type === 'ImageBackground' || record.type === 'Video') && record.props.resizeMode !== classes.resizeMode)
+      (derived ??= {}).resizeMode = classes.resizeMode
+    return derived
   }
 
   function resolveNodeIcon(id: string, record: NodeRecord, name: string) {
@@ -1269,6 +1286,15 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     }
     record.style = resolveStyle(record, node.__stxId)
     if (descriptor) descriptor.style = { ...record.style } as STXNode['style']
+    // A node drawn with the screen is never created again, so what its
+    // classes say about its props goes out with that first draw (#2195).
+    if (classes) {
+      const derived = classProps(node.__stxId, record, classStylesOf(record, false))
+      if (derived) {
+        Object.assign(record.props, derived)
+        if (descriptor) Object.assign(descriptor.props, derived)
+      }
+    }
     records.set(node.__stxId, record)
     decorateControl(node, type)
     decoratePosition(node)
@@ -1485,8 +1511,11 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       queue = []
       const describe = (node: NativeNode): STXNode => {
         const record = recordOf(node)
-        if (!record.materialized)
+        if (!record.materialized) {
           record.style = resolveStyle(record, node.__stxId)
+          const derived = classProps(node.__stxId, record, classStylesOf(record, false))
+          if (derived) Object.assign(record.props, derived)
+        }
         record.materialized = true
         const children = record.children
           .filter(child => child.__stxAnchor === undefined)
