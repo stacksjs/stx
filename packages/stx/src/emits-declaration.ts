@@ -18,7 +18,12 @@ function detailFromTuple(tuple: string): string {
   const member = members[0]!
   if (member.startsWith('...')) return tuple.trim()
   const labelled = /^(?:[A-Za-z_$][\w$]*)(\?)?\s*:\s*([\s\S]+)$/.exec(member)
-  return labelled ? `${labelled[2]}${labelled[1] ? ' | undefined' : ''}` : member
+  // A tuple member's ? is tuple syntax, not a standalone type operator.
+  // Native emit dispatches [] for zero arguments and the scalar for one,
+  // including an explicitly supplied undefined.
+  const optional = labelled ? !!labelled[1] : member.endsWith('?')
+  const type = labelled ? labelled[2]! : optional ? member.slice(0, -1).trim() : member
+  return optional ? `(${type}) | undefined | []` : type
 }
 
 export interface EmitsDeclaration {

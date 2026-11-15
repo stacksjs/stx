@@ -74,6 +74,7 @@ for (const fixture of ['component-library-emits.test.ts', 'component-library-emi
   const test = readFileSync(join(root, 'packages/stx/test/web-components', fixture), 'utf8')
     .replaceAll("'../../src/component-library'", "'@stacksjs/stx/component-library'")
     .replaceAll("'../../src/process'", "'@stacksjs/stx/process'")
+    .replace("new URL('../../src/signals-api.ts', import.meta.url).pathname", "new URL(import.meta.resolve('@stacksjs/stx/signals-api')).pathname")
     .replaceAll("'../../src/temp-dir'", "'@stacksjs/stx/temp-dir'")
     .replaceAll("'../../test-utils/browser-fixture'", "'./browser-fixture'")
     .replace("const buildComponentLibrary = process.env.STX_LIBRARY_DIST ? (await import('../../dist/component-library.js')).buildComponentLibrary : sourceBuild", 'const buildComponentLibrary = sourceBuild')
@@ -87,7 +88,11 @@ for (const flags of [[], ['--frozen-lockfile']]) {
   if (normalLock) assert.equal(lock, normalLock, 'Frozen install changed the qualified lockfile')
   else normalLock = lock
   await verifyPublicTypes(smokeRoot, publicTypeArchives, flags.length ? 'frozen' : 'normal', { kind: 'prepublication-original-archives', url: registry.url, requests: registry.requests })
-  await run([process.execPath, '--no-env-file', 'test', '--preload', './happy-dom.ts', './component-library-emits.test.ts', './component-library-emits-browser.test.ts'])
+  await run([process.execPath, '--no-env-file', 'test', '--preload', './happy-dom.ts', './component-library-emits.test.ts'])
+  // Bun's Chrome bridge discovers its executable through the real desktop HOME;
+  // archive installation and strict/SSR consumers retain their isolated HOME.
+  await run([process.execPath, '--no-env-file', 'test', '--preload', './happy-dom.ts', './component-library-emits-browser.test.ts'], smokeRoot,
+    process.env.STX_BROWSER_HOME ? { HOME: process.env.STX_BROWSER_HOME } : {})
   console.log(`native emits original-archive ${flags.length ? 'frozen' : 'normal'} consumer passed`)
 }
 

@@ -44,6 +44,7 @@ interface CompiledComponent {
   methods: Record<string, string>
   methodDeclarations: Record<string, string[]>
   declarationTypes: string
+  declarationImports: string
   eventTypes: string[]
   handlers: string[]
   scopeMethods: string[]
@@ -251,7 +252,7 @@ export function methodDeclaration(method: ClientMethod): string {
   return `${method.name}${method.generic}(${parameters}): ${method.returns || (method.async ? 'Promise<unknown>' : 'unknown')}`
 }
 
-function extractClientMethods(source: string, file: string): { methods: Record<string, string>, declarations: Record<string, string[]>, types: string } {
+function extractClientMethods(source: string, file: string): { methods: Record<string, string>, declarations: Record<string, string[]>, types: string, typeImports: string } {
   const methods: Record<string, string> = {}, declarations: Record<string, string[]> = {}, types: string[] = [], imports: Array<{ binding: string, module: string }> = []
   const scripts = scanHtmlScriptElements(componentScriptSource(source)).map(script => ({
     code: source.slice(script.bodyStart, script.bodyEnd),
@@ -328,7 +329,7 @@ function extractClientMethods(source: string, file: string): { methods: Record<s
     if (imported.module.startsWith('.') || path.isAbsolute(imported.module)) throw new Error(`${file}: public method types import ${JSON.stringify(imported.module)} outside the generated package; declare these types in the component or import them from a published dependency`)
   }
   const typeImports = [...new Set(usedImports.map(imported => `import type ${imported.binding.replace(/\btype\s+/g, '')} from ${JSON.stringify(imported.module)}`))]
-  return { methods, declarations, types: [...typeImports, ...types].join('\n\n') }
+  return { methods, declarations, types: types.join('\n\n'), typeImports: typeImports.join('\n') }
 }
 
 function extractTemplate(source: string): string {
@@ -451,7 +452,7 @@ export function parseNativeComponentLoop(expression: string): { iterable: string
   return pair ? { iterable: pair[1]!, key: pair[2], value: pair[3]! } : undefined
 }
 
-function compileTemplateToRender(template: string): string {
+function compileTemplateToRender(template: string, handlers: string[]): string {
   const parts: string[] = []
   let cursor = 0
 
@@ -482,15 +483,17 @@ function compileTemplateToRender(template: string): string {
     // Interpolation splits the literal, so the pieces around it are emitted as
     // string constants and the expressions as real JavaScript.
     let index = 0
-    const interpolation = /\{!!\s*([\s\S]*?)\s*!!\}|\{\{\s*([\s\S]*?)\s*\}\}/g
+    const interpolation = /\{!!\s*([\s\S]*?)\s*!!\}|\{\{\s*([\s\S]*?)\s*\}\}|(data-stx-on-[\w:-]+=")(\d+)(")/g
     let hit: RegExpExecArray | null
     while ((hit = interpolation.exec(raw))) {
       if (hit.index > index) parts.push(`out += ${JSON.stringify(raw.slice(index, hit.index))};`)
       // `{!! !!}` is the author saying "this is markup". `{{ }}` is the author
       // saying "this is a value", and a value is escaped, always.
-      parts.push(hit[1] !== undefined
-        ? `out += __raw(${hit[1]});`
-        : `out += __escape(${hit[2]});`)
+      parts.push(hit[3] !== undefined
+        ? `out += ${JSON.stringify(hit[3])} + (this._handlers.push(${handlers[Number(hit[4])]}) - 1) + ${JSON.stringify(hit[5])};`
+        : hit[1] !== undefined
+          ? `out += __raw(${hit[1]});`
+          : `out += __escape(${hit[2]});`)
       index = hit.index + hit[0].length
     }
     if (index < raw.length) parts.push(`out += ${JSON.stringify(raw.slice(index))};`)
@@ -787,7 +790,7 @@ async function compileComponent(
     scope.imports.push(...hoistScriptImports(source.slice(script.bodyStart, script.bodyEnd)).imports)
   }
   scope.imports = [...new Set(scope.imports)]
-  const render = compileTemplateToRender(bindingCompilation.template)
+  const render = compileTemplateToRender(bindingCompilation.template, eventCompilation.handlers)
 
   // A prop declared with defineProps is part of the element's public surface,
   // so it becomes a real property here. Without this the component compiles
@@ -823,6 +826,7 @@ async function compileComponent(
     methods: { ...metadataMethods, ...configuredMethods, ...extractedMethods.methods },
     methodDeclarations: extractedMethods.declarations,
     declarationTypes: extractedMethods.types,
+    declarationImports: extractedMethods.typeImports,
     eventTypes: eventCompilation.eventTypes,
     handlers: eventCompilation.handlers,
     scopeMethods: Object.keys(extractedMethods.methods),
@@ -905,6 +909,7 @@ export class StxElement extends HTMLElementBase {
     this._scopeSubscriptions = [];
     this._scopeMounts = [];
     this._scopeDestroys = [];
+    this._scopeConnectionDestroys = [];
     this._scopeMountCleanups = [];
     const definition = this.constructor.definition;
     for (const [name, property] of Object.entries(definition.properties || {})) {
@@ -963,8 +968,10 @@ export class StxElement extends HTMLElementBase {
     catch (error) { console.error('[stx] onDisconnect failed', error); }
     finally {
       this._disposeScopeEffects();
-      for (const dispose of this._scopeSubscriptions.splice(0)) dispose?.();
-      for (const cleanup of [...this._scopeDestroys, ...this._scopeMountCleanups.splice(0)]) {
+      for (const dispose of this._scopeSubscriptions.splice(0)) {
+        try { dispose?.(); } catch (error) { console.error('[stx] scope subscription cleanup failed', error); }
+      }
+      for (const cleanup of [...this._scopeDestroys.splice(0), ...this._scopeConnectionDestroys.splice(0), ...this._scopeMountCleanups.splice(0)]) {
         try { cleanup(); } catch (error) { console.error('[stx] scope cleanup failed', error); }
       }
       for (const [event, listener] of this._listeners) this.renderRoot.removeEventListener(event, listener);
@@ -1016,7 +1023,9 @@ export class StxElement extends HTMLElementBase {
   }
 
   _disposeScopeEffects() {
-    for (const dispose of this._scopeEffects.splice(0)) dispose();
+    for (const dispose of this._scopeEffects.splice(0)) {
+      try { dispose(); } catch (error) { console.error('[stx] effect cleanup failed', error); }
+    }
   }
 
   _runScopeMounts() {
@@ -1031,7 +1040,9 @@ ${signals ? `  _beginScope() {
     this._scopeMounts = [];
     this._scopeDestroys = [];
     let stateIndex = 0, derivedIndex = 0;
+    let rendering = true;
     return {
+      finish: () => { rendering = false; },
       state: (initial) => {
         const index = stateIndex++;
         const value = this._scopeStates[index] ||= nativeState(initial);
@@ -1058,7 +1069,7 @@ ${signals ? `  _beginScope() {
       },
       batch: nativeBatch,
       onMount: callback => this._scopeMounts.push(callback),
-      onDestroy: callback => this._scopeDestroys.push(callback),
+      onDestroy: callback => (rendering ? this._scopeDestroys : this._scopeConnectionDestroys).push(callback),
     };
   }
 
@@ -1253,6 +1264,9 @@ function componentModule(component: CompiledComponent, runtimeImport = './runtim
   }).join('\n\n')
 
   const scope = component.scope
+  const localNames = new Set(new Tokenizer([scope.body, ...scope.imports, ...Object.keys(component.properties), ...Object.values(scope.propBindings)].join('\n')).tokenize().map(token => token.value))
+  let scopeOwner = '__stxScope'
+  while (localNames.has(scopeOwner)) scopeOwner += '$'
 
   // Every declared property, not only the ones defineProps named. A component
   // may declare its surface in script metadata instead, and those templates
@@ -1275,13 +1289,14 @@ function componentModule(component: CompiledComponent, runtimeImport = './runtim
 
   if (component.render.trim() !== '' || scope.body !== '' || destructured !== '') {
     const inner = [
-      scope.apis.length ? `const { ${scope.apis.join(', ')} } = this._beginScope();` : '',
+      scope.apis.length ? `const ${scopeOwner} = this._beginScope();\nconst { ${scope.apis.join(', ')} } = ${scopeOwner};` : '',
       destructured ? `const { ${destructured} } = this._props();` : '',
       scope.body,
       component.scopeMethods.length ? `this._scopeMethods = { ${component.scopeMethods.join(', ')} };` : '',
-      component.handlers.length ? `this._handlers = [${component.handlers.join(', ')}];` : '',
+      component.handlers.length ? 'this._handlers = [];' : '',
       `let out = '';`,
       component.render,
+      scope.apis.length ? `${scopeOwner}.finish();` : '',
       'return out;',
     ].filter(Boolean).join('\n')
 
@@ -1336,14 +1351,30 @@ export function typeForProperty(property: ComponentLibraryProperty): string {
 }
 
 function componentDeclaration(component: CompiledComponent): string {
+  // Authored support types keep their names in a private scope. In particular,
+  // a tuple map named FooEventMap must never merge with the DOM FooEventMap.
+  const authoredTypes = [component.declarationTypes, component.declarationImports, component.name, ...Object.values(component.methodDeclarations).flat(), ...Object.values(component.events).map(event => event.detailType)].join('\n')
+  const identifiers = new Set(new Tokenizer(authoredTypes).tokenize().map(token => token.value))
+  const unique = (base: string): string => { let name = base; while (identifiers.has(name)) name += '$'; identifiers.add(name); return name }
+  const support = unique('__StxSupport'), publicMethods = unique('__Methods'), eventDetails = unique('__Details')
+  const scoped = !!component.declarationTypes
   const props = Object.entries(component.properties).map(([name, property]) =>
     `  ${name}${property.required ? '' : '?'}: ${typeForProperty(property)}`,
   ).join('\n')
   const events = Object.entries(component.events).map(([name, event]) =>
-    `  ${JSON.stringify(name)}: CustomEvent<${event.detailType || 'unknown'}>`).join('\n')
+    `  ${JSON.stringify(name)}: CustomEvent<${scoped ? `${support}.${eventDetails}[${JSON.stringify(name)}]` : event.detailType || 'unknown'}>`).join('\n')
   const methods = Object.keys(component.methods).flatMap(name => component.methodDeclarations[name] || [`${name}($event?: Event): unknown`]).map(signature => `  ${signature}`).join('\n')
 
-  return `${component.declarationTypes ? `${component.declarationTypes}\n\n` : ''}export interface ${component.name}Props {
+  const supportDeclaration = scoped ? `declare namespace ${support} {
+${component.declarationTypes}
+export interface ${publicMethods} {
+${methods}
+}
+export interface ${eventDetails} {
+${Object.entries(component.events).map(([name, event]) => `  ${JSON.stringify(name)}: ${event.detailType || 'unknown'}`).join('\n')}
+}
+}\n\n` : ''
+  return `${component.declarationImports ? component.declarationImports + '\n\n' : ''}${supportDeclaration}export interface ${component.name}Props {
 ${props}
 }
 
@@ -1351,10 +1382,10 @@ export interface ${component.name}EventMap {
 ${events}
 }
 
-export interface ${component.name} extends Required<Pick<${component.name}Props, Exclude<keyof ${component.name}Props, keyof HTMLElement>>> {}
+export interface ${component.name} extends Required<Pick<${component.name}Props, Exclude<keyof ${component.name}Props, keyof HTMLElement>>>${scoped ? `, ${support}.${publicMethods}` : ''} {}
 
 export declare class ${component.name} extends HTMLElement {
-${methods}
+${scoped ? '' : methods}
   addEventListener<K extends keyof ${component.name}EventMap>(type: K, listener: (this: ${component.name}, event: ${component.name}EventMap[K]) => unknown, options?: boolean | AddEventListenerOptions): void
   addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, event: HTMLElementEventMap[K]) => unknown, options?: boolean | AddEventListenerOptions): void
   addEventListener(type: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions): void
@@ -1539,15 +1570,9 @@ export async function buildComponentLibrary(config: ComponentLibraryConfig): Pro
   }
 
   const signals = components.some(component => component.scope.apis.length)
-  if (signals) {
-    // Bundle the native primitives once. Generated elements need no ambient
-    // runtime and share the same dependency tracker as their emitted helpers.
-    const extension = import.meta.url.endsWith('.ts') ? '.ts' : '.js'
-    const nativeSignals = new URL(`./signals-api${extension}`, import.meta.url).pathname
-    const built = await Bun.build({ entrypoints: [nativeSignals], target: 'browser', format: 'esm', minify: true })
-    if (!built.success) throw new Error(`Failed to bundle native component signals: ${built.logs.map(String).join('\n')}`)
-    await emit('signals.js', await built.outputs[0]!.text())
-  }
+  const extension = import.meta.url.endsWith('.ts') ? '.ts' : '.js'
+  const nativeSignals = new URL(`./signals-api${extension}`, import.meta.url).pathname
+  if (signals) await emit('signals.js', `export * from ${JSON.stringify(nativeSignals)};`)
   await emit('runtime.js', runtimeModule(signals))
   for (const component of components) {
     await emit(`${component.tag}.js`, componentModule(component))
@@ -1562,7 +1587,7 @@ export async function buildComponentLibrary(config: ComponentLibraryConfig): Pro
   // when the component has no static declarations. Scan compiled browser code
   // so server scripts, type syntax and import-looking text cannot activate it.
   const importScanner = new Bun.Transpiler({ loader: 'ts' })
-  if (components.some(component => component.scope.imports.length || importScanner.scanImports(componentModule(component)).some(imported => imported.kind === 'dynamic-import'))) {
+  if (signals || components.some(component => component.scope.imports.length || importScanner.scanImports(componentModule(component)).some(imported => imported.kind === 'dynamic-import'))) {
     // Resolve TS/npm/transitive browser dependencies before distribution. A
     // single split build preserves shared module identity between elements;
     // separately bundling each entry would duplicate imported stores/effects.
@@ -1571,6 +1596,8 @@ export async function buildComponentLibrary(config: ComponentLibraryConfig): Pro
     for (const [index, file] of entrypoints.entries()) canonicalEntries.set(file, components[index]!)
     const sourceEntries = new Map(components.map(component => [path.join(path.dirname(component.sourcePath), `.stx-library-${component.tag}.ts`), component]))
     const runtimePath = path.join(outputDir, 'runtime.js')
+    entrypoints.push(runtimePath)
+    if (signals) entrypoints.push(path.join(outputDir, 'signals.js'))
     // Bun resolves from its module identity (onLoad has no resolveDir option).
     // Give each generated entry an identity beside its authored component,
     // without writing there. Bun then applies the source package's browser
@@ -1585,7 +1612,10 @@ export async function buildComponentLibrary(config: ComponentLibraryConfig): Pro
           if (args.path === 'bun' || args.path.startsWith('bun:') || args.path.startsWith('node:') || SERVER_MODULES.has(args.path)) throw new Error(`Server-only import ${JSON.stringify(args.path)} is not available in a browser component (${args.importer})`)
           const entry = canonicalEntries.get(args.path)
           if (!args.importer && entry) return { path: path.join(path.dirname(entry.sourcePath), `.stx-library-${entry.tag}.ts`) }
-          if (args.path === runtimePath && sourceEntries.has(args.importer)) return { path: './runtime.js', external: true }
+          if (args.path === runtimePath && sourceEntries.has(args.importer)) return { path: runtimePath }
+          // Authored module helpers and element scope primitives participate in
+          // this same split build, using the owner's canonical signals module.
+          if (/^(?:@stacksjs\/stx|stx)\/signals-api(?:\.[jt]s)?$/.test(args.path)) return { path: nativeSignals }
         })
         builder.onLoad({ filter: /\.ts$/ }, args => {
           const component = sourceEntries.get(args.path)

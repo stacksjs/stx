@@ -24,6 +24,13 @@ const payload = defineEmits<{ select: { id: string }; delete: string }>()
 payload('select', { id: 'one' }); payload('delete', 'one')
 // @ts-expect-error Payload maps retain object shapes.
 payload('select', { id: 1 })
+const optional = defineEmits<{ change: [string?]; named: [value?: string] }>()
+optional('change'); optional('change', undefined); optional('change', 'value')
+optional('named'); optional('named', undefined); optional('named', 'value')
+// @ts-expect-error Optional argument remains typed.
+optional('change', 7)
+// @ts-expect-error Labeled optional argument remains typed.
+optional('named', 7)
 const runtime = defineEmits(['change', 'close'])
 runtime('change', 'value'); runtime('close')
 // @ts-expect-error Runtime event names are checked.
