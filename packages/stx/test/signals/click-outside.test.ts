@@ -44,6 +44,28 @@ describe('useClickOutside runtime', () => {
     listener.remove()
   })
 
+  it('resolves a getter when each pointer event occurs', () => {
+    const inside = document.createElement('div')
+    const outside = document.createElement('button')
+    document.body.append(inside, outside)
+
+    let current: HTMLElement | null = null
+    let calls = 0
+    const listener = window.stx.useClickOutside(() => current, () => calls++)
+
+    // Nothing to be outside of yet: the getter answers null.
+    outside.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }))
+    expect(calls).toBe(0)
+
+    current = inside
+    inside.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }))
+    expect(calls).toBe(0)
+    outside.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }))
+    expect(calls).toBe(1)
+
+    listener.remove()
+  })
+
   it('resolves value-based refs', () => {
     const targetElement = document.createElement('div')
     const outside = document.createElement('button')

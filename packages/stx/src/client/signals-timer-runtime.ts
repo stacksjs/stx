@@ -278,6 +278,10 @@ else if (timer === null) {
   function useClickOutside(target, handler) {
     function resolveTarget() {
       if (typeof target === 'string') return document.querySelector(target);
+      // A getter (\`() => box.current\`), as the module composable's MaybeRef reads one.
+      // It used to be taken for the element itself, and every pointerdown threw
+      // "el.contains is not a function" without ever running the handler.
+      if (typeof target === 'function') return target();
       if (target && typeof target === 'object') {
         if ('current' in target) return target.current;
         if ('value' in target) return target.value;

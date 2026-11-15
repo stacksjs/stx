@@ -414,7 +414,8 @@ declare function useEventListener(
 declare function useScrollLock(
   _target?: HTMLElement | null | { current?: HTMLElement | null, value?: HTMLElement | null } | (() => HTMLElement | null | undefined),
 ): StxSignal<boolean>
-declare function useClickOutside(_target: HTMLElement | StxRef<HTMLElement | null> | string | null, _handler: (event: MouseEvent) => void): StxCleanup
+/** `_target` is an element, a selector, a ref, or a getter for the element (`() => box.current`), read on every press. */
+declare function useClickOutside(_target: HTMLElement | StxRef<HTMLElement | null> | (() => HTMLElement | null | undefined) | string | null, _handler: (event: MouseEvent) => void): StxCleanup
 declare function useFocus(_target: HTMLElement | StxRef<HTMLElement | null> | string | null): { focused: StxSignal<boolean>, focus: () => void, blur: () => void }
 
 // ============================================================================
