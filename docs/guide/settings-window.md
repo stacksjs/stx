@@ -135,6 +135,8 @@ that `setting`, scrolls to it and highlights it; false when there is none),
 `back()`, `forward()`, `focusSearch()`, `getPane()`. On a native host, which
 has no document to find the window in, `componentApi(id)` takes the window's
 `id` and nothing else.
+A native sidebar item carries the test id `settings-item-<id>`, so a UI test can
+open a pane by pressing it.
 
 ```ts
 import { componentApi } from '@stacksjs/components/component-api'

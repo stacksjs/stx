@@ -35,6 +35,7 @@ export const glyphInk = settingsNativeGlyph(tone)
   role="tab"
   aria-selected="false"
   aria-label="{{ label }}"
+  testID="settings-item-{{ paneId }}"
   data-settings-item="{{ paneId }}"
   data-label="{{ label }}"
   data-keywords="{{ keywords }}"
