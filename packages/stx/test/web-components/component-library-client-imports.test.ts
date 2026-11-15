@@ -173,6 +173,83 @@ function read(): string { return value + ':' + local }
   }, 30_000)
 }
 
+for (const bundle of [true, false]) {
+  test(`dynamic-only imports distribute a lazy shared graph in ${bundle ? 'standalone bundles' : 'ESM output'}`, async () => {
+    const root = createTempDir('stx-lazy-package-origin-')
+    let fixture: ReturnType<typeof createBrowserFixture> | undefined
+    try {
+      const project = join(root, 'project'), widgets = join(project, 'widgets'), inputDir = join(widgets, 'src')
+      await installHelper(root, project, 'WRONG-root-version', '1.0.0')
+      await installHelper(root, widgets, 'correct-source-browser', '2.0.0')
+      await Bun.write(join(project, 'src', 'local.ts'), "export const local = 'WRONG-root-map'")
+      await Bun.write(join(inputDir, 'local.ts'), "export const local = 'source-import-map'")
+      await Bun.write(join(inputDir, 'lazy.ts'), `customElements.define('lazy-import-effect', class extends HTMLElement {})
+let counter = 0
+export function next() { return ++counter }
+`)
+      await Bun.write(join(inputDir, 'Probe.stx'), `<script client>
+async function read(): Promise<string> {
+  const [{ value }, { local }] = await Promise.all([import('review-helper'), import('#local')])
+  return value + ':' + local
+}
+async function count(): Promise<number> { return (await import('./lazy.ts')).next() }
+</script><template><p>Lazy imports</p></template>`)
+      await Bun.write(join(inputDir, 'Mirror.stx'), `<script client>
+async function count(): Promise<number> { return (await import('./lazy.ts')).next() }
+</script><template>Mirror</template>`)
+      const outputs = []
+      for (const outputDir of [join(project, 'dist'), join(root, 'separate', 'dist')]) {
+        const result = await buildComponentLibrary({ inputDir, outputDir, prefix: 'lazy', bundle })
+        const javascript = (await Promise.all(result.files.filter(file => file.endsWith('.js')).map(file => Bun.file(file).text()))).join('\n')
+        expect(javascript).toContain('correct-source-browser')
+        expect(javascript).not.toContain('WRONG-root-version')
+        expect(javascript).not.toContain('WRONG-node-condition')
+        expect(javascript).not.toContain('WRONG-root-map')
+        expect(await Bun.file(join(outputDir, 'lazy-probe.d.ts')).text()).toContain('read(): Promise<string>')
+        outputs.push({ outputDir, result })
+      }
+      await rm(widgets, { recursive: true })
+      await rm(join(project, 'src'), { recursive: true })
+      await rm(join(project, 'node_modules'), { recursive: true })
+      for (const { outputDir, result } of outputs) {
+        fixture = createBrowserFixture({
+          createServer: () => Bun.serve({ hostname: '127.0.0.1', port: 0, async fetch(request) {
+            const pathname = new URL(request.url).pathname
+            if (pathname === '/') return new Response(`<!doctype html><script type="module" src="/${bundle ? 'bundle' : 'index'}.js"></script><lazy-probe></lazy-probe><lazy-mirror></lazy-mirror>`, { headers: { 'Content-Type': 'text/html', 'Content-Security-Policy': "default-src 'none'; script-src 'self'; base-uri 'none'" } })
+            const file = join(outputDir, pathname)
+            return result.files.includes(file) && await Bun.file(file).exists() ? new Response(Bun.file(file), { headers: { 'Content-Type': 'text/javascript' } }) : new Response(null, { status: 404 })
+          } }),
+          createView: () => new WebView({ headless: true, backend: { type: 'chrome', url: false } }),
+        })
+        await fixture.view.navigate(fixture.url)
+        await fixture.waitFor("!!customElements.get('lazy-probe')", value => value === true)
+        expect(await fixture.view.evaluate("!!customElements.get('lazy-import-effect')")).toBe(false)
+        expect(await fixture.view.evaluate("document.querySelector('lazy-probe').read()")).toBe('correct-source-browser:source-import-map')
+        expect(await fixture.view.evaluate("document.querySelector('lazy-probe').count()")).toBe(1)
+        expect(await fixture.view.evaluate("document.querySelector('lazy-mirror').count()")).toBe(2)
+        expect(await fixture.view.evaluate("!!customElements.get('lazy-import-effect')")).toBe(true)
+        expect(await fixture.view.evaluate("typeof window.stx + ':' + typeof window.next")).toBe('undefined:undefined')
+        fixture.close()
+      }
+    }
+    finally { fixture?.close(); await rm(root, { recursive: true, force: true }) }
+  }, 30_000)
+
+  test(`dynamic-only server imports fail the ${bundle ? 'standalone' : 'ESM'} browser build`, async () => {
+    const root = createTempDir('stx-lazy-server-import-')
+    try {
+      const inputDir = join(root, 'source')
+      for (const specifier of ['node:fs', 'bun']) {
+        await Bun.write(join(inputDir, 'Unsafe.stx'), `<script client>
+async function read(): Promise<unknown> { return import('${specifier}') }
+</script><template>Unsafe</template>`)
+        await expect(buildComponentLibrary({ inputDir, outputDir: join(root, 'dist'), bundle })).rejects.toThrow(/Server-only import|browser/)
+      }
+    }
+    finally { await rm(root, { recursive: true, force: true }) }
+  })
+}
+
 test('browser dependency failures are reported while building elements, including without a standalone bundle', async () => {
   const root = createTempDir('stx-client-server-import-')
   try {

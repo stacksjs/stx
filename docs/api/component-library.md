@@ -84,6 +84,8 @@ Client methods can explicitly import browser helpers from relative TypeScript mo
 
 Imports resolve from the authored component's package, including browser export conditions and package import maps, even when `outputDir` is outside that package. Comments and import attributes retain their ordinary module meaning. `<script server>` blocks are excluded from the browser component graph and are not executed by the component-library compiler. Supply browser render values through properties or the component's default client script; server-only declarations are unavailable to the generated browser render.
 
+Literal dynamic imports such as `await import('./optional.ts')` use the same source-context dependency graph, including components with no static imports. Their modules execute when imported; distributed ESM includes the required lazy chunks, and the standalone bundle includes their dependencies. Browser dependency checks apply to these imports as well.
+
 Distribute the complete emitted directory, including any `chunks/` files. Both individual ESM entries and `bundle.js` work without the author's source tree. `bundle: false` disables only the standalone bundle; browser dependencies are still compiled into the ESM distribution. Server-only modules such as `node:fs` fail the browser build. Component metadata and SSR helper generation do not execute these browser dependencies.
 
 Property types are `string`, `number`, `boolean`, `object`, and `array`. Properties reflect to kebab-case attributes by default. Use `"attribute": false` for property-only values, a string for a custom attribute name, or `"reflect": false` to accept attribute input without reflecting later property writes.

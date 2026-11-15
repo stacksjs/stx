@@ -1865,7 +1865,11 @@ export async function buildComponentLibrary(config: ComponentLibraryConfig): Pro
     }
   }
 
-  if (components.some(component => component.scope.imports.length)) {
+  // Literal import() dependencies need the same source-context build even
+  // when the component has no static declarations. Scan compiled browser code
+  // so server scripts, type syntax and import-looking text cannot activate it.
+  const importScanner = new Bun.Transpiler({ loader: 'ts' })
+  if (components.some(component => component.scope.imports.length || importScanner.scanImports(componentModule(component)).some(imported => imported.kind === 'dynamic-import'))) {
     // Resolve TS/npm/transitive browser dependencies before distribution. A
     // single split build preserves shared module identity between elements;
     // separately bundling each entry would duplicate imported stores/effects.
