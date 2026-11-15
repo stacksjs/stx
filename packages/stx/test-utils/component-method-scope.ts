@@ -64,4 +64,3 @@ export async function exerciseMethodScope(tag: string): Promise<unknown[]> {
 }
 
 export const methodScopeExpected = ['initial:0', 'initial:0', 'second:0', 'pending:0', 'pending:1', 'pending:1', 'second:0', 'second:0', '<p>manual:1</p>', 'manual:1', 'manual:1', 'async:1', 'async:1', 'expected label failure', 'recovered:1', 'recovered:1', 'recovered', 'RangeError', 'recovered:1', 'second:0']
-
