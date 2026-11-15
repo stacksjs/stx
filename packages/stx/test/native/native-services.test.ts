@@ -747,6 +747,17 @@ describe('files: a picked photo, a download, a form', () => {
     await expect(scope.fetch('https://hq.training/api/x', { method: 'GET', body: form })).rejects.toThrow('A GET or HEAD request cannot have a body')
   })
 
+  it("asks the host to leave its cookies out of a fetch with credentials 'omit'", async () => {
+    const { scope, requests, answer } = await runtime()
+    const sent = scope.fetch('https://notes.test/login', { method: 'POST', credentials: 'omit', headers: { 'content-type': 'application/json' }, body: '{}' })
+    expect(requests().at(-1)!.payload.args[0]).toEqual({ url: 'https://notes.test/login', method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}', credentials: 'omit' })
+    answer(requests().at(-1)!, { status: 200, headers: {}, body: '{}' })
+    await sent
+    // Any other mode is the host's default and is not sent: an older host reads the same request it always did.
+    void scope.fetch('https://notes.test/me', { credentials: 'include' }).catch(() => {})
+    expect(requests().at(-1)!.payload.args[0]).toEqual({ url: 'https://notes.test/me', method: 'GET', headers: {}, body: null })
+  })
+
   it('collects form values without files but keeps multipart uploads capability-gated', async () => {
     const { scope, requests } = await runtime()
     expect(scope.craft.files).toBeUndefined()

@@ -1337,6 +1337,9 @@ export function installCraftBridge(
       if (body != null && typeof body !== 'string') return Promise.reject(new TypeError('fetch in a native screen sends string bodies only'))
       if (body != null && (method === 'GET' || method === 'HEAD')) return Promise.reject(new TypeError('A GET or HEAD request cannot have a body'))
       const signal: AnyRecord | undefined = init.signal || source.signal
+      // `credentials: 'omit'`, as in a browser: the host neither sends its cookie store with this request nor
+      // keeps the cookies the response sets. What a bearer-token client wants, so no cookie rides along unasked.
+      const omitCredentials = (init.credentials || source.credentials) === 'omit'
       if (signal?.aborted) return Promise.reject(abortError(signal.reason))
       if (typeof init.onUploadProgress === 'function' && !capabilities.has('uploadProgress'))
         return Promise.reject(Object.assign(new Error('This app build cannot report upload progress'), { code: 'UPLOAD_PROGRESS_UNSUPPORTED' }))
@@ -1344,7 +1347,7 @@ export function installCraftBridge(
         return streamingFetch(url, method, headers, body == null ? null : body, signal)
       const uploadProgressId = typeof init.onUploadProgress === 'function' ? `upload-${++nextUpload}` : ''
       if (uploadProgressId) uploads.set(uploadProgressId, value => { if (!signal?.aborted) init.onUploadProgress(value) })
-      const answer = protocol.request<AnyRecord, AnyRecord>('API_REQUEST', { version: 1, module: 'Network', method: 'fetch', args: [{ url, method, headers, body: body == null ? null : body, ...(form ? { form } : {}), ...(uploadProgressId ? { uploadProgressId } : {}) }], ...(form ? { untimed: true } : {}) }, form ? null : undefined, signal as AbortSignal).then((data: AnyRecord) => {
+      const answer = protocol.request<AnyRecord, AnyRecord>('API_REQUEST', { version: 1, module: 'Network', method: 'fetch', args: [{ url, method, headers, body: body == null ? null : body, ...(omitCredentials ? { credentials: 'omit' } : {}), ...(form ? { form } : {}), ...(uploadProgressId ? { uploadProgressId } : {}) }], ...(form ? { untimed: true } : {}) }, form ? null : undefined, signal as AbortSignal).then((data: AnyRecord) => {
         const responseBody = data?.body == null ? '' : String(data.body)
         let bodyUsed = false
         const consume = (): Promise<string> => {
