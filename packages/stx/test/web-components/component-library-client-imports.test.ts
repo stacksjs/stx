@@ -1,7 +1,7 @@
 import { WebView } from 'bun'
 import { expect, test } from 'bun:test'
 import { rm } from 'node:fs/promises'
-import { join } from 'node:path'
+import { join, relative } from 'node:path'
 import { buildComponentLibrary as sourceBuild } from '../../src/component-library'
 import { createTempDir } from '../../src/temp-dir'
 import { createBrowserFixture } from '../../test-utils/browser-fixture'
@@ -263,3 +263,31 @@ function read(): string { return secret() }
   }
   finally { await rm(root, { recursive: true, force: true }) }
 })
+
+for (const signals of [false, true]) {
+  test(`distributed element module graphs are reproducible across output directories (${signals ? 'reactive' : 'plain'})`, async () => {
+    const root = createTempDir('stx-library-reproducible-')
+    try {
+      const inputDir = join(root, 'source')
+      await Bun.write(join(inputDir, 'helper.ts'), "export const value = 'shared'\n")
+      for (const name of ['Probe', 'Mirror']) {
+        await Bun.write(join(inputDir, `${name}.stx`), `<script client>
+import { value } from './helper'
+${signals ? "import { state } from '@stacksjs/stx/signals-api'\nconst count = state(0)" : ''}
+function read(): string { return value${signals ? ' + count()' : ''} }
+</script><template>Reproducible</template>`)
+      }
+      const graphs = []
+      for (const outputDir of [join(root, 'dist'), join(root, 'elsewhere', 'published')]) {
+        const result = await buildComponentLibrary({ inputDir, outputDir, prefix: 'stable', bundle: true })
+        const graph: Record<string, string> = {}
+        for (const file of result.files.filter(file => file.endsWith('.js')).sort())
+          graph[relative(outputDir, file)] = await Bun.file(file).text()
+        graphs.push(graph)
+      }
+      expect(Object.keys(graphs[0]).some(file => file.startsWith('chunks/'))).toBe(true)
+      expect(graphs[1]).toEqual(graphs[0])
+    }
+    finally { await rm(root, { recursive: true, force: true }) }
+  })
+}

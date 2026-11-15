@@ -1604,8 +1604,14 @@ export async function buildComponentLibrary(config: ComponentLibraryConfig): Pro
     for (const [index, file] of entrypoints.entries()) canonicalEntries.set(file, components[index]!)
     const sourceEntries = new Map(components.map(component => [path.join(path.dirname(component.sourcePath), `.stx-library-${component.tag}.ts`), component]))
     const runtimePath = path.join(outputDir, 'runtime.js')
+    const signalsPath = path.join(outputDir, 'signals.js')
+    // Generated output locations must not become module identities. Bun uses
+    // identities in shared-chunk hashes; rebuilding into another directory
+    // must produce the same distributed graph from the same source.
+    const runtimeSource = path.join(inputDir, '.stx-library-runtime.ts')
+    const signalsSource = path.join(inputDir, '.stx-library-signals.ts')
     entrypoints.push(runtimePath)
-    if (signals) entrypoints.push(path.join(outputDir, 'signals.js'))
+    if (signals) entrypoints.push(signalsPath)
     // Bun resolves from its module identity (onLoad has no resolveDir option).
     // Give each generated entry an identity beside its authored component,
     // without writing there. Bun then applies the source package's browser
@@ -1620,12 +1626,15 @@ export async function buildComponentLibrary(config: ComponentLibraryConfig): Pro
           if (args.path === 'bun' || args.path.startsWith('bun:') || args.path.startsWith('node:') || SERVER_MODULES.has(args.path)) throw new Error(`Server-only import ${JSON.stringify(args.path)} is not available in a browser component (${args.importer})`)
           const entry = canonicalEntries.get(args.path)
           if (!args.importer && entry) return { path: path.join(path.dirname(entry.sourcePath), `.stx-library-${entry.tag}.ts`) }
-          if (args.path === runtimePath && sourceEntries.has(args.importer)) return { path: runtimePath }
+          if (args.path === runtimePath) return { path: runtimeSource }
+          if (args.path === signalsPath || (args.importer === runtimeSource && args.path === './signals.js')) return { path: signalsSource }
           // Authored module helpers and element scope primitives participate in
           // this same split build, using the owner's canonical signals module.
           if (/^(?:@stacksjs\/stx|stx)\/signals-api(?:\.[jt]s)?$/.test(args.path)) return { path: nativeSignals }
         })
         builder.onLoad({ filter: /\.ts$/ }, args => {
+          if (args.path === runtimeSource) return { contents: runtimeModule(signals), loader: 'ts' }
+          if (args.path === signalsSource) return { contents: `export * from ${JSON.stringify(nativeSignals)};`, loader: 'ts' }
           const component = sourceEntries.get(args.path)
           if (component) return { contents: componentModule(component, runtimePath), loader: 'ts' }
         })
