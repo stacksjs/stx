@@ -1111,7 +1111,7 @@ export function installCraftBridge(
     const merged = mergeChromeButtons(ownButtons[side] as NativeNavigationButton[], effectiveChrome(), side, { name: craft.route?.name ?? '', path: craft.route?.path })
     const presses = navButtonPresses[side]
     presses.clear()
-    buttonPresses(merged, path => craft.navigation.open(path)).forEach((press, id) => presses.set(id, press))
+    buttonPresses(merged, (path, shown) => craft.navigation.open(path, shown)).forEach((press, id) => presses.set(id, press))
     sentButtons[side] = buttonsKey(merged)
     return merged.map(hostButton)
   }
@@ -1122,9 +1122,11 @@ export function installCraftBridge(
     back: () => protocol.goBack(),
     // A finished task (a saved workout) closes to where its stack began.
     popToRoot: () => protocol.popToRoot(),
-    open: (path: string) => {
+    open: (path: string, shown?: { presentation?: string }) => {
       if (typeof path !== 'string' || !path.trim()) throw new TypeError('navigation.open needs a path, such as /m/workout/42')
-      return protocol.send('NAVIGATE_OPEN', { path })
+      // The host reads how to show it from the same message as the path.
+      const presentation = typeof shown?.presentation === 'string' && shown.presentation ? shown.presentation : undefined
+      return protocol.send('NAVIGATE_OPEN', presentation ? { path, presentation } : { path })
     },
     setOptions: (navigationOptions: AnyRecord) => {
       if (!navigationOptions || typeof navigationOptions !== 'object') throw new TypeError('navigation.setOptions needs an object')

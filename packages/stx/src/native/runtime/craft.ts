@@ -13,6 +13,17 @@ import type { NativeLiveActivities } from '../live-activity'
  */
 
 /** One choice in a bar button's native menu. */
+/** How `navigation.open` shows the path it opens. */
+export interface NativeOpenOptions {
+  /**
+   * `'cover'`: over everything (the tab bar and the floating actions
+   * included), sliding up, first in a navigation stack of its own with a close
+   * button. Paths opened from it push inside it, and Back from its first
+   * screen closes it. Left out, the path is pushed as before.
+   */
+  presentation?: 'cover'
+}
+
 export interface NativeNavigationMenuItem {
   id: string
   title: string
@@ -22,6 +33,8 @@ export interface NativeNavigationMenuItem {
   destructive?: boolean
   /** Where choosing it goes (`craft.navigation.open`). Left out on the screen it opens. */
   open?: string
+  /** How `open` is shown: `'cover'` opens it over everything (see NativeOpenOptions). */
+  presentation?: NativeOpenOptions['presentation']
   /** Kept in the screen; the host only sees the id. */
   onPress?: (event: { id: string }) => unknown
 }
@@ -83,6 +96,8 @@ export interface NativeAccessoryCompanion {
   title: string
   symbol: string
   accessibilityLabel?: string
+  /** `'cover'`: a tap opens `path` over everything (see NativeOpenOptions). Left out, it is pushed. */
+  presentation?: NativeOpenOptions['presentation']
   /**
    * On: drawn in the app's tint, filled where the symbol has a fill, and
    * announced as selected. For a mode the action switched (Maps' location
@@ -132,6 +147,8 @@ export interface NativeChromeButton extends NativeNavigationButton {
    * left off the screen already at that path.
    */
   open?: string
+  /** How `open` is shown: `'cover'` opens it over everything (see NativeOpenOptions). */
+  presentation?: NativeOpenOptions['presentation']
   /** Screens (`craft.route.name`) it is left off as well. */
   hideOn?: string[]
 }
@@ -166,8 +183,9 @@ export interface NativeNavigation {
   /**
    * Open a path of the app (`/m/workout/42`). In a hybrid app the host shows
    * the native screen mapped to it, or pushes the web view at that path.
+   * `{ presentation: 'cover' }` opens it over everything instead.
    */
-  open: (path: string) => string
+  open: (path: string, options?: NativeOpenOptions) => string
   setOptions: (options: NativeNavigationOptions) => unknown
   /** A toolbar button was tapped; returns an unsubscribe function. */
   onButton: (callback: (event: { id: string }) => unknown) => () => void

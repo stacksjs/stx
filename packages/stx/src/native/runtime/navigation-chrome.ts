@@ -13,7 +13,7 @@
  * what it returns.
  */
 
-import type { NativeChromeButton, NativeNavigationButton, NativeNavigationChrome, NativeTabItemOptions } from './craft'
+import type { NativeChromeButton, NativeNavigationButton, NativeNavigationChrome, NativeOpenOptions, NativeTabItemOptions } from './craft'
 
 export type ButtonSide = 'leftButtons' | 'rightButtons'
 
@@ -71,18 +71,20 @@ export function mergeChromeButtons(
 
 /** What the host is shown for a button: no callbacks, and nothing chrome-only. */
 export function hostButton(button: NativeChromeButton): NativeNavigationButton {
-  const { onPress, open, hideOn, menu, ...rest } = button
+  const { onPress, open, presentation, hideOn, menu, ...rest } = button
   if (!menu) return rest
-  return { ...rest, menu: menu.map(({ onPress: press, open: path, ...item }) => item) }
+  return { ...rest, menu: menu.map(({ onPress: press, open: path, presentation: shown, ...item }) => item) }
 }
 
 /** What pressing each button, or choosing from its menu, does in the screen. */
-export function buttonPresses(buttons: readonly NativeChromeButton[], open: (path: string) => unknown): Map<string, (event: { id: string }) => unknown> {
+export function buttonPresses(buttons: readonly NativeChromeButton[], open: (path: string, options?: NativeOpenOptions) => unknown): Map<string, (event: { id: string }) => unknown> {
   const presses = new Map<string, (event: { id: string }) => unknown>()
-  const add = (target: { id: string, open?: string, onPress?: (event: { id: string }) => unknown }) => {
+  const add = (target: { id: string, open?: string, presentation?: NativeOpenOptions['presentation'], onPress?: (event: { id: string }) => unknown }) => {
     const path = target.open
+    // How it is shown goes with the path, as a call to navigation.open would give it.
+    const shown = target.presentation ? { presentation: target.presentation } : undefined
     if (typeof target.onPress === 'function') presses.set(String(target.id), target.onPress)
-    else if (path) presses.set(String(target.id), () => open(path))
+    else if (path) presses.set(String(target.id), () => shown ? open(path, shown) : open(path))
   }
   for (const button of buttons) {
     add(button)

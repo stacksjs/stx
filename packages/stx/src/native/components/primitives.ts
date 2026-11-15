@@ -431,6 +431,13 @@ export interface DatePickerProps extends BaseProps {
   minuteInterval?: number
   /** `compact` (the default) shows a button that opens a calendar or clock; `inline` and `wheels` show them in place. */
   display?: 'compact' | 'inline' | 'wheels'
+  /**
+   * The language and region the picker writes its dates in, as a BCP 47 tag
+   * (`de`, `en-GB`): "16. Nov. 2026" where the device alone would write
+   * "Nov 16, 2026". Left out, the device's own. The value it reports does not
+   * change with it.
+   */
+  locale?: string
   /** A change, as `@change` hears it. */
   onValueChange?: (event: DatePickerChange) => void
   /** DOM-compatible change alias accepted by native hosts. */

@@ -86,6 +86,41 @@ describe('craft.navigation.setChrome', () => {
     protocol.dispose()
   })
 
+  /*
+   * craft-native/craft#526: a path can be opened over everything, in a stack
+   * of its own, and the host reads that from the same message as the path.
+   * The bridge sent the path alone, so `presentation: 'cover'` on a button or
+   * in a call went nowhere and the screen was pushed like any other.
+   */
+  it('says how a path is to be shown, from a call and from a button or a menu choice', () => {
+    const { craft, sent, options, press, protocol } = host({ name: 'Feed', url: '/feed' })
+    craft.navigation.open('/compose', { presentation: 'cover' })
+    craft.navigation.open('/feed/7')
+    craft.navigation.setChrome({ rightButtons: [
+      { id: 'new', symbol: 'plus', accessibilityLabel: 'New post', open: '/compose', presentation: 'cover' },
+      { id: 'more', symbol: 'ellipsis', accessibilityLabel: 'More', menu: [
+        { id: 'scan', title: 'Scan', open: '/scan', presentation: 'cover' },
+        { id: 'store', title: 'Store', open: '/store' },
+      ] },
+    ] })
+    // It is the screen's to act on: the host is not sent it with the button.
+    expect(options().at(-1)).toEqual({ rightButtons: [
+      { id: 'new', symbol: 'plus', accessibilityLabel: 'New post' },
+      { id: 'more', symbol: 'ellipsis', accessibilityLabel: 'More', menu: [{ id: 'scan', title: 'Scan' }, { id: 'store', title: 'Store' }] },
+    ] })
+    press('new')
+    press('scan')
+    press('store')
+    expect(sent.filter(message => message.type === 'NAVIGATE_OPEN').map(message => message.payload)).toEqual([
+      { path: '/compose', presentation: 'cover' },
+      { path: '/feed/7' },
+      { path: '/compose', presentation: 'cover' },
+      { path: '/scan', presentation: 'cover' },
+      { path: '/store' },
+    ])
+    protocol.dispose()
+  })
+
   it('sends a button menu without callbacks or paths, and runs the choice that was picked', () => {
     const { craft, sent, options, press, protocol } = host({ name: 'Feed', url: '/feed' })
     const heard: string[] = []
