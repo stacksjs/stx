@@ -530,7 +530,7 @@ describe('defineProps discovery', () => {
   async function fieldsOf(script: string): Promise<Record<string, { type?: string, default?: string }>> {
     const { input, output } = await workspace()
     await fixture(input, 'Widget.stx', `<script component>{"tag":"props-widget"}</script>
-<script server>
+<script>
 ${script}
 </script>
 <template><div>{{ label }}</div></template>
@@ -617,7 +617,7 @@ const props = defineProps<Props>()`))
     // and nothing to collide with.
     const { input, output } = await workspace()
     await fixture(input, 'Collide.stx', `<script component>{"tag":"collide-widget","properties":{"activity":{"type":"string","default":"","reflect":true}}}</script>
-<script server>
+<script>
 const { activity = '' } = defineProps<{ activity?: string }>()
 const shown = activity.toUpperCase()
 </script>
@@ -633,7 +633,7 @@ const shown = activity.toUpperCase()
   it('leaves the declarations the component derives alone', async () => {
     const { input, output } = await workspace()
     await fixture(input, 'Widget.stx', `<script component>{"tag":"derives-widget"}</script>
-<script server>
+<script>
 const { count = 21 } = defineProps<{ count?: number }>()
 const doubled = count * 2
 </script>

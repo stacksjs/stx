@@ -12,6 +12,7 @@ import { builtinModules } from 'node:module'
 import { scriptAttributes, scriptContainsCode } from './script-attributes'
 import { topLevelDeclarationSites } from './client-parameter-bindings'
 import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
+import { Tokenizer } from './parser/tokenizer'
 
 export interface SourceMetadata {
   name?: string
@@ -976,7 +977,7 @@ export function parseDefaults(object: string): Array<[string, string]> {
 }
 
 /** Keep real module imports from every authored script, including method blocks. */
-function hoistScriptImports(code: string, file: string, outputDir: string): { imports: string[], body: string } {
+function hoistScriptImports(code: string): { imports: string[], body: string } {
   const masked = stripCommentsAndLiterals(code)
   const depths = bracketDepths(masked).depths
   const imports: string[] = []
@@ -984,24 +985,43 @@ function hoistScriptImports(code: string, file: string, outputDir: string): { im
   for (const match of masked.matchAll(/\bimport\b/g)) {
     const start = match.index!
     if (depths[start] !== 0) continue
+    // Use source tokens, keeping the declaration verbatim. Comment punctuation
+    // is not syntax, and a string-named binding is not the module specifier.
+    const tokens = new Tokenizer(code.slice(start)).tokenize().filter(token => !['COMMENT', 'WHITESPACE'].includes(token.type))
     // Dynamic import() and import.meta are expressions, not declarations.
-    const declaration = /^import\s*(?:[^'";]*?\bfrom\s*)?(['"])([^'"\r\n]+)\1(?:\s+with\s*\{[^}]*\})?\s*;?/.exec(code.slice(start))
-    if (!declaration) continue
-    const statement = declaration[0]
-    spans.push({ start, end: start + statement.length })
-    if (declaration[2] === 'stx') continue
-    const specifier = declaration[2]!
-    const target = specifier.startsWith('.') ? path.resolve(path.dirname(file), specifier) : undefined
-    const rewritten = target ? path.relative(outputDir, target).split(path.sep).join('/') : specifier
-    const offset = statement.indexOf(declaration[1]! + specifier + declaration[1]!) + 1
-    imports.push(statement.slice(0, offset) + (target && !rewritten.startsWith('.') ? `./${rewritten}` : rewritten) + statement.slice(offset + specifier.length))
+    if (tokens[1]?.value === '(' || tokens[1]?.value === '.') continue
+    let specifierIndex = tokens[1]?.type === 'STRING' ? 1 : -1
+    let depth = 0
+    for (let index = 1; specifierIndex === -1 && index < tokens.length; index++) {
+      const token = tokens[index]!
+      if (token.value === ';' || token.type === 'EOF') break
+      if (token.value === '{') depth++
+      else if (token.value === '}') depth--
+      else if (depth === 0 && token.value === 'from' && tokens[index + 1]?.type === 'STRING') specifierIndex = index + 1
+    }
+    if (specifierIndex === -1) continue
+    const specifier = tokens[specifierIndex]!
+    let last = specifierIndex
+    if (tokens[last + 1]?.value === 'with' && tokens[last + 2]?.value === '{') {
+      last += 2
+      let attributesDepth = 1
+      while (attributesDepth && tokens[last + 1]?.type !== 'EOF') {
+        last++
+        if (tokens[last]?.value === '{') attributesDepth++
+        else if (tokens[last]?.value === '}') attributesDepth--
+      }
+    }
+    if (tokens[last + 1]?.value === ';') last++
+    const end = start + tokens[last]!.end
+    spans.push({ start, end })
+    if (specifier.value.slice(1, -1) !== 'stx') imports.push(code.slice(start, end))
   }
   let body = code
   for (const span of spans.reverse()) body = body.slice(0, span.start) + body.slice(span.end)
   return { imports, body }
 }
 
-function compileScriptScope(source: string, file: string, outputDir: string): {
+function compileScriptScope(source: string): {
   imports: string[]
   body: string
   propNames: string[]
@@ -1010,7 +1030,7 @@ function compileScriptScope(source: string, file: string, outputDir: string): {
   declared: Record<string, string>
 } {
   const scripts = scanHtmlScriptElements(componentScriptSource(source))
-  const block = scripts.find(script => { const attrs = scriptAttributes(script.attrs); return scriptContainsCode(attrs) && !['component','stx:component','client','src'].some(name => attrs.has(name)) })
+  const block = scripts.find(script => { const attrs = scriptAttributes(script.attrs); return scriptContainsCode(attrs) && !['component','stx:component','client','server','src'].some(name => attrs.has(name)) })
 
   if (!block) return { imports: [], body: '', propNames: [], propBindings: {}, defaults: {}, declared: {} }
 
@@ -1022,7 +1042,7 @@ function compileScriptScope(source: string, file: string, outputDir: string): {
   /** Prop name to the TypeScript type the component declared for it. */
   const declared: Record<string, string> = {}
 
-  const hoisted = hoistScriptImports(code, file, outputDir)
+  const hoisted = hoistScriptImports(code)
   imports.push(...hoisted.imports)
   code = hoisted.body
 
@@ -1162,11 +1182,11 @@ async function compileComponent(
   )
   const eventCompilation = compileEventDirectives(extractTemplate(source))
   const bindingCompilation = compileDynamicBindings(eventCompilation.template)
-  const scope = compileScriptScope(source, sourcePath, path.resolve(defaults.outputDir))
+  const scope = compileScriptScope(source)
   for (const script of scanHtmlScriptElements(componentScriptSource(source))) {
     const attrs = scriptAttributes(script.attrs)
     if (!attrs.has('client') || ['server', 'component', 'stx:component', 'src'].some(name => attrs.has(name)) || !scriptContainsCode(attrs)) continue
-    scope.imports.push(...hoistScriptImports(source.slice(script.bodyStart, script.bodyEnd), sourcePath, path.resolve(defaults.outputDir)).imports)
+    scope.imports.push(...hoistScriptImports(source.slice(script.bodyStart, script.bodyEnd)).imports)
   }
   scope.imports = [...new Set(scope.imports)]
   const render = compileTemplateToRender(bindingCompilation.template)
@@ -1541,7 +1561,7 @@ export function defineComponent(Component, definition) {
 `
 }
 
-function componentModule(component: CompiledComponent): string {
+function componentModule(component: CompiledComponent, runtimeImport = './runtime.js'): string {
   const definition = JSON.stringify({
     tag: component.tag,
     template: component.template,
@@ -1615,7 +1635,7 @@ ${indent(compiled.trim())}
 `
   }
 
-  return `import { StxElement, defineComponent } from './runtime.js';
+  return `import { StxElement, defineComponent } from ${runtimeImport === './runtime.js' ? "'./runtime.js'" : JSON.stringify(runtimeImport)};
 ${scope.imports.length ? `${scope.imports.join('\n')}\n` : ''}
 /** ${component.description || `${component.name} web component generated from ${component.file}.`} */
 export class ${component.name} extends StxElement {
@@ -1850,7 +1870,14 @@ export async function buildComponentLibrary(config: ComponentLibraryConfig): Pro
     // single split build preserves shared module identity between elements;
     // separately bundling each entry would duplicate imported stores/effects.
     const entrypoints = components.map(component => path.join(outputDir, `${component.tag}.js`))
-    const canonicalEntries = new Set(await Promise.all(entrypoints.map(file => realpath(file))))
+    const canonicalEntries = new Map(await Promise.all(entrypoints.map(async (file, index) => [await realpath(file), components[index]!] as const)))
+    for (const [index, file] of entrypoints.entries()) canonicalEntries.set(file, components[index]!)
+    const sourceEntries = new Map(components.map(component => [path.join(path.dirname(component.sourcePath), `.stx-library-${component.tag}.ts`), component]))
+    const runtimePath = path.join(outputDir, 'runtime.js')
+    // Bun resolves from its module identity (onLoad has no resolveDir option).
+    // Give each generated entry an identity beside its authored component,
+    // without writing there. Bun then applies the source package's browser
+    // exports/import maps and nested dependencies through its native resolver.
     const built = await Bun.build({
       entrypoints, outdir: outputDir, root: outputDir,
       target: 'browser', format: 'esm', splitting: true,
@@ -1859,7 +1886,13 @@ export async function buildComponentLibrary(config: ComponentLibraryConfig): Pro
       plugins: [{ name: 'stx-element-runtime', setup(builder) {
         builder.onResolve({ filter: /.*/ }, args => {
           if (args.path === 'bun' || args.path.startsWith('bun:') || args.path.startsWith('node:') || SERVER_MODULES.has(args.path)) throw new Error(`Server-only import ${JSON.stringify(args.path)} is not available in a browser component (${args.importer})`)
-          if (args.path === './runtime.js' && canonicalEntries.has(args.importer)) return { path: './runtime.js', external: true }
+          const entry = canonicalEntries.get(args.path)
+          if (!args.importer && entry) return { path: path.join(path.dirname(entry.sourcePath), `.stx-library-${entry.tag}.ts`) }
+          if (args.path === runtimePath && sourceEntries.has(args.importer)) return { path: './runtime.js', external: true }
+        })
+        builder.onLoad({ filter: /\.ts$/ }, args => {
+          const component = sourceEntries.get(args.path)
+          if (component) return { contents: componentModule(component, runtimePath), loader: 'ts' }
         })
       } }],
     }).catch(error => {

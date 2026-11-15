@@ -12,7 +12,7 @@ async function library(): Promise<{ root: string, output: string }> {
   roots.push(root)
   const input = join(root, 'source')
   const output = join(root, 'dist')
-  await Bun.write(join(input, 'Surface.stx'), `<script server>
+  await Bun.write(join(input, 'Surface.stx'), `<script>
 const { id, style, onclick, label } = withDefaults(
   defineProps<{ id?: string, style?: string, onclick?: string, label?: string }>(), { label: 'Surface' }
 )

@@ -9,7 +9,7 @@ it('renders aliased public props and their defaults from emitted JavaScript modu
   const root = createTempDir('stx-library-alias-')
   const input = join(root, 'source')
   const output = join(root, 'dist')
-  await Bun.write(join(input, 'Field.stx'), `<script server>
+  await Bun.write(join(input, 'Field.stx'), `<script>
 const { class: classList, label: caption = 'Default label' } = withDefaults(
   defineProps<{ class?: string, label?: string }>(), { class: 'default-class' }
 )

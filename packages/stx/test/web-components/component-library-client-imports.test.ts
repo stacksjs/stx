@@ -8,6 +8,34 @@ import { createBrowserFixture } from '../../test-utils/browser-fixture'
 
 const buildComponentLibrary = process.env.STX_LIBRARY_DIST ? (await import('../../dist/component-library.js')).buildComponentLibrary : sourceBuild
 
+// Pack and install small npm dependencies without consulting a registry or the
+// developer's credentials/cache. Different versions make a wrong base visible.
+async function installHelper(root: string, directory: string, value: string, version: string) {
+  const packageDir = join(root, `helper-${version}`)
+  const archive = join(root, `helper-${version}.tgz`)
+  await Bun.write(join(packageDir, 'package.json'), JSON.stringify({
+    name: 'review-helper', version, type: 'module',
+    exports: { '.': { browser: './browser.js', default: './default.js' } },
+    imports: { '#value': './value.js' },
+  }))
+  await Bun.write(join(packageDir, 'browser.js'), "export { value } from '#value'")
+  await Bun.write(join(packageDir, 'value.js'), `export const value = ${JSON.stringify(value)}`)
+  await Bun.write(join(packageDir, 'default.js'), "export const value = 'WRONG-node-condition'")
+  await Bun.write(join(directory, 'package.json'), JSON.stringify({
+    name: `consumer-${version}`, private: true, type: 'module',
+    dependencies: { 'review-helper': archive }, imports: { '#local': './src/local.ts' },
+  }))
+  const env = { PATH: process.env.PATH!, HOME: join(root, 'home'), BUN_INSTALL_CACHE_DIR: join(root, 'cache') }
+  for (const [cwd, args] of [
+    [packageDir, ['pm', 'pack', '--ignore-scripts', '--filename', archive]],
+    [directory, ['install', '--ignore-scripts']],
+  ] as const) {
+    const child = Bun.spawn([process.execPath, '--no-env-file', ...args], { cwd, env, stdout: 'pipe', stderr: 'pipe' })
+    const [code, stdout, stderr] = await Promise.all([child.exited, new Response(child.stdout).text(), new Response(child.stderr).text()])
+    if (code) throw new Error(`Fixture package operation failed: ${stdout}\n${stderr}`)
+  }
+}
+
 // The public compiler and an ordinary browser host catch missing/privileged
 // runtime imports. They do not exercise an application's network protocol.
 for (const bundle of [true, false]) {
@@ -26,29 +54,45 @@ export function connect(element: HTMLElement & { connections?: number }) { eleme
 export function disconnect(element: HTMLElement & { disconnects?: number }) { element.disconnects = (element.disconnects || 0) + 1 }
 `)
       await Bun.write(join(inputDir, 'side-effect.ts'), "customElements.define('import-side-effect', class extends HTMLElement {})")
+      await Bun.write(join(inputDir, 'data.json'), '{"label":"attributes"}')
+      await Bun.write(join(inputDir, 'runtime.js'), "export const runtimeValue = 'source-runtime'")
+      await Bun.write(join(inputDir, 'private.ts'), "export function secret() { return 'PRIVATE-server-sentinel' }")
       await Bun.write(join(inputDir, 'Probe.stx'), `<script component type="application/json">{"properties":{"label":{"type":"string","default":"initial"}}}</script>
+<script server>
+import { secret } from './private'
+const caption = secret()
+</script>
+<script>
+const caption = 'browser scope'
+</script>
 <script client>
 import greeting, {
-  named as renamed,
+  /* helper's public value */ named as renamed,
   connect,
   next,
 } from './helpers.ts'
 import type { NeverLoaded } from './missing-type-only-module'
-function read(): string { return [greeting(), renamed, this.label, this.connections, this.disconnects || 0].join(':') }
+import { runtimeValue } from './runtime.js'
+import data from /* attributes; aren't declaration boundaries */ './data.json' with /* comment's punctuation; */ { type: 'json' }
+function read(): string { return [greeting(), renamed, data.label, runtimeValue, this.label, this.connections, this.disconnects || 0].join(':') }
 function onConnect(): void { connect(this) }
 function count(): number { return next() }
 </script>
 <script client>
-import * as helpers from './helpers.ts'
-import './side-effect.ts'
+import * /* shared; immutable */ as helpers from './helpers.ts'
+import /* side-effect's registration; */ './side-effect.ts'
 function onDisconnect(): void { helpers.disconnect(this) }
 </script>
-<template><p>{{ label }}</p><slot></slot></template>`)
-      await Bun.write(join(inputDir, 'Mirror.stx'), `<script client>
+<template><p>{{ caption }}:{{ label }}</p><slot></slot></template>`)
+      await Bun.write(join(inputDir, 'Mirror.stx'), `<script server>
+import { readFileSync } from 'node:fs'
+const privateContent = readFileSync('/PRIVATE-server-only', 'utf8')
+</script><script client>
 import { next } from './helpers.ts'
 function count(): number { return next() }
 </script><template><p>Mirror</p></template>`)
       const result = await buildComponentLibrary({ inputDir, outputDir, prefix: 'imports', bundle })
+      for (const file of result.files.filter(file => file.endsWith('.js'))) expect(await Bun.file(file).text()).not.toContain('PRIVATE-server-')
       expect(await Bun.file(join(outputDir, 'imports-probe.d.ts')).text()).toContain('read(): string')
       // A registry consumer receives only dist, never the author's source tree.
       await rm(inputDir, { recursive: true })
@@ -63,17 +107,67 @@ function count(): number { return next() }
       })
       await fixture.view.navigate(fixture.url)
       await fixture.waitFor("!!customElements.get('imports-probe')", value => value === true)
-      expect(await fixture.view.evaluate("document.querySelector('imports-probe').read()")).toBe('default-transitive:named:initial:1:0')
-      expect(await fixture.view.evaluate("document.querySelectorAll('imports-probe')[1].read()")).toBe('default-transitive:named:second:1:0')
+      expect(await fixture.view.evaluate("document.querySelector('imports-probe').read()")).toBe('default-transitive:named:attributes:source-runtime:initial:1:0')
+      expect(await fixture.view.evaluate("document.querySelectorAll('imports-probe')[1].read()")).toBe('default-transitive:named:attributes:source-runtime:second:1:0')
+      expect(await fixture.view.evaluate("document.querySelectorAll('imports-probe')[1].querySelector('p').textContent")).toBe('browser scope:second')
       expect(await fixture.view.evaluate("!!customElements.get('import-side-effect')")).toBe(true)
       expect(await fixture.view.evaluate("document.querySelector('imports-probe').count()")).toBe(1)
       expect(await fixture.view.evaluate("document.querySelector('imports-mirror').count()")).toBe(2)
       expect(await fixture.view.evaluate("document.querySelector('imports-probe b').textContent")).toBe('slot')
       await fixture.view.evaluate("(()=>{ globalThis.detached = document.querySelector('imports-probe'); detached.remove() })()")
-      expect(await fixture.view.evaluate('detached.read()')).toBe('default-transitive:named:initial:1:1')
+      expect(await fixture.view.evaluate('detached.read()')).toBe('default-transitive:named:attributes:source-runtime:initial:1:1')
       await fixture.view.evaluate("(()=>{ detached.label = 'updated'; document.body.append(detached) })()")
-      expect(await fixture.view.evaluate('detached.read()')).toBe('default-transitive:named:updated:2:1')
+      expect(await fixture.view.evaluate('detached.read()')).toBe('default-transitive:named:attributes:source-runtime:updated:2:1')
       expect(await fixture.view.evaluate("typeof window.stx + ':' + typeof window.greeting")).toBe('undefined:undefined')
+    }
+    finally { fixture?.close(); await rm(root, { recursive: true, force: true }) }
+  }, 30_000)
+}
+
+for (const bundle of [true, false]) {
+  test(`imports use the source package context for nested and detached ${bundle ? 'bundles' : 'ESM output'}`, async () => {
+    const root = createTempDir('stx-package-origin-')
+    let fixture: ReturnType<typeof createBrowserFixture> | undefined
+    try {
+      const project = join(root, 'project'), widgets = join(project, 'widgets'), inputDir = join(widgets, 'src')
+      await installHelper(root, project, 'WRONG-root-version', '1.0.0')
+      await installHelper(root, widgets, 'correct-source-browser', '2.0.0')
+      await Bun.write(join(project, 'src', 'local.ts'), "export const local = 'WRONG-root-map'")
+      await Bun.write(join(inputDir, 'local.ts'), "export const local = 'source-import-map'")
+      await Bun.write(join(inputDir, 'Probe.stx'), `<script client>
+import { value } from 'review-helper'
+import { local } from '#local'
+function read(): string { return value + ':' + local }
+</script><template><p>Package origin</p></template>`)
+      const outputs = []
+      for (const outputDir of [join(project, 'dist'), join(root, 'separate', 'dist')]) {
+        const result = await buildComponentLibrary({ inputDir, outputDir, prefix: 'origin', bundle })
+        const javascript = (await Promise.all(result.files.filter(file => file.endsWith('.js')).map(file => Bun.file(file).text()))).join('\n')
+        expect(javascript).toContain('correct-source-browser')
+        expect(javascript).not.toContain('WRONG-root-version')
+        expect(javascript).not.toContain('WRONG-node-condition')
+        expect(javascript).not.toContain('WRONG-root-map')
+        outputs.push({ outputDir, result })
+      }
+      // Nothing in the distributed graph may resolve against the author tree.
+      await rm(widgets, { recursive: true })
+      await rm(join(project, 'src'), { recursive: true })
+      await rm(join(project, 'node_modules'), { recursive: true })
+      for (const { outputDir, result } of outputs) {
+        fixture = createBrowserFixture({
+          createServer: () => Bun.serve({ hostname: '127.0.0.1', port: 0, async fetch(request) {
+            const pathname = new URL(request.url).pathname
+            if (pathname === '/') return new Response(`<!doctype html><script type="module" src="/${bundle ? 'bundle' : 'index'}.js"></script><origin-probe></origin-probe>`, { headers: { 'Content-Type': 'text/html', 'Content-Security-Policy': "default-src 'none'; script-src 'self'; base-uri 'none'" } })
+            const file = join(outputDir, pathname)
+            return result.files.includes(file) && await Bun.file(file).exists() ? new Response(Bun.file(file), { headers: { 'Content-Type': 'text/javascript' } }) : new Response(null, { status: 404 })
+          } }),
+          createView: () => new WebView({ headless: true, backend: { type: 'chrome', url: false } }),
+        })
+        await fixture.view.navigate(fixture.url)
+        await fixture.waitFor("!!customElements.get('origin-probe')", value => value === true)
+        expect(await fixture.view.evaluate("document.querySelector('origin-probe').read()")).toBe('correct-source-browser:source-import-map')
+        fixture.close()
+      }
     }
     finally { fixture?.close(); await rm(root, { recursive: true, force: true }) }
   }, 30_000)
