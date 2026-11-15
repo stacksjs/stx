@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.891...v0.2.892)
+
+## 🐛 Bug Fixes
+
+- forward API preflights through the request proxy ([5dd7947](https://github.com/stacksjs/stx/commit/5dd7947)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.892 ([e33a8e9](https://github.com/stacksjs/stx/commit/e33a8e9)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.890...v0.2.891)
 
 ## ✨ Features
