@@ -30,6 +30,7 @@ export interface CraftBridgeOptions {
 function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
   return {
     desktop: capabilities.has('desktop'),
+    updater: capabilities.has('updater'),
     haptics: capabilities.has('haptics'),
     rawMotionSensors: capabilities.has('rawMotionSensors'),
     barometer: capabilities.has('barometer'),
@@ -514,6 +515,40 @@ export function installCraftBridge(
       }),
       isDefaultBrowser: () => request('Desktop', 'isDefaultBrowser', []),
       setDefaultBrowser: () => request('Desktop', 'setDefaultBrowser', []),
+    }
+  }
+
+  // In-app updates of a directly distributed Mac app: the host's `Updater`
+  // module (`status`, `check`, `install`, `relaunch`), with every change of
+  // state or progress arriving as the CRAFT_EVENT `craftUpdaterChange`, its
+  // detail the status. A desktop host that predates the module is one that
+  // cannot update, and says so in the same words: a screen draws from the
+  // status, so nothing here rejects where the contract says it never does.
+  if (capabilities.has('updater') || capabilities.has('desktop')) {
+    const isStatus = (value: unknown): value is AnyRecord => !!value && typeof value === 'object' && typeof (value as AnyRecord).state === 'string'
+    const unavailable = (): AnyRecord => ({
+      currentVersion: craft.app.version,
+      state: 'unavailable',
+      selfUpdating: false,
+      reason: 'This version of the app cannot update itself.',
+    })
+    const failed = (error: unknown): AnyRecord => {
+      const code = String((error as AnyRecord | null)?.code ?? '')
+      // The host has no such module (or no such method): nothing to update with.
+      if (['CAPABILITY_DISABLED', 'UNSUPPORTED', 'UNSUPPORTED_METHOD', 'UNSUPPORTED_MODULE'].includes(code)) return unavailable()
+      const message = typeof (error as AnyRecord | null)?.message === 'string' ? (error as AnyRecord).message : String(error)
+      return { currentVersion: craft.app.version, state: 'error', selfUpdating: false, error: message }
+    }
+    const answer = (method: string): Promise<AnyRecord> => request('Updater', method, [])
+      .then(value => isStatus(value) ? value : unavailable(), failed)
+    craft.updater = {
+      status: () => answer('status'),
+      check: () => answer('check'),
+      install: () => answer('install'),
+      relaunch: () => request('Updater', 'relaunch', []).then(() => undefined),
+      onChange: (callback: (status: AnyRecord) => void) => protocol.on<AnyRecord>('CRAFT_EVENT', ({ payload }) => {
+        if (payload?.event === 'craftUpdaterChange' && isStatus(payload.detail)) callback(payload.detail)
+      }),
     }
   }
 

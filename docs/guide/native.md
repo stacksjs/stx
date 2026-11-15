@@ -339,6 +339,12 @@ implementation is installed, the primitive remains the final fallback.
 
 ### Platform controls from shared components
 
+#### Controls on a Mac
+
+On Craft's AppKit host (`craft.platform === 'macos'`) the shared `Button` is the host's push button, an NSButton, on every variant: its words are `title` (the `label`, `title` or `text` prop, all live, or the slot's text), its glyph `symbol`, and a caller's `class` font size and `style` colour land on the button itself. A written `variant` of `primary`, `danger`, `ghost` or `toolbar` asks the host for its default, destructive, borderless or toolbar button; anything else, and no variant at all, is the plain push button. `loading` disables it, since an NSButton has no spinner. A phone keeps the filled pressable. Which host a screen runs on is known only on the device, so the component carries both and keeps one; what the caller wrote on the tag reaches whichever is kept.
+
+`Select` feeds the picker its choices as `options` as well as `items`, which is the name the AppKit host's NSPopUpButton reads. With `variant="mac"` a `Select` is as wide as its longest choice, a `TextInput` and a `PasswordInput` are AppKit's fields at 22pt and 13pt (170pt wide unless `className` says otherwise, the secure one without a reveal button), a `Checkbox` and a `Switch` set their labels at 13pt, and a `SegmentedControl` draws 24pt segments. The AppKit host has no segmented control and no slider of its own: `SegmentedControl` is drawn from views there, and `Slider` does not work.
+
 #### TextInput resolution and event compatibility
 
 Native `TextInput` uses the installed shared implementation for
@@ -632,6 +638,19 @@ onMount(() => craft.session.onChange((token) => {
 ```
 
 A host older than Craft 0.0.245 never sends the change, so `onChange` stays silent there; `token()` still reads secure storage.
+
+`craft.updater` is in-app updates of a directly distributed Mac app, answered by the `Updater` module of Craft's AppKit host. `status()`, `check()` and `install()` each resolve to the status (`NativeUpdateStatus`: `currentVersion`, `state`, `selfUpdating`, and from `available` on the update's `version`, with `progress` from 0 to 1 while `downloading`); `relaunch()` quits and starts the installed version; `onChange(status => …)` hears every change of state or progress in every window (the host's `craftUpdaterChange` event) and returns the unsubscribe. `check()` and `install()` never reject: a failure is `state: 'error'`, and an app that cannot update (no `updates` in its config, a Mac App Store build, a host with no `Updater` module) answers `state: 'unavailable'` with `selfUpdating: false`, so a screen draws from the status alone. It is absent on a phone. `<SettingsUpdateRow>` in `@stacksjs/components` draws the row from that status.
+
+```html
+<script client>
+const status = state(null)
+onMount(async () => {
+  if (!craft.updater) return
+  onDestroy(craft.updater.onChange(next => status.set(next)))
+  status.set(await craft.updater.status())
+})
+</script>
+```
 
 When the host advertises the `fetch` capability (Craft's iOS host does), the bundle installs a global `fetch` with the common subset: `method`, `headers`, a string `body`, and a response with `ok`, `status`, `statusText`, `url`, `headers.get()`, `text()` and `json()`. The host performs the request under the same request deadline as the other capabilities; transport failures reject with a `TypeError` carrying a `code`. Set a signal from a promise continuation to update native bindings, exactly as on the web.
 

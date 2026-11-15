@@ -412,6 +412,8 @@ export interface NativeCraft {
   liveActivity?: NativeLiveActivities
   /** AppKit window and menu operations (`capabilities.desktop`). */
   desktop?: NativeDesktop
+  /** In-app updates of a directly distributed Mac app (Craft's AppKit host). */
+  updater?: NativeUpdater
   /** Web pages shown by `<WebView tab>` (`capabilities.web`: Craft's AppKit host built with `webkit: true`). */
   web?: NativeWeb
   platform: string
@@ -647,6 +649,50 @@ export interface NativeCraft {
    * event's `id`, or none for everything pending.
    */
   background?: { complete: (ok?: boolean, id?: string) => Promise<boolean> }
+}
+
+/** Where an in-app update stands. */
+export type NativeUpdateState = 'unavailable' | 'idle' | 'checking' | 'current' | 'available' | 'downloading' | 'installing' | 'installed' | 'error'
+
+/** What `craft.updater` reports: in every answer and in every change. */
+export interface NativeUpdateStatus {
+  currentVersion: string
+  state: NativeUpdateState
+  /** False when the app cannot replace itself: no `updates` config, an App Store receipt, sandboxed, a read-only volume, translocated. */
+  selfUpdating: boolean
+  /** Why `selfUpdating` is false, as a sentence for the UI. */
+  reason?: string
+  /** The update's version, from `available` on. */
+  version?: string
+  notes?: string
+  publishedAt?: string
+  /** 0 to 1 while downloading. */
+  progress?: number
+  error?: string
+  /** ISO time of the last completed check. */
+  lastCheckedAt?: string
+}
+
+/**
+ * In-app updates (`craft.updater`), answered by the host's `Updater` module.
+ *
+ * Present on Craft's AppKit host. A host that has the surface but cannot
+ * update (no `updates` in its config, a Mac App Store build, a host older than
+ * the module) answers every call with `state: 'unavailable'` and
+ * `selfUpdating: false`, so a screen draws from the status and never from
+ * whether a call threw.
+ */
+export interface NativeUpdater {
+  /** Where things stand now. */
+  status: () => Promise<NativeUpdateStatus>
+  /** Ask the feed. Never rejects: a failure is `state: 'error'`. */
+  check: () => Promise<NativeUpdateStatus>
+  /** Download, verify and swap the bundle. Resolves at `installed` or `error`. */
+  install: () => Promise<NativeUpdateStatus>
+  /** Quit and start the installed version. */
+  relaunch: () => Promise<void>
+  /** Every change of state or progress, in every window. Returns the unsubscribe. */
+  onChange: (callback: (status: NativeUpdateStatus) => void) => () => void
 }
 
 export interface NativeDesktop {
