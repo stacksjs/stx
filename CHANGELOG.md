@@ -1,5 +1,36 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.890...v0.2.891)
+
+## ✨ Features
+
+- **native**: fetch passes credentials: 'omit' to the host ([3dff5e6](https://github.com/stacksjs/stx/commit/3dff5e6)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **components**: a native Settings sidebar item has a test id ([11d3139](https://github.com/stacksjs/stx/commit/11d3139)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **components**: the Settings window on a native host, and an update row ([d648939](https://github.com/stacksjs/stx/commit/d648939)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: craft.updater for in-app updates on the AppKit host ([23241ea](https://github.com/stacksjs/stx/commit/23241ea)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: sidebar label weight and inset props ([27d527f](https://github.com/stacksjs/stx/commit/27d527f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🐛 Bug Fixes
+
+- integrate render method scope correction ([91a8389](https://github.com/stacksjs/stx/commit/91a8389)) _(by Chris Breuer <chris@stacksjs.com>)_
+- keep public helpers in the active render scope ([8e1b5be](https://github.com/stacksjs/stx/commit/8e1b5be)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **components**: keep SettingsPane's web stylesheet out of a native screen ([78f140a](https://github.com/stacksjs/stx/commit/78f140a)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: draw the shared controls as AppKit's own on the Mac host ([36b0ffc](https://github.com/stacksjs/stx/commit/36b0ffc)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **runtime**: useClickOutside accepts a getter ([6b2f63b](https://github.com/stacksjs/stx/commit/6b2f63b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 💄 Styles
+
+- remove extra method fixture EOF blank ([5d3c427](https://github.com/stacksjs/stx/commit/5d3c427)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **components**: format the settings update view ([25aa2b7](https://github.com/stacksjs/stx/commit/25aa2b7)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.891 ([f5183c5](https://github.com/stacksjs/stx/commit/f5183c5)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.889...v0.2.890)
 
 ## 🐛 Bug Fixes
