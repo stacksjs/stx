@@ -63,7 +63,7 @@ export const T = SETTINGS_NATIVE
   </section>
 @endif
 
-<style>
+<style data-native-exclude>
 .stx-settings-pane { display: block; min-width: 0; outline: 0; }
 .stx-settings-pane[hidden] { display: none; }
 </style>
