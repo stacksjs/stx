@@ -559,11 +559,13 @@ in Craft 0.0.505 and their pins are gone (see
   the browser draws a ringed one), so a pixel comparison would compare two
   designs. What is held instead is geometry measured in the app (`images`,
   `controls`, `text-size`) and the system's audit of contrast and clipping.
-- **The placeholder grey and the secondary greys.** The audit reports the
-  field placeholder on its dark fill and a row's value and time on white.
-  Those are colour decisions and stay with
-  [#2187](https://github.com/stacksjs/stx/issues/2187); the clipping that
-  issue also described is fixed.
+- **The placeholder grey and the secondary greys.** Fixed on 2026-11-16:
+  see [the audit's colours](#the-audits-colours-2026-11-16). What the audit
+  reported on the field in dark was not the placeholder.
+- **A placeholder too long for its line.** At the largest text sizes the
+  audit reports "you@example.com" and the password's placeholder as clipped.
+  A placeholder is one line. Accepted as it is in
+  [#2187](https://github.com/stacksjs/stx/issues/2187) and listed as known.
 - **The `hud` suite on a small iPhone.** Its buttons sit under the keyboard
   on a 667-point screen. It is the host's panel and a fixture's layout, not a
   shared component.
@@ -613,3 +615,51 @@ this change in the working tree, not yet committed when run.
 Not run again: right-to-left, Increase Contrast, the iPad, the iPhone SE and
 landscape. Landscape still waits on
 [craft#539](https://github.com/craft-native/craft/issues/539).
+
+## The audit's colours: 2026-11-16
+
+[#2187](https://github.com/stacksjs/stx/issues/2187) was decided as: pass
+Apple's accessibility audit, and accept a long placeholder as known. Three
+contrast findings are gone.
+
+| Finding | What it was | Now |
+| --- | --- | --- |
+| Every shared text field, in dark: "contrast nearly passed" | Not the placeholder. The audit compares a field's text with its fill and reads the fill without its transparency: white on `#767680` is 4.497 to 1 | The fill's grey is `#747480`, at the same 12% and 24%: 4.6 against white, 4.55 against black |
+| A grouped row's value and a list row's time, in light | The system's secondary grey, `#8a8a8e`, is 3.4 to 1 on white | `#6d6d72` in light, 5.1 to 1; dark keeps `#98989f` |
+| A list row's badge, in both | Never in a suite. Its grey words on its translucent grey fill, read the same way | The label colour on the `#747480` fill, and a badge is on the `lists` screen |
+
+How the first was found: a screen of fields that differed in one thing each.
+A field was reported in dark whatever its placeholder's colour, with text
+typed in it or not, and was not reported with the same placeholder on an
+opaque fill or on a translucent fill whose grey was slightly darker. A
+placeholder as pale as `#c7c7cc` on a light fill is not reported either, so
+the placeholder's colour is not something this audit reads. The system's own
+`#8e8e93` is kept for it.
+
+The change to the fill cannot be seen: two steps of 255 at 12% or 24%.
+
+### Recorded runs
+
+Xcode 26.6, iOS 26.5 Simulator, iPhone 17 Pro held upright, Craft
+`7096d6691201` (0.0.506), the change in the working tree. On this phone a
+suite's list of known findings has to match what the audit finds exactly, so
+a pass means the three are no longer reported.
+
+| Suite | Dark | Light |
+| --- | --- | --- |
+| `accessibility` | 4 of 4 | 4 of 4 |
+| `forms` | 6 of 6 | 6 of 6 |
+| `lists` | 5 of 5 | 5 of 5 |
+| `text-size` | 2 of 2 | 2 of 2 |
+| `controls` | 3 of 3 | 3 of 3 |
+
+Still listed as known: the two long placeholders, the captions the audit
+calls too small to tap (they are words, not controls), and the host's
+navigation title in light until Craft 0.0.507
+([craft#531](https://github.com/craft-native/craft/issues/531)).
+
+Other shared controls keep the `#767680` fill: the tab strip, the segmented
+control drawn from parts, the secondary Button and the Drawer's close button.
+A secondary Button is on the `lists` screen and is not reported. The other
+three are not on a screen the audit is run over, so nothing is known about
+them either way.
