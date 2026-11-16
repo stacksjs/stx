@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { access, rm } from 'node:fs/promises'
 import path from 'node:path'
-import { fillRouteParams, isRenderableCacheCandidate, ROUTE_PARAMS_PLACEHOLDER, serverScriptsReadParams } from '../src/serve'
+import { fillRouteParams, isRenderableCacheCandidate, ROUTE_PARAMS_PLACEHOLDER, serverScriptsReadParams, templatesReadParamNames, trackParamReads } from '../src/serve'
 import { freePort } from '../../stx/test-utils/test-port'
 import { createTempDir } from '../../stx/src/temp-dir'
 
@@ -71,6 +71,36 @@ const heading = 'post-' + params.slug
 const marker = crypto.randomUUID()
 </script>
 <main>{{ heading }} marker:{{ marker }}</main>
+`)
+  // Pages with no server script of their own that still render their params:
+  // in markup, through a bound prop, in a component's server script, and by a
+  // segment's bare name (stacksjs/stx#2188). The marker shows whether a render
+  // was shared.
+  await Bun.write(path.join(fixtureDir, 'views', 'probe', '[model].stx'), `<main>
+<p data-inline="{{ params.model }}">inline</p>
+<ProbeEcho />
+<ProbeProp :model="params.model" />
+<MarkerProbe />
+</main>
+`)
+  await Bun.write(path.join(fixtureDir, 'views', 'echo', '[model].stx'), `<main><ProbeEcho /><MarkerProbe /></main>
+`)
+  await Bun.write(path.join(fixtureDir, 'views', 'bare', '[model].stx'), `<main><p data-bare="{{ model }}">bare</p><MarkerProbe /></main>
+`)
+  await Bun.write(path.join(fixtureDir, 'components', 'ProbeEcho.stx'), `<script server>
+const seen = typeof params === 'object' && params !== null ? String(params.model ?? '') : 'no params'
+</script>
+<p data-seen="{{ seen }}">echo</p>
+`)
+  await Bun.write(path.join(fixtureDir, 'components', 'ProbeProp.stx'), `<script server>
+const { model = '' } = defineProps()
+</script>
+<p data-prop="{{ model }}">prop</p>
+`)
+  await Bun.write(path.join(fixtureDir, 'components', 'MarkerProbe.stx'), `<script server>
+const marker = crypto.randomUUID()
+</script>
+<p>probe-marker:{{ marker }}</p>
 `)
   await Bun.write(path.join(fixtureDir, 'components', 'CompilerProbe.stx'), `<script server>
 const { label = '' } = defineProps()
@@ -243,6 +273,59 @@ const manifest = await Bun.file('data/manifest.json').text()
 
     expect(first).toContain('post-alpha')
     expect(second).toContain('post-bravo')
+  })
+
+  test('renders a script-less page that uses its params for each address (#2188)', async () => {
+    const get = async (url: string) => (await fetch(`${BASE}${url}`)).text()
+    const attr = (html: string, name: string) => new RegExp(`${name}="([^"]*)"`).exec(html)?.[1]
+    for (const model of ['alpha', 'beta', 'alpha', 'gamma']) {
+      const html = await get(`/probe/${model}`)
+      expect([attr(html, 'data-inline'), attr(html, 'data-seen'), attr(html, 'data-prop')]).toEqual([model, model, model])
+    }
+    // Read only in a component's server script.
+    for (const model of ['one', 'two'])
+      expect(attr(await get(`/echo/${model}`), 'data-seen')).toBe(model)
+    // Read by the segment's bare name.
+    for (const model of ['red', 'blue'])
+      expect(attr(await get(`/bare/${model}`), 'data-bare')).toBe(model)
+  })
+
+  test('renders such a page per address in parallel, not one shell after another', async () => {
+    const markerOf = (html: string) => /probe-marker:([\w-]+)/.exec(html)?.[1]
+    await fetch(`${BASE}/probe/first`)
+    const pages = await Promise.all(['a', 'b', 'c'].map(async model => (await fetch(`${BASE}/probe/${model}`)).text()))
+    expect(new Set(pages.map(markerOf)).size).toBe(3)
+    expect(pages.map(html => /data-inline="([^"]*)"/.exec(html)?.[1])).toEqual(['a', 'b', 'c'])
+  })
+
+  test('notes a read of params wherever it happens, and only of a param', () => {
+    const reads = (use: (params: Record<string, string>) => unknown) => {
+      const tracked = trackParamReads({ model: 'alpha' })
+      use(tracked.params)
+      return tracked.read()
+    }
+    expect(reads(params => params.model)).toBe(true)
+    expect(reads(params => 'model' in params)).toBe(true)
+    expect(reads(params => ({ ...params }))).toBe(true)
+    expect(reads(params => JSON.stringify(params))).toBe(true)
+    // Not reads of a param: a missing key reads the same for every address,
+    // and the engine probes context values for markers.
+    expect(reads(params => params.other)).toBe(false)
+    expect(reads(params => (params as any)._isSignal)).toBe(false)
+    expect(reads(params => typeof params)).toBe(false)
+    expect(reads(params => ({ context: params }))).toBe(false)
+  })
+
+  test('decides which templates use a segment by its bare name', () => {
+    expect(templatesReadParamNames(['<p>{{ model }}</p>'], ['model'])).toBe(true)
+    expect(templatesReadParamNames(['<p>{!! model !!}</p>'], ['model'])).toBe(true)
+    expect(templatesReadParamNames(['@if(model === "team")<p>x</p>@endif'], ['model'])).toBe(true)
+    expect(templatesReadParamNames(['<Thing :model="model" />'], ['model'])).toBe(true)
+    expect(templatesReadParamNames(['<script server>const t = load(model)</script><p>x</p>'], ['model'])).toBe(true)
+    // Not the segment: an attribute of the same name, a property, prose.
+    expect(templatesReadParamNames(['<div id="map" :key="row.id">The id of it</div>'], ['id'])).toBe(false)
+    expect(templatesReadParamNames(['<p>{{ club.model }}</p>'], ['model'])).toBe(false)
+    expect(templatesReadParamNames(['<p>{{ marker }}</p>'], [])).toBe(false)
   })
 
   test('decides which server scripts read params', () => {

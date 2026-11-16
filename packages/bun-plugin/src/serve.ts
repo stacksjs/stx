@@ -237,6 +237,66 @@ export function serverScriptsReadParams(serverScripts: string[], paramNames: str
 }
 
 /**
+ * A route's params for a render that may be kept as every address's shell,
+ * and whether anything read them while it rendered.
+ *
+ * `serverScriptsReadParams` sees the page's own server scripts and nothing
+ * else. A script-less page's `{{ params.model }}`, a prop bound from it and a
+ * component's server script reading `params` all ran with the first address's
+ * values, and that render was served for every address after it
+ * (stacksjs/stx#2188). A render reads its params through this object, so it
+ * can say so wherever the read happens. Only a param's own name counts: a
+ * missing key reads the same for every address, and the engine probes context
+ * values for markers (`_isSignal`, `then`) that are not reads of a param.
+ */
+export function trackParamReads(params: Record<string, string>): { params: Record<string, string>, read: () => boolean } {
+  let read = false
+  const isParam = (key: string | symbol): boolean => typeof key === 'string' && Object.hasOwn(params, key)
+  const tracked = new Proxy(params, {
+    get(target, key, receiver) {
+      if (isParam(key)) read = true
+      return Reflect.get(target, key, receiver)
+    },
+    has(target, key) {
+      if (isParam(key)) read = true
+      return Reflect.has(target, key)
+    },
+    // Enumerating them (`Object.keys`, a spread, JSON) reads them all.
+    ownKeys(target) {
+      read = true
+      return Reflect.ownKeys(target)
+    },
+  })
+  return { params: tracked, read: () => read }
+}
+
+/**
+ * Whether templates use a route segment by its bare name (`[model].stx`
+ * binds `model`) in something the server evaluates: `{{ }}`, `{!! !!}`, a
+ * directive's arguments, a bound attribute, or a server script.
+ *
+ * A bare name cannot be tracked as `params` is: it is a plain string, and
+ * every expression is handed every context value, so a read of it looks like
+ * any other. Coarse like `serverScriptsReadParams`: a match that is not the
+ * param costs the shared shell, never correctness.
+ */
+export function templatesReadParamNames(sources: string[], paramNames: string[]): boolean {
+  if (paramNames.length === 0) return false
+  const names = paramNames.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  const reads = new RegExp(`(?:^|[^\\w$.])(?:${names.join('|')})(?![\\w$])`)
+  const evaluated = /\{\{([\s\S]*?)\}\}|\{!!([\s\S]*?)!!\}|@[a-z]\w*\s*\(([^\n]*)\)|\s:[\w.-]+\s*=\s*(?:"([^"]*)"|'([^']*)')/gi
+  for (const source of sources) {
+    const { serverScripts, templateContent } = extractServerScriptsFromTemplate(source)
+    if (serverScriptsReadParams(serverScripts, paramNames)) return true
+    for (const match of templateContent.matchAll(evaluated)) {
+      const expression = match.slice(1).find(part => part !== undefined) ?? ''
+      if (reads.test(expression)) return true
+    }
+  }
+  return false
+}
+
+/**
  * Build the candidate regexes for a dynamic route file (stacksjs/stx#1927).
  *
  * `fileRouteBase` is the route path with the file extension already
@@ -1864,6 +1924,10 @@ export async function serve(options: ServeOptions): Promise<void> {
   // than URL. Concurrent misses must share a completed render, not race to
   // replace the cache with independently evaluated server scripts.
   const pendingShellRenders = new Map<string, Promise<void>>()
+  // Dynamic routes whose last render read their params, with the signature of
+  // the sources it read them in. Such a page renders per address, so it is
+  // not queued behind another address's render for a shell it will not keep.
+  const paramReaders = new Map<string, Map<string, number>>()
   const renderAdmission = createRenderAdmission(options)
   // Opt-in because generic server scripts may read external state that no
   // filesystem watcher can observe. For applications whose static views are
@@ -2137,6 +2201,7 @@ function __stxOverlay(errs){
   const watchersStarted = new Map<string, ReturnType<typeof fsWatch>>()
   const clearRenderCaches = () => {
     htmlCache.clear()
+    paramReaders.clear()
     renderCacheStore?.invalidate()
     cssCssCache.clear()
     resolvedStxModule?.clearDevCaches?.()
@@ -3672,13 +3737,18 @@ function __stxOverlay(errs){
     // per record, and one record's output must never be served for another.
     const isMutating = !!reqCtx && reqCtx.method !== 'GET' && reqCtx.method !== 'HEAD'
     const skipCacheHint = /(?:^|[^\w$])__stx_skip_cache\s*=\s*true/.test(content)
-    const cacheShell = ENABLE_HTML_CACHE
+    let cacheShell = ENABLE_HTML_CACHE
       && RENDER_CACHE_VARY === 'source'
       && paramNames.length > 0
       && !isMutating
       && !skipCacheHint
       && allowsRenderCache(reqCtx)
       && !serverScriptsReadParams(dynServerScripts, paramNames)
+    if (cacheShell) {
+      const reader = paramReaders.get(filePath)
+      if (reader && await templateSignatureFresh(reader))
+        cacheShell = false
+    }
     if (reqCtx)
       reqCtx.params = paramsObj
     if (cacheShell) {
@@ -3719,8 +3789,10 @@ function __stxOverlay(errs){
       // ...and as the documented `params` object — @stacksjs/stx's
       // variable-extractor plumbs `context.params` into every server script,
       // but the serve path never set it, so `params.id` was always `{}`
-      // (stacksjs/stacks#1967).
-      context.params = paramsObj
+      // (stacksjs/stacks#1967). A render that may become the shell reads it
+      // through a tracker, so a read anywhere in it keeps it per address.
+      const paramReads = cacheShell ? trackParamReads(paramsObj) : undefined
+      context.params = paramReads ? paramReads.params : paramsObj
 
       const { processDirectives, extractVariables, defaultConfig, injectRouterScript: injectRouter } = await stxModule
       injectServeLocaleContext(context)
@@ -3813,6 +3885,17 @@ function __stxOverlay(errs){
 
       if (!cacheShell)
         return output
+
+      // A render that used its params is this address's, whatever its own
+      // server script said: served, not kept, and remembered so the next
+      // address does not wait for a shell.
+      if (paramReads?.read() || templatesReadParamNames(
+        [templateContent, ...await Promise.all([...dependencies].filter(dep => dep !== filePath).map(dep => Bun.file(dep).text().catch(() => '')))],
+        paramNames,
+      )) {
+        paramReaders.set(filePath, await buildTemplateSignature(filePath, dependencies))
+        return fillRouteParams(output, paramsObj)
+      }
 
       // The same conditions the static path stores under, plus one of its own:
       // a render that recorded a response (a redirect, a notFound()) is about
