@@ -8,6 +8,7 @@
  * @module dynamic-components
  */
 
+import { decodeStxProp } from './component-processing'
 import { renderComponentWithSlot, resolveTemplatePath } from './utils'
 import { safeEvaluate } from './safe-evaluator'
 import type { StxOptions } from './types'
@@ -113,11 +114,63 @@ function displayExpression(expr: string): string {
  * `:class` and friends. The one thing that must go is the `:is` binding itself.
  */
 function renderAsElement(name: string, attrs: string, slotContent: string): string {
-  const cleanedAttrs = attrs.replace(/\s*(?::is|v-bind:is)\s*=\s*"[^"]*"/gi, '').trim()
+  // A loop has already evaluated its bindings into `__stx_` attributes
+  // (loops.ts): an element gets them back as the plain attributes they were.
+  const cleanedAttrs = attrs
+    .replace(/\s*(?::is|v-bind:is|__stx_is)\s*=\s*"[^"]*"/gi, '')
+    .replace(/\b__stx_([\w-]+)\s*=\s*"([^"]*)"/g, (_match, name: string, encoded: string) => {
+      const value = decodeStxProp(encoded)
+      if (value === null || value === undefined || value === false) return ''
+      if (value === true) return name
+      return `${name}="${String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"`
+    })
+    .trim()
   const open = cleanedAttrs ? `<${name} ${cleanedAttrs}>` : `<${name}>`
   if (VOID_TAGS.has(name))
     return cleanedAttrs ? `<${name} ${cleanedAttrs}>` : `<${name}>`
   return `${open}${slotContent}</${name}>`
+}
+
+/**
+ * The name a `<component>` tag asks for: its `:is` expression, or the value a
+ * loop already evaluated it to. A loop runs before this module and evaluates
+ * every bound attribute of a component tag in each row into a `__stx_`
+ * attribute, `:is` included, so a `<component :is="name">` in any `@foreach`
+ * reached here as `__stx_is="..."`, matched neither pattern, and was left in
+ * the page as an undrawn `<component>` element (stacksjs/stx#2188).
+ */
+function resolveTagName(expr: string | undefined, encoded: string | undefined, context: Record<string, any>): string | null {
+  if (encoded !== undefined) {
+    const value = decodeStxProp(encoded)
+    return typeof value === 'string' && value ? value : null
+  }
+  return resolveIsName(expr ?? '', context)
+}
+
+/** A tag's props: bound ones evaluated, static ones as written, a loop's decoded. */
+function parseTagProps(attrs: string, context: Record<string, any>): Record<string, any> {
+  const props: Record<string, any> = {}
+  const propsPattern = /(?::([a-zA-Z_][a-zA-Z0-9_-]*)|([a-zA-Z_][a-zA-Z0-9_-]*))\s*=\s*"([^"]*)"/g
+  let propMatch: RegExpExecArray | null
+  while ((propMatch = propsPattern.exec(attrs.trim())) !== null) {
+    const propName = propMatch[1] || propMatch[2]
+    const propValue = propMatch[3]
+    if (propMatch[1]) {
+      try {
+        props[propName] = safeEvaluate(propValue, context)
+      }
+      catch {
+        props[propName] = propValue
+      }
+    }
+    else if (propName.startsWith('__stx_')) {
+      props[propName.slice(6)] = decodeStxProp(propValue)
+    }
+    else {
+      props[propName] = propValue
+    }
+  }
+  return props
 }
 
 // =============================================================================
@@ -145,12 +198,14 @@ export async function processDynamicComponents(
 ): Promise<string> {
   let result = template
 
-  // Match <component :is="expr"> or <component v-bind:is="expr">
-  const componentPattern = /<component\s+(?::is|v-bind:is)\s*=\s*"([^"]*)"([^>]*)>([\s\S]*?)<\/component>/gi
+  // Match <component :is="expr">, <component v-bind:is="expr">, or the same
+  // inside a loop, which has evaluated it to <component __stx_is="...">
+  const componentPattern = /<component\s+(?:(?::is|v-bind:is)\s*=\s*"([^"]*)"|__stx_is\s*=\s*"([^"]*)")([^>]*)>([\s\S]*?)<\/component>/gi
 
   const matches: Array<{
     full: string
-    expr: string
+    expr?: string
+    encoded?: string
     attrs: string
     slotContent: string
     index: number
@@ -161,8 +216,9 @@ export async function processDynamicComponents(
     matches.push({
       full: match[0],
       expr: match[1],
-      attrs: match[2],
-      slotContent: match[3],
+      encoded: match[2],
+      attrs: match[3],
+      slotContent: match[4],
       index: match.index,
     })
   }
@@ -173,11 +229,11 @@ export async function processDynamicComponents(
 
     try {
       // Evaluate the :is expression
-      const componentName = resolveIsName(m.expr, context)
+      const componentName = resolveTagName(m.expr, m.encoded, context)
 
       if (!componentName || typeof componentName !== 'string') {
         // Could not resolve — leave a placeholder comment
-        const replacement = `<!-- dynamic component: could not resolve "${escapeHtmlComment(displayExpression(m.expr))}" -->`
+        const replacement = `<!-- dynamic component: could not resolve "${escapeHtmlComment(displayExpression(m.expr ?? 'a value a loop evaluated'))}" -->`
         result = result.slice(0, m.index) + replacement + result.slice(m.index + m.full.length)
         continue
       }
@@ -190,28 +246,7 @@ export async function processDynamicComponents(
       }
 
       // Parse additional props from attributes
-      const propsStr = m.attrs.trim()
-      const props: Record<string, any> = {}
-      const propsPattern = /(?::([a-zA-Z_][a-zA-Z0-9_-]*)|([a-zA-Z_][a-zA-Z0-9_-]*))\s*=\s*"([^"]*)"/g
-      let propMatch: RegExpExecArray | null
-      while ((propMatch = propsPattern.exec(propsStr)) !== null) {
-        const propName = propMatch[1] || propMatch[2]
-        const propValue = propMatch[3]
-
-        if (propMatch[1]) {
-          // Dynamic prop (bound with :)
-          try {
-            props[propName] = safeEvaluate(propValue, context)
-          }
-          catch {
-            props[propName] = propValue
-          }
-        }
-        else {
-          // Static prop
-          props[propName] = propValue
-        }
-      }
+      const props = parseTagProps(m.attrs, context)
 
       // Render the resolved component
       const componentsDir = options.componentsDir || 'components'
@@ -255,15 +290,16 @@ async function processSelfClosingDynamicComponents(
 ): Promise<string> {
   let result = template
 
-  const pattern = /<component\s+(?::is|v-bind:is)\s*=\s*"([^"]*)"([^>]*?)\/>/gi
-  const matches: Array<{ full: string, expr: string, attrs: string, index: number }> = []
+  const pattern = /<component\s+(?:(?::is|v-bind:is)\s*=\s*"([^"]*)"|__stx_is\s*=\s*"([^"]*)")([^>]*?)\/>/gi
+  const matches: Array<{ full: string, expr?: string, encoded?: string, attrs: string, index: number }> = []
 
   let match: RegExpExecArray | null
   while ((match = pattern.exec(result)) !== null) {
     matches.push({
       full: match[0],
       expr: match[1],
-      attrs: match[2],
+      encoded: match[2],
+      attrs: match[3],
       index: match.index,
     })
   }
@@ -272,10 +308,10 @@ async function processSelfClosingDynamicComponents(
     const m = matches[i]
 
     try {
-      const componentName = resolveIsName(m.expr, context)
+      const componentName = resolveTagName(m.expr, m.encoded, context)
 
       if (!componentName || typeof componentName !== 'string') {
-        const replacement = `<!-- dynamic component: could not resolve "${escapeHtmlComment(displayExpression(m.expr))}" -->`
+        const replacement = `<!-- dynamic component: could not resolve "${escapeHtmlComment(displayExpression(m.expr ?? 'a value a loop evaluated'))}" -->`
         result = result.slice(0, m.index) + replacement + result.slice(m.index + m.full.length)
         continue
       }
@@ -287,10 +323,12 @@ async function processSelfClosingDynamicComponents(
         continue
       }
 
+      // Its props, which this form used to drop: `<component :is="x" :model="y" />`
+      // drew the component with none of them.
       const componentsDir = options.componentsDir || 'components'
       const rendered = await renderComponentWithSlot(
         componentName,
-        {},
+        parseTagProps(m.attrs, context),
         '',
         componentsDir,
         context,
