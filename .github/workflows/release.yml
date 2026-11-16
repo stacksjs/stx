@@ -47,9 +47,11 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run lint
       - run: bun run format:check
-      - run: bun run preflight:release
+      # Before the first step that opens a browser: the preflight's
+      # installed-consumer check runs real-browser tests of its own.
       - name: Warm the browser before the startup budget
         run: bun scripts/warm-test-browser.ts
+      - run: bun run preflight:release
       - run: bun test --preload ./scripts/browser-test-preload.ts packages examples --max-concurrency=1
 
       - name: Component Tests with Coverage
@@ -86,6 +88,11 @@ jobs:
 
       - name: Build the exact SDK publication payloads
         run: bun run build && bun run validate:exports
+
+      # This job starts on a runner of its own, with a cold browser, and the
+      # check below opens one under a 15 second navigation limit.
+      - name: Warm the browser before the installed-consumer check
+        run: bun scripts/warm-test-browser.ts
 
       - name: Qualify the original SDK archives before upload
         id: public-sdk

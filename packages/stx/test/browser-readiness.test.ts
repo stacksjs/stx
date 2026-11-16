@@ -98,6 +98,27 @@ it('qualifies the browser before every CI/release process that runs browser case
   expect(ci).toContain('bun test --preload ../../scripts/browser-test-preload.ts --coverage')
   expect(ci).toContain('bun test --preload ../../scripts/browser-test-preload.ts test/integration/')
   expect(release).toContain('bun test --preload ./scripts/browser-test-preload.ts packages examples --max-concurrency=1')
+  // The installed-consumer check opens a browser too, with a 15 second
+  // navigation limit and no probe of its own. While the warm-up ran after it
+  // in CI, that check paid for Chrome's cold start and timed out twice running.
+  // A job is a runner of its own, so each one that runs the check (by itself
+  // or inside the release preflight) warms the browser first.
+  const opensBrowser = (run: string) => run.includes('smoke:install') || run.includes('preflight:release')
+  let checked = 0
+  for (const workflow of [ci, release]) {
+    const jobs = (Bun.YAML.parse(workflow) as { jobs: Record<string, { steps?: Array<{ run?: string }> }> }).jobs
+    for (const [name, job] of Object.entries(jobs)) {
+      const runs = (job.steps ?? []).map(step => step.run ?? '')
+      const first = runs.findIndex(opensBrowser)
+      if (first === -1) continue
+      const warm = runs.findIndex(run => run.includes('scripts/warm-test-browser.ts'))
+      expect(warm, `${name} warms the browser`).toBeGreaterThan(-1)
+      expect(warm, `${name} warms the browser before it is opened`).toBeLessThan(first)
+      checked++
+    }
+  }
+  // CI's test job, and the release's source gate and publisher.
+  expect(checked).toBe(3)
 })
 
 /**
