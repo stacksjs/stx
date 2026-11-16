@@ -294,6 +294,14 @@ removal, and dynamically created rows. Authored attributes remain separate from
 these generated transport fields, so removing an override restores its ARIA
 fallback rather than retaining stale native state.
 
+A box with an `aria-label` that holds a control is a named group on iOS:
+`<div role="group" aria-label="Pages">` around a row of buttons, or a
+`<section aria-label="Sign in">` around a form. VoiceOver says the name on the
+way in and still reaches every control inside. This needs Craft 0.0.505 or
+later: an older iOS host makes the box a single stop and hides what it holds.
+A labelled box that holds only text or pictures is one stop, read by its
+label, and `role="list"` makes a box a group whatever it holds.
+
 This is not full accessible-name computation: `label for`, `aria-labelledby`,
 screen-reader-only content, mixed checked state, and `aria-hidden` subtree
 semantics still need additional support. ARIA disabled state describes a control;

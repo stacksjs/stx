@@ -428,7 +428,7 @@ watches it.
 | A field under the label "Full name" was announced by its placeholder, and a Select by the option it held: a `<label for>` named nothing on a host | The label's words name the control, and the label is read once | `0af3ba98a8` |
 | A decorative image was a stop for VoiceOver, announced as "image" | `aria-hidden` reaches the host | `0af3ba98a8` |
 | Typing into a `PasswordInput` bound with `v-model:value` left the page's signal empty | It binds both ways, as the other fields do | `0af3ba98a8` |
-| The Pager was one stop called "Tour", its pages and dots out of reach; an open Drawer was one stop with its close button inside | A box that names a group of controls keeps the name as ARIA and does not send it | `f6131a4180` |
+| The Pager was one stop called "Tour", its pages and dots out of reach; an open Drawer was one stop with its close button inside | A box that names a group of controls keeps the name as ARIA and does not send it. Since 2026-11-16 the name is sent and the host makes the box a group: [below](#group-names-restored-against-craft-00506-2026-11-16) | `f6131a4180` |
 | The page a pager was on was not said to be the current one | `aria-current` is announced as selected | `f6131a4180` |
 | A Tooltip's words reached nobody who could not see them appear | They are the trigger's hint | `f6131a4180` |
 | A list row's title was drawn a space in, and read as " Second " | Template indentation is not text | `f6131a4180` |
@@ -510,18 +510,20 @@ The four lines that are not clean:
 
 ### What is the host's
 
-Six findings are in Craft's iOS host rather than in stx. Each is pinned in the
-suite that met it, as it is today, so the suite fails when the host changes
-and the pin has to be turned into the real expectation.
+Six findings were in Craft's iOS host rather than in stx. Each was pinned in
+the suite that met it, as it was, so that the suite failed when the host
+changed and the pin had to be turned into the real expectation. Four are fixed
+in Craft 0.0.505 and their pins are gone (see
+[the re-run below](#group-names-restored-against-craft-00506-2026-11-16)).
 
-| Finding | Craft issue | Pinned in |
+| Finding | Craft issue | Now |
 | --- | --- | --- |
-| The navigation title fails contrast in light appearance | [#531](https://github.com/craft-native/craft/issues/531) | `SharedAccessibilityUITests` known list |
-| A dialog's name stays on the node it was opened from and never reaches the sheet | [#535](https://github.com/craft-native/craft/issues/535) | `SharedOverlaysNativeTests` |
-| A labelled view is one stop even when it holds controls | [#536](https://github.com/craft-native/craft/issues/536) | stx withholds the label (`READER_GROUP`) |
-| A Picker's words are scaled for text size twice | [#537](https://github.com/craft-native/craft/issues/537) | `SharedTextSizeNativeTests` |
-| A scroll view does not scroll on a phone launched in landscape | [#539](https://github.com/craft-native/craft/issues/539) | Not pinned: see landscape below |
-| A TextInput's placeholder is inset by its padding twice | [#540](https://github.com/craft-native/craft/issues/540) | Not pinned: 16 points of drawing |
+| The navigation title fails contrast in light appearance | [#531](https://github.com/craft-native/craft/issues/531) | Fixed on Craft's main, not released. Still on the `SharedAccessibilityUITests` known list until it is |
+| A dialog's name stays on the node it was opened from and never reaches the sheet | [#535](https://github.com/craft-native/craft/issues/535) | Fixed in 0.0.505. `SharedOverlaysNativeTests` asserts the sheet is named |
+| A labelled view is one stop even when it holds controls | [#536](https://github.com/craft-native/craft/issues/536) | Fixed in 0.0.505. stx sends the name again |
+| A Picker's words are scaled for text size twice | [#537](https://github.com/craft-native/craft/issues/537) | Fixed in 0.0.505. `SharedTextSizeNativeTests` asserts the field's size |
+| A scroll view does not scroll on a phone launched in landscape | [#539](https://github.com/craft-native/craft/issues/539) | Open: see landscape below |
+| A TextInput's placeholder is inset by its padding twice | [#540](https://github.com/craft-native/craft/issues/540) | Fixed in 0.0.505. Never pinned: 16 points of drawing |
 
 ### What is left, and why
 
@@ -565,3 +567,49 @@ and the pin has to be turned into the real expectation.
 - **The `hud` suite on a small iPhone.** Its buttons sit under the keyboard
   on a 667-point screen. It is the host's panel and a fixture's layout, not a
   shared component.
+
+## Group names restored, against Craft 0.0.506: 2026-11-16
+
+On 2026-11-14 stx stopped sending the name of a plain box that holds controls
+(`<div role="group" aria-label="Pages">` around a row of buttons), because
+Craft's iOS host made any named view one stop for VoiceOver and hid what was
+inside. Craft 0.0.505 makes a named view that holds a control a group
+instead ([craft#536](https://github.com/craft-native/craft/issues/536)), so
+the name is sent again and nothing in stx decides what a group is.
+
+What a reader reaches, as `SpokenStops` lists it on an iPhone 17 Pro:
+
+| Screen | Before | Now |
+| --- | --- | --- |
+| The Pager's dots | Three buttons under no name | `Pages \| group`, then the three buttons |
+| An open Drawer | Its title, close button and content under no name | `Device drawer \| group`, then the same |
+| An open Dialog | Its content under no name (craft#535) | `Outer dialog \| group`, then its content |
+| A segmented control drawn from parts | Its segments under no name | Its name, then its segments (protocol test; the host draws its own control on iOS) |
+
+The Pager is named once on a host, on its scroller, and not on the box around
+it: that would be a second "Tour" around the first.
+
+An iOS app on a Craft host older than 0.0.505 gets the old behaviour back for
+these boxes, one stop that hides its controls.
+
+Two pins on the host's old behaviour became real expectations in the same
+change: a dialog's name reaches its sheet
+([craft#535](https://github.com/craft-native/craft/issues/535)), and a
+Picker's words are the size of the field's beside it at the largest text size
+([craft#537](https://github.com/craft-native/craft/issues/537)), so the
+Picker is back in the sweep for cut-off words.
+
+### Recorded runs
+
+Xcode 26.6, iOS 26.5 Simulator, iPhone 17 Pro held upright, Craft
+`7096d6691201` (the 0.0.506 release, a clean clone), stx `d39ffef30f` with
+this change in the working tree, not yet committed when run.
+[Every run's counts, device and settings](shared-ios-acceptance-2026-11-16.json).
+
+| Device and setting | Appearance | Passed | Not passing |
+| --- | --- | --- | --- |
+| iPhone 17 Pro, upright | dark and light | 22 of 22 runs, 96 of 96 tests | None |
+
+Not run again: right-to-left, Increase Contrast, the iPad, the iPhone SE and
+landscape. Landscape still waits on
+[craft#539](https://github.com/craft-native/craft/issues/539).
