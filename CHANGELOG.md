@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.895...v0.2.896)
+
+## ✨ Features
+
+- **offline**: defer precaching until app entry ([2165068](https://github.com/stacksjs/stx/commit/2165068)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.896 ([a6ee70a](https://github.com/stacksjs/stx/commit/a6ee70a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.894...v0.2.895)
 
 ## 🐛 Bug Fixes
