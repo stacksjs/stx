@@ -643,7 +643,7 @@ function keepAssets(html) {
           keepingAssets[url] = cache.match(url).then(function (hit) {
             if (hit) return;
             return background(function (signal) {
-              return fetch(url, { credentials: 'same-origin', signal: signal, priority: 'low' }).then(function (asset) {
+              return fetch(url, { credentials: 'same-origin', headers: { 'Purpose': 'prefetch' }, signal: signal, priority: 'low' }).then(function (asset) {
                 if (asset.status === 200) return keepAsset(cache, url, asset);
                 delete keepingAssets[url];
               });
@@ -661,7 +661,7 @@ function precache() {
   return caches.open(SHELL).then(function (cache) {
     return Promise.all(wanted.map(function (page) {
       return Promise.all([false, true].map(function (fragment) {
-        var headers = fragment ? { 'X-STX-Router': 'true', 'Accept': 'text/html' } : { 'Accept': 'text/html' };
+        var headers = fragment ? { 'X-STX-Router': 'true', 'Accept': 'text/html', 'Purpose': 'prefetch' } : { 'Accept': 'text/html', 'Purpose': 'prefetch' };
         return background(function (signal) {
           return fetch(page.url, { headers: headers, credentials: 'same-origin', signal: signal, priority: 'low' }).then(function (response) {
             if (response.status !== 200 || response.redirected) return null;

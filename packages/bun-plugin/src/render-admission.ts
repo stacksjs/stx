@@ -17,6 +17,17 @@ export class RenderAdmissionError extends Error {
 
 interface WaitingRender {
   start: () => void
+  priority: RenderPriority
+}
+
+type RenderPriority = 'foreground' | 'background'
+
+/** A caller can lower its own priority, never take priority above navigation. */
+export function renderRequestPriority(request?: Request): RenderPriority {
+  const purpose = `${request?.headers.get('purpose') || ''} ${request?.headers.get('sec-purpose') || ''}`
+  return purpose.toLowerCase().split(/[;,\s]+/).some(value => value === 'prefetch' || value === 'prerender')
+    ? 'background'
+    : 'foreground'
 }
 
 function integer(value: number | undefined, fallback: number, minimum: number): number {
@@ -31,22 +42,35 @@ export function createRenderAdmission(options: RenderAdmissionOptions = {}) {
   const concurrency = integer(options.renderConcurrency, 4, 1)
   const queueLimit = integer(options.renderQueueLimit, 32, 0)
   const timeoutMs = integer(options.renderQueueTimeoutMs, 15_000, 1)
+  // Speculation may use spare capacity, but cannot occupy every render slot
+  // or every waiting place before a person opens a page.
+  const backgroundConcurrency = Math.max(1, Math.floor(concurrency / 2))
+  const backgroundQueueLimit = Math.max(0, queueLimit - concurrency)
   const waiting: WaitingRender[] = []
   let active = 0
+  let activeBackground = 0
 
-  function release(): void {
+  function release(priority: RenderPriority): void {
     active--
-    waiting.shift()?.start()
+    if (priority === 'background') activeBackground--
+    // Precache work must not put a person's next page behind an entire
+    // backlog. Preserve FIFO within each class and keep the same capacity.
+    while (active < concurrency && waiting.length) {
+      const foreground = waiting.findIndex(entry => entry.priority === 'foreground')
+      if (foreground < 0 && activeBackground >= backgroundConcurrency) break
+      waiting.splice(foreground < 0 ? 0 : foreground, 1)[0]?.start()
+    }
   }
 
-  async function acquire(signal?: AbortSignal): Promise<void> {
+  async function acquire(signal: AbortSignal | undefined, priority: RenderPriority): Promise<void> {
     if (signal?.aborted)
       throw new RenderAdmissionError(408)
-    if (active < concurrency) {
+    if (active < concurrency && (priority === 'foreground' || activeBackground < backgroundConcurrency)) {
       active++
+      if (priority === 'background') activeBackground++
       return
     }
-    if (waiting.length >= queueLimit)
+    if (waiting.length >= queueLimit || priority === 'background' && waiting.filter(entry => entry.priority === 'background').length >= backgroundQueueLimit)
       throw new RenderAdmissionError(503)
 
     await new Promise<void>((resolve, reject) => {
@@ -67,12 +91,14 @@ export function createRenderAdmission(options: RenderAdmissionOptions = {}) {
       }
       const abort = () => fail(408)
       const entry: WaitingRender = {
+        priority,
         start() {
           if (settled)
             return
           settled = true
           cleanup()
           active++
+          if (priority === 'background') activeBackground++
           resolve()
         },
       }
@@ -86,8 +112,8 @@ export function createRenderAdmission(options: RenderAdmissionOptions = {}) {
   }
 
   return {
-    async run<T>(start: () => Promise<T>, signal?: AbortSignal): Promise<T> {
-      await acquire(signal)
+    async run<T>(start: () => Promise<T>, signal?: AbortSignal, priority: RenderPriority = 'foreground'): Promise<T> {
+      await acquire(signal, priority)
       try {
         // A disconnect cannot free the slot while its script still runs.
         // Doing so would let disconnected clients create unbounded work.
@@ -96,7 +122,7 @@ export function createRenderAdmission(options: RenderAdmissionOptions = {}) {
         return await start()
       }
       finally {
-        release()
+        release(priority)
       }
     },
   }

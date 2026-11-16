@@ -175,6 +175,20 @@ function runWorker(config: Parameters<typeof generateOfflineWorker>[0], network:
 }
 
 describe('background precaching', () => {
+  it('marks page, fragment and linked asset preloads as speculative while foreground reads stay ordinary', async () => {
+    const requests: Request[] = []
+    const sw = runWorker({ enabled: true, pages: ['/m'] }, (_url, request) => {
+      requests.push(request!)
+      return new Response('<main>Ready</main><script src="/_stx/modules.1234567890abcdef.js"></script>', { headers: { 'Content-Type': 'text/html' } })
+    })
+    await sw.install()
+    expect(requests.filter(request => request.headers.get('Purpose') === 'prefetch').length).toBeGreaterThanOrEqual(3)
+    expect(requests.every(request => request.headers.get('Purpose') === 'prefetch')).toBe(true)
+    requests.length = 0
+    await sw.request('http://app.test/api/foreground')
+    expect(requests.map(request => request.headers.get('Purpose'))).toEqual([null])
+  })
+
   it('leaves connection capacity for a foreground navigation during install', async () => {
     // Model an HTTP/1.1 origin's six connections. Held background responses
     // expose submitted work without depending on real network timings.
