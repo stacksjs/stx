@@ -522,15 +522,15 @@ in Craft 0.0.505 and their pins are gone (see
 | A dialog's name stays on the node it was opened from and never reaches the sheet | [#535](https://github.com/craft-native/craft/issues/535) | Fixed in 0.0.505. `SharedOverlaysNativeTests` asserts the sheet is named |
 | A labelled view is one stop even when it holds controls | [#536](https://github.com/craft-native/craft/issues/536) | Fixed in 0.0.505. stx sends the name again |
 | A Picker's words are scaled for text size twice | [#537](https://github.com/craft-native/craft/issues/537) | Fixed in 0.0.505. `SharedTextSizeNativeTests` asserts the field's size |
-| A scroll view does not scroll on a phone launched in landscape | [#539](https://github.com/craft-native/craft/issues/539) | Open: see landscape below |
+| A scroll view does not scroll on a phone launched in landscape | [#539](https://github.com/craft-native/craft/issues/539) | Closed, not the host's: a 10-point swipe, and six screens that did not scroll. See [landscape](#landscape-on-a-phone-2026-11-16) |
 | A TextInput's placeholder is inset by its padding twice | [#540](https://github.com/craft-native/craft/issues/540) | Fixed in 0.0.505. Never pinned: 16 points of drawing |
 
 ### What is left, and why
 
-- **Landscape on a phone.** `--orientation landscape` works and the suites
-  are written to run in it, but everything below the fold is out of reach
-  there until craft#539 is fixed, which is most of every screen at 402 points
-  tall. Recorded as it is: `lists` 4 of 5, `forms` 5 of 6 and `accessibility` 3 of 4, each failure a control that is below the fold or a pager that will not turn its page.
+- **Landscape on a phone.** 7 of 11 suites pass sideways (see
+  [landscape](#landscape-on-a-phone-2026-11-16)). Left: a Dialog that fills
+  the screen, a page that jumps when dragged with the keyboard up, and the
+  `hud` panel under the keyboard.
 - **Right-to-left mirroring.** Every suite passes with the system's
   right-to-left switch on, which is to say every control still works. The
   drawing is half mirrored: text aligns right and the system's own controls
@@ -736,3 +736,72 @@ right to left.
 
 That leaves landscape on a phone as the one setting not passing, waiting on
 [craft#539](https://github.com/craft-native/craft/issues/539).
+
+## Landscape on a phone: 2026-11-16
+
+[craft#539](https://github.com/craft-native/craft/issues/539) is closed as not
+the host's: the pager in `lists` did not turn on a phone held sideways because
+XCUITest sized `swipeLeft()` from the 20-point-tall text it was sent to and
+swiped 10 points. A drag across the page replaces it. Every suite was then run
+sideways for the first time (three were, on 2026-11-14), which found more,
+most of it in the suites rather than the host.
+
+Xcode 26.6, iOS 26.5 Simulator, Craft `7096d6691201` (0.0.506), stx
+`9908257c4c` with the changes below. Three simulators.
+[Every run's counts, device and settings](shared-ios-landscape-2026-11-16.json).
+
+### What changed in the suites
+
+- **Six screens did not scroll.** The accessibility, controls, image, video,
+  toggle and overlay screens were a column with no scroll view, written for a
+  phone held upright, so what was below the fold on one held sideways could
+  not be reached at all: no drag or swipe moved anything, and a tap's own
+  scroll-to-visible failed. Each is a scroll view now, as the lists, forms and
+  text-size screens already were.
+- **The title's contrast finding is gone from those screens.** The host's
+  navigation title ("main") failed the audit's contrast check in light on the
+  screens that did not scroll
+  ([craft#531](https://github.com/craft-native/craft/issues/531)). The lists
+  screen, which always scrolled, never had it, and now none of them does, so
+  it is off the accessibility and overlays known lists.
+- **`reach` holds before letting go,** so a drag stops where it ends.
+- **A frame is measured from a neighbour** in the image and toggle suites.
+  Their buttons sit below the fold sideways, a tap on one scrolls the screen
+  first, and a frame on the screen alone moved when nothing on the page had.
+- **"Outside" is in the screen's content.** A tap at 95% of the window's width
+  lands in the safe area beside the content on a phone held sideways, which
+  the screen never sees, so a popover and a tooltip stayed open. It is now in
+  the right-hand padding of the root scroll view.
+
+### Recorded runs
+
+| Device and setting | Appearance | Passed | Not passing |
+| --- | --- | --- | --- |
+| iPhone 17 Pro, upright | dark | 11 of 11 runs, 49 of 49 tests | None |
+| iPhone 17 Pro, upright | light | 11 of 11 runs, 49 of 49 tests | None |
+| iPhone 17 Pro, landscape | dark | 7 of 11 runs, 45 of 49 tests | `overlays`: 6 of 7; `forms`: 5 of 6; `text-size`: 1 of 2; `hud`: 0 of 1 |
+
+The upright runs are the reference phone, where the audit must find exactly
+what is listed, so they show the new scroll views changed nothing else.
+`overlays` was run again in all three after its known list changed; those are
+the runs recorded.
+
+### What is left sideways
+
+None of the four is a shared component:
+
+- **A Dialog fills the screen.** At the height of a phone held sideways the
+  host's sheet becomes full screen, so there is no outside to tap and a
+  Dialog with no close button of its own cannot be dismissed
+  (`testNestedDismissalAndDrawer`). The Drawer stays a sheet and passes.
+- **A drag with the keyboard up moves the page about 280 points.** With a
+  field focused, each 55-point drag in the strip above the keyboard carried
+  the password field between y = 200 and y = -81, one way and then the other,
+  and never let it stop in view. Holding before letting go changed nothing,
+  so it is not the drag coasting. In `forms` and `text-size` the next field
+  cannot be scrolled to while the keyboard is up.
+- **`hud` has its buttons under the keyboard,** as on the iPhone SE: the host's
+  panel and the fixture's layout.
+
+The two keyboard findings and the full-screen Dialog are the host's to
+decide, and stay open on #2184.
