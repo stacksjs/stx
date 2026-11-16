@@ -73,11 +73,11 @@ final class SharedOverlaysNativeTests: XCTestCase {
         try await wait("the dialog is presented: \(SpokenStops.of(self.front(screen)))", {
             SpokenStops.of(self.front(screen)).contains("Open nested dialog |  | button")
         })
-        // Known gap, in the host (craft-native/craft#535): the dialog's name ("Outer dialog") is set
-        // on the node the sheet was opened from and never reaches the sheet,
-        // so a reader lands in it without being told what it is. When the
-        // host carries it over, this list gains "Outer dialog |  | group".
-        XCTAssertEqual(SpokenStops.of(front(screen)), ["Open nested dialog |  | button"])
+        // The dialog's name reaches the sheet it is presented in, so a reader
+        // is told what they have landed in (craft-native/craft#535, fixed in
+        // Craft 0.0.505: the name used to stay on the node the sheet was
+        // opened from).
+        XCTAssertEqual(SpokenStops.of(front(screen)), ["Outer dialog |  | group", "Open nested dialog |  | button"])
         screen.evaluateScript("overlayProbe.outer.set(false)")
         try await wait("the dialog is dismissed", { screen.presentedViewController == nil })
 
@@ -85,9 +85,10 @@ final class SharedOverlaysNativeTests: XCTestCase {
         try await wait("the drawer is presented: \(SpokenStops.of(self.front(screen)))", {
             SpokenStops.of(self.front(screen)).contains("Close drawer |  | button")
         })
-        // The panel used to be one stop called "Device drawer", with its
-        // close button and everything else in it out of reach.
-        XCTAssertEqual(SpokenStops.of(front(screen)), ["Device drawer |  | ", "Close panel |  | button", "Close drawer |  | button"])
+        // The panel is a named group with its title, its close button and
+        // what the drawer holds inside it. It used to be one stop called
+        // "Device drawer" with all of that out of reach.
+        XCTAssertEqual(SpokenStops.of(front(screen)), ["Device drawer |  | group", "Device drawer |  | ", "Close panel |  | button", "Close drawer |  | button"])
         screen.evaluateScript("overlayProbe.drawer.set(false)")
         try await wait("the drawer is dismissed", { screen.presentedViewController == nil })
     }

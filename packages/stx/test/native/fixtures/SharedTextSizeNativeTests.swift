@@ -56,20 +56,15 @@ final class SharedTextSizeNativeTests: XCTestCase {
         // And the field grew to hold it, where it used to stay 48 points tall.
         XCTAssertGreaterThanOrEqual(field.bounds.height, (field.font?.lineHeight ?? 0))
 
-        // Known gap, in the host (craft-native/craft#537): a picker's words
-        // are scaled for the text size twice, 17 points drawn near 150 where
-        // the field beside it draws them at 48. When the host scales them
-        // once this fails, and should become an equality with the field.
+        // A picker's words are the size of the field's beside it. The host
+        // once scaled them for the text size twice, 17 points drawn near 150
+        // (craft-native/craft#537, fixed in Craft 0.0.505).
         let picker = try XCTUnwrap(find("size-sport", in: screen.view) as? UIButton)
         let words = try XCTUnwrap(picker.titleLabel?.font.pointSize)
-        XCTAssertGreaterThan(words, (field.font?.pointSize ?? 0) * 2, "The picker now draws its words at \(words) points: craft#537 looks fixed")
+        XCTAssertEqual(words, field.font?.pointSize ?? 0, accuracy: 0.5)
 
-        // The picker is left out of the sweep for that reason: at this
-        // scale its words do not fit a narrow phone at all.
-        picker.isHidden = true
         var found: [String] = []
         cutOff(in: screen.view, into: &found)
-        picker.isHidden = false
         XCTAssertEqual(found, [], "Words cut off by their box at the largest text size")
     }
 }

@@ -52,12 +52,12 @@ describe('SegmentedControl on a native host', () => {
     const phone = mountNativeScreen(code, 'Screen', { globals: { console: { ...console, error: (...args: unknown[]) => errors.push(args) } } })
     await phone.settle()
 
-    // Drawn from parts, the group is a plain box: its name stays an ARIA
-    // attribute and is not sent as a label, which would make the box one
-    // stop for a screen reader and put every segment out of reach.
+    // Drawn from parts, the group is a plain box that holds its segments:
+    // a host announces its name on the way in and reaches each of them.
     const group = phone.byTestID('period')!
     expect(group.props['aria-label']).toBe('Period')
-    expect(group.props.accessibilityLabel).toBeUndefined()
+    expect(group.props.accessibilityLabel).toBe('Period')
+    expect(group.props.accessibilityRole).toBeUndefined()
     const segment = (value: string) => phone.byTestID(`period-${value}`)!
     expect(segment('week').type).toBe('Pressable')
     expect(phone.all().some(node => node.children.includes('This month'))).toBe(true)
@@ -131,14 +131,13 @@ window.probe = { name }
     expect(phone.byTestID('range')!.props.accessibilityLabel).toBe('Zeitraum')
     unmountAllNativeScreens()
 
-    // Drawn from parts it is a box, which follows the name without sending it.
+    // Drawn from parts it is a box, and the box's name follows too.
     const parts = mountNativeScreen(code, 'Screen')
     await parts.settle()
-    expect(parts.byTestID('range')!.props).toMatchObject({ 'aria-label': 'Range' })
+    expect(parts.byTestID('range')!.props).toMatchObject({ 'aria-label': 'Range', 'accessibilityLabel': 'Range' })
     parts.context.probe.name.set('Zeitraum')
     await parts.settle()
-    expect(parts.byTestID('range')!.props).toMatchObject({ 'aria-label': 'Zeitraum' })
-    expect(parts.byTestID('range')!.props.accessibilityLabel ?? null).toBeNull()
+    expect(parts.byTestID('range')!.props).toMatchObject({ 'aria-label': 'Zeitraum', 'accessibilityLabel': 'Zeitraum' })
   }, 30_000)
 })
 

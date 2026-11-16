@@ -14,13 +14,14 @@ it.each([['ios', false], ['ios', true], ['android', false], ['android', true]] a
   const phone = mountNativeScreen(result.code, 'Screen', { platform })
   try {
     await phone.settle()
-    // The pager is named on its scroller; the box around it and the box
-    // around its dots are not, or a reader could not get inside them.
+    // The pager is named once, on its scroller, and not again on the box
+    // around it.
     const pager = phone.all().find(node => node.type === 'ScrollView' && node.props.pagingEnabled === true)!
     expect(pager.props.accessibilityLabel).toBe('Tour')
-    // The one named box is the list, which a host can name and still enter.
+    // The named boxes are the list and the pager's dots: each holds controls,
+    // so a host names the group and still lets a reader into it.
     expect(phone.all().filter(node => node.type === 'View' && node.props.accessibilityLabel !== undefined)
-      .map(node => [node.props.accessibilityRole, node.props.accessibilityLabel])).toEqual([['list', 'Exercises']])
+      .map(node => [node.props.accessibilityRole, node.props.accessibilityLabel])).toEqual([['list', 'Exercises'], [undefined, 'Pages']])
     const chips = phone.all().filter(node => node.props['data-stx-filter-chip'] !== undefined)
     expect(chips.map(node => node.props.accessibilityState?.selected)).toEqual([true, false])
     // A row's title carries no template indentation.

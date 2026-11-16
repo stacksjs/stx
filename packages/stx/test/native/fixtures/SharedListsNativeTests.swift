@@ -34,9 +34,10 @@ final class SharedListsNativeTests: XCTestCase {
     }
 
     /// A row that goes somewhere is one stop that says so, the filter in
-    /// force says it is selected, and the pager is a named group whose page
-    /// and dots are inside it. The pager used to be a single stop called
-    /// "Tour": naming the box around it hid everything in the box.
+    /// force says it is selected, and the pager is a named group with its
+    /// page inside and its dots a named group after it. The pager used to
+    /// be a single stop called "Tour": the host made any named box one stop
+    /// that hid everything in it (craft-native/craft#536, fixed in 0.0.505).
     func testAReaderReachesEveryRowFilterPageAndDot() async throws {
         let (screen, window) = try await host()
         defer { screen.viewDidDisappear(false); window.isHidden = true }
@@ -57,6 +58,7 @@ final class SharedListsNativeTests: XCTestCase {
             "2m |  | ",
             "Tour |  | group",
             "One |  | ",
+            "Pages |  | group",
             "Go to page 1 |  | button, selected",
             "Go to page 2 |  | button",
             "Go to page 3 |  | button",
