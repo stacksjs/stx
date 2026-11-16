@@ -939,6 +939,13 @@ craft.navigation.setChrome({
 })
 ```
 
+Shared chrome can also set `titleColor`, which supplies the default for inline
+and large navigation titles. A screen's own `setOptions({ titleColor })` takes
+precedence, so refreshing an inbox badge or changing the shared appearance
+cannot overwrite a branded screen's colour. Set the screen's `titleColor` to
+`undefined` to resume the shared colour, or `null` to request the host default.
+Removing the chrome restores the host default unless the screen owns a colour.
+
 `floatingActions()` answers the typed `NativeTabAccessory` the host draws:
 companions first, then the primary action, with `layout` implying `iconOnly`.
 It can be written by hand through `craft.navigation.setOptions` or

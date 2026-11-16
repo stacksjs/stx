@@ -1093,6 +1093,17 @@ export function installCraftBridge(
   const sentTabItems = new Map<string, string>()
   let sentAccessory: string | undefined
   let chrome: NativeNavigationChrome | null = null
+  let ownTitleColor: NativeNavigationChrome['titleColor']
+  let sentTitleColor: NativeNavigationChrome['titleColor']
+  const applyTitleColor = (payload: AnyRecord, force = false): void => {
+    const color = ownTitleColor !== undefined ? ownTitleColor : chrome?.titleColor
+    if (color === undefined && sentTitleColor === undefined && !force) return
+    const next = color ?? null
+    if (force || next !== sentTitleColor) {
+      payload.titleColor = next
+      sentTitleColor = next
+    }
+  }
   // The layout's bar links, after the app's own chrome: a button the app
   // already has for the same path is not added twice.
   const layoutButtons: NativeChromeButton[] = (options.chrome?.bar ?? []).map(item => ({
@@ -1138,7 +1149,13 @@ export function installCraftBridge(
           // host changed underneath it.
           payload[key] = barButtons(key)
         }
-        else if (typeof navigationOptions[key] !== 'function') payload[key] = navigationOptions[key]
+        else if (typeof navigationOptions[key] !== 'function') {
+          if (key === 'titleColor') {
+            ownTitleColor = navigationOptions[key]
+            applyTitleColor(payload, true)
+          }
+          else payload[key] = navigationOptions[key]
+        }
       }
       return sendOptions(payload)
     },
@@ -1146,6 +1163,7 @@ export function installCraftBridge(
       if (next !== null && (typeof next !== 'object' || Array.isArray(next))) throw new TypeError('navigation.setChrome needs an object, or null')
       chrome = next
       const payload: AnyRecord = {}
+      applyTitleColor(payload)
       for (const side of ['leftButtons', 'rightButtons'] as const) {
         const before = sentButtons[side]
         const buttons = barButtons(side)

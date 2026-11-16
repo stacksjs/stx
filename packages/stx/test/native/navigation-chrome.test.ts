@@ -52,6 +52,45 @@ describe('merging the app chrome into a screen bar', () => {
 })
 
 describe('craft.navigation.setChrome', () => {
+  it('updates the shared title colour without resending unchanged chrome', () => {
+    const { craft, options, protocol } = host({ name: 'Today' })
+    craft.navigation.setChrome({ titleColor: '#ffffff' })
+    craft.navigation.setChrome({ titleColor: '#ffffff' })
+    craft.navigation.setChrome({ titleColor: '#1c1c1e' })
+    expect(options()).toEqual([{ titleColor: '#ffffff' }, { titleColor: '#1c1c1e' }])
+    protocol.dispose()
+  })
+
+  it('preserves the screen title colour across shared appearance and badge updates', () => {
+    const { craft, options, protocol } = host({ name: 'BrandedFeedback' })
+    craft.navigation.setChrome({ titleColor: '#1c1c1e' })
+    craft.navigation.setOptions({ title: 'Training feedback', titleColor: '#e9f0ed' })
+    craft.navigation.setChrome({ titleColor: '#1c1c1e', tabItems: [{ id: '/m/me', badge: '1' }] })
+    craft.navigation.setChrome({ titleColor: '#ffffff', tabItems: [{ id: '/m/me', badge: '2' }] })
+    expect(options().filter(value => 'titleColor' in value)).toEqual([
+      { titleColor: '#1c1c1e' },
+      { title: 'Training feedback', titleColor: '#e9f0ed' },
+    ])
+    craft.navigation.setOptions({ titleColor: undefined })
+    expect(options().at(-1)).toEqual({ titleColor: '#ffffff' })
+    protocol.dispose()
+  })
+
+  it('restores host defaults when shared chrome is removed and respects an explicit null', () => {
+    const { craft, options, protocol } = host({ name: 'Today' })
+    craft.navigation.setChrome({ titleColor: '#ffffff' })
+    craft.navigation.setChrome(null)
+    expect(options()).toEqual([{ titleColor: '#ffffff' }, { titleColor: null }])
+    craft.navigation.setOptions({ titleColor: null })
+    craft.navigation.setChrome({ titleColor: '#1c1c1e' })
+    expect(options().at(-1)).toEqual({ titleColor: null })
+    const fresh = host({ name: 'AnotherScreen' })
+    fresh.craft.navigation.setChrome({ titleColor: '#1c1c1e' })
+    expect(fresh.options()).toEqual([{ titleColor: '#1c1c1e' }])
+    fresh.protocol.dispose()
+    protocol.dispose()
+  })
+
   it('sends the chrome with the screen buttons, without callbacks or chrome-only fields', () => {
     const { craft, options, protocol } = host({ name: 'Feed', url: '/feed' })
     craft.navigation.setOptions({ title: 'Feed', rightButtons: [{ id: 'search', symbol: 'magnifyingglass', onPress: () => {} }] })

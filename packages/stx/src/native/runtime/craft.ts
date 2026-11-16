@@ -123,7 +123,7 @@ export interface NativeTabAccessory extends Omit<NativeAccessoryCompanion, 'menu
 
 export interface NativeNavigationOptions {
   title?: string
-  /** Inline and large navigation title colour for this screen; null restores the host default. */
+  /** Inline and large title colour. Null restores the host default; undefined resumes the shared chrome colour. */
   titleColor?: string | null
   largeTitle?: boolean
   hidden?: boolean
@@ -160,6 +160,8 @@ export interface NativeChromeButton extends NativeNavigationButton {
  * follow; a screen button with a chrome button's id gives way to it.
  */
 export interface NativeNavigationChrome {
+  /** Default inline and large title colour. An explicit screen colour takes precedence over shared updates. */
+  titleColor?: NativeNavigationOptions['titleColor']
   leftButtons?: NativeChromeButton[]
   rightButtons?: NativeChromeButton[]
   /** Screens (`craft.route.name`) that keep only their own buttons, such as a profile with its own actions. */
