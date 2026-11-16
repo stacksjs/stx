@@ -43,16 +43,27 @@ export const rowClasses = $native
  * On a native host ($native): the label and secondary-label colours, the
  * title clamped to two lines as a native Text clamps, and a link row that
  * highlights grey while pressed, as a table cell does.
+ *
+ * The secondary grey in light is darker than the system's (#8a8a8e, 3.4 to 1
+ * on white): #6d6d72 is 5.1 to 1, which the 13pt words it is used for need,
+ * and is the grey the shared fields' labels already use (stacksjs/stx#2187).
  */
-const secondary = $native ? 'text-[#8a8a8e] dark:text-[#98989f]' : 'text-fg-muted'
+const secondary = $native ? 'text-[#6d6d72] dark:text-[#98989f]' : 'text-fg-muted'
 export const eyebrowClasses = $native ? `text-[13px] ${secondary}` : 'block truncate text-sm text-fg-muted'
 export const titleClasses = $native
   ? 'text-[15px] font-semibold text-[#000000] dark:text-[#ffffff] line-clamp-2'
   : 'block text-[15px] font-semibold leading-snug text-fg-strong [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] overflow-hidden'
 export const detailClasses = $native ? `mt-0.5 text-[13px] ${secondary} truncate` : 'mt-0.5 block truncate text-sm text-fg-muted'
 export const metaClasses = $native ? `text-[13px] ${secondary}` : 'text-sm text-fg-muted'
+/*
+ * The badge's words are the label colour, not the secondary grey, on a fill
+ * two steps darker than the system's #767680. Apple's audit compares a
+ * label's words with its own fill and reads the fill without its
+ * transparency: grey on that grey failed in both appearances, and white on
+ * #767680 is a hair under 4.5 to 1 (see TextInput, stacksjs/stx#2187).
+ */
 export const trailingClasses = $native
-  ? `rounded-[6px] bg-[#767680]/12 dark:bg-[#767680]/24 px-1.5 py-0.5 text-[12px] font-medium ${secondary}`
+  ? 'rounded-[6px] bg-[#747480]/12 dark:bg-[#747480]/24 px-1.5 py-0.5 text-[12px] font-medium text-[#000000] dark:text-[#ffffff]'
   : 'rounded-control bg-surface-sunken px-1.5 py-0.5 text-xs font-medium text-fg-muted'
 // A column natively: a span holding spans is otherwise one run of text there.
 export const bodyClasses = $native ? 'flex flex-col min-w-0 flex-1' : 'min-w-0 flex-1'

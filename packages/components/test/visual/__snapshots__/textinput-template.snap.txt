@@ -178,8 +178,16 @@ export const autofocus = $bool($props.autofocus)
  * shadow and density roles have nothing to draw on a device, and its icon
  * slot is a web flourish iOS fields do without. An invalid field gets the
  * system red outline, a disabled one dims as UIKit's do.
+ *
+ * The fill is the system's (#767680 at 12% and 24%) with its grey two steps
+ * darker, which nobody can see and Apple's accessibility audit can. The
+ * audit compares a field's text with its fill and reads the fill without its
+ * transparency: white on #767680 is 4.497 to 1, a hair under the 4.5 it
+ * wants, so every field in dark was reported, whatever was typed in it.
+ * #747480 is 4.6 against white and 4.55 against black. The placeholder's
+ * colour is not something the audit reads (stacksjs/stx#2187).
  */
-export const nativeFieldClasses = `min-h-12 px-4 text-[17px] text-[#000000] dark:text-[#ffffff] bg-[#767680]/12 dark:bg-[#767680]/24 rounded-[10px] border-0 ${inputClassName}`.trim()
+export const nativeFieldClasses = `min-h-12 px-4 text-[17px] text-[#000000] dark:text-[#ffffff] bg-[#747480]/12 dark:bg-[#747480]/24 rounded-[10px] border-0 ${inputClassName}`.trim()
 /*
  * `variant="mac"` on Craft's AppKit host is AppKit's text field (the host
  * draws an NSTextField): 22pt tall at 13pt, with the bezel and the fill the

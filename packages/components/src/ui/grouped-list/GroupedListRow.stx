@@ -54,7 +54,9 @@ export const tileClasses = `flex shrink-0 items-center justify-center h-[29px] w
  * On a native host ($native) the row is a table cell: it highlights grey
  * while pressed (TouchableHighlight, a translucent fill that reads in both
  * appearances), its hairline is the system separator, its words are the
- * label and secondary-label colours and its chevron the SF Symbol.
+ * label and secondary-label colours and its chevron the SF Symbol. The
+ * secondary grey in light is #6d6d72, not the system's #8a8a8e, which is
+ * 3.4 to 1 on a white row where text needs 4.5 (stacksjs/stx#2187).
  */
 export const rowClasses = $native
   ? `flex-row items-center gap-3 w-full min-h-[44px] px-4 py-2.5 ${className}`.replace(/\s+/g, ' ').trim()
@@ -65,7 +67,7 @@ export const ruleClasses = $native
 export const titleClasses = $native
   ? `text-[17px] ${destructive ? 'text-[#ff3b30] dark:text-[#ff453a]' : 'text-[#000000] dark:text-[#ffffff]'}`
   : `text-[17px] ${destructive ? 'text-danger' : 'text-fg'}`
-const secondary = $native ? 'text-[#8a8a8e] dark:text-[#98989f]' : 'text-fg-soft'
+const secondary = $native ? 'text-[#6d6d72] dark:text-[#98989f]' : 'text-fg-soft'
 export const subtitleClasses = `text-[15px] ${secondary}`
 export const valueClasses = `shrink-0 text-[17px] ${secondary}`
 </script>
