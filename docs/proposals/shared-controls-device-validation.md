@@ -794,14 +794,16 @@ None of the four is a shared component:
   host's sheet becomes full screen, so there is no outside to tap and a
   Dialog with no close button of its own cannot be dismissed
   (`testNestedDismissalAndDrawer`). The Drawer stays a sheet and passes.
+  [craft#561](https://github.com/craft-native/craft/issues/561).
 - **A drag with the keyboard up moves the page about 280 points.** With a
   field focused, each 55-point drag in the strip above the keyboard carried
   the password field between y = 200 and y = -81, one way and then the other,
   and never let it stop in view. Holding before letting go changed nothing,
   so it is not the drag coasting. In `forms` and `text-size` the next field
   cannot be scrolled to while the keyboard is up.
+  [craft#562](https://github.com/craft-native/craft/issues/562).
 - **`hud` has its buttons under the keyboard,** as on the iPhone SE: the host's
   panel and the fixture's layout.
 
-The two keyboard findings and the full-screen Dialog are the host's to
-decide, and stay open on #2184.
+The full-screen Dialog and the jumping page are filed on Craft as host
+defects, and stay open on #2184 until they are fixed.
