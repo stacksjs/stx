@@ -28,8 +28,9 @@ describe('disposeSubtreeScopes (#1727)', () => {
   const runtime = generateSignalsRuntimeDev()
 
   describe('helper exists with the right shape', () => {
-    it('defines disposeSubtreeScopes(root) at runtime scope', () => {
-      expect(runtime).toContain('function disposeSubtreeScopes(root)')
+    it('defines disposeSubtreeScopes(root, offPage) at runtime scope', () => {
+      // offPage: a hidden :if branch, released with what holds it (#2189).
+      expect(runtime).toContain('function disposeSubtreeScopes(root, offPage)')
     })
 
     it('walks root + descendants matching [data-stx-scope]', () => {

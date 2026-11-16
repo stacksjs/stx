@@ -39,7 +39,17 @@ export const SIGNALS_SCOPE_DISPOSAL_RUNTIME = `  // ============================
       if (el.__stx_detached_if) {
         var detached = el.__stx_detached_if;
         el.__stx_detached_if = null;
-        detached.forEach(function(node) { disposeSubtreeEffects(node); });
+        // A hidden branch leaves with what holds it, and so do the components
+        // in it. A walk of the page cannot find their scopes: the branch is off
+        // the page, which is the only reason this list exists. A component
+        // under an :if that was never true was set up all the same (its script
+        // runs once, at load, for #1737), so the effects its script made kept
+        // running after the router swapped the page out, and every visit to
+        // the page added more (stacksjs/stx#2189).
+        detached.forEach(function(node) {
+          disposeSubtreeEffects(node);
+          disposeSubtreeScopes(node, true);
+        });
       }
       for (var k = 0; k < owned.length; k++) {
         var disposeOwned = el[owned[k]];
@@ -127,7 +137,12 @@ export const SIGNALS_SCOPE_DISPOSAL_RUNTIME = `  // ============================
     catch (e) { console.warn('[stx] scope effect dispose error:', e); }
   }
 
-  function disposeSubtreeScopes(root) {
+  // offPage: the subtree is a hidden :if branch, so nothing in it is mounted.
+  // A component in it either mounted and was suspended when the branch hid
+  // (it released everything then) or never mounted at all. Neither is owed an
+  // onDestroy: one without the onMount it pairs with would undo what was
+  // never done.
+  function disposeSubtreeScopes(root, offPage) {
     if (!root || !window.stx || !window.stx._scopes) return;
     // The host reports which scopes live in this subtree: the document finds
     // them with a selector, a native host reads the map it keeps as it builds
@@ -142,7 +157,7 @@ export const SIGNALS_SCOPE_DISPOSAL_RUNTIME = `  // ============================
       // running the hooks again would unmount it twice. (A hidden component's
       // root is detached, so no walk reaches it today; this keeps the next
       // disposal path that does from unmounting it twice.)
-      var alreadyReleased = scopeVars.__suspended && !scopeVars.__mounted;
+      var alreadyReleased = offPage ? !scopeVars.__mounted : scopeVars.__suspended && !scopeVars.__mounted;
       if (!alreadyReleased && scopeVars.__destroyCallbacks && Array.isArray(scopeVars.__destroyCallbacks)) {
         for (var j = 0; j < scopeVars.__destroyCallbacks.length; j++) {
           try { scopeVars.__destroyCallbacks[j](); }
