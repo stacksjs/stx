@@ -1,5 +1,28 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.894...v0.2.895)
+
+## 🐛 Bug Fixes
+
+- **native**: send a group's name again, now that the host keeps the group open ([6024912](https://github.com/stacksjs/stx/commit/6024912)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([craft-native/craft#536](https://github.com/craft-native/craft/issues/536))
+
+## 📝 Documentation
+
+- **native**: record the restored group names and the run against Craft 0.0.506 ([2655873](https://github.com/stacksjs/stx/commit/2655873)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: record that the physical iPhone pass was dropped from #2184 ([d39ffef](https://github.com/stacksjs/stx/commit/d39ffef)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184))
+
+## ✅ Tests
+
+- **native**: hold the named groups a reader reaches, and two host fixes ([8de4c62](https://github.com/stacksjs/stx/commit/8de4c62)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([craft-native/craft#535](https://github.com/craft-native/craft/issues/535), [craft-native/craft#537](https://github.com/craft-native/craft/issues/537))
+
+## 🔧 Chores
+
+- release v0.2.895 ([dd3d58e](https://github.com/stacksjs/stx/commit/dd3d58e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.893...v0.2.894)
 
 ## ✨ Features
