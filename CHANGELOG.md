@@ -1,5 +1,28 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.897...v0.2.898)
+
+## 🐛 Bug Fixes
+
+- **serve**: reserve render capacity for user navigation ([a4ea422](https://github.com/stacksjs/stx/commit/a4ea422)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **native**: run Apple's accessibility audit over the overlays screen ([cda3bc7](https://github.com/stacksjs/stx/commit/cda3bc7)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2187](https://github.com/stacksjs/stx/issues/2187))
+
+## 💚 Continuous Integration
+
+- warm the browser before the installed-consumer check, in every job that runs it ([247dcc0](https://github.com/stacksjs/stx/commit/247dcc0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2160](https://github.com/stacksjs/stx/issues/2160))
+
+## 🔧 Chores
+
+- release v0.2.898 ([d9f63d0](https://github.com/stacksjs/stx/commit/d9f63d0)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.896...v0.2.897)
 
 ## 🐛 Bug Fixes
