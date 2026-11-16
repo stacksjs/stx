@@ -1,5 +1,25 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.898...v0.2.899)
+
+## 🐛 Bug Fixes
+
+- **components**: draw a <component :is> inside a @foreach (#2188) ([37e2b89](https://github.com/stacksjs/stx/commit/37e2b89)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2188](https://github.com/stacksjs/stx/issues/2188))
+- **serve**: keep a dynamic route's render per address when anything in it reads params (#2188) ([53ef881](https://github.com/stacksjs/stx/commit/53ef881)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2188](https://github.com/stacksjs/stx/issues/2188))
+- **runtime**: release the components in a hidden :if branch when it leaves (#2189) ([7c1df1d](https://github.com/stacksjs/stx/commit/7c1df1d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2189](https://github.com/stacksjs/stx/issues/2189))
+
+## 📝 Documentation
+
+- **native**: record right-to-left, Increase Contrast, iPad and iPhone SE run again (#2184) ([f9f020c](https://github.com/stacksjs/stx/commit/f9f020c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184))
+
+## 🔧 Chores
+
+- release v0.2.899 ([f31de8f](https://github.com/stacksjs/stx/commit/f31de8f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.897...v0.2.898)
 
 ## 🐛 Bug Fixes
