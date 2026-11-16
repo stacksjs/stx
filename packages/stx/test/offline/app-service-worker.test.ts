@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { generateOfflineWorker, OFFLINE_REGISTER_SCRIPT, offlineFallbackScope, offlineRoute } from '../../src/offline/app-service-worker'
+import { generateOfflineRegisterScript, generateOfflineWorker, OFFLINE_REGISTER_SCRIPT, offlineFallbackScope, offlineRoute } from '../../src/offline/app-service-worker'
 import { processDirectives } from '../../src/process'
 
 describe('the offline worker', () => {
@@ -56,6 +56,16 @@ describe('registering it', () => {
   it('rides on every document when offline is on', async () => {
     const html = await processDirectives(page, {}, 'page.stx', { offline: { enabled: true } } as any, new Set())
     expect(html).toContain(OFFLINE_REGISTER_SCRIPT)
+  })
+
+  it('carries configured app entry paths through the real document renderer', async () => {
+    const offline = { enabled: true, registerOn: ['/home', '/m'] }
+    const script = generateOfflineRegisterScript(offline)
+    const html = await processDirectives(page, {}, 'page.stx', { offline } as any, new Set())
+    expect(html).toContain(script)
+    expect(script).toContain('["/home","/m"]')
+    // eslint-disable-next-line no-new-func
+    expect(() => new Function(script.replace(/^<script[^>]*>|<\/script>$/g, ''))).not.toThrow()
   })
 
   it('is absent otherwise', async () => {

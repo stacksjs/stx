@@ -63,7 +63,8 @@ import { processDynamicComponents } from './dynamic-components'
 import { dedupeScopedStyles, processScopedStyles } from './style-scoping'
 import { injectColorModeBootScript, normalizeCriticalHeadOrder } from './color-mode-boot'
 import { buildIdFragment } from './build-id'
-import { OFFLINE_REGISTER_SCRIPT } from './offline/app-service-worker'
+import { generateOfflineRegisterScript } from './offline/app-service-worker'
+import type { OfflineAppConfig } from './offline/app-service-worker'
 import type { HeadInjections } from './head-injection'
 import { applyHeadInjections, createHeadInjections } from './head-injection'
 import { serverDataScope, serverDataTag } from './server-data'
@@ -964,8 +965,9 @@ export async function processDirectives(
         if (buildId !== null)
           headInjections.afterOpen.push(buildId)
         // The offline worker, when the app keeps working without a network.
-        if ((options as { offline?: { enabled?: boolean } }).offline?.enabled && !result.includes('data-stx-offline'))
-          headInjections.beforeClose.push(OFFLINE_REGISTER_SCRIPT)
+        const offline = (options as { offline?: OfflineAppConfig }).offline
+        if (offline?.enabled && !result.includes('data-stx-offline'))
+          headInjections.beforeClose.push(generateOfflineRegisterScript(offline))
         result = applyHeadInjections(result, headInjections)
 
         // The color-mode boot script (#1794) keeps its own splice: it does not

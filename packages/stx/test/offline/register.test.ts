@@ -7,13 +7,14 @@ import { OFFLINE_REGISTER_SCRIPT, registerOfflineWorker } from '../../src/offlin
 import { applyOfflineUpdate, onOfflineUpdateReady } from '../../src/composables/use-offline'
 
 const g = globalThis as any
-const saved = { navigator: globalThis.navigator, raf: g.requestAnimationFrame, readyState: Object.getOwnPropertyDescriptor(document, 'readyState') }
+const saved = { navigator: globalThis.navigator, raf: g.requestAnimationFrame, readyState: Object.getOwnPropertyDescriptor(document, 'readyState'), location: globalThis.location }
 afterEach(() => {
   Object.defineProperty(globalThis, 'navigator', { value: saved.navigator, configurable: true, writable: true })
   g.requestAnimationFrame = saved.raf
   if (saved.readyState) Object.defineProperty(document, 'readyState', saved.readyState)
   else delete (document as any).readyState
   delete g.window.stxOffline
+  g.location = saved.location
 })
 
 class Target {
@@ -73,6 +74,38 @@ describe('the register tag', () => {
     expect(container.registered).toEqual([])
     paint()
     expect(container.registered).toEqual([])
+    await registered()
+    expect(container.registered).toEqual(['/_stx/sw.js'])
+  })
+
+  it.each([false, true])('waits for app entry, including SPA navigation (existing controller: %s)', async (controller) => {
+    const { container, paint, registered } = setUp({ controller })
+    g.location = new URL('https://app.test/marketing')
+    registerOfflineWorker('/_stx/sw.js', ['/home', '/m'])
+    paint()
+    await Bun.sleep(10)
+    expect(container.registered).toEqual([])
+
+    g.location = new URL('https://app.test/more')
+    window.dispatchEvent(new CustomEvent('stx:load'))
+    paint()
+    await Bun.sleep(10)
+    expect(container.registered).toEqual([])
+
+    g.location = new URL('https://app.test/m/health')
+    window.dispatchEvent(new CustomEvent('stx:load'))
+    await registered()
+    expect(container.registered).toEqual(['/_stx/sw.js'])
+    window.dispatchEvent(new CustomEvent('stx:load'))
+    paint()
+    await Bun.sleep(10)
+    expect(container.registered).toEqual(['/_stx/sw.js'])
+  })
+
+  it('registers normally when the first page is an app entry', async () => {
+    const { container, registered } = setUp({ controller: false })
+    g.location = new URL('https://app.test/home')
+    registerOfflineWorker('/_stx/sw.js', ['/home', '/m'])
     await registered()
     expect(container.registered).toEqual(['/_stx/sw.js'])
   })

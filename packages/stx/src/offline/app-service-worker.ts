@@ -51,6 +51,13 @@
 export interface OfflineAppConfig {
   /** Turn the worker on. */
   enabled: boolean
+  /**
+   * Path prefixes that start worker registration and background precaching.
+   * Defaults to every page. A marketing site beside an offline app can name
+   * only app entry paths, so a visitor does not download the app's screens.
+   * Prefixes match complete segments; SPA entry starts registration too.
+   */
+  registerOn?: string[]
   /** Screens fetched when the worker installs, so they open offline before they were visited. */
   pages?: string[]
   /**
@@ -174,7 +181,7 @@ export function offlineRoute(path: string): OfflineRoute | null {
  *   `stx:offline-update-ready`, so an app can offer "Update" and call
  *   `window.stxOffline.applyUpdate()`, which takes over now and reloads.
  */
-export function registerOfflineWorker(path: string): void {
+export function registerOfflineWorker(path: string, registerOn?: string[]): void {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator) || !navigator.serviceWorker)
     return
   const sw = navigator.serviceWorker
@@ -182,6 +189,7 @@ export function registerOfflineWorker(path: string): void {
   if (w.stxOffline)
     return
   let registration: ServiceWorkerRegistration | null = null
+  let registering = false
   let reloadOnTakeOver = false
   const waitingCallbacks: Array<() => void> = []
   const api = {
@@ -253,6 +261,15 @@ export function registerOfflineWorker(path: string): void {
   })
 
   const register = (): void => {
+    if (registering)
+      return
+    if (registerOn && !registerOn.some((prefix) => {
+      const scope = prefix.replace(/\/+$/, '') || '/'
+      return scope === '/' || location.pathname === scope || location.pathname.startsWith(`${scope}/`)
+    }))
+      return
+    registering = true
+    window.removeEventListener('stx:load', afterPaint)
     sw.register(path, { scope: '/' }).then((reg) => {
       registration = reg
       try { sw.controller?.postMessage({ type: 'stx:reachability?' }) }
@@ -272,7 +289,11 @@ export function registerOfflineWorker(path: string): void {
             ready(reg)
         })
       })
-    }).catch(() => {})
+    }).catch(() => {
+      registering = false
+      if (registerOn)
+        window.addEventListener('stx:load', afterPaint)
+    })
   }
   const afterPaint = (): void => {
     const later = (fn: () => void): void => { setTimeout(fn, 0) }
@@ -280,6 +301,8 @@ export function registerOfflineWorker(path: string): void {
       requestAnimationFrame(() => later(register))
     else later(register)
   }
+  if (registerOn)
+    window.addEventListener('stx:load', afterPaint)
   if (!sw.controller) {
     if (document.readyState === 'complete')
       afterPaint()
@@ -293,8 +316,9 @@ export function registerOfflineWorker(path: string): void {
   }
 }
 
-function registerScriptSource(): string {
-  const source = `(${registerOfflineWorker.toString()})(${JSON.stringify(OFFLINE_WORKER_PATH)})`
+function registerScriptSource(registerOn?: string[]): string {
+  const paths = registerOn?.filter(prefix => typeof prefix === 'string' && prefix.startsWith('/') && !prefix.startsWith('//'))
+  const source = `(${registerOfflineWorker.toString()})(${JSON.stringify(OFFLINE_WORKER_PATH)}${paths ? `,${JSON.stringify(paths)}` : ''})`
   // It rides inline on every document: whitespace is bytes on every page.
   try {
     return new Bun.Transpiler({ loader: 'js', minifyWhitespace: true }).transformSync(source).trim().replace(/;$/, '')
@@ -319,6 +343,11 @@ export function offlineFallbackScope(fallback: string | null, scope?: string): s
 
 /** The tag every page carries so the worker is installed. */
 export const OFFLINE_REGISTER_SCRIPT = `<script data-stx-offline>${registerScriptSource()}</script>`
+
+/** Registration policy travels with the document, including SPA entry paths. */
+export function generateOfflineRegisterScript(config: Pick<OfflineAppConfig, 'registerOn'>): string {
+  return config.registerOn === undefined ? OFFLINE_REGISTER_SCRIPT : `<script data-stx-offline>${registerScriptSource(config.registerOn)}</script>`
+}
 
 /** The worker itself, for one build. */
 export function generateOfflineWorker(config: OfflineAppConfig, buildId: string): string {

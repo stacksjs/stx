@@ -414,6 +414,7 @@ import type { StxOptions } from '@stacksjs/stx'
 export default {
   offline: {
     enabled: true,
+    registerOn: ['/m', '/login'], // Optional app entry prefixes; defaults to every page
     pages: ['/m', '/m/calendar'],
     apiPrefix: '/api/',
     networkTimeoutMs: 1500,
@@ -428,6 +429,12 @@ buildId)` at `OFFLINE_WORKER_PATH` (`/_stx/sw.js`) with scope `/`; rendered
 pages register it automatically when `offline.enabled` is true. Use the same
 offline configuration and build identifier when rendering pages and serving
 the worker.
+
+Use `registerOn` when marketing pages share the app's host. Registration and
+background installation wait until a matching app entry, including SPA
+navigation. Prefixes match whole path segments, so `/m` includes `/m/calendar`
+and excludes `/marketing`. Existing offline caches and account isolation keep
+their normal behavior.
 
 Installation fetches each listed page and its router fragment, then the linked
 stylesheets and scripts. At most two background downloads run at once, leaving
