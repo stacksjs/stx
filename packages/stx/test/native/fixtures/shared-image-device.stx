@@ -12,7 +12,10 @@ const errors = state(0)
 const errorMessages = state([])
 window.imageProbe = { source, fit, position, shown, loads, errors, errorMessages, wide, tall }
 </script>
-<section class="p-4 gap-3 bg-white dark:bg-black text-black dark:text-white">
+{{-- The screen scrolls, as a real one does, so that what is below the fold
+     on a phone held sideways can be scrolled to (stacksjs/stx#2184). --}}
+<div data-native="ScrollView" class="flex-1 bg-white dark:bg-black">
+<section class="p-4 gap-3 text-black dark:text-white">
   <div class="w-[100px] h-[100px]">
     <Image :if="shown" testID="shared-photo" src="" :src="source" alt="Two-color fixture"
       width="100" height="100" className="w-full h-full" placeholder="none"
@@ -34,3 +37,4 @@ window.imageProbe = { source, fit, position, shown, loads, errors, errorMessages
   <Button testID="image-defaults" @click="fit.set(null); position.set(null)">Restore defaults</Button>
   <Button testID="image-toggle" @click="shown.set(!shown())">Toggle image</Button>
 </section>
+</div>

@@ -17,6 +17,9 @@ const progress = state(0)
 const errors = state([])
 window.videoProbe = { source, legacySource, controls, autoplay, loop, muted, paused, shown, starts, loads, plays, pauses, ends, progress, errors }
 </script>
+{{-- The screen scrolls, as a real one does, so that what is below the fold
+     on a phone held sideways can be scrolled to (stacksjs/stx#2184). --}}
+<div data-native="ScrollView" class="flex-1">
 <section class="p-4 gap-2">
   <Video :if="shown" testID="shared-movie" :src="source" :controls="controls" :autoplay="autoplay" :loop="loop" :muted="muted" :paused="paused" label="Shared test movie"
     @loadstart="starts.set(starts() + 1)" @loadedmetadata="loads.set(loads() + 1)" @play="plays.set(plays() + 1)" @pause="pauses.set(pauses() + 1)"
@@ -31,3 +34,4 @@ window.videoProbe = { source, legacySource, controls, autoplay, loop, muted, pau
   <Button testID="video-defaults" @click="controls.set(null);autoplay.set(null);loop.set(null);muted.set(null)">Defaults</Button>
   <Button testID="video-toggle" @click="shown.set(!shown())">Toggle video</Button>
 </section>
+</div>

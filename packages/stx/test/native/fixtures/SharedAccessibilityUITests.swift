@@ -130,12 +130,10 @@ final class SharedAccessibilityUITests: XCTestCase {
         // that line at the largest text sizes, in either appearance. Accepted
         // as it is (stacksjs/stx#2187): what is typed scrolls, and a
         // placeholder is gone by then.
-        var known = ["textClipped a11y-email"]
-        if XCUIDevice.shared.appearance != .dark {
-            // Not a shared control: the host's navigation title, which reads
-            // "main" for a screen that names none, on its light bar.
-            known.append("contrast \"main\"")
-        }
+        // The host's navigation title ("main") also failed contrast in light
+        // here (craft-native/craft#531) until the screen scrolled, as the
+        // lists screen always has.
+        let known = ["textClipped a11y-email"]
         Gate.checkAudit(found: found, known: known, details: details)
     }
 }

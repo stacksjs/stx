@@ -13,7 +13,10 @@ const compact = state(false)
 :root { --stx-panel: #f8fafc; }
 .dark { --stx-panel: #172554; }
 </style>
-<section class="p-4 gap-4 bg-white dark:bg-black text-black dark:text-white" :style="compact ? { '--stx-control-px': '8px', '--stx-radius-panel': '4px' } : { '--stx-control-px': '24px', '--stx-radius-panel': '16px' }">
+{{-- The screen scrolls, as a real one does, so that what is below the fold
+     on a phone held sideways can be scrolled to (stacksjs/stx#2184). --}}
+<div data-native="ScrollView" class="flex-1 bg-white dark:bg-black">
+<section class="p-4 gap-4 text-black dark:text-white" :style="compact ? { '--stx-control-px': '8px', '--stx-radius-panel': '4px' } : { '--stx-control-px': '24px', '--stx-radius-panel': '16px' }">
   <span testID="count" :text="'Count: ' + count()"></span>
   <Button testID="increment" data-testid="increment" @click="count.set(count() + 1)">Increment</Button>
   <TextInput testID="name-input" data-testid="name-input" placeholder="Type your name" v-model:value="name" />
@@ -28,3 +31,4 @@ const compact = state(false)
   <Button testID="density-toggle" data-testid="density-toggle" @click="compact.set(!compact())">Toggle density</Button>
   <span testID="density" :text="compact ? 'Density: compact' : 'Density: comfortable'"></span>
 </section>
+</div>
