@@ -17,7 +17,7 @@ describe('bounded browser fixture', () => {
     expect(isolatedBrowserBackend('linux', '')).toEqual({ type: 'chrome', url: false })
     expect(isolatedBrowserBackend('win32', undefined)).toEqual({ type: 'chrome', url: false })
     expect(isolatedBrowserBackend('darwin', '')).toBeUndefined()
-    expect(isolatedBrowserBackend('darwin', 'chrome')).toEqual({ type: 'chrome', url: false })
+    expect(isolatedBrowserBackend('darwin', 'chrome')).toEqual({ type: 'chrome', url: false, argv: ['--use-mock-keychain'] })
   })
 
   it('closes its server when constructing the browser fails', () => {

@@ -21,9 +21,11 @@ interface BrowserFixtureOptions {
   sleep?: (ms: number) => Promise<unknown>
 }
 
-/** Never attach a test to an ambient Chrome session (or its permission dialog). */
+/** Isolate Chrome sessions and their credential store from the desktop user. */
 export function isolatedBrowserBackend(platform = process.platform, browser = process.env.STX_IMAGE_BROWSER) {
-  return platform !== 'darwin' || browser === 'chrome' ? { type: 'chrome' as const, url: false as const } : undefined
+  return platform !== 'darwin' || browser === 'chrome'
+    ? { type: 'chrome' as const, url: false as const, ...(platform === 'darwin' ? { argv: ['--use-mock-keychain'] } : {}) }
+    : undefined
 }
 
 /**

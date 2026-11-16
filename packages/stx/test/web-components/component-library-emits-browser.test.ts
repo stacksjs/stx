@@ -5,7 +5,7 @@ import { join, relative, sep } from 'node:path'
 import { buildComponentLibrary as sourceBuild } from '../../src/component-library'
 import { processDirectives } from '../../src/process'
 import { createTempDir } from '../../src/temp-dir'
-import { createBrowserFixture } from '../../test-utils/browser-fixture'
+import { createBrowserFixture, isolatedBrowserBackend } from '../../test-utils/browser-fixture'
 
 const buildComponentLibrary = process.env.STX_LIBRARY_DIST ? (await import('../../dist/component-library.js')).buildComponentLibrary : sourceBuild
 
@@ -49,7 +49,7 @@ function submit(): void { emit('submit', { id, submitHandler, suffix }) }
         const file = emitted.get(pathname)
         return file ? new Response(Bun.file(file), { headers: { 'Content-Type': 'text/javascript' } }) : new Response(null, { status: 404 })
       } }),
-      createView: () => browser = new WebView({ headless: true, backend: { type: 'chrome', url: false } }),
+      createView: () => browser = new WebView({ headless: true, backend: isolatedBrowserBackend(process.platform, 'chrome') }),
     })
     await fixture.view.navigate(fixture.url)
     expect(await fixture.waitFor(`document.querySelector('event-browser-panel')?.shadowRoot?.querySelectorAll('button').length`, value => value === 2)).toBe(2)
@@ -127,7 +127,7 @@ function bump(): void { bumpShared() }
         const file = emitted.get(pathname)
         return file ? new Response(Bun.file(file), { headers: { 'Content-Type': 'text/javascript' } }) : new Response(null, { status: 404 })
       } }),
-      createView: () => new WebView({ headless: true, backend: { type: 'chrome', url: false } }),
+      createView: () => new WebView({ headless: true, backend: isolatedBrowserBackend(process.platform, 'chrome') }),
     })
     await fixture.view.navigate(fixture.url)
     expect(await fixture.waitFor(`!!customElements.get('scope-browser-shared')`, value => value === true)).toBe(true)

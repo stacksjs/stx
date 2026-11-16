@@ -4,7 +4,7 @@ import { rm } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'
 import { buildComponentLibrary as sourceBuild } from '../../src/component-library'
 import { createTempDir } from '../../src/temp-dir'
-import { createBrowserFixture } from '../../test-utils/browser-fixture'
+import { createBrowserFixture, isolatedBrowserBackend } from '../../test-utils/browser-fixture'
 import { exerciseMethodScope, methodScopeExpected, methodScopeSource } from '../../test-utils/component-method-scope'
 
 const buildComponentLibrary = process.env.STX_LIBRARY_DIST ? (await import('../../dist/component-library.js')).buildComponentLibrary : sourceBuild
@@ -29,7 +29,7 @@ for (const bundle of [false, true]) test(`public method render ownership works i
         const file = emitted.get(pathname)
         return file ? new Response(Bun.file(file), { headers: { 'Content-Type': 'text/javascript' } }) : new Response(null, { status: 404 })
       } }),
-      createView: () => new WebView({ headless: true, backend: { type: 'chrome', url: false } }),
+      createView: () => new WebView({ headless: true, backend: isolatedBrowserBackend(process.platform, 'chrome') }),
     })
     await fixture.view.navigate(fixture.url)
     expect(await fixture.waitFor(`!!customElements.get('browser-method-probe')`, value => value === true)).toBe(true)
