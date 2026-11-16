@@ -4630,7 +4630,8 @@ function __stxOverlay(errs){
               // only checks for one when this file changes.
               if (path === '/_stx/sw.js' && (stxConfig as { offline?: { enabled?: boolean } }).offline?.enabled) {
                 const stx = await stxModule
-                return new Response((stx as any).generateOfflineWorker((stxConfig as any).offline, getBuildId()), {
+                await discoverFiles()
+                return new Response((stx as any).generateOfflineWorker((stxConfig as any).offline, getBuildId(), [...(discoveredPagePaths ?? [])]), {
                   headers: {
                     'Content-Type': 'text/javascript; charset=utf-8',
                     'Cache-Control': 'no-cache',

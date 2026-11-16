@@ -350,11 +350,15 @@ export function generateOfflineRegisterScript(config: Pick<OfflineAppConfig, 're
 }
 
 /** The worker itself, for one build. */
-export function generateOfflineWorker(config: OfflineAppConfig, buildId: string): string {
+/** File routers pass their literal page paths without adding them to the precache. */
+export function generateOfflineWorker(config: OfflineAppConfig, buildId: string, pagePaths: readonly string[] = []): string {
   const precacheTimeout = Number(config.precacheTimeoutMs)
   const settings = {
     build: String(buildId || 'dev'),
     pages: Array.from(new Set((config.pages || []).filter(page => typeof page === 'string' && page.startsWith('/')))),
+    exactPages: Array.from(new Set([...pagePaths, ...(config.pages || []), ...(config.routes || [])]
+      .filter(page => typeof page === 'string' && page.startsWith('/') && !page.includes('[') && !page.includes(':') && !page.includes('*'))
+      .map(page => page.replace(/\/+$/, '') || '/'))),
     staticPages: (config.staticPages || []).filter(page => typeof page === 'string' && ((config.pages || []).includes(page) || (config.routes || []).includes(page))),
     api: config.apiPrefix || '/api/',
     timeout: Math.max(500, Number(config.networkTimeoutMs) || 1500),
@@ -556,6 +560,10 @@ function routeKey(route, fragment) {
 }
 
 function routeOf(pathname) {
+  // The file router gives literal pages precedence over parameter routes.
+  // Otherwise a slow /workouts/library first opens the /workouts/:id shell,
+  // and its later response replaces that shell for every real workout too.
+  if (S.exactPages.indexOf(pathname.replace(/\\/+$/, '') || '/') !== -1) return null;
   for (var i = 0; i < S.routes.length; i++) {
     var match = new RegExp(S.routes[i].re).exec(pathname);
     if (!match) continue;

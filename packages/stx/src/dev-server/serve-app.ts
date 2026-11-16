@@ -653,7 +653,8 @@ catch {
       if (url.pathname === OFFLINE_WORKER_PATH && offline?.enabled) {
         if (!['GET', 'HEAD'].includes(request.method))
           return new Response('Method Not Allowed', { status: 405, headers: { Allow: 'GET, HEAD' } })
-        return new Response(request.method === 'HEAD' ? null : generateOfflineWorker(offline, getBuildId()), {
+        const literalPages = [...routes, ...pluginRoutes.map(({ route }) => route)].filter(route => !route.isDynamic).map(route => route.pattern)
+        return new Response(request.method === 'HEAD' ? null : generateOfflineWorker(offline, getBuildId(), literalPages), {
           headers: { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-store', 'Service-Worker-Allowed': '/' },
         })
       }

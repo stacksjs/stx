@@ -425,10 +425,17 @@ export default {
 ```
 
 The server integration must serve `generateOfflineWorker(config.offline,
-buildId)` at `OFFLINE_WORKER_PATH` (`/_stx/sw.js`) with scope `/`; rendered
+buildId, literalPagePaths)` at `OFFLINE_WORKER_PATH` (`/_stx/sw.js`) with scope `/`; rendered
 pages register it automatically when `offline.enabled` is true. Use the same
 offline configuration and build identifier when rendering pages and serving
 the worker.
+
+The built-in file servers supply their literal page paths automatically.
+Custom hosts pass all literal routes in the optional third argument, including
+pages outside the precache. This gives `/workouts/library` precedence over
+`/workouts/:id`, without downloading the library during installation. A slow
+or offline library visit cannot show a workout shell or replace the reusable
+workout shell in the cache.
 
 Use `registerOn` when marketing pages share the app's host. Registration and
 background installation wait until a matching app entry, including SPA

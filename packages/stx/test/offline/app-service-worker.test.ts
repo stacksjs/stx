@@ -89,7 +89,7 @@ interface RequestOptions { method?: string, mode?: string, cache?: string }
  * from `network` are same-origin (`type: 'basic'`) unless it says otherwise;
  * returning null is no network at all.
  */
-function runWorker(config: Parameters<typeof generateOfflineWorker>[0], network: (url: string, request?: Request) => Response | null | Promise<Response | null>) {
+function runWorker(config: Parameters<typeof generateOfflineWorker>[0], network: (url: string, request?: Request) => Response | null | Promise<Response | null>, pagePaths: string[] = []) {
   const stores = new Map<string, Map<string, Response>>()
   const open = async (name: string) => {
     if (!stores.has(name)) stores.set(name, new Map())
@@ -126,7 +126,7 @@ function runWorker(config: Parameters<typeof generateOfflineWorker>[0], network:
     return answer
   }
   // eslint-disable-next-line no-new-func
-  new Function('self', 'caches', 'fetch', 'crypto', generateOfflineWorker(config, 'b1'))(self, caches, fetch, crypto)
+  new Function('self', 'caches', 'fetch', 'crypto', generateOfflineWorker(config, 'b1', pagePaths))(self, caches, fetch, crypto)
   let background: Promise<unknown>[] = []
   return {
     stores,
@@ -462,6 +462,41 @@ describe('a screen not kept whole', () => {
 describe('a dynamic screen never opened', () => {
   const paramsScript = (json: string) => `<script data-stx-route-params>(function(){var p=${json};window.__stx_rp=p;if(window.stx){window.stx._rp=p;if(window.stx.setRouteParams)window.stx.setRouteParams(p)}})()</script>`
   const sessionPage = (id: string) => `<html><head>${paramsScript(`{'id':'${id}'}`)}</head><body>Session</body></html>`
+
+  it('never lets a literal page replace a dynamic route shell', async () => {
+    let online = true
+    const sw = runWorker({ enabled: true, routes: ['/workouts/:id'], staticPages: ['/workouts/:id'] }, url => online
+      ? new Response(url.includes('/library') ? '<main>Workout library</main>' : sessionPage('0'), { headers: { 'Content-Type': 'text/html', 'Cache-Control': 'no-store' } })
+      : null, ['/workouts/library'])
+    await sw.install()
+    expect(sw.fetched.some(url => url.includes('/library'))).toBe(false)
+    expect(await (await sw.request('http://app.test/workouts/library/', { Accept: 'text/html' }))!.text()).toContain('Workout library')
+    await sw.settle()
+    online = false
+    const workout = await sw.request('http://app.test/workouts/42', { Accept: 'text/html' })
+    expect(await workout!.text()).toContain('Session')
+    expect(await sw.stores.get('stx-shell-b1')!.get('http://app.test/__stx_route__/workouts/:id')!.clone().text()).not.toContain('Workout library')
+  })
+
+  it('waits for a literal page instead of showing a dynamic shell on a slow first visit', async () => {
+    let slow = false
+    const sw = runWorker({ enabled: true, routes: ['/workouts/:id'], networkTimeoutMs: 500 }, url => slow
+      ? later(700, () => new Response('<main>Workout library</main>'))
+      : new Response(sessionPage('0')), ['/workouts/library'])
+    await sw.install()
+    slow = true
+    const answer = await sw.request('http://app.test/workouts/library?search=warmup', { 'X-STX-Router': 'true', 'Accept': 'text/html' })
+    expect(await answer!.text()).toContain('Workout library')
+    await sw.settle()
+  })
+
+  it('honours configured literal pages when no file router is attached', async () => {
+    const sw = runWorker({ enabled: true, pages: ['/workouts/library'], routes: ['/workouts/:id'] }, () => null)
+    sw.stores.set('stx-shell-b1', new Map([
+      ['http://app.test/__stx_route__/workouts/:id', new Response(sessionPage('0'))],
+    ]))
+    expect((await sw.request('http://app.test/workouts/library', { Accept: 'text/html' }))!.type).toBe('error')
+  })
 
   it('matches `:param` and `[param]` routes, and leaves static ones out', () => {
     expect(offlineRoute('/m/workout/:id')).toEqual({ path: '/m/workout/:id', re: '^/m/workout/([^/]+)/?$', names: ['id'], sample: '/m/workout/0' })
