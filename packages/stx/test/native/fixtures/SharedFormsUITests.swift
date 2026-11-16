@@ -109,7 +109,8 @@ final class SharedFormsUITests: XCTestCase {
 
     /// The system's own accessibility audit of the form, all of it. What it
     /// finds is listed, so a new finding fails and a fixed one has to come off
-    /// the list (stacksjs/stx#2187 for the placeholder grey on the dark fill).
+    /// the list. The fields in dark used to be on it: the audit reads a
+    /// field's fill without its transparency (stacksjs/stx#2187).
     func testSystemAccessibilityAudit() throws {
         guard #available(iOS 17.0, *) else { throw XCTSkip("The accessibility audit needs iOS 17") }
         let app = launch()
@@ -133,14 +134,10 @@ final class SharedFormsUITests: XCTestCase {
             details.append("\(issue.compactDescription) on \(name) at \(element?.frame ?? .zero): \(issue.detailedDescription)")
             return true
         }
-        let fields = ["form-name", "form-email", "form-password"]
         // A placeholder is one line. The password's, beside its reveal
         // button, is too long for that line at the largest text sizes.
-        var known = ["textClipped form-password"]
-        if XCUIDevice.shared.appearance == .dark {
-            // The placeholder grey on the fields' dark fill.
-            known += fields.map { "contrast \($0)" }
-        }
+        // Accepted as it is (stacksjs/stx#2187).
+        let known = ["textClipped form-password"]
         // On a narrower phone the other placeholders run out of line too.
         Gate.checkAudit(found: found, known: known, elsewhere: ["textClipped form-name", "textClipped form-email"], details: details)
     }

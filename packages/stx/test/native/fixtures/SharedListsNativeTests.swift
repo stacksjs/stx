@@ -56,6 +56,7 @@ final class SharedListsNativeTests: XCTestCase {
             "Welcome, From HQ |  | link",
             "Second |  | ",
             "2m |  | ",
+            "New |  | ",
             "Tour |  | group",
             "One |  | ",
             "Pages |  | group",

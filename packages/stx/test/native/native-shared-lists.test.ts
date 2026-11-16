@@ -59,8 +59,14 @@ describe.each(['ios', 'android'] as const)('shared lists on %s', (platform) => {
     expect(separator.style.marginLeft).toBe(16)
     expect(phone.ofType('Icon').some(icon => icon.props.symbol === 'chevron.right' && icon.style.color === '#c4c4c7')).toBe(true)
     expect(phone.find(node => node.style.backgroundColor === '#34c759' && node.style.width === 29)).toBeDefined()
-    expect(phone.find(node => node.type === 'Text' && node.children[0] === 'Pro')!.style.color).toBe('#8a8a8e')
+    // 5.1 to 1 on a white row; the system's secondary grey is 3.4 (stacksjs/stx#2187).
+    expect(phone.find(node => node.type === 'Text' && node.children[0] === 'Pro')!.style.color).toBe('#6d6d72')
     expect(phone.find(node => node.type === 'Text' && node.children[0] === 'Account')!.style).toMatchObject({ fontSize: 13, color: '#6d6d72' })
+
+    // A row's badge: the label colour on a fill Apple's audit can read as
+    // enough contrast in both appearances (stacksjs/stx#2187).
+    const badge = phone.find(node => node.type === 'Text' && node.children[0] === '3')!
+    expect(badge.style).toMatchObject({ color: '#000000', backgroundColor: '#7474801f', fontSize: 12 })
 
     phone.press(profile)
     await phone.settle()
@@ -70,6 +76,8 @@ describe.each(['ios', 'android'] as const)('shared lists on %s', (platform) => {
     await phone.settle()
     expect(group.style.backgroundColor).toBe('#1c1c1e')
     expect(separator.style.backgroundColor).toBe('#38383a')
+    expect(badge.style).toMatchObject({ color: '#ffffff', backgroundColor: '#7474803d' })
+    expect(phone.find(node => node.type === 'Text' && node.children[0] === 'Pro')!.style.color).toBe('#98989f')
   })
 
   it('parts a section card\'s rows with the system separator, following which row is first', async () => {

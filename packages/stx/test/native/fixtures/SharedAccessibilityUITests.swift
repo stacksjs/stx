@@ -127,12 +127,11 @@ final class SharedAccessibilityUITests: XCTestCase {
             return true
         }
         // A placeholder is one line, and "you@example.com" is too long for
-        // that line at the largest text sizes, in either appearance.
+        // that line at the largest text sizes, in either appearance. Accepted
+        // as it is (stacksjs/stx#2187): what is typed scrolls, and a
+        // placeholder is gone by then.
         var known = ["textClipped a11y-email"]
-        if XCUIDevice.shared.appearance == .dark {
-            // The placeholder grey on the field's dark fill.
-            known.append("contrast a11y-email")
-        } else {
+        if XCUIDevice.shared.appearance != .dark {
             // Not a shared control: the host's navigation title, which reads
             // "main" for a screen that names none, on its light bar.
             known.append("contrast \"main\"")

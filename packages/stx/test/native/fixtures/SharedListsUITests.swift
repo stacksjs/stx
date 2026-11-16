@@ -82,11 +82,9 @@ final class SharedListsUITests: XCTestCase {
         }
         // Captions set at 13 points, which the audit reports as too small a
         // target. They are words, not controls: nothing happens on a tap.
-        var known = ["ACCOUNT", "Signed in", "Second", "2m"].map { "hitRegion \"\($0)\"" }
-        if XCUIDevice.shared.appearance != .dark {
-            // The grey a row's value and time are set in, on white (stacksjs/stx#2187).
-            known += ["contrast \"Pro\"", "contrast \"2m\""]
-        }
+        // The contrast of a row's value, its time and its badge used to be
+        // listed here too, and is fixed (stacksjs/stx#2187).
+        let known = ["ACCOUNT", "Signed in", "Second", "2m", "New"].map { "hitRegion \"\($0)\"" }
         Gate.checkAudit(found: found, known: known, details: details)
     }
 }

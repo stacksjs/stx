@@ -29,7 +29,7 @@ window.listProbe = { opened, page }
   </GroupedList>
   <SectionCard testID="list-inbox" title="Inbox">
     <ListRow title="Welcome" detail="From HQ" href="/inbox/1" />
-    <ListRow title="Second" meta="2m" />
+    <ListRow title="Second" meta="2m" trailing="New" />
   </SectionCard>
   <Pager testID="list-tour" v-model:index="page" label="Tour">
     <section><span testID="list-page-one">One</span></section>
