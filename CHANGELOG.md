@@ -1,5 +1,30 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.896...v0.2.897)
+
+## 🐛 Bug Fixes
+
+- **testing**: isolate Chrome credentials on macOS ([696d9ef](https://github.com/stacksjs/stx/commit/696d9ef)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **router**: preserve route parameters across layout changes ([7f9588f](https://github.com/stacksjs/stx/commit/7f9588f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **components**: pass Apple's contrast audit on the native fields, rows and badge (#2187) ([772247c](https://github.com/stacksjs/stx/commit/772247c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2187](https://github.com/stacksjs/stx/issues/2187), [#767680](https://github.com/stacksjs/stx/issues/767680), [#747480](https://github.com/stacksjs/stx/issues/747480))
+
+## 📝 Documentation
+
+- **native**: record what the contrast audit measures and the runs that pass it (#2187) ([8713700](https://github.com/stacksjs/stx/commit/8713700)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2187](https://github.com/stacksjs/stx/issues/2187))
+
+## ✅ Tests
+
+- **native**: take the fixed contrast findings off the audit's known lists (#2187) ([cd50fdd](https://github.com/stacksjs/stx/commit/cd50fdd)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2187](https://github.com/stacksjs/stx/issues/2187))
+
+## 🔧 Chores
+
+- release v0.2.897 ([39e2190](https://github.com/stacksjs/stx/commit/39e2190)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.895...v0.2.896)
 
 ## ✨ Features
