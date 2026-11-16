@@ -20,11 +20,15 @@ extension XCUIApplication {
             let upper = coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: top + span * 0.2))
             let lower = coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: top + span * 0.6))
             let above = element.exists && element.frame.midY < top
-            // Hold before letting go. A drag released at speed coasts on, and
-            // in the strip a keyboard leaves on a phone held sideways it
-            // carried the control past the strip every time, up and down.
+            // Drag slowly. A synthesized hold sends no touches, so UIKit keeps
+            // the speed of the drag's last movement through it and the page
+            // coasts about 200 points when the finger lifts: in the strip a
+            // keyboard leaves on a phone held sideways, that carried the
+            // control past the strip every time, up and down
+            // (craft-native/craft#562). At 40 points a second the page moves
+            // as far as the finger and stops there.
             let (from, to) = above ? (upper, lower) : (lower, upper)
-            from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .default, thenHoldForDuration: 0.3)
+            from.press(forDuration: 0.05, thenDragTo: to, withVelocity: XCUIGestureVelocity(40), thenHoldForDuration: 0.3)
             swipes += 1
         }
         XCTAssertTrue(element.isHittable, "\(element) cannot be scrolled onto the screen", file: file, line: line)

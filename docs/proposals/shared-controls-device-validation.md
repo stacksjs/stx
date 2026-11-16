@@ -529,8 +529,9 @@ in Craft 0.0.505 and their pins are gone (see
 
 - **Landscape on a phone.** 7 of 11 suites pass sideways (see
   [landscape](#landscape-on-a-phone-2026-11-16)). Left: a Dialog that fills
-  the screen, a page that jumps when dragged with the keyboard up, and the
-  `hud` panel under the keyboard.
+  the screen ([craft#561](https://github.com/craft-native/craft/issues/561)),
+  a scroll view that stops short of its last line once the keyboard is put
+  away (`forms`, `text-size`), and the `hud` panel under the keyboard.
 - **Right-to-left mirroring.** Every suite passes with the system's
   right-to-left switch on, which is to say every control still works. The
   drawing is half mirrored: text aligns right and the system's own controls
@@ -764,7 +765,8 @@ Xcode 26.6, iOS 26.5 Simulator, Craft `7096d6691201` (0.0.506), stx
   ([craft#531](https://github.com/craft-native/craft/issues/531)). The lists
   screen, which always scrolled, never had it, and now none of them does, so
   it is off the accessibility and overlays known lists.
-- **`reach` holds before letting go,** so a drag stops where it ends.
+- **`reach` holds before letting go,** so a drag stops where it ends. (It
+  did not; see [the correction below](#the-keyboard-drag-was-the-suites-2026-11-17).)
 - **A frame is measured from a neighbour** in the image and toggle suites.
   Their buttons sit below the fold sideways, a tap on one scrolls the screen
   first, and a frame on the screen alone moved when nothing on the page had.
@@ -798,12 +800,39 @@ None of the four is a shared component:
 - **A drag with the keyboard up moves the page about 280 points.** With a
   field focused, each 55-point drag in the strip above the keyboard carried
   the password field between y = 200 and y = -81, one way and then the other,
-  and never let it stop in view. Holding before letting go changed nothing,
-  so it is not the drag coasting. In `forms` and `text-size` the next field
-  cannot be scrolled to while the keyboard is up.
-  [craft#562](https://github.com/craft-native/craft/issues/562).
+  and never let it stop in view. This was recorded as the host's, wrongly:
+  see [the correction below](#the-keyboard-drag-was-the-suites-2026-11-17).
 - **`hud` has its buttons under the keyboard,** as on the iPhone SE: the host's
   panel and the fixture's layout.
 
-The full-screen Dialog and the jumping page are filed on Craft as host
-defects, and stay open on #2184 until they are fixed.
+The full-screen Dialog is filed on Craft as a host defect
+([craft#561](https://github.com/craft-native/craft/issues/561)) and stays
+open on #2184 until it is fixed.
+
+### The keyboard drag was the suites': 2026-11-17
+
+[craft#562](https://github.com/craft-native/craft/issues/562) traced the jump
+to `reach`, not the host. A synthesized hold sends no touches, so at release
+UIKit still has the speed of the drag's last movement (about 408 points a
+second sideways, 300 upright) and the page coasts about 200 points on it,
+upright too. Sideways the strip above the keyboard is about 138 points, so
+every coast carried the field through it. Holding was no fix for the same
+reason. `reach` now drags at 40 points a second and the page moves as far as
+the finger: the password field is reached in one drag in `forms` and
+`text-size`, from y = 200 and y = 212 just above a keyboard at y = 238.
+
+Run again on Craft 0.0.506, iPhone 17 Pro, against stx `7418cb8208` with the
+change: `forms`, `text-size` and `lists` pass upright in dark and light, and
+`lists` passes sideways. Two upright runs that did not pass in the first
+batch (a test past its five-minute allowance, and an accessibility server
+not found) ran while the Mac's load average was over 50 after an update;
+`forms` passed run again alone in both appearances.
+
+What stops `forms` and `text-size` sideways now is later in each test, once
+the keyboard is put away. The last line of the forms screen, `form-summary`,
+is drawn at y = 394 to 414, below the root scroll view, which ends at
+y = 382, and 24 drags move nothing: the scroll view stops about 32 points
+short of the end of its content. That is the case on every run before this
+change too. Whether the scroll view's content size is the host's is for
+Craft to say. `text-size` met the same thing at `size-row` in a batch and
+not in a run alone.
