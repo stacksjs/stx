@@ -48,7 +48,10 @@ final class SharedToggleUITests: XCTestCase {
 
     func testHiddenChangesAndDefaultsSurviveTwoRemounts() {
         let app = launch(), check = app.buttons["shared-check"], toggle = app.switches["shared-switch"]
-        let frame = toggle.frame
+        // Measured from a neighbour that scrolls with it: each button below
+        // scrolls the screen first on a phone held sideways (#2184).
+        let anchor = app.buttons["legacy-check"]
+        let frame = toggle.frame(from: anchor)
         app.buttons["toggle-shown"].tap(); XCTAssertFalse(check.exists); XCTAssertFalse(toggle.exists)
         app.buttons["toggle-true"].tap(); app.buttons["toggle-disable"].tap(); app.buttons["toggle-mixed"].tap()
         app.buttons["toggle-shown"].tap()
@@ -58,7 +61,7 @@ final class SharedToggleUITests: XCTestCase {
         app.buttons["toggle-defaults"].tap(); app.buttons["toggle-shown"].tap()
         XCTAssertTrue(check.waitForExistence(timeout: 10)); enabled(check, true); enabled(toggle, true)
         XCTAssertEqual(check.value as? String, "unchecked"); XCTAssertEqual(toggle.value as? String, "0")
-        XCTAssertEqual(toggle.frame, frame)
+        XCTAssertEqual(toggle.frame(from: anchor), frame)
         label(app, "toggle-events", "Events: 0,0,0")
     }
 }

@@ -20,10 +20,34 @@ extension XCUIApplication {
             let upper = coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: top + span * 0.2))
             let lower = coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: top + span * 0.6))
             let above = element.exists && element.frame.midY < top
-            if above { upper.press(forDuration: 0.05, thenDragTo: lower) } else { lower.press(forDuration: 0.05, thenDragTo: upper) }
+            // Hold before letting go. A drag released at speed coasts on, and
+            // in the strip a keyboard leaves on a phone held sideways it
+            // carried the control past the strip every time, up and down.
+            let (from, to) = above ? (upper, lower) : (lower, upper)
+            from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .default, thenHoldForDuration: 0.3)
             swipes += 1
         }
         XCTAssertTrue(element.isHittable, "\(element) cannot be scrolled onto the screen", file: file, line: line)
+    }
+
+    /// A point on the screen, away from any control and from anything
+    /// floating over it, that a person would tap to dismiss: the right-hand
+    /// edge of the screen's content, in its padding. Measured from the root
+    /// scroll view, since on a phone held sideways the window's edge is the
+    /// safe area beside the content, which the screen never sees.
+    func outside(atHeight fraction: CGFloat = 0.3) -> XCUICoordinate {
+        let root = scrollViews.firstMatch
+        let area = root.exists && root.frame.width > 0 ? root.frame : frame
+        return coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: area.maxX - 8, dy: frame.minY + frame.height * fraction))
+    }
+}
+
+extension XCUIElement {
+    /// Where this element is drawn, measured from one that scrolls with it.
+    /// A tap on a control below the fold scrolls the screen first, so a frame
+    /// on the screen alone changes when nothing on the page moved.
+    func frame(from anchor: XCUIElement) -> CGRect {
+        frame.offsetBy(dx: -anchor.frame.minX, dy: -anchor.frame.minY)
     }
 }
 

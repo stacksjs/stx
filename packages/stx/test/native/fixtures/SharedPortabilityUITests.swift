@@ -18,7 +18,7 @@ final class SharedPortabilityUITests: XCTestCase {
     }
 
     private func dismissOutside(_ app: XCUIApplication) {
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.3)).tap()
+        app.outside().tap()
     }
 
     func testPopoverEscapesClippingAndRetainsInteractiveState() {
@@ -95,10 +95,11 @@ final class SharedPortabilityUITests: XCTestCase {
         let drawer = try audit(app)
         found += drawer.found.map { "in the drawer: \($0)" }
         details += drawer.details.map { "in the drawer: \($0)" }
-        // Not a shared control: the host's navigation title, which reads
-        // "main" for a screen that names none, on its light bar
-        // (craft-native/craft#531, fixed after Craft 0.0.506).
-        let known = XCUIDevice.shared.appearance == .dark ? [] : ["contrast \"main\""]
+        // The host's navigation title ("main") failed contrast on its light
+        // bar here (craft-native/craft#531) until the screen scrolled, as the
+        // lists screen always has; over a scroll view the bar never draws the
+        // title where the audit fails it.
+        let known: [String] = []
         // A tab and the popover's button are the host's own button, a
         // UIButton with a title. On two of the first six runs, one in each
         // appearance, the audit said its title will not follow the reader's

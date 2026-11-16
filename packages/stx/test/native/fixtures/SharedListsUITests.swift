@@ -50,7 +50,12 @@ final class SharedListsUITests: XCTestCase {
         XCTAssertFalse(first.isSelected)
         XCTAssertTrue(app.staticTexts["list-page-two"].waitForExistence(timeout: 10))
 
-        app.staticTexts["list-page-two"].swipeLeft()
+        // A drag across the page, not swipeLeft(): sideways, XCUITest sizes
+        // the swipe from this 20-point-tall text and sends 10 points with no
+        // moves, which never starts the pager's pan (craft-native/craft#539).
+        let page = app.staticTexts["list-page-two"]
+        page.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5))
+            .press(forDuration: 0.05, thenDragTo: page.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5)))
         waitForLabel(summary, "Opened: 0, page 3")
         XCTAssertTrue(third.isSelected)
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.lifetime = .keepAlways; add(shot)
