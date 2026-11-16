@@ -28,7 +28,7 @@ const { values } = parseArgs({ options: {
 const suites: Record<string, { source: string, tests: string, count: number, unitTests?: string, unitCount?: number, support?: string[], contentSize?: string, media?: boolean }> = {
   hud: { source: 'native-hud-device.stx', tests: 'NativeHudUITests', count: 1 },
   controls: { source: 'shared-controls-device.stx', tests: 'SharedControlsUITests', count: 3 },
-  overlays: { source: 'shared-overlays-device.stx', tests: 'SharedPortabilityUITests', count: 4, unitTests: 'SharedOverlaysNativeTests', unitCount: 2, support: ['SpokenStops.swift'] },
+  overlays: { source: 'shared-overlays-device.stx', tests: 'SharedPortabilityUITests', count: 5, unitTests: 'SharedOverlaysNativeTests', unitCount: 2, support: ['SpokenStops.swift'] },
   images: { source: 'shared-image-device.stx', tests: 'SharedImageUITests', count: 1, unitTests: 'SharedImageNativeTests', unitCount: 6 },
   videos: { source: 'shared-video-device.stx', tests: 'SharedVideoUITests', count: 1, unitTests: 'SharedVideoNativeTests', unitCount: 4 },
   streams: { source: 'shared-video-device.stx', tests: 'SharedVideoUITests', count: 1, unitTests: 'SharedVideoStreamNativeTests', unitCount: 3, media: true },

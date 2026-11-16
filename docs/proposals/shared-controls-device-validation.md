@@ -446,7 +446,7 @@ bun scripts/native-portability-ios.ts --craft-root /path/to/clean/craft \
 | Suite | Tests | What it holds |
 | --- | --- | --- |
 | `controls` | 3 UI | Typing keeps the keyboard through updates; a Card's inset follows its density token |
-| `overlays` | 4 UI, 2 in-app | Popover, Tooltip, nested Dialog, Drawer and Tabs take touches; a reader hears the tooltip's hint and the chosen tab, and is inside an open dialog or drawer |
+| `overlays` | 5 UI, 2 in-app | Popover, Tooltip, nested Dialog, Drawer and Tabs take touches; a reader hears the tooltip's hint and the chosen tab, and is inside an open dialog or drawer; the system audit of the screen and of an open drawer |
 | `images` | 1 UI, 6 in-app | Fit, position, replacement and the pixels actually painted |
 | `videos` | 1 UI, 4 in-app | A local clip plays, pauses, loops, is replaced and removed |
 | `streams` | 1 UI, 3 in-app | A file over HTTP and an HLS stream play; a missing stream is an error the page hears, and the player recovers |
@@ -658,8 +658,35 @@ calls too small to tap (they are words, not controls), and the host's
 navigation title in light until Craft 0.0.507
 ([craft#531](https://github.com/craft-native/craft/issues/531)).
 
-Other shared controls keep the `#767680` fill: the tab strip, the segmented
-control drawn from parts, the secondary Button and the Drawer's close button.
-A secondary Button is on the `lists` screen and is not reported. The other
-three are not on a screen the audit is run over, so nothing is known about
-them either way.
+Other shared controls keep the `#767680` fill: the tab strip, the secondary
+Button and the Drawer's close button. A secondary Button is on the `lists`
+screen and is not reported. The tab strip and the close button were not on a
+screen the audit was run over; they are now, and it reports no contrast on
+either ([below](#the-audit-over-the-overlays-screen-2026-11-16)). A segmented
+control is Apple's own on an iOS host, which says it draws the platform's
+controls, so the one drawn from parts on that fill does not appear there; the
+host's is on the `forms` screen and is not reported.
+
+## The audit over the overlays screen: 2026-11-16
+
+`overlays` had no audit. It has one now, over the screen and then over an
+open drawer, because the tab strip and the drawer's close button are drawn on
+the translucent grey fill the audit misreads under a field's text.
+
+On an iPhone 17 Pro against Craft `7096d6691201` (0.0.506), it reports no
+contrast on the tab strip or the close button, in dark or in light, and
+nothing at all inside the open drawer.
+
+What it does report:
+
+| Finding | When | Whose |
+| --- | --- | --- |
+| Contrast on the navigation title "main" | Light, every run | The host's ([craft#531](https://github.com/craft-native/craft/issues/531)), listed as known |
+| The titles of the two tabs and of the popover's button "will not follow the text size", and the popover's "may be clipped" | Two of the first six runs, one in each appearance; not on the other four | The host's own button, a `UIButton` with a title. The shared Button, a label in a pressable box, is never reported |
+
+A finding that comes and goes can be neither required nor refused, so
+`Gate.checkAudit` takes a `sometimes` list for it. That list is the one kind
+that can go stale: nothing fails when the host stops being reported.
+
+After that change the suite ran six more times, three in each appearance:
+7 of 7 tests every time.

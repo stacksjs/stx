@@ -78,4 +78,61 @@ final class SharedPortabilityUITests: XCTestCase {
         app.buttons["tab-first"].tap()
         waitForLabel(app.staticTexts["selection"], "Selected: first")
     }
+
+    /// The system's own accessibility audit of the screen and then of an
+    /// open drawer. The tab strip and the drawer's close button are drawn on
+    /// the translucent grey fill the audit misread on the text fields
+    /// (stacksjs/stx#2187), and neither was on a screen it was run over.
+    /// It reports no contrast on either, in either appearance. What it does
+    /// find is listed, so anything new fails and a fixed finding has to come
+    /// off the list.
+    func testSystemAccessibilityAudit() throws {
+        guard #available(iOS 17.0, *) else { throw XCTSkip("The accessibility audit needs iOS 17") }
+        let app = launch()
+        var (found, details) = try audit(app)
+        app.buttons["open-drawer"].tap()
+        XCTAssertTrue(app.buttons["close-drawer"].waitForExistence(timeout: 10))
+        let drawer = try audit(app)
+        found += drawer.found.map { "in the drawer: \($0)" }
+        details += drawer.details.map { "in the drawer: \($0)" }
+        // Not a shared control: the host's navigation title, which reads
+        // "main" for a screen that names none, on its light bar
+        // (craft-native/craft#531, fixed after Craft 0.0.506).
+        let known = XCUIDevice.shared.appearance == .dark ? [] : ["contrast \"main\""]
+        // A tab and the popover's button are the host's own button, a
+        // UIButton with a title. On two of the first six runs, one in each
+        // appearance, the audit said its title will not follow the reader's
+        // text size, and that the popover's may be clipped when it does. The
+        // other four runs of the same screen reported neither. The host scales a
+        // button's font itself; the shared Button, drawn as a label in a
+        // pressable box, is never reported.
+        let sometimes = ["dynamicType \"First\"", "dynamicType \"Second\"", "dynamicType \"More actions\"", "textClipped \"More actions\""]
+        Gate.checkAudit(found: found, known: known, sometimes: sometimes, details: details)
+    }
+
+    @available(iOS 17.0, *)
+    private func audit(_ app: XCUIApplication) throws -> (found: [String], details: [String]) {
+        var found: [String] = []
+        var details: [String] = []
+        try app.performAccessibilityAudit { issue in
+            let kind: String
+            switch issue.auditType {
+            case .contrast: kind = "contrast"
+            case .textClipped: kind = "textClipped"
+            case .dynamicType: kind = "dynamicType"
+            case .hitRegion: kind = "hitRegion"
+            case .elementDetection: kind = "elementDetection"
+            case .sufficientElementDescription: kind = "description"
+            case .trait: kind = "trait"
+            default: kind = issue.compactDescription
+            }
+            // A label inside a control has no identifier of its own: its words name it.
+            let element = issue.element
+            let name = (element?.identifier).flatMap { $0.isEmpty ? nil : $0 } ?? "\"\(element?.label ?? "")\""
+            found.append("\(kind) \(name)")
+            details.append("\(issue.compactDescription) on \(name) at \(element?.frame ?? .zero): \(issue.detailedDescription)")
+            return true
+        }
+        return (found, details)
+    }
 }

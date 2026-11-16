@@ -39,12 +39,17 @@ enum Gate {
     /// it. Elsewhere it cannot: the audit reads what is on the screen, and a
     /// smaller or turned screen shows less of it. `elsewhere` lists what only
     /// such a screen brings out, as a narrower field does a long placeholder.
-    static func checkAudit(found: [String], known: [String], elsewhere: [String] = [], details: [String], file: StaticString = #filePath, line: UInt = #line) {
+    ///
+    /// `sometimes` lists what the audit reports on one run and not on the
+    /// next of the same screen, on any phone. Such a finding can be neither
+    /// required nor refused, so it is the one kind that can go stale here.
+    static func checkAudit(found: [String], known: [String], elsewhere: [String] = [], sometimes: [String] = [], details: [String], file: StaticString = #filePath, line: UInt = #line) {
         let report = "The system audit found:\n" + details.joined(separator: "\n")
+        let steady = found.filter { !sometimes.contains($0) }
         if isReferenceRun {
-            XCTAssertEqual(found.sorted(), known.sorted(), report, file: file, line: line)
+            XCTAssertEqual(steady.sorted(), known.sorted(), report, file: file, line: line)
         } else {
-            XCTAssertEqual(found.filter { !known.contains($0) && !elsewhere.contains($0) }.sorted(), [], report, file: file, line: line)
+            XCTAssertEqual(steady.filter { !known.contains($0) && !elsewhere.contains($0) }.sorted(), [], report, file: file, line: line)
         }
     }
 }
