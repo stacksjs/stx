@@ -2523,7 +2523,9 @@ else {
           if(!text.trim())return;
           if(isSignalsRuntimeScript(s,text))return;
           if(isModuleRegistryScript(s)||isComposablesScript(s))addScript(text,true,'','',s.type==='module',s.getAttribute('data-stx-module-job'),isModuleRegistryScript(s),isComposablesScript(s));
-          else if(text.indexOf('__stx_setup_')!==-1)addScript(text,true);
+          // Server route params live in the head. A layout change clears the
+          // previous params too, so carry this handoff before the page mounts.
+          else if(s.hasAttribute('data-stx-route-params')||text.indexOf('__stx_setup_')!==-1)addScript(text,true);
         });
       } else {
         // Collect page scripts from <head> AND <body> (outside container).

@@ -134,6 +134,7 @@ async function runOrder(responseHtml: string): Promise<string[]> {
     .map((s) => {
       const text = String(s.textContent || '')
       if (text.includes('__stxModuleBundles')) return 'registry'
+      if (text.includes('stx.setRouteParams')) return 'params'
       if (text.includes('__stx_setup_login')) return 'setup'
       return 'other'
     })
@@ -149,6 +150,16 @@ var __bundles = window.__stxComposableBundles || (window.__stxComposableBundles 
 if (__bundles["abc999"]) return;
 __bundles["abc999"] = true;
 })();`
+
+describe('router: a layout change carries dynamic route parameters', () => {
+  for (const place of ['head', 'body']) {
+    it(`runs parameters from the ${place} before the destination page setup`, async () => {
+      const params = '<script data-stx-route-params>window.stx.setRouteParams({ slug: "last-soul-ultra" })<\/script>'
+      const html = loginDocument(true).replace(place === 'head' ? '</head>' : '<body>', place === 'head' ? params + '</head>' : '<body>' + params)
+      expect(await runOrder(html)).toEqual(['registry', 'params', 'setup'])
+    })
+  }
+})
 
 describe('router: a layout change carries the module registry (#1957)', () => {
   it('and the page\'s composables, run after the registry and before the setup', async () => {
@@ -253,6 +264,7 @@ async function fragmentRunOrder(): Promise<string[]> {
     .map((s) => {
       const text = String(s.textContent || '')
       if (text.includes('__stxModuleBundles')) return 'registry'
+      if (text.includes('stx.setRouteParams')) return 'params'
       if (text.includes('__stxComposableBundles')) return 'composables'
       if (text.includes('function useOnline')) return 'framework'
       if (text.includes('__stx_setup_video')) return 'setup'
