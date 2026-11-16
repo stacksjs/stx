@@ -690,3 +690,49 @@ that can go stale: nothing fails when the host stops being reported.
 
 After that change the suite ran six more times, three in each appearance:
 7 of 7 tests every time.
+
+## The other settings, run again: 2026-11-16
+
+Right-to-left, Increase Contrast, the iPad and the iPhone SE were last run on
+2026-11-14, before the group names were sent again and before the contrast
+colours changed. They are run again here with the same suites as then.
+
+Xcode 26.6, iOS 26.5 Simulator, Craft `7096d6691201` (0.0.506), stx
+`cda3bc7d4b` (the runs that started after `247dcc083c`, a change to CI only,
+record that commit). Five simulators, three running at once.
+[Every run's counts, device and settings](shared-ios-settings-2026-11-16.json).
+
+| Device and setting | Appearance | Passed | Not passing |
+| --- | --- | --- | --- |
+| iPhone 17 Pro, Increase Contrast | dark and light | 10 of 12 runs, 58 of 60 tests | `forms` light: 5 of 6; `overlays` dark: 6 of 7 |
+| iPad (A16) | dark | 11 of 11 runs, 49 of 49 tests | None |
+| iPhone SE (3rd generation) | dark | 9 of 11 runs, 44 of 46 tests | `forms` dark: 2 of 3; `hud` dark: 0 of 1 |
+| iPhone 17 Pro, right-to-left | dark | 7 of 7 runs, 32 of 32 tests | None |
+| iPhone 17 Pro, Increase Contrast, run again alone | dark and light | 2 of 2 runs, 13 of 13 tests | None |
+| iPhone SE (3rd generation), run again alone | dark | 1 of 1 runs, 6 of 6 tests | None |
+
+The three runs that did not pass beside others passed when run again one at
+a time with the other simulators shut down:
+
+- **`forms` light with Increase Contrast.** Seven characters typed into the
+  password field had not reached it when the test looked.
+- **`overlays` dark with Increase Contrast.** The dialog had not appeared
+  within the test's ten seconds.
+- **`forms` on the iPhone SE.** The test runner was killed before it
+  connected, so no test in it ran.
+
+Each is a wait that ran out or a runner that never started, not a wrong
+value, and the same suites passed in every other setting in this batch. They
+are recorded as they happened.
+
+The `hud` suite on the iPhone SE fails as it did on 2026-11-14: its buttons
+sit under the keyboard on a 667-point screen. It is the host's panel and a
+fixture's layout, not a shared component.
+
+Off the reference phone the audit may only find what a suite lists, and in
+none of these runs did it find anything new: the restored group names and
+the new greys hold on a small phone, an iPad, with Increase Contrast and
+right to left.
+
+That leaves landscape on a phone as the one setting not passing, waiting on
+[craft#539](https://github.com/craft-native/craft/issues/539).
