@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.900...v0.2.901)
+
+## 🐛 Bug Fixes
+
+- **offline**: keep literal pages out of parameter route shells ([73a38e3](https://github.com/stacksjs/stx/commit/73a38e3)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **native**: drag slowly in reach so the page stops where the finger does (#2184) ([1d3ac49](https://github.com/stacksjs/stx/commit/1d3ac49)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184), [craft-native/craft#562](https://github.com/craft-native/craft/issues/562))
+
+## 🔧 Chores
+
+- release v0.2.901 ([4af377e](https://github.com/stacksjs/stx/commit/4af377e)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.899...v0.2.900)
 
 ## 🐛 Bug Fixes
