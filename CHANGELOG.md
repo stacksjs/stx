@@ -1,5 +1,31 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.899...v0.2.900)
+
+## 🐛 Bug Fixes
+
+- **native**: preserve screen title colours across shared chrome updates ([7418cb8](https://github.com/stacksjs/stx/commit/7418cb8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **serve**: render the index once for a request to "/" ([91bcefd](https://github.com/stacksjs/stx/commit/91bcefd)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 📝 Documentation
+
+- **native**: link the two landscape host defects Craft filed (#2184) ([4e1bf1c](https://github.com/stacksjs/stx/commit/4e1bf1c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184), [craft-native/craft#561](https://github.com/craft-native/craft/issues/561), [craft-native/craft#562](https://github.com/craft-native/craft/issues/562))
+- **native**: record every suite on a phone held sideways (#2184) ([5b95de8](https://github.com/stacksjs/stx/commit/5b95de8)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184))
+
+## ✅ Tests
+
+- **native**: let the six device screens that did not scroll scroll (#2184) ([bf14e7a](https://github.com/stacksjs/stx/commit/bf14e7a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184))
+- **native**: drive the iOS suites the same way on a phone held sideways (#2184) ([c9de85c](https://github.com/stacksjs/stx/commit/c9de85c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184), [craft-native/craft#539](https://github.com/craft-native/craft/issues/539))
+
+## 🔧 Chores
+
+- release v0.2.900 ([6cb95fc](https://github.com/stacksjs/stx/commit/6cb95fc)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.898...v0.2.899)
 
 ## 🐛 Bug Fixes
