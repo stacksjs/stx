@@ -214,11 +214,13 @@ onDestroy(() => {
 defineExpose({ selected, count, go, next, prev })
 </script>
 
-<section class="{{ rootClasses }}" aria-roledescription="carousel" @if(label)aria-label="{{ label }}"@endif @keydown="onKey($event)">
+<section class="{{ rootClasses }}" aria-roledescription="carousel" @if(label && !nativeHost)aria-label="{{ label }}"@endif @keydown="onKey($event)">
   @if(nativeHost)
-    {{-- A host's scroller is where a pager's name goes: it announces the
-         name on the way in and leaves the pages inside reachable, which the
-         box around it cannot do (a named box is a single stop). --}}
+    {{-- A host's scroller is where a pager's name goes, and the only place:
+         it announces the name on the way in and leaves the pages reachable
+         whatever they hold. The box around it would be one stop that hid
+         them when the pages are words alone and there are no dots, and a
+         second "Tour" around the first when there are. --}}
     <div data-native="ScrollView" @if(label)aria-label="{{ label }}"@endif horizontal pagingEnabled :pageIndex="selected()" :scrollEnabled="allowSwipe" showsHorizontalScrollIndicator="false" showsVerticalScrollIndicator="false" class="flex-1 min-h-0" @page-selected="onNativePage($event)">
       <slot />
     </div>

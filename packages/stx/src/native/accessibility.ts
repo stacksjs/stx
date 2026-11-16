@@ -35,20 +35,6 @@ const STATE_KEYS: Record<string, string> = {
 }
 
 /**
- * Marks a box that names a group of controls (set by the compiler).
- *
- * A browser reads `<div role="group" aria-label="Pages">` as a name for what
- * is inside. A host has no such thing for a plain box: a View with a label is
- * one stop for a screen reader, and whatever is inside it can no longer be
- * reached. The shared Pager was one stop called "Tour", its pages and its
- * page dots gone. So the name of such a box is not sent: the group goes
- * unnamed and its controls stay reachable, which is the half that matters.
- * Hosts' own containers (a scroll view, a tab strip, a dialog) keep theirs.
- * craft-native/craft#536 asks the host for a box that is both named and open.
- */
-export const READER_GROUP = 'data-stx-reader-group'
-
-/**
  * ARIA roles a host can announce, in its own vocabulary.
  *
  * Container roles (`group`, `radiogroup`, `region`) are left out on purpose.
@@ -56,12 +42,18 @@ export const READER_GROUP = 'data-stx-reader-group'
  * the role description, so a group would be announced as the word "group"
  * before every control in it.
  *
- * `list` is the exception, because it is the one container both hosts can
- * name and still let a reader into: iOS announces its label on the way in and
- * reaches every control inside, and "list" is the word Android's own lists are
- * announced with. A row of removable pills or of filter buttons written as
- * `<div role="list" aria-label="Exercises">` keeps its name that way, where a
- * plain labelled box loses it (see READER_GROUP).
+ * A box written with one of them still keeps its name. On iOS a labelled
+ * view that holds a control is a named group: the name is announced on the
+ * way in and every control inside is reached (Craft 0.0.505,
+ * craft-native/craft#536; before it the box was one stop that hid them, and
+ * stx withheld the name). On Android the box is a stop of its own and the
+ * controls inside it are stops too. A box that holds only words or pictures
+ * is one stop read by its label on both, which is what `aria-label` on a
+ * rating or a badge means.
+ *
+ * `list` is the one container role that is sent, because both hosts have it:
+ * iOS announces its label on the way in, and "list" is the word Android's own
+ * lists are announced with. It also makes a box a group whatever it holds.
  */
 const ROLES: Record<string, string> = {
   alert: 'alert',
@@ -117,7 +109,7 @@ function stateValue(name: string, value: unknown): boolean | 'mixed' | undefined
 }
 
 /** The role a host would announce for an ARIA `role`, or null where it has none. */
-export function nativeRole(value: unknown): string | null {
+function nativeRole(value: unknown): string | null {
   if (value === undefined || value === null) return null
   // ARIA allows a fallback list (`role="switch checkbox"`): the first one a
   // host understands is the one to use.
@@ -179,8 +171,6 @@ export function applyStaticAccessibility(props: Record<string, unknown>): void {
   // written on, not what is inside it: a host has no prop for a subtree.
   if (stateValue('aria-hidden', props['aria-hidden']) === true)
     derived.accessibilityRole = 'none'
-  if (props[READER_GROUP] !== undefined)
-    delete derived.accessibilityLabel
   for (const key of ['accessibilityLabel', 'accessibilityRole', 'accessibilityValue']) {
     if (props[key] === undefined && derived[key] !== undefined && derived[key] !== null)
       props[key] = derived[key]

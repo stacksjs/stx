@@ -1,12 +1,16 @@
 /**
- * A named group of controls stays a group a screen reader can enter.
+ * A named group of controls is a group a screen reader is told the name of
+ * and can enter.
  *
  * A browser reads `<div role="group" aria-label="Pages">` as a name for what
- * is inside. A native host has no such thing for a plain box: a view with a
- * label is one stop, and nothing inside it can be reached. Run on a simulator
- * (stacksjs/stx#2184), the shared Pager was a single stop called "Tour". Its
- * pages and its page dots were on screen and could be touched, and VoiceOver
- * could reach none of them.
+ * is inside. Craft's iOS host once made any labelled view one stop, and
+ * nothing inside it could be reached: run on a simulator (stacksjs/stx#2184),
+ * the shared Pager was a single stop called "Tour", its pages and its page
+ * dots on screen and out of VoiceOver's reach. stx withheld such a name until
+ * the host learned to make a labelled view that holds a control a named
+ * group (Craft 0.0.505, craft-native/craft#536). The name is sent again, and
+ * `SharedListsNativeTests` and `SharedOverlaysNativeTests` hold what a
+ * reader reaches on a simulator.
  *
  * Also here, since they came out of the same run: the page a pager is on and
  * the link someone is on are said to be so, a tooltip's words reach a reader
@@ -15,7 +19,7 @@
  */
 import { afterEach, describe, expect, it } from 'bun:test'
 import { join } from 'node:path'
-import { projectAccessibility, READER_GROUP } from '../../src/native/accessibility'
+import { projectAccessibility } from '../../src/native/accessibility'
 import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import { compileNativeScreen, mountNativeScreen, unmountAllNativeScreens } from '../../src/native/testing'
 import type { STXNode } from '../../src/native/compiler/ir'
@@ -35,7 +39,7 @@ function find(node: STXNode, match: (node: STXNode) => boolean): STXNode | undef
 const byTestID = (root: STXNode, id: string): STXNode => find(root, node => node.props.testID === id)!
 
 describe('a labelled box around controls', () => {
-  it('is not sent its label, so the controls inside stay reachable', async () => {
+  it('is sent its label, with no role and no marker, and the host makes it a group', async () => {
     const { root } = await translateHtmlToIR(`<div>
       <div testID="dots" role="group" aria-label="Pages"><button aria-label="Go to page 1"></button></div>
       <section testID="region" aria-label="Filters"><a href="/people">People</a></section>
@@ -43,10 +47,15 @@ describe('a labelled box around controls', () => {
       <div testID="bound" :aria-label="title()"><button>Save</button></div>
       <div testID="panel" role="dialog" aria-modal="true" aria-label="Filters"><button aria-label="Close panel"></button></div>
     </div>`)
-    for (const id of ['dots', 'region', 'deep', 'bound', 'panel']) {
-      expect(byTestID(root, id).props[READER_GROUP]).toBe('')
-      expect(byTestID(root, id).props.accessibilityLabel).toBeUndefined()
+    for (const [id, label] of [['dots', 'Pages'], ['region', 'Filters'], ['deep', 'Sign in'], ['panel', 'Filters']] as const) {
+      expect(byTestID(root, id).props.accessibilityLabel).toBe(label)
+      // No role: neither host has a word for a group, and iOS decides that
+      // the box is one from the control it holds.
+      expect(byTestID(root, id).props.accessibilityRole).toBeUndefined()
+      expect(Object.keys(byTestID(root, id).props).filter(name => name.startsWith('data-stx-'))).toEqual([])
     }
+    // A bound name is projected when it is written (the last test here).
+    expect(byTestID(root, 'bound').bindings?.['aria-label']).toBe('title()')
     // The controls keep their own names.
     expect(find(root, node => node.props['aria-label'] === 'Go to page 1')!.props.accessibilityLabel).toBe('Go to page 1')
   })
@@ -60,10 +69,8 @@ describe('a labelled box around controls', () => {
       <div testID="scroller" data-native="ScrollView" aria-label="Tour"><button>Next</button></div>
       <div testID="native" accessibilityLabel="Toolbar"><button>Bold</button></div>
     </div>`)
-    for (const [id, label] of [['rating', 'Rated 4 of 5'], ['card', 'Open order 12'], ['tabs', 'Sections'], ['pills', 'Exercises'], ['scroller', 'Tour'], ['native', 'Toolbar']] as const) {
-      expect(byTestID(root, id).props[READER_GROUP]).toBeUndefined()
+    for (const [id, label] of [['rating', 'Rated 4 of 5'], ['card', 'Open order 12'], ['tabs', 'Sections'], ['pills', 'Exercises'], ['scroller', 'Tour'], ['native', 'Toolbar']] as const)
       expect(byTestID(root, id).props.accessibilityLabel).toBe(label)
-    }
   })
 
   it('is a list a host can name and still enter, when it says it is one', async () => {
@@ -76,12 +83,11 @@ describe('a labelled box around controls', () => {
     expect(find(root, node => node.props['aria-label'] === 'Remove squats')!.props.accessibilityLabel).toBe('Remove squats')
   })
 
-  it('stays unnamed when its label is written again later', () => {
+  it('is named again when its label is written later', () => {
     // What the runtime does on a bound aria-label: project the node's props.
-    expect(projectAccessibility({ 'aria-label': 'Pages', [READER_GROUP]: '' })).toEqual({})
-    expect(projectAccessibility({ 'aria-label': 'Pages', 'role': 'tablist', [READER_GROUP]: '' })).toEqual({ accessibilityRole: 'tablist' })
-    // An authored native label is a decision, not a translation.
-    expect(projectAccessibility({ accessibilityLabel: 'Pages', [READER_GROUP]: '' })).toEqual({ accessibilityLabel: 'Pages' })
+    expect(projectAccessibility({ 'aria-label': 'Pages' })).toEqual({ accessibilityLabel: 'Pages' })
+    expect(projectAccessibility({ 'aria-label': 'Pages', 'role': 'group' })).toEqual({ accessibilityLabel: 'Pages' })
+    expect(projectAccessibility({ 'aria-label': 'Pages', 'role': 'tablist' })).toEqual({ accessibilityLabel: 'Pages', accessibilityRole: 'tablist' })
   })
 })
 
@@ -111,7 +117,7 @@ describe('text', () => {
 })
 
 describe.each(['ios', 'android'] as const)('the shared components on %s', (platform) => {
-  it('name the pager on its scroller and leave its box and its dots unnamed', async () => {
+  it('name the pager once, on its scroller, and name its dots', async () => {
     const { code } = await compileNativeScreen(`@import('Pager', '${ui}/pager/Pager.stx')
 <script client>
 const page = state(0)
@@ -123,9 +129,11 @@ const page = state(0)
     await phone.settle()
     const scroller = phone.ofType('ScrollView')[0]!
     expect(scroller.props.accessibilityLabel).toBe('Tour')
+    // The box around the scroller carries no name on a host: it would be a
+    // second "Tour" around the first, and with no dots and pages of words
+    // alone it would be one stop that hid the pages.
     const boxes = phone.all().filter(node => node.type === 'View' && node.props['aria-label'] !== undefined)
-    expect(boxes.map(node => node.props['aria-label'])).toEqual(['Tour', 'Pages'])
-    expect(boxes.map(node => node.props.accessibilityLabel)).toEqual([undefined, undefined])
+    expect(boxes.map(node => [node.props['aria-label'], node.props.accessibilityLabel])).toEqual([['Pages', 'Pages']])
 
     // The host reports its pages; the dot for the one showing is the selected one.
     phone.press(scroller, 'onPageSelected', { index: 1, count: 2 })
@@ -134,7 +142,7 @@ const page = state(0)
     expect(dots.map(node => [node.props.accessibilityLabel, node.props.accessibilityState?.selected === true])).toEqual([['Go to page 1', false], ['Go to page 2', true]])
   }, 30_000)
 
-  it('leave an open drawer\'s panel unnamed, so its close button can be reached', async () => {
+  it('name an open drawer\'s panel, which holds its close button', async () => {
     const { code } = await compileNativeScreen(`@import('Drawer', '${ui}/drawer/Drawer.stx')
 @import('Button', '${ui}/button/Button.stx')
 <script client>
@@ -144,9 +152,8 @@ const open = state(true)
     const phone = mountNativeScreen(code, 'Screen', { platform })
     await phone.settle()
     const panel = phone.all().find(node => node.props['aria-label'] === 'Filters' && node.type === 'View')!
-    expect(panel.props.accessibilityLabel).toBeUndefined()
-    // The title is drawn inside it, so a reader still hears what it is.
-    expect(phone.all().some(node => node.type === 'Text' && node.children.includes('Filters'))).toBe(true)
+    expect(panel.props.accessibilityLabel).toBe('Filters')
+    expect(panel.props.accessibilityRole).toBeUndefined()
     expect(phone.all().find(node => node.props.accessibilityLabel === 'Close panel')).toBeDefined()
   }, 30_000)
 
