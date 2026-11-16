@@ -4875,10 +4875,15 @@ function __stxOverlay(errs){
               if (path === '/index')
                 path = '/'
 
-              // Redirect root to /home if no index exists (dashboard pattern)
+              // Redirect root to /home if no index exists (dashboard pattern).
+              // The index's render is the answer when there is one: asking
+              // whether it exists by rendering it, then rendering it again
+              // below, ran every server script on "/" twice per request and
+              // threw the first page away.
+              let content: string | null | undefined
               if (path === '/') {
-                const indexContent = await getRoute('/', reqCtx)
-                if (!indexContent) {
+                content = await getRoute('/', reqCtx)
+                if (!content) {
                   // Try /home as default landing page
                   const homeContent = await getRoute('/home', reqCtx)
                   if (homeContent) {
@@ -4894,7 +4899,8 @@ function __stxOverlay(errs){
               }
 
               // Try to serve the requested page (lazy load on demand)
-              const content = await getRoute(path, reqCtx)
+              if (content === undefined)
+                content = await getRoute(path, reqCtx)
 
               // A page action asked for a redirect (#1847). 303 rather than 302:
               // it is the status that tells the browser to follow up with a GET,
