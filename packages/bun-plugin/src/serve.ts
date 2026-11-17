@@ -24,7 +24,7 @@ import { loadConfig } from 'bunfig'
 import { bodyCloseIndex, BUILD_ID_HEADER, decodeTitleEntities, externalScriptsOutsideContainer, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, insertBeforeHeadClose, mergeCssConfig, pageCssFragment, pageHeadFragment, readResponseHeaders, readResponseStatus, renderFontCSS, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
 import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
-import { extractLayoutMetadata } from 'stx-router/layout-metadata'
+import { extractLayoutMetadata, layoutChanges, type LayoutMetadata, layoutTheRouterHas } from 'stx-router/layout-metadata'
 import { FILE_SEGMENT_GUARD, isFileRequestPath } from 'stx-router/file-requests'
 import { insertBeforeBodyClose, actionRedirectResponse, compressResponse, runPageAction as sharedRunPageAction } from '@stacksjs/stx'
 import { compileDomainRoutes, describeDomainRoutes, requestHost, resolveDomainElsewhere, resolveDomainRoute } from './domain-routes'
@@ -4927,7 +4927,23 @@ function __stxOverlay(errs){
                 const responseStatus = reqCtx.responseStatus ?? 200
                 // SPA navigation: return only <main> content as fragment
                 const isSpaNav = req.headers.get(SPA_NAV_HEADER) === 'true'
+                // The router says which layout its page is on. A page on another
+                // layout cannot be swapped in as a fragment, so it is answered
+                // with the document now: the router used to take the fragment,
+                // see the layout change and ask again, and the page was rendered
+                // twice for one click (two 1.25 MB renders and two data lookups
+                // on one app). A router that says nothing keeps the old answer.
+                let layoutAcross: LayoutMetadata | null = null
                 if (isSpaNav) {
+                  const routerHas = layoutTheRouterHas(req.headers)
+                  if (routerHas) {
+                    const page = extractLayoutMetadata(content)
+                    const group = (i18nConfig && i18nLocale) ? `i18n:${i18nLocale}` : page.group
+                    if (layoutChanges(routerHas, { layout: page.layout, group }))
+                      layoutAcross = { layout: page.layout, group }
+                  }
+                }
+                if (isSpaNav && !layoutAcross) {
                   // Detect layout from rendered content — extract @extends layout name.
                   // If layout differs from the referrer's layout, return full HTML (not
                   // fragment) so the router does a full document swap instead of just
@@ -5249,6 +5265,14 @@ function __stxOverlay(errs){
                 // session (#1927). `append`, since several are legitimate.
                 for (const cookie of reqCtx.actionCookies ?? [])
                   pageHeaders.append('Set-Cookie', cookie)
+                // The document a router asked for from another layout says
+                // which layout it is, as a fragment would, and which build drew
+                // it, so the router's skew check reads the same thing either way.
+                if (layoutAcross) {
+                  pageHeaders.set('X-STX-Layout', layoutAcross.layout)
+                  pageHeaders.set('X-STX-Layout-Group', layoutAcross.group)
+                  pageHeaders.set(BUILD_ID_HEADER, getBuildId())
+                }
 
                 return new Response(injectHmrClient(cleaned), {
                   status: pageRenderFailed ? 500 : responseStatus,

@@ -103,5 +103,19 @@ export function appendVary(vary: string | null | undefined, field: string): stri
  * tree inside the container. `Vary` describes the url, not one answer for it.
  */
 export function spaNavVaryHeaders(existing?: string | null): { Vary: string } {
-  return { Vary: appendVary(existing, SPA_NAV_HEADER) }
+  // The router also says which layout its page is on, and a request from
+  // another layout is answered with the document rather than the fragment,
+  // so those headers choose the body too. A browser loading the page sends
+  // neither, so its cache key is unchanged.
+  let vary = appendVary(existing, SPA_NAV_HEADER)
+  for (const header of SPA_LAYOUT_HEADERS)
+    vary = appendVary(vary, header)
+  return { Vary: vary }
 }
+
+/**
+ * The headers the router sends with a fragment request to say which layout
+ * its page is on. Named here as well as in stx-router so the cache key does
+ * not depend on that package's build.
+ */
+export const SPA_LAYOUT_HEADERS = ['X-STX-Have-Layout', 'X-STX-Have-Layout-Group'] as const

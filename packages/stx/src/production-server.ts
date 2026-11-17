@@ -15,7 +15,7 @@ import { serve } from 'bun'
 import { loadManifest, type BuildManifest, type ManifestRoute } from './manifest'
 import { hydrateTemplateStream } from './template-hydrator'
 import type { CompiledTemplate } from './template-compiler'
-import { extractContainerContent, extractLayoutMetadata, hasContainerRegion, type LayoutMetadata } from './app-shell'
+import { extractContainerContent, extractLayoutMetadata, hasContainerRegion, layoutChanges, type LayoutMetadata, layoutTheRouterHas } from './app-shell'
 import { pageShipsSignalsRuntime } from './runtime-injection'
 import { isFileRequestPath, patternToRegex } from 'stx-router'
 import { compressResponse } from './compression'
@@ -93,6 +93,24 @@ const MIME_TYPES: Record<string, string> = {
  * - Static pages: served directly (zero processing)
  * - Dynamic pages: hydrated with request-time data
  */
+/**
+ * The page's layout when the router asking for it is on another one, else
+ * null. Such a request is answered with the document: a fragment cut from
+ * another layout is one the router would reject and fetch again, which made
+ * a click across layouts two renders (see layoutChanges in stx-router).
+ */
+function layoutAcrossFor(request: Request, page: LayoutMetadata | null | undefined): LayoutMetadata | null {
+  if (!page)
+    return null
+  const routerHas = layoutTheRouterHas(request.headers)
+  return routerHas && layoutChanges(routerHas, page) ? page : null
+}
+
+/** The layout headers a document carries when it answers a router across layouts. */
+function layoutHeaders(page: LayoutMetadata | null): Record<string, string> {
+  return page ? { 'X-STX-Layout': page.layout, 'X-STX-Layout-Group': page.group } : {}
+}
+
 export async function startProductionServer(options: ProductionServerOptions = {}): Promise<{ port: number, stop: () => void, invalidate: (pathname?: string) => void }> {
   const outputDir = path.resolve(options.outputDir || '.output')
   const port = options.port ?? 3000
@@ -287,7 +305,11 @@ export async function startProductionServer(options: ProductionServerOptions = {
         return responseCache.respond(request, rule.cache, async () => {
         // ── SPA fragment response (only genuinely static artifacts) ──
         const candidate = compiledTemplates.get(matchedRoute.pattern)
-        if (isSpaNav && request.method === 'GET' && candidate && !candidate.hasServerScripts && Object.keys(candidate.placeholders).length === 0) {
+        // A router on another layout cannot use a fragment of this page: it
+        // is answered with the document, once, instead of a fragment it would
+        // reject and ask for again (see layoutChanges in stx-router).
+        const staticAcross = isSpaNav ? layoutAcrossFor(request, layoutMetadataCache.get(matchedRoute.pattern)) : null
+        if (isSpaNav && !staticAcross && request.method === 'GET' && candidate && !candidate.hasServerScripts && Object.keys(candidate.placeholders).length === 0) {
           const fragment = fragmentCache.get(matchedRoute.pattern)
           if (fragment) {
             const layoutMetadata = layoutMetadataCache.get(matchedRoute.pattern)
@@ -368,6 +390,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
               // inside the container.
               ...spaNavVaryHeaders(),
               'Cache-Control': 'public, max-age=60',
+              ...layoutHeaders(staticAcross),
             },
           })
         }
@@ -394,14 +417,18 @@ export async function startProductionServer(options: ProductionServerOptions = {
             const headers = new Headers({ ...spaNavVaryHeaders(), ...pageHeaders, 'Cache-Control': 'private, no-store' })
             for (const cookie of cookies ?? [])
               headers.append('Set-Cookie', cookie)
-            if (isSpaNav && !isMutating && hasContainerRegion(html, manifest.routerContainer || 'main')) {
-              const layout = extractLayoutMetadata(html)
+            const streamLayout = isSpaNav && !isMutating ? extractLayoutMetadata(html) : null
+            const streamAcross = streamLayout ? layoutAcrossFor(request, streamLayout) : null
+            const streamFragment = isSpaNav && !isMutating && !streamAcross && hasContainerRegion(html, manifest.routerContainer || 'main')
+            if (streamFragment && streamLayout) {
               headers.set('X-STX-Fragment', 'true')
               headers.set('X-STX-Runtime', pageShipsSignalsRuntime(html) ? 'true' : 'false')
-              headers.set('X-STX-Layout', layout.layout)
-              headers.set('X-STX-Layout-Group', layout.group)
+              headers.set('X-STX-Layout', streamLayout.layout)
+              headers.set('X-STX-Layout-Group', streamLayout.group)
             }
-            return streamToResponse(renderStreamingPage(isSpaNav && !isMutating && hasContainerRegion(html, manifest.routerContainer || 'main') ? extractContainerContent(html, manifest.routerContainer || 'main', true) : html, boundaries, { timeoutMs: 30000 }), {
+            for (const [name, value] of Object.entries(layoutHeaders(streamAcross)))
+              headers.set(name, value)
+            return streamToResponse(renderStreamingPage(streamFragment ? extractContainerContent(html, manifest.routerContainer || 'main', true) : html, boundaries, { timeoutMs: 30000 }), {
               status: status ?? compiled.status ?? 200,
               headers,
             })
@@ -426,8 +453,12 @@ export async function startProductionServer(options: ProductionServerOptions = {
           for (const [name, value] of Object.entries(pageHeaders ?? {}))
             headers.set(name, value)
           headers.set('Vary', spaNavVaryHeaders(headers.get('Vary')).Vary)
-          if (isSpaNav && !isMutating && hasContainerRegion(html, manifest.routerContainer || 'main')) {
-            const layout = extractLayoutMetadata(html)
+          const pageLayout = isSpaNav && !isMutating ? extractLayoutMetadata(html) : null
+          const pageAcross = pageLayout ? layoutAcrossFor(request, pageLayout) : null
+          for (const [name, value] of Object.entries(layoutHeaders(pageAcross)))
+            headers.set(name, value)
+          if (isSpaNav && !isMutating && !pageAcross && hasContainerRegion(html, manifest.routerContainer || 'main')) {
+            const layout = pageLayout ?? extractLayoutMetadata(html)
             headers.set('X-STX-Fragment', 'true')
             headers.set('X-STX-Runtime', pageShipsSignalsRuntime(html) ? 'true' : 'false')
             headers.set('X-STX-Layout', layout.layout)

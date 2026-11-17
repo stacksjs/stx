@@ -23,7 +23,7 @@ import { matchScriptElement, scanAtElementPosition } from './html-masking'
 import { isDevelopment } from './env'
 import { isSpaNavRequest } from './spa-nav'
 import { pageCssFragment, pageHeadFragment } from './page-head'
-export { extractLayoutMetadata } from 'stx-router/layout-metadata'
+export { extractLayoutMetadata, HAVE_LAYOUT_GROUP_HEADER, HAVE_LAYOUT_HEADER, layoutChanges, layoutTheRouterHas } from 'stx-router/layout-metadata'
 export type { LayoutMetadata } from 'stx-router/layout-metadata'
 
 // Marker comment carrying page-authored head tags (base64) through a
