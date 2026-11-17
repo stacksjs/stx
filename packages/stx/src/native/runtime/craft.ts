@@ -464,6 +464,14 @@ export interface NativeCraft {
     isAvailable: () => Promise<boolean>
     getBiometricType: () => Promise<string | null>
     authenticate: (reason?: string) => Promise<unknown>
+    /** Keep `value` where only Face ID or Touch ID releases it. No prompt. */
+    storeCredential: (key: string, value: string) => Promise<unknown>
+    /** Ask for it: the system prompt with `reason`. `null` when none is kept or it was invalidated. */
+    getCredential: (key: string, reason?: string) => Promise<string | null>
+    /** Whether one is kept under `key`, without a prompt. */
+    hasCredential: (key: string) => Promise<boolean>
+    /** Forget it, without a prompt (signing out). */
+    deleteCredential: (key: string) => Promise<unknown>
   }
   db: {
     execute: (sql: string, params?: unknown[]) => Promise<unknown>

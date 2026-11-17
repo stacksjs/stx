@@ -329,6 +329,11 @@ describe('shared-runtime native capability protocol', () => {
     scope.craft.biometrics.isAvailable()
     scope.craft.biometrics.getBiometricType()
     scope.craft.biometrics.authenticate('Unlock WildLoop')
+    scope.craft.biometrics.storeCredential('session', 'refresh-token')
+    scope.craft.biometrics.getCredential('session', 'Sign in to WildLoop')
+    scope.craft.biometrics.getCredential('session')
+    scope.craft.biometrics.hasCredential('session')
+    scope.craft.biometrics.deleteCredential('session')
     expect(scope.craft.capabilities).toMatchObject({ biometric: true, secureStorage: true })
     expect(sent.filter(message => message.type === 'API_REQUEST').map(message => message.payload)).toEqual([
       { version: 1, module: 'SecureStorage', method: 'set', args: ['token', 'secret'] },
@@ -339,6 +344,13 @@ describe('shared-runtime native capability protocol', () => {
       { version: 1, module: 'Biometrics', method: 'getBiometricType', args: [] },
       // Face ID waits on the person, so the host keeps no deadline for it either.
       { version: 1, module: 'Biometrics', method: 'authenticate', args: ['Unlock WildLoop'], untimed: true },
+      // Keeping a credential does not prompt; reading it shows Face ID, so it
+      // has no deadline, and the host's own reason stands when none is given.
+      { version: 1, module: 'Biometrics', method: 'storeCredential', args: ['session', 'refresh-token'] },
+      { version: 1, module: 'Biometrics', method: 'getCredential', args: ['session', 'Sign in to WildLoop'], untimed: true },
+      { version: 1, module: 'Biometrics', method: 'getCredential', args: ['session'], untimed: true },
+      { version: 1, module: 'Biometrics', method: 'hasCredential', args: ['session'] },
+      { version: 1, module: 'Biometrics', method: 'deleteCredential', args: ['session'] },
     ])
   })
 

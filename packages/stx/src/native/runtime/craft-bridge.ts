@@ -410,6 +410,17 @@ export function installCraftBridge(
     isAvailable: () => request('Biometrics', 'isAvailable', []),
     getBiometricType: () => request('Biometrics', 'getBiometricType', []),
     authenticate: (reason?: string) => ask('Biometrics', 'authenticate', [reason || 'Authenticate to continue']),
+    // A credential only Face ID or Touch ID releases (Craft 0.0.511, iOS):
+    // "Sign in with Face ID". Reading it shows the system prompt, so it waits
+    // on the person with no deadline; keeping, asking about and forgetting
+    // one do not prompt. Failures reject with BIOMETRICS_UNAVAILABLE,
+    // AUTHENTICATION_CANCELLED, AUTHENTICATION_FAILED or SECURE_STORAGE_ERROR,
+    // and a credential another enrolled face or finger invalidated reads as
+    // null, so the app asks for the password again.
+    storeCredential: (key: string, value: string) => request('Biometrics', 'storeCredential', [key, value]),
+    getCredential: (key: string, reason?: string) => ask('Biometrics', 'getCredential', reason ? [key, reason] : [key]),
+    hasCredential: (key: string) => request('Biometrics', 'hasCredential', [key]),
+    deleteCredential: (key: string) => request('Biometrics', 'deleteCredential', [key]),
   }
   craft.db = {
     execute: (sql: string, params: unknown[] = []) => request('Database', 'execute', [sql, params]),
