@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.907...v0.2.908)
+
+## 🐛 Bug Fixes
+
+- **runtime**: a component under an :if in a nested loop row is filled when shown ([e8f78a5](https://github.com/stacksjs/stx/commit/e8f78a5)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2197](https://github.com/stacksjs/stx/issues/2197))
+
+## 🔧 Chores
+
+- release v0.2.908 ([5deb26e](https://github.com/stacksjs/stx/commit/5deb26e)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.906...v0.2.907)
 
 ## ✨ Features
