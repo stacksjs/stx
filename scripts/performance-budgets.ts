@@ -53,7 +53,13 @@ const budgets = {
   // cut and failed this preflight in the release workflow for it, so no release
   // reached npm. A deliberate raise for a behaviour added on purpose, with 1.5KB
   // of slack; the next real win is still trimming what the router ships inline.
-  routerScriptBytes: 75 * 1024,
+  // Raised from 75KiB to 77KiB, measured first: the script was 76644 bytes,
+  // 156 under, when a router request began saying which layout its page is
+  // on (one render per click across layouts instead of two) and navigation
+  // got a time limit that falls back to a page load. Those took it to 76997,
+  // after trimming them from 77200, which failed v0.2.906's preflight. The
+  // same ~1.8KB of slack.
+  routerScriptBytes: 77 * 1024,
 }
 
 async function measure<T>(fn: () => T | Promise<T>, iterations: number): Promise<number> {

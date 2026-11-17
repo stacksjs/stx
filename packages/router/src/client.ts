@@ -1394,25 +1394,17 @@ function routerSource(): string {
   // than behind a link that looks as if it was never pressed.
   function routerFetch(url,headers,fresh){
     if(headers['X-STX-Router'])haveLayoutHeaders(headers);
-    var init={headers:headers};
-    var abort=navAbort;
+    var init={headers:headers},abort=navAbort,limit=+o.navigationTimeout||0,timer;
     if(abort)init.signal=abort.signal;
     if(fresh)init.cache='no-store';
-    var limit=Number(o.navigationTimeout)||0;
-    if(!abort||limit<=0)return fetch(url,init);
-    var timedOut=false;
-    var timer=setTimeout(function(){timedOut=true;try{abort.abort()}catch(e){}},limit);
-    return fetch(url,init).then(function(r){clearTimeout(timer);return r},function(err){
-      clearTimeout(timer);
-      if(timedOut){var late=new Error('navigation timed out');late.name='NavigationTimeout';throw late}
-      throw err;
-    });
+    // The controller says it was the limit, so failed() loads the page.
+    if(abort&&limit>0)timer=setTimeout(function(){abort.late=1;abort.abort()},limit);
+    return fetch(url,init).finally(function(){clearTimeout(timer)});
   }
-  function haveLayoutHeaders(headers){
-    var meta=qs(LAYOUT_META);
-    headers['X-STX-Have-Layout']=meta?meta.getAttribute('content')||'':'';
-    headers['X-STX-Have-Layout-Group']=getCurrentLayoutGroup();
-    return headers;
+  function haveLayoutHeaders(h){
+    var m=qs(LAYOUT_META);
+    h['X-STX-Have-Layout']=m&&m.getAttribute('content')||'';
+    h['X-STX-Have-Layout-Group']=getCurrentLayoutGroup();
   }
   function navigate(url,pushState,force){
     // Tenant shells can keep their explicit scope on links and programmatic
@@ -1507,7 +1499,7 @@ function routerSource(): string {
     // to everything -- offline that load is the offline page, or nothing.
     function failed(err){
       if(stale())return false;
-      if(err&&err.name==='NavigationTimeout'){log('[router] no answer in time, loading the page:',url);location.assign(url);return false}
+      if(navAbort&&navAbort.late){location.assign(url);return false}
       if(err&&err.name==='AbortError')return false;
       console.error('[router] fetch error:',err);
       return showNavError(url,err,pushState,targetHash,ctx);
