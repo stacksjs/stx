@@ -130,7 +130,7 @@ function routerSource(): string {
   if(window.__stxRouter&&window.__stxRouter.__rev===ROUTER_REV)return;
 
   // ── Configuration ──
-  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false,prefetchCacheMax:50,routeFocus:true,announceRoute:true,interceptForms:false,cssLoadTimeout:1500,scrollRestoration:true,screens:'auto',screenLimit:8,navDuration:350,swipeBack:true,swipeEdge:20,prefetchVisible:true,prefetchVisibleMax:12,revalidate:true,revalidateAfter:3000,keepOpening:true};
+  var defaults={container:'main',loadingClass:'stx-navigating',viewTransitions:true,cache:true,scrollToTop:true,prefetch:true,progress:true,progressColor:'#78dce8',progressHeight:'2px',interceptAllLinks:false,prefetchCacheMax:50,routeFocus:true,announceRoute:true,interceptForms:false,cssLoadTimeout:1500,scrollRestoration:true,screens:'auto',screenLimit:8,navDuration:350,swipeBack:true,swipeEdge:20,prefetchVisible:true,prefetchVisibleMax:12,revalidate:true,revalidateAfter:3000,keepOpening:true,navigationTimeout:10000};
   var o=Object.assign({},defaults,window.__stxRouterConfig||{},window.STX_ROUTER_OPTIONS||{});
   var containerSel=o.container;
   var debug=!!o.debug;
@@ -1382,11 +1382,37 @@ function routerSource(): string {
   // fresh: past every cache, the offline worker's included (it hands a
   // no-store request straight to the network). For recoverUnbound, whose
   // whole point is that the kept copy is the broken one.
+  //
+  // A fragment request says which layout this page is on, so a server can
+  // answer a page on another layout with the whole document at once. The
+  // router used to read that fragment, see the layout change and fetch the
+  // page again, and the server rendered it twice for one click.
+  //
+  // And a navigation has a time limit (navigationTimeout, 0 for none). Past
+  // it the browser loads the page itself: a server that has not answered is
+  // better waited on by the browser, with its own spinner and stop button,
+  // than behind a link that looks as if it was never pressed.
   function routerFetch(url,headers,fresh){
+    if(headers['X-STX-Router'])haveLayoutHeaders(headers);
     var init={headers:headers};
-    if(navAbort)init.signal=navAbort.signal;
+    var abort=navAbort;
+    if(abort)init.signal=abort.signal;
     if(fresh)init.cache='no-store';
-    return fetch(url,init);
+    var limit=Number(o.navigationTimeout)||0;
+    if(!abort||limit<=0)return fetch(url,init);
+    var timedOut=false;
+    var timer=setTimeout(function(){timedOut=true;try{abort.abort()}catch(e){}},limit);
+    return fetch(url,init).then(function(r){clearTimeout(timer);return r},function(err){
+      clearTimeout(timer);
+      if(timedOut){var late=new Error('navigation timed out');late.name='NavigationTimeout';throw late}
+      throw err;
+    });
+  }
+  function haveLayoutHeaders(headers){
+    var meta=qs(LAYOUT_META);
+    headers['X-STX-Have-Layout']=meta?meta.getAttribute('content')||'':'';
+    headers['X-STX-Have-Layout-Group']=getCurrentLayoutGroup();
+    return headers;
   }
   function navigate(url,pushState,force){
     // Tenant shells can keep their explicit scope on links and programmatic
@@ -1480,7 +1506,9 @@ function routerSource(): string {
     // in place of its content, where a document load used to be the answer
     // to everything -- offline that load is the offline page, or nothing.
     function failed(err){
-      if(stale()||(err&&err.name==='AbortError'))return false;
+      if(stale())return false;
+      if(err&&err.name==='NavigationTimeout'){log('[router] no answer in time, loading the page:',url);location.assign(url);return false}
+      if(err&&err.name==='AbortError')return false;
       console.error('[router] fetch error:',err);
       return showNavError(url,err,pushState,targetHash,ctx);
     }
@@ -3415,7 +3443,7 @@ else {
   // screen is never swapped out from under the user.
   function prefetchHeaders(fragment){
     var headers={'Accept':'text/html','Purpose':'prefetch'};
-    if(fragment)headers['X-STX-Router']='true';
+    if(fragment){headers['X-STX-Router']='true';haveLayoutHeaders(headers)}
     return headers;
   }
   function revalidate(key,url){

@@ -32,7 +32,7 @@ export {
 
 // Nested layouts
 export { resolveLayoutChain } from './nested-layouts'
-export { deriveLayoutGroup, extractLayoutMetadata } from './layout-metadata'
+export { deriveLayoutGroup, extractLayoutMetadata, HAVE_LAYOUT_GROUP_HEADER, HAVE_LAYOUT_HEADER, layoutChanges, layoutTheRouterHas } from './layout-metadata'
 export type { LayoutMetadata } from './layout-metadata'
 
 // Route type generation
