@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.902...v0.2.903)
+
+## 🐛 Bug Fixes
+
+- **components**: a client signal wins over a render-context value of its name ([b860256](https://github.com/stacksjs/stx/commit/b860256)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.903 ([26d6e75](https://github.com/stacksjs/stx/commit/26d6e75)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.901...v0.2.902)
 
 ## 🐛 Bug Fixes
