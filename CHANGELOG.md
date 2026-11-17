@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.904...v0.2.905)
+
+## 🐛 Bug Fixes
+
+- **stx**: scan module declaration boundaries once ([b2ff4c2](https://github.com/stacksjs/stx/commit/b2ff4c2)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.905 ([1ffc41e](https://github.com/stacksjs/stx/commit/1ffc41e)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.903...v0.2.904)
 
 ## 🐛 Bug Fixes
