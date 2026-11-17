@@ -678,6 +678,9 @@ const NON_EXPRESSION_ATTRS = new Set([
 export function extractTemplateExpressions(source: string): TemplateExpression[] {
   const masked = maskNonTemplateRegions(source)
   const found: TemplateExpression[] = []
+  // Expression positions share one index. Scanning the prefix for every
+  // binding makes large application documents quadratic in source length.
+  const starts = lineStarts(masked)
 
   // `{{ … }}` and the raw form `{!! … !!}`.
   const interpolation = /(@?)\{\{([\s\S]*?)\}\}|(@?)\{!!([\s\S]*?)!!\}/g
@@ -696,8 +699,7 @@ export function extractTemplateExpressions(source: string): TemplateExpression[]
     const offset = m.index + openLength + (code.length - code.trimStart().length)
     found.push({
       code: code.trim(),
-      line: lineAt(masked, offset),
-      column: columnAt(masked, offset),
+      ...offsetToPosition(starts, offset),
       offset,
       kind: 'interpolation',
     })
@@ -751,8 +753,7 @@ export function extractTemplateExpressions(source: string): TemplateExpression[]
     const start = open + 1 + (raw.length - raw.trimStart().length)
     found.push({
       code,
-      line: lineAt(masked, start),
-      column: columnAt(masked, start),
+      ...offsetToPosition(starts, start),
       offset: m.index,
       kind: 'condition',
     })
@@ -798,8 +799,7 @@ export function extractTemplateExpressions(source: string): TemplateExpression[]
         + (iterable.length - iterable.trimStart().length)
       found.push({
         code: substituteInterpolations(iterable.trim()),
-        line: lineAt(masked, offset + iterableStart),
-        column: columnAt(masked, offset + iterableStart),
+        ...offsetToPosition(starts, offset + iterableStart),
         offset: offset + iterableStart,
         kind: 'directive',
         attribute: base,
@@ -810,8 +810,7 @@ export function extractTemplateExpressions(source: string): TemplateExpression[]
     const lead = value.length - value.trimStart().length
     found.push({
       code: substituteInterpolations(value.trim()),
-      line: lineAt(masked, offset + lead),
-      column: columnAt(masked, offset + lead),
+      ...offsetToPosition(starts, offset + lead),
       offset: offset + lead,
       kind: 'directive',
       attribute: base,
