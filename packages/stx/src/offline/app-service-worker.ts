@@ -83,6 +83,18 @@ export interface OfflineAppConfig {
   /** Deadline for each background precache request and response body, ms. Default 10000. Does not abort foreground reads. */
   precacheTimeoutMs?: number
   /**
+   * How long the page's own requests must have been quiet before the next
+   * screen is precached, ms. Default 1500; 0 starts each one at once.
+   *
+   * Precaching renders every listed screen on the server, and it starts as
+   * the first page after sign-in loads. All at once, that was the server's
+   * whole CPU for minutes (about 60 renders on one app) and the pages a person
+   * was opening came back up to 2.7 times slower. So it goes one screen at a
+   * time, each after the page has gone quiet, waits after a slow answer as
+   * long as that answer took, and backs off on 503, 408 and 429.
+   */
+  precacheQuietMs?: number
+  /**
    * Paths (prefixes) answered network first rather than from the kept copy:
    * the kept copy is used only when the network does not answer in
    * `networkTimeoutMs`. For a read whose stale copy would mislead, such as a
@@ -363,6 +375,7 @@ export function generateOfflineWorker(config: OfflineAppConfig, buildId: string,
     api: config.apiPrefix || '/api/',
     timeout: Math.max(500, Number(config.networkTimeoutMs) || 1500),
     precacheTimeout: Number.isFinite(precacheTimeout) && precacheTimeout > 0 ? Math.min(2147483647, Math.max(1, Math.floor(precacheTimeout))) : 10000,
+    precacheQuiet: Number.isFinite(Number(config.precacheQuietMs)) && Number(config.precacheQuietMs) >= 0 ? Math.min(60000, Math.floor(Number(config.precacheQuietMs))) : 1500,
     networkFirst: (config.networkFirst || []).filter(path => typeof path === 'string' && path.startsWith('/')),
     updateOnColdStart: config.updateOnColdStart === true,
     fallback: config.fallback || (config.pages && config.pages[0]) || null,
@@ -663,26 +676,101 @@ function keepAssets(html) {
   }).catch(function () {});
 }
 
+// Precaching renders each listed screen on the server, and it starts as the
+// first page after sign-in loads. All at once (two at a time, about 60
+// renders on one app) it took the server's CPU for minutes, and the pages a
+// person was actually opening came back up to 2.7 times slower. So: one
+// screen at a time; each only after the page's own requests have gone quiet;
+// after a slow answer a pause as long as it took; and on 503, 408 or 429 a
+// wait (Retry-After when the server gives one) and up to three more tries. A
+// screen already kept for this build is not fetched again, so an install the
+// browser cut short picks up where it stopped.
+var foregroundAt = 0;
+var foregroundOpen = 0;
+var QUIET_WAIT_MAX = 30000;
+var SLOW_ANSWER = 2000;
+var BUSY = [503, 408, 429];
+function noteForeground(event) {
+  foregroundAt = Date.now();
+  foregroundOpen++;
+  var settled = false;
+  var counted = { responded: false, settle: function () {
+    if (settled) return;
+    settled = true;
+    foregroundOpen = Math.max(0, foregroundOpen - 1);
+    foregroundAt = Date.now();
+  } };
+  try {
+    var respond = event.respondWith.bind(event);
+    event.respondWith = function (answer) {
+      counted.responded = true;
+      Promise.resolve(answer).then(counted.settle, counted.settle);
+      return respond(answer);
+    };
+  }
+  catch (error) { counted.responded = false; }
+  return counted;
+}
+function pause(ms) {
+  return new Promise(function (resolve) { setTimeout(resolve, Math.max(0, ms)); });
+}
+function quietNetwork() {
+  if (!S.precacheQuiet) return Promise.resolve();
+  var started = Date.now();
+  return new Promise(function (resolve) {
+    (function check() {
+      var now = Date.now();
+      if ((foregroundOpen === 0 && now - foregroundAt >= S.precacheQuiet) || now - started >= QUIET_WAIT_MAX) return resolve();
+      setTimeout(check, Math.min(250, S.precacheQuiet));
+    })();
+  });
+}
+function retryAfterMs(response, attempt) {
+  var given = response.headers.get('Retry-After');
+  var seconds = given === null ? NaN : Number(given);
+  if (isFinite(seconds) && seconds >= 0) return Math.min(60000, seconds * 1000);
+  var at = given === null ? NaN : Date.parse(given);
+  if (isFinite(at)) return Math.min(60000, Math.max(0, at - Date.now()));
+  return 1000 * Math.pow(2, attempt);
+}
+function precacheOne(cache, page, fragment, attempt) {
+  var key = page.key(fragment);
+  return cache.match(key).then(function (kept) {
+    if (kept) return null;
+    return quietNetwork().then(function () {
+      var headers = fragment ? { 'X-STX-Router': 'true', 'Accept': 'text/html', 'Purpose': 'prefetch' } : { 'Accept': 'text/html', 'Purpose': 'prefetch' };
+      var started = Date.now();
+      return background(function (signal) {
+        return fetch(page.url, { headers: headers, credentials: 'same-origin', signal: signal, priority: 'low' }).then(function (response) {
+          var took = Date.now() - started;
+          if (BUSY.indexOf(response.status) !== -1) return { busy: retryAfterMs(response, attempt), took: took, html: null };
+          if (response.status !== 200 || response.redirected) return { took: took, html: null };
+          var copy = response.clone();
+          return Promise.all([store(cache, [key], response), copy.text()]).then(function (parts) { return { took: took, html: parts[1] }; });
+        });
+      }).then(function (result) {
+        if (result.busy !== undefined) {
+          if (attempt >= 3) return null;
+          return pause(result.busy).then(function () { return precacheOne(cache, page, fragment, attempt + 1); });
+        }
+        var rest = result.took > SLOW_ANSWER ? pause(Math.min(QUIET_WAIT_MAX, result.took)) : Promise.resolve();
+        // Queue linked assets after releasing the page's slot. Waiting for
+        // child jobs inside a bounded parent job would deadlock installation.
+        return rest.then(function () { if (result.html !== null) return keepAssets(result.html); });
+      });
+    });
+  }).catch(function () {});
+}
+
 function precache() {
   var wanted = S.pages.map(function (page) { return { url: page, key: function (fragment) { return variantUrl(page, fragment); } }; })
     .concat(S.routes.map(function (route) { return { url: route.sample, key: function (fragment) { return routeKey(route, fragment); } }; }));
   return caches.open(SHELL).then(function (cache) {
-    return Promise.all(wanted.map(function (page) {
-      return Promise.all([false, true].map(function (fragment) {
-        var headers = fragment ? { 'X-STX-Router': 'true', 'Accept': 'text/html', 'Purpose': 'prefetch' } : { 'Accept': 'text/html', 'Purpose': 'prefetch' };
-        return background(function (signal) {
-          return fetch(page.url, { headers: headers, credentials: 'same-origin', signal: signal, priority: 'low' }).then(function (response) {
-            if (response.status !== 200 || response.redirected) return null;
-            var copy = response.clone();
-            return Promise.all([store(cache, [page.key(fragment)], response), copy.text()]).then(function (parts) { return parts[1]; });
-          });
-        }).then(function (html) {
-          // Queue linked assets after releasing the page's slot. Waiting for
-          // child jobs inside a bounded parent job would deadlock installation.
-          if (html !== null) return keepAssets(html);
-        }).catch(function () {});
-      }));
-    }));
+    var jobs = [];
+    wanted.forEach(function (page) { jobs.push([page, false], [page, true]); });
+    return jobs.reduce(function (previous, job) {
+      return previous.then(function () { return precacheOne(cache, job[0], job[1], 0); });
+    }, Promise.resolve());
   });
 }
 
@@ -1043,6 +1131,12 @@ function apiResponse(request, event) {
 }
 
 self.addEventListener('fetch', function (event) {
+  var counted = noteForeground(event);
+  try { answerFetch(event); }
+  finally { if (!counted.responded) counted.settle(); }
+});
+
+function answerFetch(event) {
   var request = event.request;
   var url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
@@ -1079,6 +1173,6 @@ self.addEventListener('fetch', function (event) {
   if (request.mode === 'navigate' || isFragment(request) || accept.indexOf('text/html') !== -1) {
     event.respondWith(pageResponse(request, event));
   }
-});
+}
 `
 }

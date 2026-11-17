@@ -419,6 +419,7 @@ export default {
     apiPrefix: '/api/',
     networkTimeoutMs: 1500,
     precacheTimeoutMs: 10000,
+    precacheQuietMs: 1500,
     fallback: '/m',
   },
 } satisfies StxOptions
@@ -444,7 +445,15 @@ and excludes `/marketing`. Existing offline caches and account isolation keep
 their normal behavior.
 
 Installation fetches each listed page and its router fragment, then the linked
-stylesheets and scripts. At most two background downloads run at once, leaving
+stylesheets and scripts. Each page is a render on the server, so they are
+fetched one at a time, in the order listed, and each only after the page's own
+requests have been quiet for `precacheQuietMs` (default 1500, `0` to start each
+at once; it never waits more than 30 seconds). After an answer that took over
+two seconds the worker pauses as long as it took, and on 503, 408 or 429 it
+waits (as `Retry-After` says, or 1, 2 then 4 seconds) and tries three more
+times before moving on. A page already kept for this build is not fetched
+again, so an installation the browser cut short resumes where it stopped.
+Linked stylesheets and scripts download at most two at once, leaving
 connection capacity for navigation. Each background request has a
 `precacheTimeoutMs` budget covering its response body as well as its headers;
 a stalled download is aborted and does not prevent the remaining files from

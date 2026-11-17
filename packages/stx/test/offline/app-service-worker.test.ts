@@ -310,7 +310,10 @@ describe('background precaching', () => {
     let attempts = 0
     let release: (() => void) | undefined
     const sw = runWorker({ enabled: true, pages: ['/m'], precacheTimeoutMs: 15 }, (url, request) => {
-      if (!url.endsWith('.css')) return new Response('<html><link href="/retry.css"></html>')
+      // Only the document links the sheet: the screen's two variants are
+      // precached one after the other, and a fragment linking it too would
+      // retry the download during installation, before the foreground read.
+      if (!url.endsWith('.css')) return new Response(request!.headers.get('X-STX-Router') ? '<main>m</main>' : '<html><link href="/retry.css"></html>')
       if (++attempts > 1) return new Response('body { color: green }')
       return new Promise<Response>((resolve, reject) => {
         request!.signal.addEventListener('abort', () => { reject(new DOMException('Aborted', 'AbortError')) }, { once: true })
@@ -1022,5 +1025,94 @@ describe('a new build', () => {
     expect(kept.length).toBe(50)
     expect(kept).not.toContain('http://app.test/assets/0.png')
     expect(kept).toContain('http://app.test/assets/59.png')
+  })
+})
+
+/**
+ * Precaching renders every listed screen on the server, and it starts as the
+ * first page after sign-in loads. All at once (about 60 renders on one app)
+ * it took the server's CPU for minutes, and the pages a person was opening
+ * came back up to 2.7 times slower. So it is paced.
+ */
+describe('precache pacing', () => {
+  const pageHtml = '<main>kept</main>'
+  const isPage = (url: string) => !/\.(?:css|js)$/.test(url)
+
+  it('asks for one screen at a time, in the order they are listed', async () => {
+    let open = 0
+    let peak = 0
+    const order: string[] = []
+    const sw = runWorker({ enabled: true, pages: ['/a', '/b', '/c'], precacheQuietMs: 0 }, async (url, request) => {
+      if (!isPage(url)) return new Response('')
+      order.push(`${url}${request!.headers.get('X-STX-Router') ? ' fragment' : ''}`)
+      peak = Math.max(peak, ++open)
+      await Bun.sleep(5)
+      open--
+      return new Response(pageHtml)
+    })
+    await sw.install()
+    expect(peak).toBe(1)
+    expect(order).toEqual(['/a', '/a fragment', '/b', '/b fragment', '/c', '/c fragment'])
+  })
+
+  it('waits until the page\'s own requests have been quiet', async () => {
+    let foregroundDone = 0
+    let firstPrecache = 0
+    const sw = runWorker({ enabled: true, pages: ['/a'], precacheQuietMs: 60 }, async (url, request) => {
+      if (url.includes('/m/open')) {
+        await Bun.sleep(80)
+        foregroundDone = Date.now()
+        return new Response('<main>open</main>')
+      }
+      if (request!.headers.get('Purpose') === 'prefetch' && !firstPrecache)
+        firstPrecache = Date.now()
+      return new Response(pageHtml)
+    })
+    const foreground = sw.request('http://app.test/m/open', {}, { mode: 'navigate' })
+    await sw.install()
+    await foreground
+    expect(firstPrecache).toBeGreaterThan(0)
+    // Not while the page's own request was out, nor in the quiet after it.
+    expect(firstPrecache - foregroundDone).toBeGreaterThanOrEqual(50)
+  })
+
+  it('backs off on 503 as the server asks, then keeps the screen', async () => {
+    let calls = 0
+    const sw = runWorker({ enabled: true, pages: ['/a'], precacheQuietMs: 0 }, (url, request) => {
+      if (request!.headers.get('X-STX-Router')) return new Response(pageHtml)
+      return ++calls === 1
+        ? new Response('busy', { status: 503, headers: { 'Retry-After': '0' } })
+        : new Response(pageHtml)
+    })
+    await sw.install()
+    expect(calls).toBe(2)
+    expect(await sw.stores.get('stx-shell-b1')?.get('http://app.test/a')?.text()).toBe(pageHtml)
+  })
+
+  it('gives a screen that stays busy three more tries, then moves on', async () => {
+    const seen: string[] = []
+    const sw = runWorker({ enabled: true, pages: ['/busy', '/next'], precacheQuietMs: 0 }, (url, request) => {
+      if (request!.headers.get('X-STX-Router')) return new Response(pageHtml)
+      seen.push(url)
+      return url === '/busy' ? new Response('', { status: 429, headers: { 'Retry-After': '0' } }) : new Response(pageHtml)
+    })
+    await sw.install()
+    expect(seen.filter(url => url === '/busy')).toHaveLength(4)
+    expect(sw.stores.get('stx-shell-b1')?.has('http://app.test/busy')).toBe(false)
+    expect(await sw.stores.get('stx-shell-b1')?.get('http://app.test/next')?.text()).toBe(pageHtml)
+  })
+
+  it('does not ask again for a screen this build already kept', async () => {
+    let calls = 0
+    const sw = runWorker({ enabled: true, pages: ['/a', '/b'], precacheQuietMs: 0 }, () => {
+      calls++
+      return new Response(pageHtml)
+    })
+    await sw.install()
+    const first = calls
+    expect(first).toBe(4)
+    // An install the browser cut short runs again: what it kept stays kept.
+    await sw.install()
+    expect(calls).toBe(first)
   })
 })
