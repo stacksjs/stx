@@ -267,19 +267,29 @@ export function topLevelDeclarationSites(source: string): Array<{ name: string, 
   const analysis = analyze(source)
   const masked = stripBindingLiterals(source)
   const { depths } = bracketDepths(masked)
+  // Binding boundaries differ from the general analysis tokens (literal
+  // endings matter for ASI). Scan them once, then locate each declaration's
+  // preceding token, rather than tokenizing its entire source prefix again.
+  const boundaries = [...masked.matchAll(/[A-Za-z_$][\w$]*|\d+(?:[.]\d+)?|[^\s]/g)]
   const result: Array<{ name: string, start: number }> = []
   for (const site of analysis.sites) {
     if (site.file || site.declarationToken === undefined) continue
     const keyword = analysis.tokens[site.declarationToken]!
     if (depths[keyword.start] !== 0) continue
-    const prefix = masked.slice(0, keyword.start)
-    const tokens = [...prefix.matchAll(/[A-Za-z_$][\w$]*|\d+(?:[.]\d+)?|[^\s]/g)]
-    let previous = tokens.pop()
+    let low = 0
+    let high = boundaries.length
+    while (low < high) {
+      const middle = (low + high) >>> 1
+      if (boundaries[middle].index! < keyword.start) low = middle + 1
+      else high = middle
+    }
+    let previousIndex = low - 1
+    let previous = boundaries[previousIndex--]
     if (previous?.[0] === 'declare') continue
     if (keyword.text === 'function' || keyword.text === 'class') {
-      while (previous && ['async', 'export', 'default', 'abstract'].includes(previous[0])) previous = tokens.pop()
+      while (previous && ['async', 'export', 'default', 'abstract'].includes(previous[0])) previous = boundaries[previousIndex--]
       if (previous && ![';', '}'].includes(previous[0])) {
-        const gap = prefix.slice(previous.index! + previous[0].length)
+        const gap = masked.slice(previous.index! + previous[0].length, keyword.start)
         if (!/[\r\n]/.test(gap) || !/^(?:[\w$]+|[)\]])$/.test(previous[0]) || ['return', 'throw', 'yield', 'await', 'new'].includes(previous[0])) continue
       }
     }
