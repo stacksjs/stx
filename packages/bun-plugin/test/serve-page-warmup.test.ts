@@ -221,8 +221,8 @@ describe('portIsServed', () => {
 
 describe('resolvePageWarmup', () => {
   it('is on with the defaults when unset', () => {
-    expect(resolvePageWarmup(undefined)).toEqual({ enabled: true, paths: [], holdBind: 'replacing', budgetMs: DEFAULT_PAGE_WARMUP_BUDGET_MS, concurrency: 4 })
-    expect(resolvePageWarmup(true)).toEqual({ enabled: true, paths: [], holdBind: 'replacing', budgetMs: DEFAULT_PAGE_WARMUP_BUDGET_MS, concurrency: 4 })
+    expect(resolvePageWarmup(undefined)).toEqual({ enabled: true, paths: [], holdBind: 'replacing', budgetMs: DEFAULT_PAGE_WARMUP_BUDGET_MS, concurrency: 4, report: true })
+    expect(resolvePageWarmup(true)).toEqual({ enabled: true, paths: [], holdBind: 'replacing', budgetMs: DEFAULT_PAGE_WARMUP_BUDGET_MS, concurrency: 4, report: true })
     expect(resolvePageWarmup({ holdBind: 'always' }).holdBind).toBe('always')
     expect(resolvePageWarmup({ holdBind: 'sometimes' }).holdBind).toBe('replacing')
   })
@@ -238,5 +238,85 @@ describe('resolvePageWarmup', () => {
   it('falls back to the defaults for unusable numbers', () => {
     expect(resolvePageWarmup({ budgetMs: -1, concurrency: 0 })).toMatchObject({ budgetMs: DEFAULT_PAGE_WARMUP_BUDGET_MS, concurrency: 4 })
     expect(resolvePageWarmup({ budgetMs: 0, concurrency: 2.7 })).toMatchObject({ budgetMs: 0, concurrency: 2 })
+  })
+})
+
+/**
+ * What the warm-up did, readable from outside the process.
+ *
+ * It used to be only a line in the web process's own log, which a deploy
+ * cannot read: a release with a 90 s budget and 19 configured paths could not
+ * tell from CI whether they were warm before it took traffic.
+ */
+describe('GET /_stx/warmup', () => {
+  const report = async (port: number): Promise<Record<string, any>> => {
+    const response = await fetch(`http://127.0.0.1:${port}/_stx/warmup`)
+    expect(response.headers.get('Cache-Control')).toBe('no-store')
+    return await response.json() as Record<string, any>
+  }
+
+  it('says the budget stopped it, with the progress so far and what it never reached', async () => {
+    const port = freePort()
+    // Every page takes 2 s, one at a time, against a 300 ms budget: only the
+    // home page starts before the bind.
+    const booted = await boot(PRODUCTION, port, { pageWarmup: { holdBind: 'always', budgetMs: 300, concurrency: 1, paths: ['/users/ada', '/users/grace'] } }, { path: '*', ms: 2000 })
+    try {
+      const during = await report(port)
+      expect(during).toMatchObject({ enabled: true, running: true, held: true, stoppedAtBudget: true, warmed: 0, configured: 2, configuredReached: 0 })
+      // The configured paths come first in what it never reached.
+      expect(during.unreached.slice(0, 2)).toEqual(['/users/ada', '/users/grace'])
+      expect(during.unreached).toContain('/about')
+      expect(during.unreached).not.toContain('/')
+      expect(during.total).toBe(during.unreached.length + 1)
+
+      let after = during
+      for (let i = 0; i < 60 && after.running; i++) {
+        await Bun.sleep(100)
+        after = await report(port)
+      }
+      expect(after).toMatchObject({ running: false, warmed: 1, failed: 0, stoppedAtBudget: true })
+      expect(after.seconds).toBeGreaterThanOrEqual(1.5)
+      expect(after.unreached).toEqual(during.unreached)
+    }
+    finally {
+      booted.stop()
+    }
+  })
+
+  it('reports a warm-up that finished in time', async () => {
+    const port = freePort()
+    const booted = await boot(PRODUCTION, port, { pageWarmup: { holdBind: 'always', paths: ['/users/ada'] } })
+    try {
+      const done = await report(port)
+      expect(done).toMatchObject({ enabled: true, running: false, held: true, stoppedAtBudget: false, failed: 0, configured: 1, configuredReached: 1, unreached: [] })
+      expect(done.warmed).toBe(done.total)
+    }
+    finally {
+      booted.stop()
+    }
+  })
+
+  it('says nothing was held when nobody else serves the port', async () => {
+    const port = freePort()
+    const booted = await boot(PRODUCTION, port)
+    try {
+      expect(await report(port)).toMatchObject({ enabled: true, running: false, held: false, warmed: 0, total: 0 })
+    }
+    finally {
+      booted.stop()
+    }
+  })
+
+  it('is not answered when turned off', async () => {
+    const port = freePort()
+    const booted = await boot(PRODUCTION, port, { pageWarmup: { holdBind: 'always', report: false } })
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}/_stx/warmup`)
+      expect(response.headers.get('Content-Type') ?? '').not.toContain('application/json')
+      await response.text()
+    }
+    finally {
+      booted.stop()
+    }
   })
 })

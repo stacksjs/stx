@@ -1129,6 +1129,10 @@ export interface ServeOptions extends RenderAdmissionOptions {
    *   together under your deploy tool's limit (ts-cloud waits 180s).
    * - `concurrency`: pages in flight at once, 4 by default.
    * - `holdBind`: `'replacing'` (default) or `'always'`; see above.
+   * - `report`: answer `GET /_stx/warmup` with what the warm-up did (see
+   *   PageWarmupReport): counts, whether the bind was held, whether the budget
+   *   stopped it and which pages it never reached. While it is still running,
+   *   the progress so far. On by default; `false` turns it off.
    *
    * Warm-up requests carry the `x-stx-warmup: 1` header, so analytics and
    * other per-visit side effects can ignore them.
@@ -1596,6 +1600,8 @@ export interface PageWarmupOptions {
   budgetMs?: number
   /** Pages in flight at once. */
   concurrency?: number
+  /** Answer `GET /_stx/warmup` with what the warm-up did. On by default. */
+  report?: boolean
 }
 
 export interface ResolvedPageWarmup {
@@ -1604,6 +1610,40 @@ export interface ResolvedPageWarmup {
   holdBind: 'replacing' | 'always'
   budgetMs: number
   concurrency: number
+  report: boolean
+}
+
+/** Where a server answers what its page warm-up did. */
+export const PAGE_WARMUP_REPORT_PATH = '/_stx/warmup'
+
+/**
+ * What the page warm-up did, as `GET /_stx/warmup` answers it.
+ *
+ * The warm-up used to say so only in the web process's own log, which a
+ * deploy cannot read: a release with a 90 s budget and 19 configured paths
+ * could not tell from CI whether they were all warm before it took traffic.
+ * Only counts and paths the project configured, so it is answered publicly;
+ * `pageWarmup.report: false` turns it off.
+ */
+export interface PageWarmupReport {
+  /** Whether this process warms at all (production, `pageWarmup` on). */
+  enabled: boolean
+  /** Still rendering pages; the counts are the progress so far. */
+  running: boolean
+  /** Whether the bind waited for it: another release was serving the port, or `holdBind: 'always'`. */
+  held: boolean
+  warmed: number
+  /** Pages that answered 5xx or failed. */
+  failed: number
+  /** Pages it set out to warm. */
+  total: number
+  seconds: number
+  stoppedAtBudget: boolean
+  /** `pageWarmup.paths`, and how many of them were started. */
+  configured: number
+  configuredReached: number
+  /** Pages never started when the budget stopped it, configured paths first. */
+  unreached: string[]
 }
 
 /** Default for `pageWarmup.budgetMs`: beside the image budget, inside ts-cloud's 180s bind window. */
@@ -1615,7 +1655,7 @@ export const DEFAULT_PAGE_WARMUP_BUDGET_MS = 60_000
  * the warm-up only ever asks this server for its own pages.
  */
 export function resolvePageWarmup(value: unknown): ResolvedPageWarmup {
-  const defaults: ResolvedPageWarmup = { enabled: true, paths: [], holdBind: 'replacing', budgetMs: DEFAULT_PAGE_WARMUP_BUDGET_MS, concurrency: 4 }
+  const defaults: ResolvedPageWarmup = { enabled: true, paths: [], holdBind: 'replacing', budgetMs: DEFAULT_PAGE_WARMUP_BUDGET_MS, concurrency: 4, report: true }
   if (value === false)
     return { ...defaults, enabled: false }
   if (!value || typeof value !== 'object')
@@ -1631,7 +1671,7 @@ export function resolvePageWarmup(value: unknown): ResolvedPageWarmup {
     ? Math.floor(raw.concurrency)
     : defaults.concurrency
   const holdBind = raw.holdBind === 'always' ? 'always' : defaults.holdBind
-  return { enabled: true, paths, holdBind, budgetMs, concurrency }
+  return { enabled: true, paths, holdBind, budgetMs, concurrency, report: raw.report !== false }
 }
 
 /**
@@ -1813,6 +1853,28 @@ export async function serve(options: ServeOptions): Promise<void> {
 
   // See `pageWarmup` on ServeOptions.
   const pageWarmup = resolvePageWarmup(options.pageWarmup ?? (stxConfig as { pageWarmup?: unknown }).pageWarmup)
+  // What the page warm-up is doing or did; see PageWarmupReport.
+  const warmupState = { running: false, held: false, warmed: 0, failed: 0, stoppedAtBudget: false, startedAt: 0, finishedAt: 0, routes: [] as string[], next: 0 }
+  const pageWarmupReport = (): PageWarmupReport => {
+    const configured = pageWarmup.paths
+    const started = new Set(warmupState.routes.slice(0, warmupState.next))
+    const end = warmupState.running ? performance.now() : warmupState.finishedAt
+    return {
+      enabled: production && pageWarmup.enabled,
+      running: warmupState.running,
+      held: warmupState.held,
+      warmed: warmupState.warmed,
+      failed: warmupState.failed,
+      total: warmupState.routes.length,
+      seconds: warmupState.startedAt ? Math.round(Math.max(0, end - warmupState.startedAt)) / 1000 : 0,
+      stoppedAtBudget: warmupState.stoppedAtBudget,
+      configured: configured.length,
+      configuredReached: configured.filter(routePath => started.has(routePath)).length,
+      // Routes run in order, '/' and the configured paths first, so what was
+      // never started is already configured-first.
+      unreached: warmupState.stoppedAtBudget ? warmupState.routes.slice(warmupState.next) : [],
+    }
+  }
 
   /** Resolve once the warm-up finishes, or once the grace runs out. */
   function awaitImageWarmup(): Promise<void> | undefined {
@@ -4288,6 +4350,12 @@ function __stxOverlay(errs){
         if (malformed)
           return malformed
 
+        // What the page warm-up did, before anything that could wait on it,
+        // route or redirect it: a deploy reads this to know whether the
+        // release it just bound is warm.
+        if (pageWarmup.report && (req.method === 'GET' || req.method === 'HEAD') && new URL(req.url).pathname === PAGE_WARMUP_REPORT_PATH)
+          return Response.json(pageWarmupReport(), { headers: { 'Cache-Control': 'no-store' } })
+
         // See `awaitImageWarmup`: the port is already bound, and this is
         // where the wait belongs — before anything renders, not before
         // anything listens. Bounded, because answering beats answering with
@@ -5574,15 +5642,21 @@ function __stxOverlay(errs){
   // harness).
   if (production && pageWarmup.enabled) {
     const holding = pageWarmup.holdBind === 'always' || (options.reusePort === true && await portIsServed(port))
+    warmupState.held = holding
     if (holding) {
       const warmupStartedAt = performance.now()
+      warmupState.startedAt = warmupStartedAt
+      warmupState.running = true
       const warmup = { stop: false }
       const warming = warmPages(warmup)
       if (!(await settleWithin(warming, pageWarmup.budgetMs))) {
         warmup.stop = true
+        warmupState.stoppedAtBudget = true
         console.warn(`[stx] page warm-up stopped at its ${formatSeconds(pageWarmup.budgetMs)} budget; binding now, and the pages left render on their first visit.`)
       }
       void warming.then(({ warmed, pages, failed }) => {
+        warmupState.running = false
+        warmupState.finishedAt = performance.now()
         console.log(`[stx] warmed ${warmed} of ${pages} pages in ${formatSeconds(performance.now() - warmupStartedAt)}${failed ? ` (${failed} answered 5xx or failed)` : ''}`)
       })
     }
@@ -5593,6 +5667,16 @@ function __stxOverlay(errs){
    * listener. Stops taking new pages once `control.stop` is set.
    */
   async function warmPages(control: { stop: boolean }): Promise<{ warmed: number, pages: number, failed: number }> {
+    try {
+      return await warmEveryPage(control)
+    }
+    catch (error) {
+      warmupState.running = false
+      throw error
+    }
+  }
+
+  async function warmEveryPage(control: { stop: boolean }): Promise<{ warmed: number, pages: number, failed: number }> {
     const files = await discoverFiles()
     // The home page and the paths the project named first: the budget can
     // run out, and those are the pages it chose because they matter. Named
@@ -5604,13 +5688,14 @@ function __stxOverlay(errs){
       ...(discoveredPagePaths ?? []),
     ])]
     const warm = listen(0, false, '127.0.0.1')
-    let next = 0
-    let warmed = 0
-    let failed = 0
+    // Kept on the shared state as it goes, so GET /_stx/warmup can answer
+    // with the progress while it runs and with what was left when it stopped.
+    warmupState.routes = routes
+    warmupState.next = 0
     try {
       await Promise.all(Array.from({ length: Math.min(pageWarmup.concurrency, routes.length) }, async () => {
-        while (next < routes.length && !control.stop) {
-          const routePath = routes[next++]
+        while (warmupState.next < routes.length && !control.stop) {
+          const routePath = routes[warmupState.next++]
           try {
             const response = await fetch(`http://127.0.0.1:${warm.port}${routePath}`, {
               headers: { [PAGE_WARMUP_HEADER]: '1', 'Accept': 'text/html' },
@@ -5618,13 +5703,13 @@ function __stxOverlay(errs){
             })
             await response.arrayBuffer()
             if (response.status >= 500)
-              failed++
+              warmupState.failed++
             else
-              warmed++
+              warmupState.warmed++
           }
           catch {
             // A page that fails here renders on its first real request instead.
-            failed++
+            warmupState.failed++
           }
         }
       }))
@@ -5632,7 +5717,7 @@ function __stxOverlay(errs){
     finally {
       warm.stop(true)
     }
-    return { warmed, pages: routes.length, failed }
+    return { warmed: warmupState.warmed, pages: routes.length, failed: warmupState.failed }
   }
 
   // Allow callers to disable port auto-increment (Vite-style) — when the
