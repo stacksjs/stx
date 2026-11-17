@@ -199,3 +199,53 @@ window.probe = { horizontal }
   }
   finally { view.close(); server.stop(true) }
 }, 30_000)
+
+it('keeps configured spacing between the header and variable-size rows in both directions', async () => {
+  const root = join(import.meta.dir, '..')
+  const html = await processDirectives(`@import('List', '${root}/src/ui/list/List.stx')
+<!doctype html><html><head><style>body{margin:0;width:360px}.bounded{height:160px;width:100%;max-width:240px;max-height:160px;overflow:auto;}</style></head><body>
+<script client>
+const spacing = state({ padding:8, gap:12 })
+const horizontal = state(false)
+window.probe = { spacing, horizontal }
+</script>
+<List class="bounded" :horizontal="horizontal" :hasMore="false" :contentContainerStyle="spacing">
+  <header listRole="header" data-header style="height:44px;width:100px">Coaching accounts</header>
+  <article data-row="1" style="height:80px;width:120px">First subscription</article>
+  <article data-row="2" style="height:120px;width:120px">Second subscription</article>
+</List></body></html>`, {}, join(root, 'list-content-gap.stx'), { ...defaultConfig, root, cache:false, debug:false }, new Set())
+  const server = Bun.serve({ port:0, hostname:'127.0.0.1', fetch: () => new Response(html, { headers:{ 'Content-Type':'text/html' } }) })
+  const view = new WebView({ headless:true })
+  async function metrics() {
+    return view.evaluate(`(() => {
+      const list = document.querySelector('[data-stx-list]');
+      if (!window.probe || !list) return null;
+      const header = list.querySelector('[data-header]').getBoundingClientRect();
+      const first = list.querySelector('[data-row="1"]').getBoundingClientRect();
+      const last = list.querySelector('[data-row="2"]').getBoundingClientRect();
+      return { gap:getComputedStyle(list).gap, verticalGap:first.top-header.bottom, horizontalGap:first.left-header.right, firstHeight:first.height, lastHeight:last.height, firstWidth:first.width, width:list.getBoundingClientRect().width, scrollHeight:list.scrollHeight, height:list.clientHeight };
+    })()`)
+  }
+  try {
+    await view.navigate(server.url.href)
+    let initial = await metrics()
+    for (let attempt = 0; !initial && attempt < 100; attempt++) { await Bun.sleep(25); initial = await metrics() }
+    expect(initial?.verticalGap).toBe(12)
+    expect(initial?.height).toBe(160)
+    expect(initial?.width).toBe(240)
+    expect(initial?.firstHeight).toBe(80)
+    expect(initial?.lastHeight).toBe(120)
+    expect(initial?.scrollHeight).toBeGreaterThan(initial?.height ?? 0)
+    await view.evaluate('window.probe.spacing.set({padding:8,gap:20})')
+    for (let attempt = 0; (await metrics())?.gap !== '20px' && attempt < 100; attempt++) await Bun.sleep(25)
+    expect((await metrics())?.verticalGap).toBe(20)
+    await view.evaluate('window.probe.horizontal.set(true)')
+    for (let attempt = 0; (await metrics())?.horizontalGap !== 20 && attempt < 100; attempt++) await Bun.sleep(25)
+    const across = await metrics()
+    expect(across?.horizontalGap).toBe(20)
+    expect(across?.firstWidth).toBe(120)
+    expect(across?.firstHeight).toBe(80)
+    expect(across?.lastHeight).toBe(120)
+  }
+  finally { view.close(); server.stop(true) }
+}, 30_000)

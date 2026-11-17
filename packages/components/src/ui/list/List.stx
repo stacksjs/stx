@@ -16,7 +16,7 @@
  * an application-owned overlay. Content padding belongs here, not on a
  * viewport whose height could then exclude its last rows.
  */
-export const className = $props.className || ''
+export const className = $props.className || $props.class || ''
 export const nativeHost = $native
 export const horizontal = $bool($props.horizontal)
 export const viewportClasses = horizontal ? 'min-h-0 min-w-0 overflow-x-auto' : 'flex-1 min-h-0 min-w-0 overflow-y-auto'
@@ -46,7 +46,7 @@ const webPadding = derived(() => {
   const vertical = style.paddingVertical ?? all
   const across = style.paddingHorizontal ?? all
   const px = value => `${Math.max(0, Number(value) || 0)}px`
-  return { maxWidth: '100%', boxSizing: 'border-box', ...(horizontal() ? { display: 'flex', flexDirection: 'row', overflowX: 'auto', overflowY: 'hidden' } : {}), paddingTop: px(style.paddingTop ?? vertical), paddingBottom: px(style.paddingBottom ?? vertical), paddingLeft: px(style.paddingLeft ?? across), paddingRight: px(style.paddingRight ?? across) }
+  return { boxSizing: 'border-box', ...(horizontal() ? { display: 'flex', flexDirection: 'row', overflowX: 'auto', overflowY: 'hidden' } : {}), ...(style.gap == null ? {} : { display: 'flex', flexDirection: horizontal() ? 'row' : 'column', gap: px(style.gap) }), paddingTop: px(style.paddingTop ?? vertical), paddingBottom: px(style.paddingBottom ?? vertical), paddingLeft: px(style.paddingLeft ?? across), paddingRight: px(style.paddingRight ?? across) }
 })
 onMount(() => {
   if (nativeHost || typeof IntersectionObserver !== 'function') return
@@ -88,7 +88,9 @@ onMount(() => {
 /* A page list needs a fallback bound, but authored viewport classes win.
    Keeping the fallback at zero specificity also works when it follows the
    application's stylesheet, including during SPA navigation. */
-:where([data-stx-list]) { max-height: 100dvh; }
+:where([data-stx-list]) { max-height: 100dvh; max-width: 100%; }
+/* A configured content gap uses flex layout; rows keep their authored sizes. */
+:where([data-stx-list] > *) { flex-shrink: 0; }
 :where([data-stx-list][data-stx-list-direction="horizontal"]) { max-height: none; }
 </style>
 @endif

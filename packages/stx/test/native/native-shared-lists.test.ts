@@ -216,9 +216,9 @@ window.probe = { rows, pages, refreshes, loading }
 })
 
 
-it.each(['ios', 'android'] as const)('keeps authored List bounds and direct keyed roles on %s', async (platform) => {
+it.each([['ios', 'className'], ['android', 'className'], ['ios', 'class'], ['android', 'class']] as const)('keeps authored List bounds and direct keyed roles on %s with %s', async (platform, attribute) => {
   const source = `@import('List', '${ui}/list/List.stx')
-<List className="max-h-[240px]" :contentContainerStyle="{ paddingTop:7, paddingBottom:23 }" testID="bounded">
+<List ${attribute}="max-h-[240px] max-w-[320px]" :contentContainerStyle="{ paddingTop:7, paddingBottom:23 }" testID="bounded">
   <div key="heading" listRole="header"><p>Heading</p></div>
   <div key="row"><p>Saved row</p></div>
   <div key="retry" listRole="footer"><button>Retry</button></div>
@@ -229,6 +229,7 @@ it.each(['ios', 'android'] as const)('keeps authored List bounds and direct keye
   const list = phone.byTestID('bounded')!
   expect(list.type).toBe('FlatList')
   expect(list.style.maxHeight).toBe(240)
+  expect(list.style.maxWidth).toBe(320)
   expect(list.props.contentContainerStyle).toEqual({ paddingTop:7, paddingBottom:23 })
   expect(list.children.filter(child => typeof child !== 'string')).toHaveLength(3)
   expect(phone.texts()).toEqual(expect.arrayContaining(['Heading', 'Saved row', 'Retry']))
