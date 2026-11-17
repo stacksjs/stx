@@ -39,6 +39,11 @@ export const SIGNALS_LOOP_CONDITIONAL_RUNTIME = `  // A :for row is a clone of i
       var next = el.nextElementSibling;
       if (next && (getElseAttrInfo(next) || next.tagName === 'SCRIPT')) continue;
       if (el.hasAttribute('data-stx-scope') || el.hasAttribute('x-data') || el.querySelector('script')) continue;
+      // An outer loop already emptied this one into a shared branch. It holds
+      // no script now, but only bindIf's own pass fills it: a clone of
+      // template content is bound as it is, and the component stayed an empty
+      // element in every row of the inner loop (stacksjs/stx#2197).
+      if (el.hasAttribute('data-stx-lazy')) continue;
       var holder = document.createElement('template');
       holder.setAttribute(attr, el.getAttribute(attr));
       el.removeAttribute(attr);
