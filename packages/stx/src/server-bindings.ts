@@ -210,6 +210,15 @@ export function processServerBindings(
     // geometry objects. DOM attributes retain their ordinary string contract.
     const nativeHost = /(?:^|\s)data-native(?:\s|=|$)/i.test(attrs.replace(/"[^"]*"|'[^']*'/g, ''))
 
+    // A component's root carries the bindings its caller owns, named in
+    // `data-stx-parent-bindings`: the component renderer already decided they
+    // are the browser's (component-renderer.ts, emitClientReactiveAttrs).
+    // Resolving them again here, against a context that does not know the
+    // names a component's own client script declares, wrote the server's
+    // value instead: SearchFilter's `query` became the request's query object,
+    // and every dashboard search box showed "[object Object]".
+    const parentOwned = new Set((/(?:^|\s)data-stx-parent-bindings="([^"]*)"/.exec(attrs)?.[1] ?? '').split(/\s+/).filter(Boolean))
+
     // Find all :attr="expr" in this tag's attributes
     const bindingRegex = /\s:([a-zA-Z_][\w-]*)\s*=\s*"([^"]*)"/g
     let attrMatch: RegExpExecArray | null
@@ -236,6 +245,11 @@ export function processServerBindings(
        * 0.2.173, which is why it surfaced then rather than when it was written.
        */
       if (isRuntimeOwnedColonAttr(attrName))
+        continue
+
+      // A native host takes its props as data from this pass, whoever owns
+      // them (`nativeHost` above), so only a DOM root defers here.
+      if (parentOwned.has(attrName) && !nativeHost)
         continue
 
       // Client declarations and enclosing loop variables belong to the caller,

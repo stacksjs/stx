@@ -148,4 +148,59 @@ const count = state(0)
 
     expect(html).toContain('from the server')
   })
+
+  it('binds a signal a component\'s own client script declares, not the context\'s value', async () => {
+    // A component's scripts are taken out of its template before its child
+    // components are drawn, so the names they declare never reached the
+    // binding resolver: SearchFilter's `const query = state('')` bound as
+    // `<Input v-model:value="query" />` was resolved against the request's
+    // `query`, first by the component renderer and then again by the plain
+    // element pass over the wrapper it emits.
+    const dir = createTempDir('stx-client-context-')
+    await Bun.write(path.join(dir, 'Field.stx'), `<script client>
+const value = useReactiveProp('value', '')
+</script>
+<input :value="value()" />`)
+    await Bun.write(path.join(dir, 'SearchBox.stx'), `<script client>
+const query = state('')
+</script>
+<div><Field v-model:value="query" /></div>`)
+    const html = await processDirectives(
+      '<SearchBox />',
+      { query: { page: '2' } },
+      path.join(dir, 'page.stx'),
+      { ...options, componentsDir: dir },
+      new Set<string>(),
+    )
+
+    expect(html).not.toContain('[object Object]')
+    expect(html).not.toContain('&quot;page&quot;')
+    expect(html).toMatch(/data-stx-parent-bindings="value"[^>]*:value="query"/)
+  })
+
+  it('lets a component forward its own prop when the page declares a client name like it', async () => {
+    // The caller's client names reach a component for its slot markup. In the
+    // component's own template, its props are its own.
+    const dir = createTempDir('stx-client-context-')
+    await Bun.write(path.join(dir, 'Field.stx'), `<script server>
+const { value = '' } = defineProps<{ value?: string }>()
+</script>
+<input value="{{ value }}" />`)
+    await Bun.write(path.join(dir, 'Frame.stx'), `<script server>
+const { title = '' } = defineProps<{ title?: string }>()
+</script>
+<section><Field :value="title" /></section>`)
+    const html = await processDirectives(
+      `<script client>
+const title = state('page title')
+</script>
+<Frame title="Edit discount" />`,
+      {},
+      path.join(dir, 'page.stx'),
+      { ...options, componentsDir: dir },
+      new Set<string>(),
+    )
+
+    expect(html).toContain('value="Edit discount"')
+  })
 })

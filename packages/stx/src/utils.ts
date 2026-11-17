@@ -34,14 +34,14 @@ import { contentKey, depsUnchanged, renderMemo, snapshotDeps } from './render-me
 import { transformStoreImports } from './store-imports'
 import { LRUCache } from './performance-utils'
 import { getPublicEnvDefine } from './public-env'
-import { isUsableParamName } from './safe-evaluator'
+import { freeIdentifiers, isUsableParamName } from './safe-evaluator'
 import { processScopedStyles } from './style-scoping'
 import { findSfcTemplateBlock } from './sfc-template'
 import { importOnce } from './lazy-module'
 import { scanAtElementPosition, scanHtmlScriptElements, skipLeadingHtmlTrivia, stashScriptElements } from './html-masking'
 import { hasReactiveDirectives } from './reactive'
 import { markProjectedRefs, markProjectedSlotRoots } from './misc-directives'
-import { collectBlockDeclarations } from './stx-virtual-ts'
+import { clientScriptNames, collectBlockDeclarations } from './stx-virtual-ts'
 import { CLIENT_LOOP_NAMES_KEY, inheritedClientLoopNames } from './loop-binding'
 import { isFallthroughAttribute } from './builtins/attrs'
 import { StxValidationError } from './errors/types'
@@ -1859,6 +1859,36 @@ export async function renderComponentWithSlot(
         callerPreservedExpressions.push(match[1].trim())
     }
 
+    /*
+     * The same for the caller's bound component props.
+     *
+     * Slot markup is placed into this component's template before its child
+     * components are drawn, so a `<Field :value="title" />` the caller wrote
+     * is resolved in this component's context, where `title` may be this
+     * component's prop (a Modal's). When the caller's client script declares
+     * `title`, the caller means that signal. Recorded here by expression, so
+     * the component renderer leaves exactly these bindings for the browser
+     * while the component's own template keeps its props.
+     */
+    const callerClientNames = new Set(Array.isArray(parentContext.__stx_client_declared_names)
+      ? parentContext.__stx_client_declared_names as string[]
+      : [])
+    const callerClientBindings: string[] = []
+    if (callerClientNames.size > 0 && callerSlotContent) {
+      for (const tag of callerSlotContent.matchAll(/<[A-Z][\w.-]*\b([^>]*)>/g)) {
+        for (const binding of tag[1].matchAll(/\s(?:v-model(?::[\w-]+)?|:[\w-]+)\s*=\s*"([^"]*)"/g)) {
+          const expression = binding[1].trim()
+          try {
+            if (expression && freeIdentifiers(expression).some(name => callerClientNames.has(name)))
+              callerClientBindings.push(expression)
+          }
+          catch {
+            // An expression the scanner cannot read is left to the usual rules.
+          }
+        }
+      }
+    }
+
     const stashedCallerScripts = stashScriptElements(callerSlotContent)
     const callerClientScripts: string[] = []
     const componentSlotContent = stashedCallerScripts.output.replace(
@@ -1973,6 +2003,13 @@ export async function renderComponentWithSlot(
           ? parentContext.__stx_preserved_client_expressions as string[]
           : []),
         ...callerPreservedExpressions,
+      ],
+      // The caller's bound component props that read its client names (above).
+      __stx_caller_client_bindings: [
+        ...(Array.isArray(parentContext.__stx_caller_client_bindings)
+          ? parentContext.__stx_caller_client_bindings as string[]
+          : []),
+        ...callerClientBindings,
       ],
     }
 
@@ -2339,6 +2376,24 @@ export async function renderComponentWithSlot(
       componentContext.__stx_client_signal_names = [...new Set([...inheritedClientSignalNames, ...clientSignalNames])]
     else
       delete componentContext.__stx_client_signal_names
+
+    // Every name this component's own client script declares is the client's
+    // in its template, as a page's are in the page's (component-renderer.ts).
+    // The scan there reads the template it is given, and this component's
+    // scripts were taken out of it above, so it never saw them: SearchFilter's
+    // `const query = state('')` bound as `<Input v-model:value="query" />` was
+    // evaluated against the render context's `query` (the request's), and the
+    // box showed "[object Object]". Names inherited from the caller stay for
+    // its slot markup, minus the component's own props and server names,
+    // which in this template mean the component's values.
+    const ownClientNames = clientScriptNames(clientScripts.join('\n'))
+    const inheritedClientNames = (Array.isArray(componentContext.__stx_client_declared_names)
+      ? componentContext.__stx_client_declared_names as string[]
+      : []).filter(name => !ownServerNames.has(name) && !(name in props))
+    if (ownClientNames.size > 0 || inheritedClientNames.length > 0)
+      componentContext.__stx_client_declared_names = [...new Set([...inheritedClientNames, ...ownClientNames])]
+    else
+      delete componentContext.__stx_client_declared_names
 
     // The caller's loop variables, for the slot markup this component's own
     // passes evaluate once it is placed (its plain elements' `:class`, `:title`

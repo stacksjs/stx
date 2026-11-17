@@ -35,7 +35,7 @@ import { COMPONENT_PASSTHROUGH_X_ATTRS } from './runtime-globals'
 import { reactiveLoopScopes, siblingMarginChildren } from './server-bindings'
 import { inheritedClientLoopNames, loopBoundNames, readsAnyName } from './loop-binding'
 import { stripCommentsAndLiterals } from './strip-literals'
-import { collectTopLevelDeclarations } from './stx-virtual-ts'
+import { clientScriptNames } from './stx-virtual-ts'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -274,8 +274,16 @@ function parseComponentProps(
         // the client script declares is the client's, as it already is for
         // bindings on plain elements (server-bindings.ts).
         const jsKeywords = new Set(['true', 'false', 'null', 'undefined', 'typeof', 'instanceof', 'in', 'of', 'new', 'this', 'return', 'void', 'delete', 'throw', 'if', 'else'])
+        //
+        // In a component's own template, inherited names leave out its props
+        // and server names (utils.ts, renderComponentWithSlot), so a prop it
+        // forwards stays its own. A binding its caller wrote in the slot, and
+        // that reads the caller's client names, is recorded by expression and
+        // stays the caller's.
         const declaredOnClient = new Set(Array.isArray(context.__stx_client_declared_names) ? context.__stx_client_declared_names as string[] : [])
-        const hasUnresolved = freeIdentifiers(expression).some(v => !jsKeywords.has(v) && (declaredOnClient.has(v) || (!contextKeys.includes(v) && !(v in globalThis))))
+        const callerClientBindings = Array.isArray(context.__stx_caller_client_bindings) ? context.__stx_caller_client_bindings as string[] : []
+        const hasUnresolved = callerClientBindings.includes(expression.trim())
+          || freeIdentifiers(expression).some(v => !jsKeywords.has(v) && (declaredOnClient.has(v) || (!contextKeys.includes(v) && !(v in globalThis))))
         if (hasUnresolved) {
           resolved.clientReactive[propName] = expression
           continue
@@ -1706,27 +1714,6 @@ function findOpeningTagEnd(html: string, cursor: number): number {
   return html.length
 }
 
-/**
- * The names a page's or component's own `<script client>` declares or imports.
- */
-function clientScriptNames(html: string): Set<string> {
-  const names = new Set<string>()
-  for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
-    const attributes = match[1]
-    if (!/\bclient\b/.test(attributes) || /\bserver\b/.test(attributes))
-      continue
-    for (const name of collectTopLevelDeclarations(match[2])) names.add(name)
-    for (const imported of match[2].matchAll(/^\s*import\s+(?:type\s+)?(?:([\w$]+)\s*,?\s*)?(?:\{([^}]*)\}|\*\s+as\s+([\w$]+))?\s*from\s/gm)) {
-      if (imported[1]) names.add(imported[1])
-      if (imported[3]) names.add(imported[3])
-      for (const part of (imported[2] ?? '').split(',')) {
-        const local = part.replace(/^\s*type\s+/, '').split(/\s+as\s+/).pop()!.trim()
-        if (/^[A-Za-z_$][\w$]*$/.test(local)) names.add(local)
-      }
-    }
-  }
-  return names
-}
 
 /**
  * Unified component processing entry point.

@@ -2509,3 +2509,25 @@ export function resolvePosition(
     inGuard: column <= (mapped.guardPrefixLength ?? 0),
   }
 }
+
+/**
+ * The names a page's or component's own `<script client>` declares or imports.
+ */
+export function clientScriptNames(html: string): Set<string> {
+  const names = new Set<string>()
+  for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+    const attributes = match[1]
+    if (!/\bclient\b/.test(attributes) || /\bserver\b/.test(attributes))
+      continue
+    for (const name of collectTopLevelDeclarations(match[2])) names.add(name)
+    for (const imported of match[2].matchAll(/^\s*import\s+(?:type\s+)?(?:([\w$]+)\s*,?\s*)?(?:\{([^}]*)\}|\*\s+as\s+([\w$]+))?\s*from\s/gm)) {
+      if (imported[1]) names.add(imported[1])
+      if (imported[3]) names.add(imported[3])
+      for (const part of (imported[2] ?? '').split(',')) {
+        const local = part.replace(/^\s*type\s+/, '').split(/\s+as\s+/).pop()!.trim()
+        if (/^[A-Za-z_$][\w$]*$/.test(local)) names.add(local)
+      }
+    }
+  }
+  return names
+}
