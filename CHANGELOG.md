@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.906...v0.2.907)
+
+## ✨ Features
+
+- **native**: Face ID and Touch ID credentials on craft.biometrics ([812c09d](https://github.com/stacksjs/stx/commit/812c09d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([craft-native/craft#564](https://github.com/craft-native/craft/issues/564))
+
+## ⚡ Performance Improvements
+
+- **router**: trim the layout and time-limit code, and raise the script budget to 77KiB ([0baea37](https://github.com/stacksjs/stx/commit/0baea37)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.907 ([25fba8a](https://github.com/stacksjs/stx/commit/25fba8a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.905...v0.2.906)
 
 ## ✨ Features
