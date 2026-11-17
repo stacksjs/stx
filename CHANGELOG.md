@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.903...v0.2.904)
+
+## 🐛 Bug Fixes
+
+- **stx**: reuse validated client module syntax across renders ([49f60be](https://github.com/stacksjs/stx/commit/49f60be)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.904 ([89a6027](https://github.com/stacksjs/stx/commit/89a6027)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.902...v0.2.903)
 
 ## 🐛 Bug Fixes
