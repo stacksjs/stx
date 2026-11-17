@@ -96,4 +96,56 @@ const count = state(0)
       delete globals.serverLabel
     }
   })
+
+  it('binds a client signal even when the render context has a value of its name', async () => {
+    // A page renders with a context of its own: the serve path puts the
+    // request's `query` object in it, and a slot is rendered in the context of
+    // the component around it, whose props (a Modal's `title`) are in it too.
+    // A client signal of the same name bound bare into a component was
+    // evaluated against that instead: a dashboard search box opened holding
+    // "[object Object]", and a dialog's title field opened empty.
+    const dir = createTempDir('stx-client-context-')
+    await Bun.write(path.join(dir, 'Field.stx'), `<script client>
+const value = useReactiveProp('value', '')
+</script>
+<input :value="value()" />`)
+    await Bun.write(path.join(dir, 'Frame.stx'), `<script server>
+const { title = '' } = defineProps<{ title?: string }>()
+</script>
+<section><h2>{{ title }}</h2><slot /></section>`)
+    const html = await processDirectives(
+      `<script client>
+const query = state('')
+const title = state('Welcome 10% off')
+</script>
+<Field v-model:value="query" />
+<Frame title="Edit discount"><Field :value="title" /></Frame>`,
+      { query: { page: '2' } },
+      path.join(dir, 'page.stx'),
+      { ...options, componentsDir: dir },
+      new Set<string>(),
+    )
+
+    expect(html).not.toContain('[object Object]')
+    expect(html).toMatch(/:value="query"/)
+    expect(html).toMatch(/:value="title"/)
+    expect(html).not.toContain('value="Edit discount"')
+  })
+
+  it('still evaluates a context value the client script does not declare', async () => {
+    const dir = createTempDir('stx-client-context-')
+    await Bun.write(path.join(dir, 'Field.stx'), '<input :value="value" />')
+    const html = await processDirectives(
+      `<script client>
+const count = state(0)
+</script>
+<Field :value="label" />`,
+      { label: 'from the server' },
+      path.join(dir, 'page.stx'),
+      { ...options, componentsDir: dir },
+      new Set<string>(),
+    )
+
+    expect(html).toContain('from the server')
+  })
 })

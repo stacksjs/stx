@@ -264,9 +264,18 @@ function parseComponentProps(
         // `weekPercent()` saw `:style="{ flexGrow: weekPercent() }"` evaluated
         // against the app's `weekPercent(totals)`: the TypeError came back as
         // undefined and the binding vanished, so the bar never filled.
+        //
+        // The same holds for the render context. The serve path puts the
+        // request's `query` object in it, and a slot is rendered in the
+        // context of the component around it, whose props (a Modal's `title`)
+        // are in it too. A client signal named `query` bound as
+        // `<Input v-model:value="query" />` was evaluated against the context:
+        // every dashboard search box opened holding "[object Object]". A name
+        // the client script declares is the client's, as it already is for
+        // bindings on plain elements (server-bindings.ts).
         const jsKeywords = new Set(['true', 'false', 'null', 'undefined', 'typeof', 'instanceof', 'in', 'of', 'new', 'this', 'return', 'void', 'delete', 'throw', 'if', 'else'])
         const declaredOnClient = new Set(Array.isArray(context.__stx_client_declared_names) ? context.__stx_client_declared_names as string[] : [])
-        const hasUnresolved = freeIdentifiers(expression).some(v => !jsKeywords.has(v) && !contextKeys.includes(v) && (!(v in globalThis) || declaredOnClient.has(v)))
+        const hasUnresolved = freeIdentifiers(expression).some(v => !jsKeywords.has(v) && (declaredOnClient.has(v) || (!contextKeys.includes(v) && !(v in globalThis))))
         if (hasUnresolved) {
           resolved.clientReactive[propName] = expression
           continue
