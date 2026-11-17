@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import process from 'node:process'
 import {
   createTempDir,
@@ -88,7 +88,7 @@ describe('temp dirs', () => {
   it('creates under another root when asked', () => {
     const root = sandbox()
     const dir = createTempDir('rooted', root)
-    expect(readdirSync(root)).toEqual([dir.slice(root.length + 1)])
+    expect(readdirSync(root)).toEqual([basename(dir)])
     removeTempDir(dir)
     expect(readdirSync(root)).toEqual([])
   })

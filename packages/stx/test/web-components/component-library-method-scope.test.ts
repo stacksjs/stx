@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'bun:test'
-import { rm } from 'node:fs/promises'
+import { mkdir, rm, symlink } from 'node:fs/promises'
 import { join } from 'node:path'
 import { buildComponentLibrary as sourceBuild } from '../../src/component-library'
 import { createTempDir } from '../../src/temp-dir'
@@ -12,8 +12,13 @@ afterEach(async () => { await Promise.all(roots.splice(0).map(root => rm(root, {
 // Compile and call actual emitted elements. This catches stale prop closures and
 // render reentry; the companion Chrome test adds native loading and strict CSP.
 for (const bundle of [false, true]) test(`public helpers use current props during ${bundle ? 'standalone' : 'ESM'} renders and pending updates`, async () => {
-  const root = createTempDir('stx-method-scope-')
-  roots.push(root)
+  // Exercise canonical scratch identities even when the supplied root is an alias.
+  const parent = createTempDir('stx-method-parent-')
+  roots.push(parent)
+  const target = join(parent, 'target'), alias = join(parent, 'alias')
+  await mkdir(target)
+  await symlink(target, alias, process.platform === 'win32' ? 'junction' : 'dir')
+  const root = createTempDir('stx-method-scope-', alias)
   const inputDir = join(root, 'source'), outputDir = join(root, 'dist')
   await Bun.write(join(inputDir, 'Probe.stx'), methodScopeSource)
   await buildComponentLibrary({ inputDir, outputDir, prefix: bundle ? 'method-bundle' : 'method-esm', bundle, progressive: false })

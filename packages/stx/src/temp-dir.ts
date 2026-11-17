@@ -25,7 +25,7 @@
  *    creates sweeps up any whose owner is gone.
  */
 
-import { existsSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { constants as osConstants, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
@@ -202,7 +202,9 @@ export function createTempDir(label: string = 'stx', root: string = tmpdir()): s
     sweptRoots.add(root)
     sweepOrphanedTempDirs({ root })
   }
-  const dir = mkdtempSync(join(root, tempDirPrefix(label)))
+  // Bun's generated-module cache uses canonical paths. Returning an alias
+  // here makes a later import miss files just built through that alias.
+  const dir = realpathSync(mkdtempSync(join(root, tempDirPrefix(label))))
   if (keepTempDirsRequested()) {
     keepTempDir(dir)
     console.warn(`[stx] STX_KEEP_TEMP: keeping ${dir}`)
