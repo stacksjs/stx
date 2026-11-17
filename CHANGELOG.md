@@ -1,5 +1,27 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.905...v0.2.906)
+
+## ✨ Features
+
+- **serve**: answer GET /_stx/warmup with what the page warm-up did ([3d38ad5](https://github.com/stacksjs/stx/commit/3d38ad5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **components**: a component's own client signals stay the client's ([0f3bcfa](https://github.com/stacksjs/stx/commit/0f3bcfa)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **offline**: precache one screen at a time, once the page is quiet ([0f2cbc9](https://github.com/stacksjs/stx/commit/0f2cbc9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **serve**: answer a router from another layout with the document, rendered once ([6342dd6](https://github.com/stacksjs/stx/commit/6342dd6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **router**: say which layout the page is on, and load a page that never answers ([11075f1](https://github.com/stacksjs/stx/commit/11075f1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.906 ([21a6a18](https://github.com/stacksjs/stx/commit/21a6a18)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.904...v0.2.905)
 
 ## 🐛 Bug Fixes
