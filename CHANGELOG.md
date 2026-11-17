@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.901...v0.2.902)
+
+## 🐛 Bug Fixes
+
+- canonicalize scratch paths before generated module builds ([e8e8484](https://github.com/stacksjs/stx/commit/e8e8484)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **components**: preserve List spacing and authored bounds ([b3dcbb3](https://github.com/stacksjs/stx/commit/b3dcbb3)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.902 ([45f3158](https://github.com/stacksjs/stx/commit/45f3158)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.900...v0.2.901)
 
 ## 🐛 Bug Fixes
