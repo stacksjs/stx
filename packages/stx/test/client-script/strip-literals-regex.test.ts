@@ -1,7 +1,20 @@
 import { describe, expect, it } from 'bun:test'
-import { bracketDepths, stripCommentsAndLiterals } from '../../src/strip-literals'
+import { bracketDepths, stripBindingLiterals, stripCommentsAndLiterals } from '../../src/strip-literals'
 
 describe('stripCommentsAndLiterals and regex literals', () => {
+  it('keeps binding offsets after large generated literals and nested templates', () => {
+    const payload = 'x'.repeat(600_000)
+    const source = `const payload = '${payload}'; /*hidden\ncomment*/\nconst value = \`text $plain \${format(\`nested \${name}\`)}\`;\nvalue / 2`
+    const prefix = `const payload = ${' '.repeat(payload.length + 2)}; ${' '.repeat(8)}\n${' '.repeat(9)}\nconst value = `
+    expect(stripCommentsAndLiterals(source)).toBe(`${prefix}${' '.repeat(15)}format(${' '.repeat(10)}name  )  ;\nvalue / 2`)
+    const bindings = stripBindingLiterals(source)
+    expect(bindings).toHaveLength(source.length)
+    expect(bindings.indexOf('format')).toBe(source.indexOf('format'))
+    expect(bindings.indexOf('name')).toBe(source.indexOf('name'))
+    expect(bindings).toContain(`format((${' '.repeat(8)}{name}))`)
+    expect(bracketDepths(bindings).balanced).toBe(true)
+  })
+
   it('blanks a regex body, quotes and braces included, keeping offsets', () => {
     const code = `const re = /[&<>"']\\{x\\}/g; const next = 1`
     const out = stripCommentsAndLiterals(code)

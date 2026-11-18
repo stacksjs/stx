@@ -207,39 +207,60 @@ export function stripBindingLiterals(code: string): string { return stripLiteral
 function stripLiterals(code: string, bindingBoundaries: boolean): string {
   let out = ''
   let i = 0
+  // Consume identifiers and whitespace as runs. Large generated client modules
+  // otherwise allocate a slice and run several regular expressions per byte.
+  const tokens = /[\w$]+|\s+|[^\w$\s]/g
   // The last significant token, for telling a regex `/` from division.
   let lastSig = ''
   let lastWord = ''
 
   while (i < code.length) {
-    const two = code.slice(i, i + 2)
+    tokens.lastIndex = i
+    const token = tokens.exec(code)![0]
+    if (token.length > 1 || /[\w$\s]/.test(token)) {
+      out += token
+      i += token.length
+      if (!/\s/.test(token[0])) {
+        lastWord = /[\w$]/.test(lastSig) ? lastWord + token : token
+        lastSig = token[token.length - 1]!
+      }
+      continue
+    }
+    const ch = token
 
-    if (two === '//') {
-      while (i < code.length && code[i] !== '\n') out += ' ', i++
+    if (ch === '/' && code[i + 1] === '/') {
+      const end = code.indexOf('\n', i)
+      const next = end === -1 ? code.length : end
+      out += ' '.repeat(next - i)
+      i = next
       continue
     }
 
-    if (two === '/*') {
-      while (i < code.length && code.slice(i, i + 2) !== '*/')
-        out += code[i] === '\n' ? '\n' : ' ', i++
+    if (ch === '/' && code[i + 1] === '*') {
+      const end = code.indexOf('*/', i)
+      const next = end === -1 ? code.length : end
+      out += blankLiteral(code.slice(i, next))
+      i = next
       out += '  '
       i += 2
       continue
     }
 
-    const ch = code[i]
     if (ch === '"' || ch === '\'') {
       const quote = ch
       out += ' '
       i++
+      const boundary = quote === '"' ? /["\\]/g : /['\\]/g
       while (i < code.length && code[i] !== quote) {
         if (code[i] === '\\') {
           out += '  '
           i += 2
           continue
         }
-        out += code[i] === '\n' ? '\n' : ' '
-        i++
+        boundary.lastIndex = i
+        const next = boundary.exec(code)?.index ?? code.length
+        out += blankLiteral(code.slice(i, next))
+        i = next
       }
       out += bindingBoundaries ? '$' : ' '
       i++
@@ -263,6 +284,7 @@ function stripLiterals(code: string, bindingBoundaries: boolean): string {
     if (ch === '`') {
       out += bindingBoundaries ? '(' : ' '
       i++
+      const boundary = /[\\`$]/g
       while (i < code.length && code[i] !== '`') {
         if (code[i] === '\\') {
           out += '  '
@@ -281,8 +303,12 @@ function stripLiterals(code: string, bindingBoundaries: boolean): string {
           i = bodyEnd + 1
           continue
         }
-        out += code[i] === '\n' ? '\n' : ' '
+        // Include an ordinary dollar sign in the next blank run.
+        const start = i
         i++
+        boundary.lastIndex = i
+        i = boundary.exec(code)?.index ?? code.length
+        out += blankLiteral(code.slice(start, i))
       }
       out += bindingBoundaries ? ')' : ' '
       i++
@@ -293,17 +319,16 @@ function stripLiterals(code: string, bindingBoundaries: boolean): string {
 
     out += ch
     i++
-    if (/[\w$]/.test(ch)) {
-      lastWord = /[\w$]/.test(lastSig) ? lastWord + ch : ch
-      lastSig = ch
-    }
-    else if (!/\s/.test(ch)) {
-      lastSig = ch
-      lastWord = ''
-    }
+    lastSig = ch
+    lastWord = ''
   }
 
   return out
+}
+
+/** Mask a whole literal span without building a rope one character at a time. */
+function blankLiteral(value: string): string {
+  return value.includes('\n') ? value.replace(/[^\n]/g, ' ') : ' '.repeat(value.length)
 }
 
 /**
