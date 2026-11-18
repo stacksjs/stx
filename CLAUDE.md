@@ -230,7 +230,7 @@ The router detects layout changes and handles them without page reloads:
 Components can emit custom events to parent templates:
 
 - `defineEmits()` returns an `emit(event, payload)` function inside `<script>`
-- Uses `CustomEvent` with `bubbles: true` for DOM propagation
+- Uses `CustomEvent` with `bubbles: true` for DOM propagation, except `error`, `unhandledrejection` and `rejectionhandled`: those reach only the caller's handler on the component root, because a bubbling `error` reached `window` and error trackers logged it as a crash (#2201)
 - `@event` attributes on component tags are forwarded to the component root element
 - Parent handles emitted events via `@event="handler"` on component usage
 

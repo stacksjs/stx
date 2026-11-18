@@ -209,6 +209,8 @@ function handleClick() {
 
 Emitted events use `CustomEvent` with `bubbles: true` for DOM propagation. The `@event` attributes on component tags are forwarded to the component's root element.
 
+Three names do not bubble: `error`, `unhandledrejection` and `rejectionhandled`. `<Signup @error="…">` still runs its handler, since that listener is on the component root, but an element around the component and `window` do not hear it. A bubbling `error` reached `window`, where error trackers listen, and a form's validation message was reported as a page crash (stacksjs/stx#2201).
+
 ## Double-Bind Guard
 
 Event handlers have guards (`el.__stx_evt_<event>`) to prevent duplicate binding when `processElement` runs multiple times on the same element. This is an internal safeguard — no action required from users.

@@ -278,7 +278,7 @@ emit('submit', { data })
 ```
 
 - `defineEmits()` returns `emit(event, payload)` — no type declaration needed (unlike Vue)
-- Events use `CustomEvent` with `bubbles: true` for natural DOM propagation
+- Events use `CustomEvent` with `bubbles: true` for natural DOM propagation, except `error`, `unhandledrejection` and `rejectionhandled`, which stop at the component root so `window` (and an error tracker) never sees them (#2201)
 - `@event` attributes on component usage tags are forwarded to the component's root element during server rendering
 
 ### Async Components

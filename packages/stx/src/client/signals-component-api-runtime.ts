@@ -34,13 +34,20 @@ export const SIGNALS_COMPONENT_API_RUNTIME = `    // Component composition API (
           el.__stx_component_emits[event] = true;
         });
       }
+      var WINDOW_FAILURE_EVENTS = { error: 1, unhandledrejection: 1, rejectionhandled: 1 };
       return function(event, payload) {
         var target = el || document.body;
         if (el) {
           el.__stx_component_emits = el.__stx_component_emits || Object.create(null);
           el.__stx_component_emits[event] = true;
         }
-        var emitted = new CustomEvent(event, { detail: payload, bubbles: true, cancelable: true });
+        // An emit bubbles, so a parent element hears it too, except for the
+        // names window treats as a failure of the page. An error that bubbled
+        // reached window, where error trackers listen, and a mistyped email
+        // on a sign-up form was reported as a crash (stacksjs/stx#2201). The
+        // caller's own handler is on the component root, which still hears
+        // it.
+        var emitted = new CustomEvent(event, { detail: payload, bubbles: !WINDOW_FAILURE_EVENTS[event], cancelable: true });
         emitted.__stx_emit_args = Array.prototype.slice.call(arguments, 1);
         stxHost.emitComponentEvent(target, emitted);
       };
