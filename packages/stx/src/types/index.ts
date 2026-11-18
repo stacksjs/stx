@@ -89,6 +89,7 @@ export type {
   MarkdownConfig,
   OpenGraphConfig,
   OpenGraphProfile,
+  PageWarmupOptions,
   SeoConfig,
   SeoFeatureConfig,
   StreamingConfig,
