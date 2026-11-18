@@ -77,7 +77,9 @@ const preferredSide = {{ position }}
 const panelLimits = 'position:fixed;max-width:calc(100vw - 16px);margin:0;'
 const panelStyle = state(nativePopup ? { position: 'absolute', margin: 0, transform: [] } : panelLimits)
 const arrowStyle = state('')
-const tooltipContent = useReactiveProp('content', {{ content }})
+// The instance root carries its own content prop. Baking that value into the
+// fallback duplicated this entire setup for every different hint on a page.
+const tooltipContent = useReactiveProp('content', '')
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
 // Reactive prop binding — parent can drive `show` via signals. See #1704.
 const isVisible = useReactiveProp('show', {{ show }})

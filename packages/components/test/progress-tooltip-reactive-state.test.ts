@@ -194,3 +194,19 @@ it('keeps repeated tooltip ids unique and attached to their own controls', async
   }
   finally { await app.dispose() }
 })
+
+it('shares one tooltip setup across different static descriptions and keeps their contents separate', async () => {
+  const app = await renderApp({ ...FILES, 'components/Host.stx': `<nav><Tooltip content="Calendar help"><button>Calendar</button></Tooltip><Tooltip content="Sharing help"><button>Sharing</button></Tooltip></nav>` }, ROUTES)
+  try {
+    const html = app.documents.get('/')!
+    const calls = [...html.matchAll(/window\.__stxComponentFactories\["([a-f0-9]+)"\]\(/g)]
+    expect(calls).toHaveLength(2)
+    expect(new Set(calls.map(call => call[1])).size).toBe(1)
+    const browser = await boot(app, '/')
+    await settle()
+    const panels = [...browser.document.querySelectorAll('[role="tooltip"]')]
+    expect(panels.map(panel => panel.textContent?.trim())).toEqual(['Calendar help', 'Sharing help'])
+    expect(new Set(panels.map(panel => panel.id)).size).toBe(2)
+  }
+  finally { await app.dispose() }
+})
