@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.909...v0.2.910)
+
+## ⚡ Performance Improvements
+
+- **components**: share tooltip setup across static descriptions ([737adc8](https://github.com/stacksjs/stx/commit/737adc8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- match HMR assertions to the edited source file ([ee6ffaa](https://github.com/stacksjs/stx/commit/ee6ffaa)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.910 ([4474d1a](https://github.com/stacksjs/stx/commit/4474d1a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.908...v0.2.909)
 
 ## ⚡ Performance Improvements
