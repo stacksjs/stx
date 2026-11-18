@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.910...v0.2.911)
+
+## ⚡ Performance Improvements
+
+- **router**: prioritize foreground navigation over queued prefetches ([9c47d9c](https://github.com/stacksjs/stx/commit/9c47d9c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.911 ([3cecfc9](https://github.com/stacksjs/stx/commit/3cecfc9)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.909...v0.2.910)
 
 ## ⚡ Performance Improvements
