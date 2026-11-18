@@ -13,6 +13,7 @@
  *   serve pages/home.stx pages/about.md pages/index.html
  */
 
+import type { PageWarmupOptions } from '@stacksjs/stx'
 import type { CssConfig } from '@stacksjs/ts-css/engine'
 import type { SQLQueryBindings } from 'bun:sqlite'
 import { serve as bunServe, Glob } from 'bun'
@@ -1586,23 +1587,9 @@ export async function portIsServed(port: number, timeoutMs = 500): Promise<boole
 /** The header every page warm-up request carries. */
 export const PAGE_WARMUP_HEADER = 'x-stx-warmup'
 
-export interface PageWarmupOptions {
-  /** Extra paths to warm, e.g. one per dynamic template. */
-  paths?: string[]
-  /**
-   * When to warm. `'replacing'` (the default) warms, holding the bind, only
-   * while another instance serves the port: the previous release in a
-   * zero-downtime deploy. `'always'` warms and holds regardless, for a caller
-   * that wants a warm server before anything reaches it: a test harness.
-   */
-  holdBind?: 'replacing' | 'always'
-  /** How long a production start holds its bind for the warm-up, in ms. */
-  budgetMs?: number
-  /** Pages in flight at once. */
-  concurrency?: number
-  /** Answer `GET /_stx/warmup` with what the warm-up did. On by default. */
-  report?: boolean
-}
+// Declared beside StxConfig, where `pageWarmup` is also read from the
+// project's stx/ui config; re-exported so this package's API is unchanged.
+export type { PageWarmupOptions } from '@stacksjs/stx'
 
 export interface ResolvedPageWarmup {
   enabled: boolean

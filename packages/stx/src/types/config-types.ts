@@ -503,6 +503,28 @@ export interface AppHeadConfig {
 }
 
 /**
+ * Page warm-up for a production server: `pageWarmup` in the stx/ui config,
+ * or `ServeOptions.pageWarmup` in bun-plugin-stx.
+ */
+export interface PageWarmupOptions {
+  /** Extra paths to warm, e.g. one per dynamic template. */
+  paths?: string[]
+  /**
+   * When to warm. `'replacing'` (the default) warms, holding the bind, only
+   * while another instance serves the port: the previous release in a
+   * zero-downtime deploy. `'always'` warms and holds regardless, for a caller
+   * that wants a warm server before anything reaches it: a test harness.
+   */
+  holdBind?: 'replacing' | 'always'
+  /** How long a production start holds its bind for the warm-up, in ms. */
+  budgetMs?: number
+  /** Pages in flight at once. */
+  concurrency?: number
+  /** Answer `GET /_stx/warmup` with what the warm-up did. On by default. */
+  report?: boolean
+}
+
+/**
  * stx configuration options
  */
 export interface StxConfig {
@@ -887,6 +909,14 @@ export interface StxConfig {
    * continues in the background. The server validates the numeric budget.
    */
   imageWarmupBindBudgetMs?: number
+  /**
+   * Render pages once before a production server takes traffic. `false`
+   * turns it off; an object tunes it. On by default in production, never in
+   * development. The server reads it from here when `serve()` is not given
+   * `pageWarmup` itself; see `ServeOptions.pageWarmup` in bun-plugin-stx for
+   * the full behaviour.
+   */
+  pageWarmup?: boolean | PageWarmupOptions
   /** Path to .env file, defaults to '.env' in project root (Bun loads this automatically) */
   envFile?: string | boolean
   /** Environment variable prefix for client-side exposure (e.g. 'STX_PUBLIC_') */
