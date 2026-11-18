@@ -8,11 +8,12 @@ afterEach(() => { Object.assign(globalThis, originals) })
 
 const tick = () => new Promise(resolve => setTimeout(resolve, 25))
 
-function install() {
+function install(retained = false) {
   const window: any = new Window({ url: 'http://localhost/home' })
+  window.history.pushState(null, '', 'http://localhost/home')
   window.document.write('<html><head><meta name="stx-layout" content="layouts/app.stx"></head><body><main>Home</main><nav><a href="/a" data-stx-link id="a">A</a><a href="/b" data-stx-link id="b">B</a><a href="/c" data-stx-link id="c">C</a><a href="/target" data-stx-link id="target">Target</a></nav></body></html>')
-  window.stx = {}
-  window.__stxRouterConfig = { cache: true, prefetch: true, progress: false, viewTransitions: false, prefetchVisible: false, revalidate: false, keepOpening: false, announceRoute: false }
+  window.stx = retained ? { _cleanupContainer() {} } : {}
+  window.__stxRouterConfig = { screens: retained, navDuration: 0, cache: true, prefetch: true, progress: false, viewTransitions: false, prefetchVisible: false, revalidate: false, keepOpening: false, announceRoute: false }
   const requested: string[] = []
   const pending = new Map<string, () => void>()
   Object.assign(globalThis, {
@@ -41,6 +42,50 @@ function install() {
 }
 
 describe('foreground navigation takes priority over speculative HTML', () => {
+  it('lets retained Back win over a promoted prefetch and resumes other queued work', async () => {
+    const app = install(true)
+    let navigation: Promise<unknown> | undefined
+    try {
+      const first = app.window.stxRouter.navigate('/one')
+      app.release('/one')
+      await first
+      app.hover('a'); app.hover('b'); app.hover('target'); app.hover('c')
+      navigation = app.window.stxRouter.navigate('/target')
+      app.release('/a'); app.release('/b')
+      await tick()
+      expect(app.requested).not.toContain('/c')
+      app.window.history.back()
+      await new Promise(resolve => setTimeout(resolve, 80))
+      expect(app.window.location.pathname).toBe('/home')
+      expect(app.requested).toContain('/c')
+      app.release('/target')
+      await navigation
+      expect(app.window.location.pathname).toBe('/home')
+    }
+    finally { await app.drain(); await navigation }
+  })
+
+  it('resumes queued work when Back cancels a pending navigation into a retained screen', async () => {
+    const app = install(true)
+    let navigation: Promise<unknown> | undefined
+    try {
+      const first = app.window.stxRouter.navigate('/one')
+      app.release('/one')
+      await first
+      expect(app.window.document.querySelectorAll('[data-stx-screen]').length).toBe(2)
+      app.hover('a'); app.hover('b'); app.hover('c')
+      navigation = app.window.stxRouter.navigate('/target')
+      app.release('/a'); app.release('/b')
+      await tick()
+      expect(app.requested).not.toContain('/c')
+      app.window.history.back()
+      await new Promise(resolve => setTimeout(resolve, 80))
+      expect(app.window.location.pathname).toBe('/home')
+      expect(app.requested).toContain('/c')
+    }
+    finally { await app.drain(); await navigation }
+  })
+
   it('does not start queued prefetches while a foreground response is pending', async () => {
     const app = install()
     let navigation: Promise<unknown> | undefined

@@ -3037,6 +3037,8 @@ else {
   function finishScreen(){
     enforceLimit();
     observeLinks();
+    // Retained Back can supersede a pending navigation without its done().
+    pumpPrefetch();
   }
 
   // Show a screen that is already here: Back to one below in the stack, or a
@@ -3050,6 +3052,7 @@ else {
     var from=active,host=getContainer();
     if(navAbort){try{navAbort.abort()}catch(e){}navAbort=null}
     navSeq++;
+    awaitingKey='';
     isNavigating=false;
     document.body.classList.remove(o.loadingClass);
     if(from&&from.el){if(!opts.settled)saveScroll(from);saveEntry(from)}
