@@ -1,0 +1,78 @@
+<script server>
+/*
+ * <BiometricSignIn>: the "Sign in with Face ID" button on a sign-in screen.
+ *
+ *   <BiometricSignIn reason="Sign in to HQ"
+ *     @signin="session.exchange($event.token)"
+ *     @fallback="showPassword()" />
+ *
+ * It is offered only when this device can release a kept credential: inside
+ * Craft, with Face ID or Touch ID enrolled, after the app kept one with
+ * `createBiometricSignIn().enable(token)` at its last password sign-in. In a
+ * browser or on Android it renders nothing, so the same screen serves every
+ * platform.
+ *
+ * Pressing it shows the system prompt (`reason` is the line under it). It
+ * emits:
+ * - `signin` with `{ token }` on a match;
+ * - `fallback` with `{ reason: 'cancelled' | 'invalidated' }` when the person
+ *   dismissed the prompt, or nothing came back because another face or
+ *   finger was enrolled (the credential is forgotten, the button goes away);
+ * - `failed` with `{ code, message }` when the face or finger did not match
+ *   or the host refused. (Not `error`: an emitted event bubbles, and an
+ *   `error` reaching window would be logged by an error tracker as a crash.)
+ *
+ * Keep a device token the server can revoke, never the password. The flow
+ * lives in ./biometric (`createBiometricSignIn`), which an app's settings
+ * screen uses for "Turn on Face ID" and sign-out.
+ */
+export const credentialKey = $props.credentialKey || 'session'
+export const reason = $props.reason || ''
+export const variant = $props.variant || 'secondary'
+export const fullWidth = $bool($props.fullWidth, true)
+export const className = $props.className || ''
+</script>
+
+<script client>
+import { biometricSignInLabel, createBiometricSignIn } from './biometric'
+
+const emit = defineEmits(['signin', 'fallback', 'failed'])
+const flow = createBiometricSignIn({{ credentialKey }})
+const offered = state(false)
+const label = state('')
+const busy = state(false)
+
+async function look() {
+  const found = await flow.probe()
+  label.set(found.available ? biometricSignInLabel(found.kind) : '')
+  offered.set(found.available && found.saved)
+}
+
+async function press() {
+  if (busy())
+    return
+  busy.set(true)
+  try {
+    const result = await flow.signIn({{ reason }})
+    if (result.status === 'signed-in')
+      emit('signin', { token: result.token })
+    else if (result.status === 'failed')
+      emit('failed', { code: result.code, message: result.message })
+    else
+      emit('fallback', { reason: result.status })
+    if (result.status === 'invalidated')
+      offered.set(false)
+  }
+  finally {
+    busy.set(false)
+  }
+}
+
+onMount(look)
+
+defineExpose({ refresh: look, offered })
+</script>
+
+<div :show="offered" class="{{ className }}" data-biometric-sign-in>
+  <Button variant="{{ variant }}" fullWidth="{{ fullWidth }}" :label="label()" :loading="busy()" @click="press()" />
+</div>
