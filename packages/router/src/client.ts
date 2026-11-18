@@ -598,21 +598,27 @@ function routerSource(): string {
   // Intent moves a queued page to the front; navigation starts it at once,
   // sharing the same promise instead of waiting behind background work.
   var prefetchQueue=[],prefetchActive=0;
+  function pumpPrefetch(){
+    // A low network priority does not make server-side rendering cheap. Do
+    // not fill a freed slot while the page the person requested is pending.
+    if(isNavigating||awaitingKey)return;
+    while(prefetchActive<2&&prefetchQueue.length)runPrefetch(prefetchQueue.shift());
+  }
   function runPrefetch(job){
     prefetchActive++;
     var started;
     try{started=job.start()}catch(error){started=Promise.reject(error)}
     Promise.resolve(started).then(job.resolve,job.reject).finally(function(){
       prefetchActive--;
-      while(prefetchActive<2&&prefetchQueue.length)runPrefetch(prefetchQueue.shift());
+      pumpPrefetch();
     });
   }
   function queuePrefetch(key,start,intent){
     return new Promise(function(resolve,reject){
       var job={key:key,start:start,resolve:resolve,reject:reject};
-      if(prefetchActive<2)runPrefetch(job);
-      else if(intent)prefetchQueue.unshift(job);
+      if(intent)prefetchQueue.unshift(job);
       else prefetchQueue.push(job);
+      pumpPrefetch();
     });
   }
   function promotePrefetch(key,navigation){
@@ -1492,6 +1498,7 @@ function routerSource(): string {
       document.body.classList.remove(o.loadingClass);finishProgress();
       settleDirection();
       if(openingUrl&&pagePath()!==openingUrl)keepOpeningPage();
+      pumpPrefetch();
     }
     function stale(){return id!==navSeq}
     // A failed fetch keeps the app: the destination shows a way to try again
