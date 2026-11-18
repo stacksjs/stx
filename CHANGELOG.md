@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.912...v0.2.913)
+
+## ⚡ Performance Improvements
+
+- scan generated client literals in spans ([ff1415f](https://github.com/stacksjs/stx/commit/ff1415f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.913 ([2193386](https://github.com/stacksjs/stx/commit/2193386)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.911...v0.2.912)
 
 ## 🐛 Bug Fixes
