@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.911...v0.2.912)
+
+## 🐛 Bug Fixes
+
+- **router**: resume prefetches after retained screen navigation ([9a79efb](https://github.com/stacksjs/stx/commit/9a79efb)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.912 ([31ddfcb](https://github.com/stacksjs/stx/commit/31ddfcb)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.910...v0.2.911)
 
 ## ⚡ Performance Improvements
