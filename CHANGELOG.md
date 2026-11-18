@@ -1,5 +1,26 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.913...v0.2.914)
+
+## ✨ Features
+
+- **components**: <BiometricSignIn>, the Sign in with Face ID button ([536fd11](https://github.com/stacksjs/stx/commit/536fd11)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **components**: the Sign in with Face ID flow, on its own entry ([813b324](https://github.com/stacksjs/stx/commit/813b324)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **runtime**: an emitted error reaches its caller, not window ([2e7b1ca](https://github.com/stacksjs/stx/commit/2e7b1ca)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2201](https://github.com/stacksjs/stx/issues/2201))
+- **types**: declare pageWarmup on StxConfig (#2200) ([e90acf8](https://github.com/stacksjs/stx/commit/e90acf8)) _(by Chris <chrisbreuer93@gmail.com>)_ ([#2200](https://github.com/stacksjs/stx/issues/2200))
+
+## 🔧 Chores
+
+- release v0.2.914 ([5328054](https://github.com/stacksjs/stx/commit/5328054)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.912...v0.2.913)
 
 ## ⚡ Performance Improvements
