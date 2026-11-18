@@ -47,6 +47,11 @@
       "bun": "./stx-plugin.ts",
       "import": "./stx-plugin.ts"
     },
+    "./biometric": {
+      "types": "./dist/ui/auth/biometric.d.ts",
+      "bun": "./dist/biometric/biometric.js",
+      "import": "./dist/biometric/biometric.js"
+    },
     "./chat": {
       "types": "./dist/ui/chat/controller.d.ts",
       "bun": "./dist/chat/controller.js",

@@ -161,6 +161,20 @@ if (!overlaysResult.success) {
   process.exit(1)
 }
 
+// "Sign in with Face ID" from an app's own <script client>: keeping the token
+// after a password sign-in and forgetting it on sign-out. The root would
+// reach the syntax highlighter, as for the overlay stack.
+const biometricResult = await Bun.build({
+  entrypoints: ['./src/ui/auth/biometric.ts'],
+  outdir: './dist/biometric',
+  target: 'browser',
+  minify: false,
+})
+if (!biometricResult.success) {
+  for (const log of biometricResult.logs) console.error(log)
+  process.exit(1)
+}
+
 // A component's exposed methods, from the page that uses it. Browser code, and
 // an entry of its own for the same reason the overlay stack has one.
 const apiResult = await Bun.build({
