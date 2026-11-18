@@ -39,8 +39,8 @@ const SERVE_SRC = path.join(import.meta.dir, '..', 'src', 'serve.ts')
 
 let dir: string
 let proc: ReturnType<typeof Bun.spawn> | null = null
-/** Every HMR event type seen since the stream opened. */
-const seen: string[] = []
+/** Keep the source identity: fs.watch may emit a delayed duplicate edit. */
+const seen: Array<{ type: string, file?: string }> = []
 
 beforeAll(async () => {
   dir = createTempDir('stx-hmr-gran-')
@@ -88,7 +88,10 @@ serve({ patterns: ['views'], port: ${PORT}, watch: true, layoutsDir: 'layouts', 
         if (done) break
         for (const line of decoder.decode(value).split('\n')) {
           if (!line.startsWith('data:')) continue
-          try { seen.push(JSON.parse(line.slice(5)).type) }
+          try {
+            const event = JSON.parse(line.slice(5))
+            seen.push({ type: event.type, file: event.file })
+          }
           catch { /* keep-alive or partial chunk */ }
         }
       }
@@ -110,9 +113,12 @@ async function editAndAwait(file: string, contents: string): Promise<string | un
   const before = seen.length
   await writeFile(path.join(dir, file), contents)
   const deadline = Date.now() + 15_000
-  while (seen.length === before && Date.now() < deadline)
+  // A second event for the previous file is not this edit's verdict. Still
+  // assert the type of the matching event, so misclassification cannot pass.
+  const matching = () => seen.slice(before).find(event => event.file && path.basename(event.file) === path.basename(file))
+  while (!matching() && Date.now() < deadline)
     await Bun.sleep(50)
-  return seen[before]
+  return matching()?.type
 }
 
 describe('the store bundle endpoint', () => {
