@@ -11,6 +11,7 @@ export const delay = $num($props.delay) || 0
 export const className = $props.className || ''
 export const show = $bool($props.show)
 export const disabled = $bool($props.disabled)
+export const pressToToggle = $bool($props.pressToToggle)
 
 /*
  * The id that makes the tooltip reachable from its trigger.
@@ -60,7 +61,7 @@ export const tooltipClasses = `absolute z-50 px-3 py-2 text-sm font-medium text-
 export const arrowClass = `absolute w-0 h-0 border-4 border-transparent ${arrowClasses[position] || arrowClasses.top}`.trim()
 </script>
 <script client>
-  import { measureTooltipPosition, trackNativePopup } from '../../utils/tooltip-position'
+  import { measureTooltipPosition, trackBrowserPopup, trackNativePopup } from '../../utils/tooltip-position'
 import { portalElement } from '../../utils/element-portal'
 const nativePopup = !!window.stx._host.isNative
 const mounted = state(false)
@@ -81,6 +82,7 @@ const arrowStyle = state('')
 // fallback duplicated this entire setup for every different hint on a page.
 const tooltipContent = useReactiveProp('content', '')
 const isDisabled = useReactiveProp('disabled', {{ disabled }})
+const pressToToggle = useReactiveProp('pressToToggle', {{ pressToToggle }})
 // Reactive prop binding — parent can drive `show` via signals. See #1704.
 const isVisible = useReactiveProp('show', {{ show }})
 let timeoutId = null
@@ -115,20 +117,14 @@ async function positionTooltip() {
   arrowStyle.set('transform:none;translate:none;border-color:transparent;' + arrows[point.side] + ';')
 }
 
-// Measurement follows rendering. Reposition on scroll, including scrolling
-// ancestors, and resize; the composable removes these listeners on teardown.
-effect(() => {
-  ++positionGeneration
-  if (!nativePopup && isVisible() && !isDisabled()) nextTick(positionTooltip)
-})
-useEventListener('resize', positionTooltip)
-useEventListener('scroll', positionTooltip, { capture: true, passive: true })
-
 function showTooltip() {
-  if (isDisabled()) return
+  if (isDisabled() || pressToToggle()) return
   if (timeoutId) clearTimeout(timeoutId)
   if (delay > 0) {
-    timeoutId = setTimeout(() => { if (!destroyed && !isDisabled()) isVisible.set(true) }, delay)
+    timeoutId = setTimeout(() => {
+      timeoutId = null
+      if (!destroyed && !isDisabled() && !pressToToggle()) isVisible.set(true)
+    }, delay)
   }
   else {
     isVisible.set(true)
@@ -139,7 +135,12 @@ function toggleTouch(event) {
   // A shared Button emits click before the original press bubbles here.
   // Only the physical press toggles; otherwise one tap opens then closes.
   if (event && Array.isArray(event.__stx_emit_args)) return
-  if (nativePopup) isVisible() ? hideTooltip() : showTooltip()
+  if (isDisabled()) return
+  if (pressToToggle()) {
+    if (isVisible()) hideTooltip()
+    else isVisible.set(true)
+  }
+  else if (nativePopup) isVisible() ? hideTooltip() : showTooltip()
 }
 
 function hideTooltip() {
@@ -152,16 +153,6 @@ function hideTooltip() {
 }
 
 /*
- * Escape dismisses it (WCAG 2.1 SC 1.4.13).
- *
- * The rule is that content shown on hover or focus can be dismissed WITHOUT
- * moving the pointer or the focus -- so a keyboard listener on the trigger is
- * not enough when the tooltip was opened by hovering and focus is somewhere
- * else entirely. The listener is global for that reason, and does nothing
- * unless this tooltip is the one showing. useEventListener drops it on
- * teardown, so a page of tooltips does not leak one apiece.
- */
-/*
  * While it shows, the tooltip is a popup layer on the page's overlay stack, so
  * Escape dismisses it first: a tooltip over a dialog's field goes, and the
  * dialog stays (stacksjs/stx#2057). It listened on the document itself, where
@@ -170,13 +161,17 @@ function hideTooltip() {
 let stopPositioning = null
 effect(() => {
   if (!mounted()) return
+  ++positionGeneration
   if (stopPositioning) { stopPositioning(); stopPositioning = null }
   if (isVisible() && !isDisabled()) {
     try {
       if (nativePopup && !window.craft?.capabilities?.viewMeasure)
         throw new Error('Native Tooltip requires viewMeasure support')
       window.stx.overlays.open(activeTooltipId, { modal: false, root: nativePopup ? panelRef.value : null, panel: null, onEscape: hideTooltip, onBackdrop: hideTooltip })
-      if (nativePopup) stopPositioning = trackNativePopup(triggerRef.value, panelRef.value, preferredSide, style => panelStyle.set(style))
+      const trigger = triggerRef.value
+      const panel = panelRef.value
+      if (nativePopup) stopPositioning = trackNativePopup(trigger, panel, preferredSide, style => panelStyle.set(style))
+      else if (trigger && panel) stopPositioning = trackBrowserPopup(trigger, panel, positionTooltip)
     }
     catch (error) {
       console.warn('[stx:tooltip] ' + ((error && error.message) || String(error)))
@@ -218,9 +213,9 @@ onDestroy(() => {
 function describeTrigger() {
   const wrapper = triggerRef.value
   if (!wrapper) return
-  // The control, or the wrapper itself when the trigger is bare text and
-  // there is nothing better to carry it.
-  const target = wrapper.firstElementChild || wrapper
+  // A slotted component can wrap its actual control in a scope element.
+  const control = !nativePopup && wrapper.querySelector('button, a[href], input:not([type="hidden"]), select, textarea, summary, [role="button"], [role="link"], [tabindex]')
+  const target = control || wrapper.firstElementChild || wrapper
   // A repeated trigger can inherit the template instance's description. Replace
   // only our own previous id, preserving descriptions supplied by the caller.
   const previous = target.getAttribute('data-stx-tooltip-description')
@@ -248,7 +243,11 @@ onMount(() => {
   // its reactive bindings and refs, unlike passing them through another scope.
   nextTick(() => {
     const panel = panelRef.value
-    if (!nativePopup && !destroyed && panel && panel.isConnected) restorePanel = portalElement(panel, panel.ownerDocument.body)
+    if (nativePopup || destroyed || !panel?.isConnected) return
+    // Keep a tooltip opened in a modal with that modal. The shared overlay
+    // stack makes its body siblings inert, including a panel portaled there.
+    const modal = triggerRef.value?.closest('dialog, [aria-modal="true"]')
+    restorePanel = portalElement(panel, modal || panel.ownerDocument.body)
   })
 })
 onDestroy(() => { if (restorePanel) restorePanel() })
@@ -264,7 +263,7 @@ onDestroy(() => { if (restorePanel) restorePanel() })
     x-ref="triggerRef"
     @click="toggleTouch($event)"
     @mouseenter="showTooltip()"
-    @mouseleave="hideTooltip()"
+    @mouseleave="!pressToToggle() && hideTooltip()"
     @focusin="showTooltip()"
     @focusout="hideTooltip()"
   >
@@ -281,7 +280,7 @@ onDestroy(() => { if (restorePanel) restorePanel() })
     class="{{ tooltipClasses }}"
     role="tooltip"
     @mouseenter="showTooltip()"
-    @mouseleave="hideTooltip()"
+    @mouseleave="!pressToToggle() && hideTooltip()"
   >
       <span class="block" style="max-height:calc(100vh - 32px);overflow-y:auto;" :text="tooltipContent">
         {{ content }}
@@ -326,13 +325,12 @@ ml-2
 mr-2
 mt-2
 panelRef
+pressToToggle
 px-3
 py-2
 relative
-resize
 right-full
 rounded-panel
-scroll
 shadow-lg
 show
 text-inverse-ink
