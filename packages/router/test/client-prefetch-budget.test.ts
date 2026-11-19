@@ -12,30 +12,13 @@
  * freely and an app of large ones stops early. Only what the viewport asked
  * for is charged: a hover or a touch is a person asking for that page.
  */
-import { afterEach, describe, expect, it } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { Window } from 'very-happy-dom'
 import { getRouterScript } from '../src/client'
 
-const originals = {
-  window: globalThis.window,
-  document: globalThis.document,
-  location: globalThis.location,
-  history: globalThis.history,
-  fetch: globalThis.fetch,
-  navigator: globalThis.navigator,
-  performance: globalThis.performance,
-  CustomEvent: globalThis.CustomEvent,
-  Event: globalThis.Event,
-  DOMParser: globalThis.DOMParser,
-  IntersectionObserver: (globalThis as any).IntersectionObserver,
-  PerformanceObserver: (globalThis as any).PerformanceObserver,
-}
-afterEach(() => { Object.assign(globalThis, originals) })
-
-const observers: FakeIntersection[] = []
 class FakeIntersection {
   seen: any[] = []
-  constructor(public callback: (entries: any[]) => void) { observers.push(this) }
+  constructor(public callback: (entries: any[]) => void) {}
   observe(target: any) { this.seen.push(target) }
   unobserve() {}
   disconnect() {}
@@ -53,10 +36,10 @@ class FakeIntersection {
   }
 }
 
-interface Options { pageBytes: number, documentBytes: number, budget?: number, links?: number }
+interface Options { pageBytes: number, documentBytes: number, budget?: number, links?: number, countCap?: number }
 
-function install({ pageBytes, documentBytes, budget, links = 10 }: Options) {
-  observers.length = 0
+function install({ pageBytes, documentBytes, budget, links = 10, countCap = 12 }: Options) {
+  const observers: FakeIntersection[] = []
   const requested: string[] = []
   const window: any = new Window({ url: 'http://localhost/' })
   const anchors = Array.from({ length: links }, (_, i) => `<a href="/p${i}" data-stx-link>p${i}</a>`).join('')
@@ -67,13 +50,16 @@ function install({ pageBytes, documentBytes, budget, links = 10 }: Options) {
     cache: true,
     prefetch: true,
     prefetchVisible: true,
+    prefetchVisibleMax: countCap,
     progress: false,
     viewTransitions: false,
     revalidate: false,
     ...(budget === undefined ? {} : { prefetchBudgetBytes: budget }),
   }
   const body = `<main>${'x'.repeat(pageBytes)}</main>`
-  Object.assign(globalThis, {
+  // Each router instance owns its browser globals. Pending jobs from one test
+  // cannot call the next test's fetch or read its navigation timing fixtures.
+  const globals = {
     window,
     document: window.document,
     location: window.location,
@@ -92,11 +78,16 @@ function install({ pageBytes, documentBytes, budget, links = 10 }: Options) {
       getEntriesByType: (type: string) => type === 'navigation' ? [{ decodedBodySize: documentBytes }] : [],
     },
     fetch: async (url: string) => { requested.push(String(url)); return new Response(body, { headers: { 'Content-Type': 'text/html' } }) },
-    IntersectionObserver: FakeIntersection,
+    IntersectionObserver: class extends FakeIntersection {
+      constructor(callback: (entries: any[]) => void) {
+        super(callback)
+        observers.push(this)
+      }
+    },
     PerformanceObserver: undefined,
-  })
-  new Function(getRouterScript())()
-  return { requested }
+  }
+  new Function(...Object.keys(globals), getRouterScript())(...Object.values(globals))
+  return { requested, get observer() { return observers[0]! } }
 }
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
@@ -104,34 +95,34 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 describe('prefetch on sight is bounded by bytes', () => {
   it('stops once prefetched pages outweigh the document the origin served', async () => {
     // Five 1 KB pages fit a 5 KB document; the rest of the ten links must not be fetched.
-    const { requested } = install({ pageBytes: 1000, documentBytes: 5000 })
+    const fixture = install({ pageBytes: 1000, documentBytes: 5000 })
     await wait(20)
-    await observers[0]!.reveal(wait)
+    await fixture.observer.reveal(wait)
     await wait(40)
 
-    expect(requested.length).toBeGreaterThan(0)
-    expect(requested.length).toBeLessThan(10)
+    expect(fixture.requested.length).toBeGreaterThan(0)
+    expect(fixture.requested.length).toBeLessThan(10)
   })
 
   it('honours an explicit budget over the served document size', async () => {
     // A generous document but a 2 KB budget: roughly two 1 KB pages, not ten.
-    const { requested } = install({ pageBytes: 1000, documentBytes: 10_000_000, budget: 2000 })
+    const fixture = install({ pageBytes: 1000, documentBytes: 10_000_000, budget: 2000 })
     await wait(20)
-    await observers[0]!.reveal(wait)
+    await fixture.observer.reveal(wait)
     await wait(40)
 
-    expect(requested.length).toBeLessThan(5)
+    expect(fixture.requested.length).toBeLessThan(5)
   })
 
   it('still prefetches freely when the pages are small against the document', async () => {
     // Ten 100-byte pages against a 500 KB document stay well inside the budget,
     // so the existing count cap is what applies and every link is fetched.
-    const { requested } = install({ pageBytes: 100, documentBytes: 500_000 })
+    const fixture = install({ pageBytes: 100, documentBytes: 500_000 })
     await wait(20)
-    await observers[0]!.reveal(wait)
+    await fixture.observer.reveal(wait)
     await wait(40)
 
-    expect(requested.length).toBe(10)
+    expect(fixture.requested.length).toBe(10)
   })
 
   it('bites when a whole viewport of links arrives in one observer callback', async () => {
@@ -139,22 +130,23 @@ describe('prefetch on sight is bounded by bytes', () => {
     // entry is delivered in a single callback, so nothing has been fetched yet
     // when the last one is seen. Charging at dequeue rather than on sight is
     // what makes the budget apply here at all.
-    const { requested } = install({ pageBytes: 1000, documentBytes: 3000, links: 12 })
+    const fixture = install({ pageBytes: 1000, documentBytes: 3000, links: 12 })
     await wait(20)
-    observers[0]!.revealTogether()
+    fixture.observer.revealTogether()
     await wait(120)
 
-    expect(requested.length).toBeGreaterThan(0)
-    expect(requested.length).toBeLessThan(12)
+    expect(fixture.requested.length).toBeGreaterThan(0)
+    expect(fixture.requested.length).toBeLessThan(12)
   })
 
   it('falls back to the count cap where navigation timing says nothing', async () => {
-    // decodedBodySize of 0 means the browser did not tell us; nothing is held back.
-    const { requested } = install({ pageBytes: 1000, documentBytes: 0 })
+    // A zero decodedBodySize means only the count cap applies. Exercise more
+    // links than the cap so the test also catches an unbounded queue.
+    const fixture = install({ pageBytes: 1000, documentBytes: 0, links: 15, countCap: 10 })
     await wait(20)
-    await observers[0]!.reveal(wait)
-    await wait(40)
+    fixture.observer.revealTogether()
+    await wait(120)
 
-    expect(requested.length).toBe(10)
+    expect(fixture.requested).toEqual(Array.from({ length: 10 }, (_, index) => `/p${index}`))
   })
 })

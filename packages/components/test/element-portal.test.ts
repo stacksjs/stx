@@ -13,8 +13,10 @@ function tooltipLifecycle() {
   const destroys: Array<() => void> = []
   const ticks: Array<() => void> = []
   const panelRef: { value: HTMLElement | null } = { value: null }
-  new Function('panelRef', 'describeTrigger', 'nextTick', 'portalElement', 'onMount', 'onDestroy', 'mounted', 'nativePopup', 'destroyed', script.slice(start))(
+  const triggerRef: { value: HTMLElement | null } = { value: null }
+  new Function('panelRef', 'triggerRef', 'describeTrigger', 'nextTick', 'portalElement', 'onMount', 'onDestroy', 'mounted', 'nativePopup', 'destroyed', script.slice(start))(
     panelRef,
+    triggerRef,
     () => {},
     (callback: () => void) => ticks.push(callback),
     portalElement,
@@ -24,7 +26,7 @@ function tooltipLifecycle() {
     false,
     false,
   )
-  return { panelRef, mount: () => mounts.forEach(callback => callback()), destroy: () => destroys.forEach(callback => callback()), flush: () => ticks.splice(0).forEach(callback => callback()) }
+  return { panelRef, triggerRef, mount: () => mounts.forEach(callback => callback()), destroy: () => destroys.forEach(callback => callback()), flush: () => ticks.splice(0).forEach(callback => callback()) }
 }
 
 describe('owned element portals', () => {
@@ -36,6 +38,7 @@ describe('owned element portals', () => {
     const lifecycle = tooltipLifecycle()
     lifecycle.mount()
     expect(panel.parentElement).toBe(owner)
+    lifecycle.triggerRef.value = document.querySelector('button') as unknown as HTMLElement
     lifecycle.panelRef.value = panel as unknown as HTMLElement
     lifecycle.flush()
     expect(panel.parentElement).toBe(document.body)

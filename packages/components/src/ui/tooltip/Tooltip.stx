@@ -81,6 +81,7 @@ const pressToToggle = useReactiveProp('pressToToggle', {{ pressToToggle }})
 // Reactive prop binding — parent can drive `show` via signals. See #1704.
 const isVisible = useReactiveProp('show', {{ show }})
 let timeoutId = null
+let pointerExitTimeout = null
 let positionGeneration = 0
 let destroyed = false
 
@@ -114,6 +115,8 @@ async function positionTooltip() {
 
 function showTooltip() {
   if (isDisabled() || pressToToggle()) return
+  cancelPointerExit()
+  if (isVisible()) return
   if (timeoutId) clearTimeout(timeoutId)
   if (delay > 0) {
     timeoutId = setTimeout(() => {
@@ -124,6 +127,21 @@ function showTooltip() {
   else {
     isVisible.set(true)
   }
+}
+
+function cancelPointerExit() {
+  if (pointerExitTimeout === null) return
+  clearTimeout(pointerExitTimeout)
+  pointerExitTimeout = null
+}
+
+function leaveTooltip() {
+  if (pressToToggle()) return
+  if (!isVisible()) { hideTooltip(); return }
+  cancelPointerExit()
+  // A portaled panel has an eight-pixel gap from its trigger. Let a pointer
+  // cross that gap without losing the text it was approaching to read.
+  pointerExitTimeout = setTimeout(hideTooltip, 160)
 }
 
 function toggleTouch(event) {
@@ -140,6 +158,7 @@ function toggleTouch(event) {
 
 function hideTooltip() {
   ++positionGeneration
+  cancelPointerExit()
   if (timeoutId) {
     clearTimeout(timeoutId)
     timeoutId = null
@@ -179,6 +198,7 @@ effect(() => {
 onDestroy(() => {
   destroyed = true
   ++positionGeneration
+  cancelPointerExit()
   if (timeoutId) clearTimeout(timeoutId)
   if (stopPositioning) stopPositioning()
   window.stx.overlays.close(activeTooltipId)
@@ -257,7 +277,7 @@ onDestroy(() => { if (restorePanel) restorePanel() })
     x-ref="triggerRef"
     @click="toggleTouch($event)"
     @mouseenter="showTooltip()"
-    @mouseleave="!pressToToggle() && hideTooltip()"
+    @mouseleave="leaveTooltip()"
     @focusin="showTooltip()"
     @focusout="hideTooltip()"
   >
@@ -275,7 +295,7 @@ onDestroy(() => { if (restorePanel) restorePanel() })
     class="{{ tooltipClasses }}"
     role="tooltip"
     @mouseenter="showTooltip()"
-    @mouseleave="!pressToToggle() && hideTooltip()"
+    @mouseleave="leaveTooltip()"
   >
     <span class="block" style="max-height:calc(100vh - 32px);overflow-y:auto;" :text="tooltipContent">{{ content }}</span>
     <span :show="!nativePopup" class="{{ arrowClass }}" :style="arrowStyle"></span>

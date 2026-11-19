@@ -132,34 +132,9 @@ describe('Tooltip is reachable from what it describes', () => {
  * to read it dismissed it -- worst for exactly the long tooltips that are
  * hardest to read quickly.
  */
-describe('Tooltip can be dismissed and can be hovered', () => {
-  it('lets the pointer into the tooltip', async () => {
-    const html = markup(await render('<Tooltip content="Long explanation here">x</Tooltip>'))
-    expect(html).not.toContain('pointer-events-none')
-  })
-
-  it('keeps itself open while the pointer is over it', async () => {
-    // Without these the pointer entering the panel counts as leaving the
-    // trigger, so the tooltip closes as you reach for it.
-    const document = parse(await render('<Tooltip content="Long explanation">x</Tooltip>'))
-    const panel = document.querySelector('[role="tooltip"]')!
-    expect(panel.getAttribute('@mouseenter')).toBe('showTooltip()')
-    expect(panel.getAttribute('@mouseleave')).toBe('hideTooltip()')
-  })
-
-  it('listens for Escape globally, not just on the trigger', async () => {
-    // The tooltip can be open from a HOVER while focus is elsewhere entirely,
-    // and 1.4.13 says dismissal must not require moving pointer or focus --
-    // so a handler bound to the trigger would not satisfy it.
-    const html = await render('<Tooltip content="Help">x</Tooltip>')
-    expect(html).toContain('useEventListener')
-    expect(html).toContain('Escape')
-  })
-
-  it('only dismisses the tooltip that is showing', async () => {
-    const html = await render('<Tooltip content="Help">x</Tooltip>')
-    expect(html).toContain('isVisible()')
-  })
+it('lets the pointer into the tooltip', async () => {
+  const html = markup(await render('<Tooltip content="Long explanation here">x</Tooltip>'))
+  expect(html).not.toContain('pointer-events-none')
 })
 
 /**

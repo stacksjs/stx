@@ -114,3 +114,64 @@ it('positions only open tooltips and toggles explicit help without moving focus'
   }
   finally { view.close(); server.stop(true) }
 }, 60_000)
+
+it('keeps hover help open across the trigger gap and dismisses it with Escape from another control', async () => {
+  const root = join(import.meta.dir, '..')
+  const source = `@import('Tooltip', '${join(root, 'src/ui/tooltip/Tooltip.stx')}')
+<!doctype html><html><head></head><body><main style="padding:120px 80px">
+<Tooltip content="Read this explanation at your own pace"><button id="hover-help">Help</button></Tooltip>
+<button id="elsewhere">Elsewhere</button>
+</main></body></html>`
+  const html = await processDirectives(source, {}, join(root, 'tooltip-hover-fixture.stx'), { ...defaultConfig, root, cache: false, debug: false }, new Set())
+  const css = await generateCss(html, root)
+  const page = html.replace('</head>', `<style>${css}</style></head>`)
+  const server = Bun.serve({ hostname: '127.0.0.1', port: 0, fetch: () => new Response(page, { headers: { 'Content-Type': 'text/html' } }) })
+  const view = new WebView({ headless: true, width: 800, height: 600, backend: { type: 'chrome', url: false } })
+  try {
+    await view.navigate(server.url.href)
+    const status = () => view.evaluate(`(() => {
+      const trigger = document.querySelector('#hover-help');
+      const panel = document.getElementById(trigger.getAttribute('aria-describedby'));
+      const from = trigger.getBoundingClientRect();
+      const to = panel?.getBoundingClientRect();
+      return {
+        visible: !!panel && getComputedStyle(panel).display !== 'none',
+        positioned: !!panel?.style.left,
+        focus: document.activeElement?.id,
+        x: from.left + from.width / 2,
+        triggerY: from.top + from.height / 2,
+        gapY: to && (from.top + to.bottom) / 2,
+        panelY: to && to.top + to.height / 2,
+      };
+    })()`) as Promise<{ visible: boolean, positioned: boolean, focus: string, x: number, triggerY: number, gapY: number, panelY: number }>
+    const move = (x: number, y: number) => view.cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y })
+    await view.evaluate("document.querySelector('#elsewhere').focus()")
+    const trigger = await status()
+    expect(trigger.visible).toBe(false)
+    await move(trigger.x, trigger.triggerY)
+    for (let i = 0; i < 80; i++) {
+      const current = await status()
+      if (current.visible && current.positioned) break
+      await Bun.sleep(20)
+    }
+    const panel = await status()
+    expect(panel).toMatchObject({ visible: true, positioned: true, focus: 'elsewhere' })
+    expect(panel.panelY).toBeLessThan(panel.gapY)
+    expect(panel.gapY).toBeLessThan(panel.triggerY)
+    // Cross beside the arrow so the pointer really leaves both elements.
+    await move(panel.x + 6, panel.gapY)
+    await Bun.sleep(40)
+    await move(panel.x, panel.panelY)
+    await Bun.sleep(220)
+    expect(await status()).toMatchObject({ visible: true, focus: 'elsewhere' })
+    await view.press('Escape')
+    expect(await status()).toMatchObject({ visible: false, focus: 'elsewhere' })
+
+    await move(panel.x, panel.triggerY)
+    expect(await status()).toMatchObject({ visible: true, focus: 'elsewhere' })
+    await move(4, 4)
+    await Bun.sleep(220)
+    expect(await status()).toMatchObject({ visible: false, focus: 'elsewhere' })
+  }
+  finally { view.close(); server.stop(true) }
+}, 60_000)
