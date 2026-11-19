@@ -31,6 +31,13 @@ afterEach(() => {
 })
 
 describe('externalizeRepeatedAssets', () => {
+  it('retains critical CSS and pre-paint preferences even when repeated', () => {
+    const input = `<style stx-inline>${big('.critical{}')}</style><script data-stx-appearance-bootstrap>${big('preferences()')}</script><script data-stx-color-mode-boot>${big('theme()')}</script>`
+    const dir = site({ 'a.html': input, 'b.html': input })
+    expect(externalizeRepeatedAssets(dir).assets).toBe(0)
+    expect(read(dir, 'a.html')).toBe(input)
+    expect(read(dir, 'b.html')).toBe(input)
+  })
   it('lifts a script body shared by two pages into one asset', () => {
     const body = big('console.log(1)')
     const dir = site({

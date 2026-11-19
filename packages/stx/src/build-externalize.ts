@@ -138,7 +138,7 @@ export function externalizeHtml(html: string, basePath: string = `/${EXTERNALIZE
   for (const kind of BLOB_KINDS) {
     out = out.replace(kind.pattern, (whole, attrs: string, body: string) => {
       // An already-external tag, or an empty one that is not worth a request.
-      if (/\b(?:src|href)\s*=/.test(attrs) || !body.trim())
+      if (/(?:^|\s)stx-inline(?:\s|=|$)/i.test(attrs) || /\b(?:src|href)\s*=/.test(attrs) || !body.trim())
         return whole
 
       const filename = `${kind.prefix}.${contentHash(body)}.${kind.extension}`

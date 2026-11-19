@@ -522,6 +522,32 @@ const objectPool = {
 }
 ```
 
+## Deferred hydration scripts
+
+A static page can paint its server-rendered content while its scripts download.
+Use the native `deferScripts` pass after shared asset and island extraction:
+
+```ts
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { deferScripts } from '@stacksjs/stx/build-defer-scripts'
+
+const result = deferScripts(html)
+mkdirSync('dist/_stx', { recursive: true })
+for (const asset of result.assets)
+  writeFileSync(`dist/_stx/${asset.filename}`, asset.contents)
+writeFileSync('dist/index.html', result.html)
+```
+
+The runtime and its dependent classic setup scripts are deferred together and
+execute in document order. Inert islands, template content, modules, asynchronous
+scripts and native appearance bootstraps retain their semantics. Scripts that
+must run during parsing opt out with `stx-inline`. The pass is idempotent and
+returns content-addressed assets without writing files itself.
+
+Mark a render-critical stylesheet `<style stx-inline>` to keep it in HTML through
+both shared and repeated asset extraction. This avoids a first-paint stylesheet
+request without changing the treatment of other stylesheets.
+
 ## Related Resources
 
 - [Performance Guide](/guide/performance) - Comprehensive performance guide

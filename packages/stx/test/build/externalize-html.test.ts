@@ -16,6 +16,10 @@ const ROUTER = '<script data-stx-router>var router = 1;</script>'
 const CSS = '<style data-css="generated">.a{color:red}</style>'
 
 describe('externalizing one document', () => {
+  it('retains explicitly inline critical CSS and scripts', () => {
+    const input = '<style stx-inline data-css="generated">body{color:red}</style><script stx-inline data-stx-runtime>critical()</script>'
+    expect(externalizeHtml(input)).toEqual({ html: input, assets: [], bytesInlined: 0 })
+  })
   it('replaces the inline runtime with a src reference', () => {
     const { html, assets } = externalizeHtml(`<body>${RUNTIME}</body>`)
 

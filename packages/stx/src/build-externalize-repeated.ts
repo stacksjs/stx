@@ -84,6 +84,9 @@ function attrValue(attrs: string, name: string): string | undefined {
  * leaves bytes on the table.
  */
 function isExternalizable(tag: string, attrs: string, body: string): boolean {
+  // Critical CSS and preferences must remain available before the first paint.
+  if (/(?:^|\s)stx-inline(?:\s|=|$)|\bdata-stx-(?:color-mode-boot|appearance-bootstrap)\b/i.test(attrs))
+    return false
   if (body.length < MIN_BLOB_BYTES)
     return false
 
