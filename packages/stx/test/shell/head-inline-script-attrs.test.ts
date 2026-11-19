@@ -13,6 +13,8 @@
  * cannot end the block early. JavaScript is not touched.
  */
 import { describe, expect, it } from 'bun:test'
+import { extractContainerContent } from '../../src/app-shell'
+import { normalizeCriticalHeadOrder } from '../../src/color-mode-boot'
 import { generateDocumentShell, injectConfigHeadTags } from '../../src/document-shell'
 import { defaultConfig, processDirectives } from '../../src/index'
 
@@ -103,5 +105,50 @@ describe('renderHead', () => {
     const content = JSON.stringify({ name: '</script>' })
     const out = renderHead({ script: [{ type: 'application/ld+json', content }] })
     expect(out).toBe(`<script type="application/ld+json">${content.replace('</', '<\\/')}</script>`)
+  })
+})
+
+describe('before-runtime head scripts', () => {
+  it('places an opted-in server head script before the client runtime', async () => {
+    const out = await processDirectives(`<script server>
+useHead({ script: [{ id: 'early-decision', content: 'window.__checkedEarly = true', beforeRuntime: true }] })
+</script>
+<script client>
+const label = state('Ready')
+</script>
+<main><h1 :text="label"></h1></main>`, { ...defaultConfig }, 'page.stx', { autoShell: true } as any, new Set())
+    const early = out.indexOf('<script id="early-decision" data-stx-before-runtime="">')
+    const runtime = out.search(/<script\b[^>]*\bdata-stx-runtime(?=[\s=>])/)
+    expect(early).toBeGreaterThan(-1)
+    expect(runtime).toBeGreaterThan(early)
+    const fragment = extractContainerContent(out)
+    expect(fragment).not.toContain('window.__checkedEarly = true')
+  })
+
+  it('keeps document policy and relative URL configuration ahead of the opted-in script', () => {
+    const html = '<html><head><meta charset="utf-8"><base href="/app/">'
+      + `<meta http-equiv="Content-Security-Policy" content="script-src 'self'"><script data-stx-runtime></script>`
+      + '<script data-stx-before-runtime="">init()</script></head><body></body></html>'
+    const ordered = normalizeCriticalHeadOrder(html)
+    expect(ordered.indexOf('charset')).toBeLessThan(ordered.indexOf('<base'))
+    expect(ordered.indexOf('Content-Security-Policy')).toBeLessThan(ordered.indexOf('data-stx-before-runtime'))
+    expect(ordered.indexOf('data-stx-before-runtime')).toBeLessThan(ordered.indexOf('data-stx-runtime'))
+    expect(normalizeCriticalHeadOrder(ordered)).toBe(ordered)
+  })
+
+  it('preserves color-mode boot order without re-hoisting on a second pass', () => {
+    const html = '<html><head><meta charset="utf-8"><script data-stx-runtime></script>'
+      + '<script data-stx-color-mode-boot>boot()</script><script data-stx-before-runtime="">init()</script></head></html>'
+    const ordered = normalizeCriticalHeadOrder(html)
+    expect(ordered.indexOf('data-stx-color-mode-boot')).toBeLessThan(ordered.indexOf('data-stx-before-runtime'))
+    expect(ordered.indexOf('data-stx-before-runtime')).toBeLessThan(ordered.indexOf('data-stx-runtime'))
+    expect(normalizeCriticalHeadOrder(ordered)).toBe(ordered)
+  })
+
+  it('requires inline classic JavaScript for the opting-in script', async () => {
+    const { renderHead } = await import('../../src/head')
+    expect(() => renderHead({ script: [{ src: '/boot.js', beforeRuntime: true }] })).toThrow('synchronous inline JavaScript')
+    expect(() => renderHead({ script: [{ content: 'boot()', type: 'module', beforeRuntime: true }] })).toThrow('synchronous inline JavaScript')
+    expect(renderHead({ script: [{ content: 'boot()', beforeRuntime: false }] })).not.toMatch(/beforeRuntime|data-stx-before-runtime/)
   })
 })

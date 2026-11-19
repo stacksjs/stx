@@ -17,6 +17,17 @@
 
 const RAW_TEXT_OR_TAG = /<!--[\s\S]*?-->|<(script|style|textarea|title)\b[^>]*>[\s\S]*?<\/\1\s*>|<\/(head|body)\s*>/gi
 
+/** Read an opening tag's attributes with lowercased names and first duplicate wins. */
+export function tagAttributes(token: string): Record<string, string> {
+  const attrs: Record<string, string> = Object.create(null)
+  const attributes = token.replace(/^<\w+\b|>$/g, '')
+  for (const match of attributes.matchAll(/([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g)) {
+    const name = match[1].toLowerCase()
+    if (!(name in attrs)) attrs[name] = match[2] ?? match[3] ?? match[4] ?? ''
+  }
+  return attrs
+}
+
 function closeTagIndex(html: string, tag: 'head' | 'body', which: 'first' | 'last'): number {
   // Cheap way out for the common case of a fragment.
   if (!html.includes(`</${tag}`) && !html.includes(`</${tag.toUpperCase()}`))

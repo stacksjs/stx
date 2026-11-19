@@ -481,7 +481,7 @@ export interface AppHeadConfig {
   /** Link tags (stylesheets, icons, etc.) */
   link?: Array<Record<string, string>>
   /** Script tags to include in <head> */
-  script?: Array<{ src?: string, content?: string, [key: string]: any }>
+  script?: Array<{ src?: string, content?: string, beforeRuntime?: boolean, [key: string]: any }>
   /** Additional raw HTML to inject in <head> */
   headRaw?: string
   /**

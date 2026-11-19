@@ -240,6 +240,13 @@ update; an ordinary `let` provides a live binding without scheduling renders.
 - Run database queries
 - Use Bun or Node.js APIs
 
+### Running an Inline Script Before Hydration
+
+A `<script server>` block can register a document-level check with
+`useHead({ script: [{ beforeRuntime: true, content: '…' }] })`. Use trusted,
+synchronous inline JavaScript. The script runs during full document loads.
+Keep the normal in-app path for client-side navigation.
+
 ## Both Scripts in One Page
 
 A page can (and often should) have both script types. The server script handles data fetching and SEO, while the client script handles interactivity.

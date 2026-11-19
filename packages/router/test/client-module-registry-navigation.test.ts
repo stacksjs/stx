@@ -151,6 +151,12 @@ if (__bundles["abc999"]) return;
 __bundles["abc999"] = true;
 })();`
 
+it('does not replay document bootstrap code during a layout swap', async () => {
+  const html = loginDocument(true).replace('</head>',
+    '<script data-stx-before-runtime="">function __stx_setup_boot() { throw new Error("document boot replayed") }</script></head>')
+  expect(await runOrder(html)).toEqual(['registry', 'setup'])
+})
+
 describe('router: a layout change carries dynamic route parameters', () => {
   for (const place of ['head', 'body']) {
     it(`runs parameters from the ${place} before the destination page setup`, async () => {

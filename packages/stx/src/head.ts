@@ -29,7 +29,7 @@
  * ```
  */
 import { replaceDirectiveCalls, reportDirectiveFailure, splitTopLevelArgs } from './directive-arguments'
-import { inlineScriptContent } from './document-shell'
+import { headScriptAttributes, inlineScriptContent } from './document-shell'
 import { ErrorCodes } from './error-handling'
 import { resolveMetaArguments } from './meta-arguments'
 import { normalizeHeadKeys, USE_HEAD_KEYS } from './head-keys'
@@ -61,6 +61,8 @@ export interface ScriptTag {
   type?: string
   async?: boolean
   defer?: boolean
+  /** Execute trusted inline classic JavaScript before the runtime on a full document load. */
+  beforeRuntime?: boolean
   content?: string
   id?: string
 }
@@ -523,7 +525,8 @@ export function renderHead(config: HeadConfig = currentHead): string {
 
   // Script tags
   for (const script of config.script || []) {
-    const { content, ...attrs } = script
+    const { content } = script
+    const attrs = headScriptAttributes({ ...script })
     const attrStr = Object.entries(attrs)
       .filter(([_, v]) => v !== undefined)
       .map(([k, v]) => {

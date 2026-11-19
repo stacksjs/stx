@@ -10,6 +10,7 @@
  */
 
 import { headCloseIndex } from './document-tags'
+import { BEFORE_RUNTIME_SCRIPT_MARKER } from './head-injection'
 import type { ColorModeBootConfig } from './color-mode-boot'
 import type { AppHeadConfig } from './types/config-types'
 import { generateColorModeBootScript } from './color-mode-boot'
@@ -157,6 +158,20 @@ export function inlineScriptContent(s: { content?: unknown, type?: unknown }): s
   return /json$|^importmap$/.test(type) ? content.replace(/<\//g, '<\\/') : content
 }
 
+/** Serialize the opt-in separately from ordinary HTML attributes. */
+export function headScriptAttributes(script: Record<string, unknown>): Record<string, unknown> {
+  const { content, beforeRuntime, ...attributes } = script
+  if (beforeRuntime !== true) return attributes
+
+  const type = String(attributes.type ?? '').trim().toLowerCase()
+  if (typeof content !== 'string' || !content.trim() || attributes.src || attributes.async || attributes.defer
+    || (type && type !== 'text/javascript' && type !== 'application/javascript'))
+    throw new Error('A beforeRuntime head script must be synchronous inline JavaScript.')
+  delete attributes.async
+  delete attributes.defer
+  return { ...attributes, [BEFORE_RUNTIME_SCRIPT_MARKER]: '' }
+}
+
 /**
  * An inline head `<script>` with its attributes. `useHead({ script: [{ type:
  * 'application/ld+json', id, content }] })` has to reach the browser as the
@@ -164,7 +179,7 @@ export function inlineScriptContent(s: { content?: unknown, type?: unknown }): s
  * kept and only `content` becomes the body.
  */
 function inlineScriptTag(s: Record<string, unknown>): string {
-  const attrs = attrPairs(s, k => k === 'content')
+  const attrs = attrPairs(headScriptAttributes(s))
   return `<script${attrs ? ` ${attrs}` : ''}>${inlineScriptContent(s)}</script>`
 }
 
@@ -539,7 +554,7 @@ export function generateDocumentShell(
   // Build <head> script tags (from config)
   const configHeadScripts = headScriptTags.map(s => {
     if (s.src) {
-      return `  <script ${attrPairs(s, k => k === 'content')}></script>`
+      return `  <script ${attrPairs(headScriptAttributes(s))}></script>`
     }
     if (s.content) {
       return `  ${inlineScriptTag(s)}`
@@ -747,7 +762,7 @@ export function injectConfigHeadTags(html: string, headConfig: AppHeadConfig = {
     if (s.src) {
       if (head.includes(`src="${s.src}"`))
         continue
-      parts.push(`  <script ${attrPairs(s, k => k === 'content')}></script>`)
+      parts.push(`  <script ${attrPairs(headScriptAttributes(s))}></script>`)
     }
     else if (s.content) {
       if (head.includes(inlineScriptContent(s)))

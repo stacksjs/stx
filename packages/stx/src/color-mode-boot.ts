@@ -48,7 +48,10 @@
  *
  * @module color-mode-boot
  */
-import { headInsertionPoint } from './head-injection'
+import { headCloseIndex, tagAttributes } from './document-tags'
+import { BEFORE_RUNTIME_SCRIPT_MARKER, headInsertionPoint } from './head-injection'
+import { matchScriptElement, scanAtElementPosition } from './html-masking'
+import { decodeTitleEntities } from './spa-nav'
 
 /** Marker attribute — makes injection idempotent and findable by tests. */
 export const COLOR_MODE_BOOT_MARKER = 'data-stx-color-mode-boot'
@@ -299,16 +302,56 @@ function hoistCharsetMeta(html: string): string {
   return `${html.slice(0, headStart)}\n  ${meta[0]}${html.slice(headStart, meta.index)}${html.slice(metaEnd, headEnd)}${html.slice(headEnd)}`
 }
 
-/**
- * Re-assert the ordering of the two head tags whose position is load-bearing:
- * `<meta charset>` first, then the color-mode boot script, then everything else.
- *
- * Run this LAST, after every other head injection. Ordering the injectors
- * against each other would hold only until the next one is added; re-asserting
- * the result once at the end holds regardless of what ran before.
- */
+/** Re-assert charset, appearance and document-boot ordering after all head injections. */
 export function normalizeCriticalHeadOrder(html: string): string {
-  return hoistColorModeBootScript(hoistCharsetMeta(html))
+  return hoistBeforeRuntimeScripts(hoistColorModeBootScript(hoistCharsetMeta(html)))
+}
+
+const HEAD_POLICY_TAG = /<(?:base|meta)\b(?:"[^"]*"|'[^']*'|[^'">])*>/iy
+const SCRIPT_START_TAG = /^<script\b(?:"[^"]*"|'[^']*'|[^'">])*>/i
+
+function hoistBeforeRuntimeScripts(html: string): string {
+  if (!html.includes(`${BEFORE_RUNTIME_SCRIPT_MARKER}=""`)) return html
+  const start = headInsertionPoint(html)
+  const end = headCloseIndex(html)
+  if (start === null || end === -1) return html
+
+  const head = html.slice(start, end)
+  const headScripts = scanAtElementPosition(head, matchScriptElement)
+    .map(script => ({ ...script, attrs: tagAttributes(SCRIPT_START_TAG.exec(script.token)?.[0] ?? '') }))
+  const scripts = headScripts.filter(({ attrs }) => BEFORE_RUNTIME_SCRIPT_MARKER in attrs)
+  if (!scripts.length) return html
+
+  // Respect the document's declared base and meta CSP before any opted-in
+  // code executes. Moving an inline script ahead of a meta policy weakens it.
+  const policies = scanAtElementPosition(head, (source, index) => {
+    HEAD_POLICY_TAG.lastIndex = index
+    const candidate = HEAD_POLICY_TAG.exec(source)?.[0]
+    if (!candidate) return -1
+    const policy = decodeTitleEntities(tagAttributes(candidate)['http-equiv'] ?? '').toLowerCase()
+    return /^<base\b/i.test(candidate) || policy === 'content-security-policy' ? index + candidate.length : -1
+  })
+  const appearance = headScripts.find(({ attrs }) => COLOR_MODE_BOOT_MARKER in attrs)
+  const insertion = Math.max(policies.at(-1)?.end ?? 0, appearance?.end ?? 0)
+  let cursor = insertion
+  if (scripts.every((script) => {
+    if (script.start < cursor || head.slice(cursor, script.start).trim()) return false
+    cursor = script.end
+    return true
+  })) return html
+
+  const parts: string[] = []
+  let adjustedInsertion = insertion
+  cursor = 0
+  for (const script of scripts) {
+    parts.push(head.slice(cursor, script.start))
+    cursor = script.end
+    if (script.end <= insertion) adjustedInsertion -= script.end - script.start
+  }
+  parts.push(head.slice(cursor))
+  const remaining = parts.join('')
+  const boot = scripts.map(script => script.token).join('\n  ')
+  return html.slice(0, start) + remaining.slice(0, adjustedInsertion) + '\n  ' + boot + remaining.slice(adjustedInsertion) + html.slice(end)
 }
 
 /**

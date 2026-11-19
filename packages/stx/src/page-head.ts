@@ -1,4 +1,5 @@
 import { escapeAttr } from './builtins/escape'
+import { tagAttributes } from './document-tags'
 import { scanAtElementPosition } from './html-masking'
 import { decodeTitleEntities } from './spa-nav'
 
@@ -17,17 +18,6 @@ function headTags(html: string): string[] {
     tag.lastIndex = index
     return tag.exec(source) ? tag.lastIndex : -1
   }).map(({ token }) => token)
-}
-
-// Lowercased names, first duplicate wins, as the HTML parser reads them.
-function tagAttributes(token: string): Record<string, string> {
-  const attrs: Record<string, string> = Object.create(null)
-  const attributes = token.replace(/^<\w+\b|>$/g, '')
-  for (const match of attributes.matchAll(/([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g)) {
-    const name = match[1].toLowerCase()
-    if (!(name in attrs)) attrs[name] = match[2] ?? match[3] ?? match[4] ?? ''
-  }
-  return attrs
 }
 
 /** Only page metadata travels across a fragment swap; never executable head state. */

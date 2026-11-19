@@ -20,6 +20,7 @@ import { startsDocument } from './document-shell'
 import { findContainerRegion } from './fragment-container'
 import type { ContainerRegion } from './fragment-container'
 import { matchScriptElement, scanAtElementPosition } from './html-masking'
+import { BEFORE_RUNTIME_SCRIPT_MARKER } from './head-injection'
 import { isDevelopment } from './env'
 import { isSpaNavRequest } from './spa-nav'
 import { pageCssFragment, pageHeadFragment } from './page-head'
@@ -416,7 +417,7 @@ export function externalScriptsOutsideContainer(html: string, container: Contain
     const type = attrs.get('type')?.trim().toLowerCase()
     if (!src || attrs.has('server') || (type && !['module', 'text/javascript', 'application/javascript'].includes(type)))
       continue
-    if (attrs.has('data-stx-runtime') || attrs.has('data-stx-router')
+    if (attrs.has(BEFORE_RUNTIME_SCRIPT_MARKER) || attrs.has('data-stx-runtime') || attrs.has('data-stx-router')
       || /^\/_stx\/(?:runtime|router)(?:\.[a-f0-9]{16})?\.js(?:[?#]|$)/i.test(src))
       continue
     if (isChromeInstanceScript(html, element.token, container.start, container.end) || seen.has(element.token))
@@ -478,6 +479,7 @@ export function extractContainerContent(html: string, containerSelector: string 
       // it with the payload, but don't remount persistent layout components
       // or reinstall the shared runtime during a fragment navigation.
       if (COMPONENT_INSTANCE_SCRIPT.test(m[0]) || m[0].includes('__stx_early_mounts')
+        || /^<script\b[^>]*\bdata-stx-before-runtime(?=[\s=>])/i.test(m[0])
         || /^<script\b[^>]*\bdata-stx-runtime(?=[\s=>])/i.test(m[0])) continue
       headScripts.push(m[0])
     }

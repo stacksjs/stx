@@ -25,6 +25,9 @@ import { headCloseIndex } from './document-tags'
  * @module head-injection
  */
 
+/** A document-only classic script that runs ahead of the client runtime. */
+export const BEFORE_RUNTIME_SCRIPT_MARKER = 'data-stx-before-runtime'
+
 /** Fragments waiting to be spliced into one document. */
 export interface HeadInjections {
   /** Inserted immediately after the `<head ...>` open tag, in push order. */

@@ -2501,6 +2501,7 @@ else {
       function prepareRoutedBodyScripts(root){
         if(!root)return;
         root.querySelectorAll('script').forEach(function(s){
+          if(s.hasAttribute('data-stx-before-runtime')){s.remove();return}
           var text=s.textContent||'';
           // Not discarded: queued against docBase, so a relative src resolves
           // against the page being navigated to rather than the current URL.
@@ -2571,7 +2572,7 @@ else {
       // ── Load new external <head> scripts ──
       var extPromises=[];
       doc.querySelectorAll('head script[src]').forEach(function(s){
-        if(isSharedClientScript(s))return;
+        if(s.hasAttribute('data-stx-before-runtime')||isSharedClientScript(s))return;
         // Fetched-document script: resolve against the page being navigated to
         // (docBase), not the origin root — same rationale as the <link> reconcile (#1777).
         var src=new URL(s.getAttribute('src'),docBase).href;
@@ -2606,7 +2607,7 @@ else {
         // :model="email" showed "[object HTMLInputElement]".
         doc.querySelectorAll('head script').forEach(function(s){
           var text=s.textContent||'';
-          if(s.hasAttribute('src'))return;
+          if(s.hasAttribute('src')||s.hasAttribute('data-stx-before-runtime'))return;
           if(!text.trim())return;
           if(isSignalsRuntimeScript(s,text))return;
           if(isModuleRegistryScript(s)||isComposablesScript(s))addScript(text,true,'','',s.type==='module',s.getAttribute('data-stx-module-job'),isModuleRegistryScript(s),isComposablesScript(s));
@@ -2623,7 +2624,7 @@ else {
         scripts.forEach(function(entry){var t=entry.text;if(t.indexOf('__stx_setup_')!==-1)seenSetups[t]=1});
         doc.querySelectorAll('script').forEach(function(s){
           var text=s.textContent||'';
-          if(s.hasAttribute('src'))return;
+          if(s.hasAttribute('src')||s.hasAttribute('data-stx-before-runtime'))return;
           if(!text.trim())return;
           // Skip signals runtime and router (they contain __stx_setup references but aren't setup functions)
           if(isSignalsRuntimeScript(s,text))return;
