@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.915...v0.2.916)
+
+## ⚡ Performance Improvements
+
+- **serve**: inline small generated stylesheets within a byte budget ([885ea7b](https://github.com/stacksjs/stx/commit/885ea7b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.916 ([c99fe81](https://github.com/stacksjs/stx/commit/c99fe81)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.914...v0.2.915)
 
 ## 🐛 Bug Fixes
