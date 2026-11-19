@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.916...v0.2.917)
+
+## 🐛 Bug Fixes
+
+- **router**: a tap on a page the sight budget refused no longer freezes it ([d8764a7](https://github.com/stacksjs/stx/commit/d8764a7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **native**: a list that fills a scrolling main owns the scrolling ([4951e37](https://github.com/stacksjs/stx/commit/4951e37)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🧹 Chores
+
+- release v0.2.917 ([375cb71](https://github.com/stacksjs/stx/commit/375cb71)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.915...v0.2.916)
 
 ## ⚡ Performance Improvements
