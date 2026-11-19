@@ -1,5 +1,30 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.917...v0.2.918)
+
+## ✨ Features
+
+- **head**: allow document scripts before the runtime ([12797f2](https://github.com/stacksjs/stx/commit/12797f2)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_ ([#2204](https://github.com/stacksjs/stx/issues/2204))
+- **native**: report completed modal dismissal ([7d8fab7](https://github.com/stacksjs/stx/commit/7d8fab7)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_ ([#2203](https://github.com/stacksjs/stx/issues/2203))
+
+## 🐛 Bug Fixes
+
+- **router**: keep superseded navigation from changing the page ([9c67665](https://github.com/stacksjs/stx/commit/9c67665)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_ ([#2204](https://github.com/stacksjs/stx/issues/2204))
+- **components**: track only open tooltips ([dba1e7f](https://github.com/stacksjs/stx/commit/dba1e7f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_ ([#2202](https://github.com/stacksjs/stx/issues/2202))
+- **serve**: respect page render-cache opt-outs ([c782f05](https://github.com/stacksjs/stx/commit/c782f05)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- record tooltip and native dismissal contracts ([4df9f71](https://github.com/stacksjs/stx/commit/4df9f71)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.918 ([a014df4](https://github.com/stacksjs/stx/commit/a014df4)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.916...v0.2.917)
 
 ## 🐛 Bug Fixes
