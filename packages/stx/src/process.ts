@@ -1036,7 +1036,7 @@ export async function processDirectives(
         // Component-dense pages need both duplicate scoped-style removal and
         // generated-CSS injection. Apply both edits in one forward rebuild;
         // separate calls materialised the whole document twice (#1945).
-        result = await injectCss(result, undefined, options.buildMode === 'serve', true)
+        result = await injectCss(result, undefined, options.buildMode === 'serve', true, options.inlineGeneratedCssBytes)
       }
       else if (isTopLevel) {
         // Inner layout renders deliberately skip generated CSS, but still need

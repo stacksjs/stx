@@ -551,6 +551,10 @@ then deliver the same optimization without a static build or a custom gateway
 response transform. Generated `public/_stx` images are excluded from source
 image encoding so prepared variants are not encoded a second time.
 
+Use `inlineGeneratedCssBytes` in the same config to keep small generated
+utility stylesheets in the HTML during serving. The limit measures UTF-8
+bytes before compression. Larger stylesheets keep their cacheable asset URL.
+
 Mark a render-critical stylesheet `<style stx-inline>` to keep it in HTML through
 both shared and repeated asset extraction. This avoids a first-paint stylesheet
 request without changing the treatment of other stylesheets.

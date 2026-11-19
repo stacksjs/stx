@@ -1049,6 +1049,9 @@ export interface StxConfig {
    */
   buildMode?: 'compile' | 'serve' | 'spa'
 
+  /** Inline generated CSS up to this UTF-8 byte limit in served documents. */
+  inlineGeneratedCssBytes?: number
+
   /** Minify client scripts independently of asset emission mode. Static builds enable this. */
   minifyClient?: boolean
 

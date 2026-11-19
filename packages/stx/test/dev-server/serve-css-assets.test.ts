@@ -85,6 +85,15 @@ it('keeps non-serve generation inline without creating served assets', async () 
   expect(fs.existsSync(path.join(root, 'state/css-assets'))).toBe(false)
 })
 
+it('inlines small generated styles while leaving larger ones cacheable in serve mode', async () => {
+  const page = '<html><head></head><body class="flex gap-4"></body></html>'
+  const baseline = await injectCss(page, root)
+  const size = Buffer.byteLength(baseline.match(/<style data-css="generated">\n([\s\S]*?)\n<\/style>/)?.[1] ?? '')
+  expect(size).toBeGreaterThan(1)
+  expect(await injectCss(page, root, true, false, size)).toBe(baseline)
+  expect(await injectCss(page, root, true, false, size - 1)).toContain('/_stx/css.')
+})
+
 it('does not publish an incomplete asset when the atomic rename fails', () => {
   const rename = spyOn(fs, 'renameSync').mockImplementation(() => { throw new Error('rename failed') })
   try {

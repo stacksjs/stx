@@ -924,6 +924,7 @@ export async function injectCss(
   appDir?: string,
   serveMode = false,
   dedupeRenderedScopedStyles = false,
+  inlineGeneratedCssBytes = 0,
 ): Promise<string> {
   // Generate CSS for ALL utility classes in the (possibly shell-composed)
   // content. We must NOT early-return just because a `data-css="generated"`
@@ -943,7 +944,8 @@ export async function injectCss(
     return dedupeRenderedScopedStyles ? dedupeScopedStyles(htmlContent) : htmlContent
   }
 
-  const serveHash = serveMode ? registerCssServeAsset(css) : undefined
+  const inline = inlineGeneratedCssBytes > 0 && Buffer.byteLength(css) <= inlineGeneratedCssBytes
+  const serveHash = serveMode && !inline ? registerCssServeAsset(css) : undefined
   const assetTag = serveHash
     ? `<link data-css="generated" rel="stylesheet" href="/_stx/css.${serveHash}.css">`
     : `<style data-css="generated">\n${css}\n</style>`
