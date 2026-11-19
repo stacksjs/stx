@@ -1,5 +1,28 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.914...v0.2.915)
+
+## 🐛 Bug Fixes
+
+- **signals**: mount deferred setup after all scripts register hooks ([27ab4e0](https://github.com/stacksjs/stx/commit/27ab4e0)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ⚡ Performance Improvements
+
+- **serve**: defer final SSR setup through the native asset store ([ed97c19](https://github.com/stacksjs/stx/commit/ed97c19)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **build**: defer ordered hydration scripts and retain critical inline assets ([5a86747](https://github.com/stacksjs/stx/commit/5a86747)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- retain deferred and routed mount guard coverage ([35c2297](https://github.com/stacksjs/stx/commit/35c2297)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.915 ([ba3ff31](https://github.com/stacksjs/stx/commit/ba3ff31)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.913...v0.2.914)
 
 ## ✨ Features
