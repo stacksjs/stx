@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.918...v0.2.919)
+
+## 🐛 Bug Fixes
+
+- preserve hover help and isolate prefetch tests ([d25693d](https://github.com/stacksjs/stx/commit/d25693d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_ ([#2202](https://github.com/stacksjs/stx/issues/2202), [#2204](https://github.com/stacksjs/stx/issues/2204))
+
+## 🔧 Chores
+
+- release v0.2.919 ([44ff50c](https://github.com/stacksjs/stx/commit/44ff50c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.917...v0.2.918)
 
 ## ✨ Features
