@@ -106,6 +106,26 @@ describe('foreground navigation takes priority over speculative HTML', () => {
     finally { await app.drain(); await navigation }
   })
 
+  it('keeps the current page while waiting on a newer promoted navigation', async () => {
+    const app = install()
+    const navigated: string[] = []
+    app.window.addEventListener('stx:navigate', (event: CustomEvent<{ url: string }>) => navigated.push(event.detail.url))
+    // The destination is already downloading before either navigation.
+    app.hover('target')
+    const older = app.window.stxRouter.navigate('/old')
+    const newer = app.window.stxRouter.navigate('/target')
+    try {
+      app.release('/old')
+      await older
+      expect(app.window.location.pathname).toBe('/home')
+      expect(navigated).toEqual([])
+      app.release('/target')
+      expect(await newer).toBe(true)
+      expect(app.window.location.pathname).toBe('/target')
+    }
+    finally { await app.drain(); await older; await newer }
+  })
+
   it('holds new speculation even when a slot is free during navigation', async () => {
     const app = install()
     let navigation: Promise<unknown> | undefined

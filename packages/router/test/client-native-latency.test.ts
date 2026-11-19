@@ -146,6 +146,18 @@ describe('the newest navigation wins', () => {
     expect(navigations).toEqual([])
   })
 
+  it('does not commit a superseded swap when its fallback fade finishes', async () => {
+    const { window } = install(page('Home'), path => fragment(`<h1>${path}</h1>`), { screens: false })
+    const outgoing = window.document.querySelector('main')
+    const old = window.stxRouter.navigate('/fade')
+    for (let i = 0; i < 40 && outgoing.style.opacity !== '0'; i++) await sleep(1)
+    expect(outgoing.style.opacity).toBe('0')
+    expect(await window.stxRouter.navigate('/instant', { instant: true })).toBe(true)
+    await old
+    expect(window.location.pathname).toBe('/instant')
+    expect(main(window)).toBe('/instant')
+  })
+
   it('lets Back during a load win over the load', async () => {
     const { window } = install(page('Home'), async (path) => {
       if (path === '/slow')
@@ -432,6 +444,25 @@ describe('inner scrollers', () => {
     await sleep(300)
     expect(window.document.querySelector('[data-stx-scroll]').scrollTop).toBe(240)
   })
+
+  it('does not restore a previous entry’s inner scroll on a newer page', async () => {
+    const scroller = '<div data-stx-scroll="feed">feed</div>'
+    const { window } = install(page(scroller), () => fragment(scroller), { screens: false })
+    await window.stxRouter.navigate('/list')
+    window.document.querySelector('[data-stx-scroll]').scrollTop = 240
+    await window.stxRouter.navigate('/detail')
+
+    const returned = new Promise<void>((resolve) => {
+      window.addEventListener('stx:navigate', () => resolve(), { once: true })
+    })
+    window.history.back()
+    await returned
+    expect(window.document.querySelector('[data-stx-scroll]').scrollTop).toBe(240)
+    await window.stxRouter.navigate('/another-list', { instant: true })
+    await sleep(100)
+    expect(window.document.querySelector('[data-stx-scroll]').scrollTop).toBe(0)
+  })
+
 })
 
 describe('data-nav-direction', () => {
@@ -440,8 +471,11 @@ describe('data-nav-direction', () => {
     const seen: string[] = []
     window.addEventListener('stx:navigate', (e: any) => seen.push(`${e.detail.direction}:${window.document.documentElement.getAttribute('data-nav-direction')}`))
     await window.stxRouter.navigate('/b')
+    const returned = new Promise<void>((resolve) => {
+      window.addEventListener('stx:navigate', () => resolve(), { once: true })
+    })
     window.history.back()
-    await sleep(60)
+    await returned
     await window.stxRouter.refresh()
     expect(seen).toEqual(['push:push', 'pop:pop', 'replace:replace'])
     expect(window.document.documentElement.hasAttribute('data-nav-direction')).toBe(false)

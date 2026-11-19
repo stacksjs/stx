@@ -315,7 +315,13 @@ function routerSource(): string {
       // by a :for that has not run yet, and a box with nothing in it cannot
       // be scrolled anywhere.
       var inner=pendingInner;pendingInner=null;
-      if(inner){applyInner(activeRoot(),inner);setTimeout(function(){applyInner(activeRoot(),inner)},60)}
+      if(inner){
+        var root=activeRoot(),nav=navSeq,token=scrollToken;
+        applyInner(root,inner);
+        setTimeout(function(){
+          if(nav===navSeq&&token===scrollToken&&root===activeRoot())applyInner(root,inner)
+        },60)
+      }
       return;
     }
     pendingInner=null;
@@ -460,6 +466,41 @@ function routerSource(): string {
       log('[router] view transition unavailable:',err&&err.message?err.message:err);
       return false;
     }
+  }
+
+  // The fallback fade can outlive the navigation that started it. Keep its
+  // styles and timer owned by that swap, resetting them when another wins.
+  var cancelSwapFade=null;
+  function settleSwapFade(){if(cancelSwapFade)cancelSwapFade()}
+  function fadeBeforeSwap(content,swap,cancel){
+    settleSwapFade();
+    var style=content.style,transition=style.transition,opacity=style.opacity,committed=false;
+    style.transition='opacity 0.12s ease-out';
+    style.opacity='0';
+    var timer=setTimeout(function(){
+      committed=true;
+      restoreStyles();
+      swap();
+      if(cancelSwapFade!==restore)return;
+      // A layout swap may replace this element, and the new page may have
+      // authored different inline styles on a container that stayed.
+      if(content!==getContainer()){cancelSwapFade=null;return}
+      transition=style.transition;opacity=style.opacity;
+      style.transition='opacity 0.12s ease-out';
+      style.opacity=opacity||'1';
+      timer=setTimeout(restore,150);
+    },120);
+    function restoreStyles(){
+      style.transition=transition;
+      style.opacity=opacity;
+    }
+    function restore(){
+      cancelSwapFade=null;
+      clearTimeout(timer);
+      restoreStyles();
+      if(!committed)cancel();
+    }
+    cancelSwapFade=restore;
   }
 
   // ── Instant navigation: one frame, already filled ──
@@ -1454,11 +1495,18 @@ function routerSource(): string {
     // forward-navigation page.
     if(pushState!==false&&pushState!=='tab'&&t.href===location.href&&!t.hash&&!force)return Promise.resolve(false);
 
+    settleSwapFade();
+
     // Its prefetch is on the way: wait for that answer rather than asking the
     // server a second time. A later tap elsewhere wins.
     var awaitedKey=cacheKey(url);
     var awaited=o.cache&&!force&&!cache[awaitedKey]?prefetching[awaitedKey]:null;
     if(awaited&&awaited.then){
+      // Waiting for a promoted prefetch is already a foreground intent.
+      // The earlier request must stop before it can replace the page.
+      var intent=++navSeq,awaitedInstant=instantNext;
+      instantNext=false;
+      if(navAbort){try{navAbort.abort()}catch(e){}navAbort=null}
       awaitingKey=awaitedKey;
       promotePrefetch(awaitedKey,true);
       // Answer the tap now, not when the prefetch lands. The page it asked
@@ -1470,7 +1518,7 @@ function routerSource(): string {
       document.body.classList.add(o.loadingClass);
       startProgress();
       return awaited.then(function(){
-        if(awaitingKey!==awaitedKey)return false;
+        if(intent!==navSeq||awaitingKey!==awaitedKey)return false;
         awaitingKey='';
         // That prefetch settled without filling the cache -- it was over the
         // sight budget, or it failed, or its entry was left dangling. Drop
@@ -1482,6 +1530,7 @@ function routerSource(): string {
         // still empty, so a prefetch started since is left to finish.
         if(!cache[awaitedKey]&&prefetching[awaitedKey]===awaited)delete prefetching[awaitedKey];
         navCtxNext=ctx;
+        instantNext=awaitedInstant;
         return navigate(url,pushState,force);
       });
     }
@@ -2260,12 +2309,13 @@ else {
       var useScreens=screensOn();
       function startFragSwap(){
         if(ctx.id&&ctx.id!==navSeq)return Promise.resolve(false);
-        if(pushState!==false)snapScroll();
-        if(useScreens)settleAnimation();
-        else if(window.stx&&window.stx._cleanupContainer)window.stx._cleanupContainer(currentContent);
         return new Promise(function(resolve,reject){
           function completeFragSwap(){
+            if(ctx.id&&ctx.id!==navSeq){resolve(false);return}
             try{
+              if(pushState!==false)snapScroll();
+              if(useScreens)settleAnimation();
+              else if(window.stx&&window.stx._cleanupContainer)window.stx._cleanupContainer(currentContent);
               setDirection(ctx.direction);
               if(useScreens){scr=screenBegin(host,ctx,html,pushState!==false);currentContent=scr.el}
               beginPageSwap();
@@ -2280,7 +2330,7 @@ else {
           else if(useScreens){completeFragSwap()}
           else if(runViewTransition(completeFragSwap)){}
           else if(instantNav){completeFragSwap()}
-          else{currentContent.style.transition='opacity 0.12s ease-out';currentContent.style.opacity='0';setTimeout(function(){completeFragSwap();currentContent.style.opacity='1';setTimeout(function(){currentContent.style.transition=''},150)},120)}
+          else fadeBeforeSwap(currentContent,completeFragSwap,function(){resolve(false)})
         });
       }
       // A stylesheet this page has never loaded is fetched BEFORE the content
@@ -2731,19 +2781,16 @@ else {
 
     function startSwap(){
       if(ctx.id&&ctx.id!==navSeq)return Promise.resolve(false);
-      if(pushState!==false)snapScroll();
-      setDirection(ctx.direction);
-      // A whole document is written into the container as it is, so retained
-      // screens go first: they would otherwise outlive the page they belong to.
-      collapseScreens();
-      currentContent=getContainer();
-      // Clean up existing signals/effects
-      if(window.stx&&window.stx._cleanupContainer){
-        window.stx._cleanupContainer(currentContent);
-      }
       return new Promise(function(resolve,reject){
         function completeSwap(){
+          if(ctx.id&&ctx.id!==navSeq){resolve(false);return}
           try{
+            if(pushState!==false)snapScroll();
+            setDirection(ctx.direction);
+            // A whole document replaces any retained screens as well.
+            collapseScreens();
+            currentContent=getContainer();
+            if(window.stx&&window.stx._cleanupContainer)window.stx._cleanupContainer(currentContent);
             beginPageSwap();
             doSwap();
             resolve(true);
@@ -2757,16 +2804,7 @@ else {
           // A tab: swap at once, no fade either way.
           completeSwap();
         }
-        else {
-          // Fallback fade for browsers without View Transitions API
-          currentContent.style.transition='opacity 0.12s ease-out';
-          currentContent.style.opacity='0';
-          setTimeout(function(){
-            completeSwap();
-            currentContent.style.opacity='1';
-            setTimeout(function(){currentContent.style.transition=''},150);
-          },120);
-        }
+        else fadeBeforeSwap(currentContent,completeSwap,function(){resolve(false)})
       });
     }
     var docCssReady=preloadGeneratedCss(docCssHrefs,docCssBase);
@@ -3058,6 +3096,7 @@ else {
   function showRetained(to,dir,opts){
     renderedPage=cacheKey(to.url);
     opts=opts||{};
+    settleSwapFade();
     settleAnimation();
     var from=active,host=getContainer();
     if(navAbort){try{navAbort.abort()}catch(e){}navAbort=null}
