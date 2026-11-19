@@ -69,6 +69,8 @@ export type TranslationDiagnosticKind =
   /** A theme declaration cannot be evaluated faithfully on the native target. */
   | 'unsupported-theme-rule'
   | 'unsupported-style-rule'
+  /** A vertical ScrollView held a list that fills its space, so it was compiled as a View and the list scrolls instead. */
+  | 'list-owns-scrolling'
 
 export interface TranslationDiagnostic {
   kind: TranslationDiagnosticKind
@@ -846,6 +848,7 @@ export async function translateHtmlToIR(
   }
   nameControlsFromLabels(root)
   project(root)
+  yieldScrollingToLists(root, diagnostics)
   boundScrollingViewports(root)
 
   return { root, diagnostics }
@@ -890,6 +893,54 @@ function nameControlsFromLabels(root: STXNode): void {
     if (label.props['aria-hidden'] === undefined && label.bindings?.['aria-hidden'] === undefined)
       label.props['aria-hidden'] = 'true'
   }
+}
+
+/**
+ * A vertical ScrollView whose content holds a list that fills its space is a
+ * View: the list does the scrolling.
+ *
+ * A layout that scrolls its `<main>` (`overflow-y-auto`) compiles to a
+ * vertical ScrollView, and a page under it cannot opt out. When that page is
+ * a `<List>` (a FlatList or SectionList with `flex-1`), the list asks for the
+ * height of a viewport whose content has no height, and UIKit drew nothing:
+ * the screen showed its header, an empty body, and "NaN passed to
+ * CoreGraphics" in the log. A browser has the same nesting and scrolls the
+ * inner box, so the web page was fine and only the phone was blank.
+ *
+ * The list is looked for through plain wrappers, where the viewport's height
+ * would reach it. A wrapper with its own height or max-height bounds the list
+ * itself, a nested ScrollView is its own content boundary, and a sideways
+ * list or a list with no flex sizes to its rows, so each of those leaves the
+ * ScrollView as it was. Runs before `boundScrollingViewports`, so the View
+ * left behind carries the list's flex on up to the screen.
+ */
+function yieldScrollingToLists(node: STXNode, diagnostics: TranslationDiagnostic[]): void {
+  for (const child of node.children) {
+    if (typeof child !== 'string') yieldScrollingToLists(child, diagnostics)
+  }
+  if (node.type !== 'ScrollView' || node.props.horizontal) return
+  for (const child of node.children) {
+    const list = typeof child === 'string' ? null : flexibleVerticalList(child)
+    if (!list) continue
+    node.type = 'View'
+    diagnostics.push({ kind: 'list-owns-scrolling', tag: 'ScrollView', name: list })
+    return
+  }
+}
+
+function flexibleVerticalList(node: STXNode): string | null {
+  if (node.type === 'FlatList' || node.type === 'SectionList') {
+    // A sideways List says so in its viewport classes; its `horizontal` is a binding.
+    const sideways = Boolean(node.props.horizontal) || /(?:^|\s)overflow-x-(?:auto|scroll)(?:\s|$)/.test(node._classes ?? '')
+    return !sideways && (Number(node.style.flex) > 0 || Number(node.style.flexGrow) > 0) ? node.type : null
+  }
+  if (!['View', 'SafeAreaView', 'KeyboardAvoidingView'].includes(node.type)) return null
+  if (node.style.height !== undefined || node.style.maxHeight !== undefined) return null
+  for (const child of node.children) {
+    const list = typeof child === 'string' ? null : flexibleVerticalList(child)
+    if (list) return list
+  }
+  return null
 }
 
 /**
