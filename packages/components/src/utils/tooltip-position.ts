@@ -38,8 +38,58 @@ export async function measureTooltipPosition(trigger: HTMLElement | NativeToolti
   const viewport = trigger.ownerDocument.defaultView
   if (!rect.width || !rect.height || !viewport) return null
   const origin = panel.offsetParent?.getBoundingClientRect()
-  const point = tooltipPosition(trigger.getBoundingClientRect(), rect, { width: viewport.innerWidth, height: viewport.innerHeight }, preferred)
-  return { ...point, left: point.left - (origin?.left ?? 0), top: point.top - (origin?.top ?? 0) }
+  const visible = viewport.visualViewport
+  const x = visible?.offsetLeft ?? 0
+  const y = visible?.offsetTop ?? 0
+  const anchor = trigger.getBoundingClientRect()
+  const point = tooltipPosition(
+    { left: anchor.left - x, right: anchor.right - x, top: anchor.top - y, bottom: anchor.bottom - y },
+    rect,
+    { width: visible?.width || viewport.innerWidth, height: visible?.height || viewport.innerHeight },
+    preferred,
+  )
+  return { ...point, left: point.left + x - (origin?.left ?? 0), top: point.top + y - (origin?.top ?? 0) }
+}
+
+/** Track an open browser popup, reading layout once per rendering frame. */
+export function trackBrowserPopup(trigger: HTMLElement, panel: HTMLElement, place: () => void): () => void {
+  const view = trigger.ownerDocument.defaultView
+  if (!view) return () => {}
+  const viewport = view.visualViewport
+  let active = true
+  let frame: number | undefined
+  const scrollOptions = { capture: true, passive: true }
+
+  const schedule = (): void => {
+    if (!active || frame !== undefined) return
+    frame = view.requestAnimationFrame(() => {
+      frame = undefined
+      if (!trigger.isConnected || !panel.isConnected) stop()
+      else place()
+    })
+  }
+
+  const observer = view.ResizeObserver ? new view.ResizeObserver(schedule) : undefined
+
+  const stop = (): void => {
+    if (!active) return
+    active = false
+    if (frame !== undefined) view.cancelAnimationFrame(frame)
+    view.removeEventListener('scroll', schedule, scrollOptions)
+    view.removeEventListener('resize', schedule)
+    viewport?.removeEventListener('scroll', schedule)
+    viewport?.removeEventListener('resize', schedule)
+    observer?.disconnect()
+  }
+
+  view.addEventListener('scroll', schedule, scrollOptions)
+  view.addEventListener('resize', schedule)
+  viewport?.addEventListener('scroll', schedule, { passive: true })
+  viewport?.addEventListener('resize', schedule)
+  observer?.observe(trigger)
+  observer?.observe(panel)
+  schedule()
+  return stop
 }
 
 /**

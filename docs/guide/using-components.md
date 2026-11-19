@@ -280,7 +280,9 @@ Generated from component source. `Props` lists each prop with its default; `Emit
 | `<PopoverPanel>` | `className` (`''`), `as` (`'div'`), `position` (`'bottom'`) | — | default |
 | `<Portal>` | `target` (`'body'`), `disabled` (`false`) | — | default |
 | `<Teleport>` | `to` (`'body'`), `disabled` (`false`), `defer` (`false`) | — | default |
-| `<Tooltip>` | `content` (`''`), `position` (`'top'`), `delay` (`0`), `className` (`''`), `show` (`false`), `disabled` (`false`) | — | default |
+| `<Tooltip>` | `content` (`''`), `position` (`'top'`), `delay` (`0`), `className` (`''`), `show` (`false`), `disabled` (`false`), `pressToToggle` (`false`) | — | default |
+
+Use `pressToToggle` for a dedicated help button. Each activation opens or closes the tooltip while focus stays on the button. Hover and focus remain the defaults for descriptive hints.
 
 ### Data display
 
