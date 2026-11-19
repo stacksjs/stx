@@ -147,6 +147,8 @@ export interface PageMeta {
   description?: string
   /** Static HTTP response status for this page. */
   status?: number
+  /** Use false on pages that render live or request-specific data. */
+  cache?: boolean
   /**
    * Layout for this page, by name (`'app'` → `<layoutsDir>/app.stx`), or
    * `false` for none — the same as `@nolayout`.

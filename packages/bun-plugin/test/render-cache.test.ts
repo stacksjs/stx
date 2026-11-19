@@ -8,6 +8,7 @@ import { createTempDir } from '../../stx/src/temp-dir'
 const PORT = freePort()
 const BASE = `http://localhost:${PORT}`
 const SERVE_SOURCE = path.join(import.meta.dir, '..', 'src', 'serve.ts')
+const STX_SOURCE = path.join(import.meta.dir, '..', '..', 'stx', 'src', 'index.ts')
 
 let fixtureDir = ''
 let server: ReturnType<typeof Bun.spawn> | null = null
@@ -46,6 +47,12 @@ await Bun.write('prewarmed.txt', 'ready')
 const marker = crypto.randomUUID()
 </script>
 <main>prewarm-marker:{{ marker }}</main>
+`)
+  await Bun.write(path.join(fixtureDir, 'views', 'language.stx'), `<script server>
+definePageMeta({ cache: false })
+const language = __stxServeContext.request.headers.get('accept-language') || 'en'
+</script>
+<main data-language="{{ language }}">Language</main>
 `)
   // A source-derived shell: one render serves every record. Padded to the
   // size of a real page so a per-request copy is measurable in the heap.
@@ -118,11 +125,13 @@ await Bun.write('prewarmed-${index}.txt', 'ready')
 `)
   }
   await Bun.write(path.join(fixtureDir, 'driver.ts'), `import { serve } from ${JSON.stringify(SERVE_SOURCE)}
+import * as stx from ${JSON.stringify(STX_SOURCE)}
 
 serve({
   patterns: ['views'],
   port: ${PORT},
   quiet: true,
+  stxModule: stx,
   componentsDir: 'components',
   renderCache: true,
   renderCacheVary: 'source',
@@ -211,6 +220,14 @@ describe('opt-in rendered HTML cache', () => {
 
     expect(first).toBe(second)
     expect(first).toContain('data:alpha')
+  })
+
+  test('page metadata keeps request-specific HTML out of the source cache', async () => {
+    for (const language of ['en', 'de', 'en']) {
+      const response = await fetch(`${BASE}/language`, { headers: { 'accept-language': language } })
+      expect(response.status).toBe(200)
+      expect(await response.text()).toContain(`data-language="${language}"`)
+    }
   })
 
   test('invalidates when an explicitly watched JSON dependency changes', async () => {

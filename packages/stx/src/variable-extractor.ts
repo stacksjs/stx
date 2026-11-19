@@ -855,6 +855,8 @@ catch {
   // below it via hoisting.
   function definePageMeta(meta: unknown): void {
     const config = (meta as Record<string, unknown>) || {}
+    if (config.cache === false)
+      context.__stx_skip_cache = true
     if (config.title !== undefined || config.description !== undefined) {
       useSeoMeta({ title: config.title, description: config.description })
     }
@@ -1476,10 +1478,11 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
       // is documented and forwards correctly in head.ts, and stripping it was
       // why it silently did nothing in a server script (#1792 item 5).
       //
-      // So: lift those two out statically and re-emit them as a useSeoMeta call
-      // the sandbox already implements. String literals only — an expression
-      // cannot be evaluated safely at this point anyway.
+      // Lift supported literals into the sandbox without evaluating the rest
+      // of the metadata object.
       const callText = lines.slice(callStart, i).join('\n')
+      if (/\bcache\s*:\s*false\s*[,}]/.test(callText))
+        convertedLines.push('definePageMeta({ cache: false });')
       const lifted: string[] = []
       for (const key of ['title', 'description']) {
         const match = new RegExp(`\\b${key}\\s*:\\s*(['"\`])((?:\\\\.|(?!\\1)[^\\\\])*)\\1`).exec(callText)
