@@ -1,6 +1,12 @@
 import { expect, test } from 'bun:test'
 import { deferScripts } from '../../src/build-defer-scripts'
 
+test('template mentions in runtime strings and comments do not hide later setup', () => {
+  const result = deferScripts('<script>// A <template :if> is inert\nwindow.runtimeReady=true;</script><!-- <template> --><script>window.setupReady=true;</script>')
+  expect(result.html.match(/ defer /g)?.length).toBe(2)
+  expect(result.assets[1]?.contents).toContain('window.setupReady')
+})
+
 test('defers runtime and dependent setup in document order, preserving attributes', () => {
   const input = '<head><script data-stx-runtime src="/_stx/runtime.js"></script><script nonce="test" data-stx-modules>window.setup = true</script></head><body><script client>window.setup()</script></body>'
   const result = deferScripts(input)

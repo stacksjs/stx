@@ -17,7 +17,10 @@ export function deferScripts(html: string, basePath = '/_stx'): ExternalizeHtmlR
   const templates: [number, number][] = []
   let depth = 0
   let start = 0
-  for (const match of html.matchAll(/<\/?template\b[^>]*>/gi)) {
+  // Runtime source and HTML comments can mention <template> without opening
+  // an inert subtree. Consume raw-text elements before counting real tags.
+  for (const match of html.matchAll(/<script\b[^>]*>[\s\S]*?<\/script\s*>|<style\b[^>]*>[\s\S]*?<\/style\s*>|<!--[\s\S]*?-->|<\/?template\b[^>]*>/gi)) {
+    if (!/^<\/?template\b/i.test(match[0])) continue
     if (match[0].startsWith('</')) {
       if (depth > 0 && --depth === 0) templates.push([start, match.index! + match[0].length])
     }

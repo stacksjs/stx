@@ -695,6 +695,8 @@ export interface StxConfig {
    * @default false
    */
   ssr?: boolean
+  /** Defer ordered SSR setup scripts and serve island code as cached assets. */
+  deferScripts?: boolean
 
   /**
    * Enable or disable caching

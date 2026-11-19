@@ -199,6 +199,8 @@ async function collectRasterImages(root: string, directory = root): Promise<Arra
   for (const entry of entries) {
     const absolutePath = path.join(directory, entry.name)
     if (entry.isDirectory()) {
+      // These are already-built STX assets, not source photography.
+      if (directory === root && entry.name === '_stx') continue
       files.push(...await collectRasterImages(root, absolutePath))
       continue
     }

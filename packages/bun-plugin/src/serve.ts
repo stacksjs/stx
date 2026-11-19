@@ -5600,7 +5600,19 @@ function __stxOverlay(errs){
           if (options.onResponse) {
             const hooked = await options.onResponse(req, _finalResp)
             if (hooked instanceof Response)
-              return hooked
+              _finalResp = hooked
+          }
+          // Last: factories, page setup, CSRF and caller response hooks can all
+          // add scripts. Deferring earlier leaves late inline setup ahead of
+          // its now-deferred runtime.
+          if (stxConfig.deferScripts && req.method !== 'HEAD' && _finalResp.body && !_finalResp.bodyUsed
+            && _finalResp.headers.get('content-type')?.includes('text/html') && !_finalResp.headers.has('content-encoding')) {
+            const stx = await stxModule
+            const headers = new Headers(_finalResp.headers)
+            headers.delete('content-length')
+            _finalResp = new Response(stx.prepareServePageAssets(await _finalResp.text()), {
+              status: _finalResp.status, statusText: _finalResp.statusText, headers,
+            })
           }
           return _finalResp
         })())

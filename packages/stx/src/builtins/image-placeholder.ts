@@ -214,6 +214,7 @@ function collectImages(dir: string, baseUrl: string, out: Array<[string, string]
   for (const entry of entries) {
     const full = path.join(dir, entry.name)
     if (entry.isDirectory()) {
+      if (baseUrl === '' && entry.name === '_stx') continue
       collectImages(full, `${baseUrl}/${entry.name}`, out)
       continue
     }

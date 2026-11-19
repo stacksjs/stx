@@ -544,6 +544,13 @@ scripts and native appearance bootstraps retain their semantics. Scripts that
 must run during parsing opt out with `stx-inline`. The pass is idempotent and
 returns content-addressed assets without writing files itself.
 
+For dynamic serving, set `deferScripts: true` in `stx.config.ts` (or Stacks'
+`config/ui.ts`). The renderer registers ordered setup and island chunks in its
+native immutable asset store, preserving pre-paint preferences. The server can
+then deliver the same optimization without a static build or a custom gateway
+response transform. Generated `public/_stx` images are excluded from source
+image encoding so prepared variants are not encoded a second time.
+
 Mark a render-critical stylesheet `<style stx-inline>` to keep it in HTML through
 both shared and repeated asset extraction. This avoids a first-paint stylesheet
 request without changing the treatment of other stylesheets.

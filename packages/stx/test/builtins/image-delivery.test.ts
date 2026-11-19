@@ -62,6 +62,14 @@ describe('build-time Image delivery', () => {
     expect(html).toContain('/_stx/images/')
   })
 
+  it('does not encode already-generated public STX assets again', async () => {
+    await mkdir(join(publicDir, '_stx', 'priority'), { recursive: true })
+    await writeFile(join(publicDir, '_stx', 'priority', 'prepared.png'), await readFile(join(publicDir, 'images', 'hero.png')))
+    const result = await prepareImageDelivery(publicDir, outputDir)
+    expect(result.count).toBe(1)
+    expect(getImageDelivery('/_stx/priority/prepared.png')).toBeUndefined()
+  })
+
   it('skips an unreadable raster without failing every valid image', async () => {
     await writeFile(join(publicDir, 'images', 'broken.png'), 'not image bytes')
 
