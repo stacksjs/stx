@@ -1457,7 +1457,8 @@ function routerSource(): string {
     // Its prefetch is on the way: wait for that answer rather than asking the
     // server a second time. A later tap elsewhere wins.
     var awaitedKey=cacheKey(url);
-    if(o.cache&&!force&&!cache[awaitedKey]&&prefetching[awaitedKey]&&prefetching[awaitedKey].then){
+    var awaited=o.cache&&!force&&!cache[awaitedKey]?prefetching[awaitedKey]:null;
+    if(awaited&&awaited.then){
       awaitingKey=awaitedKey;
       promotePrefetch(awaitedKey,true);
       // Answer the tap now, not when the prefetch lands. The page it asked
@@ -1468,9 +1469,18 @@ function routerSource(): string {
       // The navigation this hands over to keeps both going and ends them.
       document.body.classList.add(o.loadingClass);
       startProgress();
-      return prefetching[awaitedKey].then(function(){
+      return awaited.then(function(){
         if(awaitingKey!==awaitedKey)return false;
         awaitingKey='';
+        // That prefetch settled without filling the cache -- it was over the
+        // sight budget, or it failed, or its entry was left dangling. Drop
+        // the entry we waited on before handing back, or the re-entry matches
+        // this same branch on an already settled promise and hands off to
+        // itself on every microtask: the thread pins at 100%, the window
+        // freezes for good, and there is no error, no request and nothing
+        // logged at all. Only this promise, and only while the cache is
+        // still empty, so a prefetch started since is left to finish.
+        if(!cache[awaitedKey]&&prefetching[awaitedKey]===awaited)delete prefetching[awaitedKey];
         navCtxNext=ctx;
         return navigate(url,pushState,force);
       });
@@ -3898,7 +3908,23 @@ else {
       // job would be queued before the first byte had been counted and the
       // budget would never bite. Two prefetches run at a time, so by the time
       // this one starts the pages before it have been weighed.
-      if(glance){var spent=sightBudget();if(spent>0&&sightBytes>=spent)return}
+      // Over budget: ask for nothing, and give the key back. What deletes the
+      // entry is the .finally of the chain below, which this path never
+      // builds, so returning here used to leave prefetching[key] holding a
+      // promise that resolves with nothing in the cache -- and navigate's
+      // hand-off branch, which waits on exactly that, then spun forever.
+      // Routine rather than rare: one observer callback queues up to
+      // prefetchVisibleMax jobs before any bytes are counted (see above) and
+      // two run at a time, so every job still queued when the budget is
+      // crossed came through here. The delete waits a microtask on purpose,
+      // and must keep doing so: queuePrefetch calls pumpPrefetch inside its
+      // Promise constructor, so a job that finds a free slot runs before
+      // queuePrefetch has returned and before the assignment above has named
+      // its promise. A synchronous delete would land first and the assignment
+      // would then put the dangling entry straight back -- an eager delete
+      // here is safe only as long as no over-budget job can start on the spot,
+      // which is not a property of this function.
+      if(glance){var spent=sightBudget();if(spent>0&&sightBytes>=spent)return Promise.resolve().then(function(){delete prefetching[key]})}
       return fetch(href,{priority:'low',headers:prefetchHeaders(wantsFragment)}).then(function(r){
       return readPrefetchResponse(r,wantsFragment);
     }).then(function(result){
