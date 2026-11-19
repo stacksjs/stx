@@ -55,7 +55,9 @@ export const SIGNALS_MOUNT_RUNTIME = `    mountEl: function(selector, setupFn) {
         root.__stx_destroy = localDestroyHooks;
       }
 
-      if (document.readyState === 'loading') {
+      // Deferred scripts run while readyState is interactive but before the
+      // remaining setup scripts and DOMContentLoaded. Queue them together.
+      if (document.readyState === 'loading' || (document.readyState === 'interactive' && document.currentScript && document.currentScript.defer)) {
         mountQueue.push(doMount);
       }
 else {
@@ -238,7 +240,7 @@ else {
 
       var isRoutedMount = scriptEl && scriptEl.hasAttribute
         && scriptEl.hasAttribute('data-stx-page');
-      if (document.readyState === 'loading' || isRoutedMount) {
+      if (document.readyState === 'loading' || (document.readyState === 'interactive' && scriptEl && scriptEl.defer) || isRoutedMount) {
         mountQueue.push(doMount);
       }
 else {
