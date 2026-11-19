@@ -428,6 +428,6 @@ describe('Auto-initialization', () => {
     expect(setupIndex).toBeGreaterThan(spaLoadIndex)
     expect(mountIndex).toBeGreaterThan(setupIndex)
     expect(runtime).toContain("scriptEl.hasAttribute('data-stx-page')")
-    expect(runtime).toContain("document.readyState === 'loading' || isRoutedMount")
+    expect(runtime).toContain("document.readyState === 'loading' || (document.readyState === 'interactive' && scriptEl && scriptEl.defer) || isRoutedMount")
   })
 })
