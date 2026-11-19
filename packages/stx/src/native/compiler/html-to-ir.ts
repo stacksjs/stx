@@ -122,6 +122,7 @@ export const NATIVE_EVENTS = new Set([
   'onChange',
   'onChangeText',
   'onDismiss',
+  'onDismissComplete',
   'onEnd',
   'onEndEditing',
   'onEndReached',

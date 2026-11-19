@@ -28,6 +28,7 @@ interface RecordNode {
   dispose: Array<() => void>
   layoutObserver?: ResizeObserver
   layoutObservedParent?: Element
+  modalPresentation?: object
   text?: string
 }
 
@@ -249,7 +250,21 @@ export class BrowserScreenRenderer {
     listen('pointerdown', () => this.fire(record, 'onPressIn'))
     listen('pointerup', () => this.fire(record, 'onPressOut'))
     listen('cancel', (event) => { if (record.events.onRequestClose) { event.preventDefault(); this.fire(record, 'onRequestClose') } })
-    listen('close', () => this.fire(record, 'onDismiss'))
+    if (record.type === 'Modal') {
+      listen('close', () => {
+        const presentation = record.modalPresentation
+        this.fire(record, 'onDismiss')
+        if (!presentation) return
+        const dialog = element as HTMLDialogElement
+        // The close event follows top-layer removal. Wait for any synchronous
+        // updates in the legacy handler, then suppress completion on reopen.
+        queueMicrotask(() => {
+          if (!dialog.isConnected || dialog.open || record.modalPresentation !== presentation) return
+          record.modalPresentation = undefined
+          this.fire(record, 'onDismissComplete')
+        })
+      })
+    }
     listen('scroll', () => this.fire(record, 'onScroll', { contentOffset: { x: element.scrollLeft, y: element.scrollTop }, layoutMeasurement: { width: element.clientWidth, height: element.clientHeight }, contentSize: { width: element.scrollWidth, height: element.scrollHeight } }))
     const videoEvents: Record<string, string> = { play: 'onPlay', pause: 'onPause', ended: 'onEnd', timeupdate: 'onProgress', loadedmetadata: 'onLoad', loadstart: 'onLoadStart', loadeddata: 'onLoadEnd', error: 'onError', enterpictureinpicture: 'onPictureInPictureStart', leavepictureinpicture: 'onPictureInPictureStop' }
     if (record.type === 'Video') {
@@ -421,8 +436,22 @@ export class BrowserScreenRenderer {
       const dialog = element as HTMLDialogElement
       css.position = 'fixed'; css.inset = '0'; css.maxWidth = '100%'; css.maxHeight = '100%'; css.width = '100%'; css.height = '100%'; css.padding = '0'; css.margin = '0'; css.border = '0'
       const visible = Boolean(props.visible)
-      if (!visible) { if (dialog.open) dialog.close(); css.display = 'none' }
-      else queueMicrotask(() => { if (!dialog.isConnected || !record.props.visible) return; css.display = 'flex'; css.flexDirection = 'column'; if (!dialog.open) { dialog.showModal(); this.fire(record, 'onShow') } })
+      if (!visible) {
+        if (dialog.open) dialog.close()
+        css.display = 'none'
+      }
+      else {
+        if (!dialog.open) record.modalPresentation = undefined
+        queueMicrotask(() => {
+          if (!dialog.isConnected || !record.props.visible) return
+          css.display = 'flex'
+          css.flexDirection = 'column'
+          if (dialog.open) return
+          record.modalPresentation = {}
+          dialog.showModal()
+          this.fire(record, 'onShow')
+        })
+      }
     }
     if (type === 'ActivityIndicator' || type === 'RefreshControl') { element.setAttribute('aria-label', String(props.accessibilityLabel ?? 'Loading')); css.width = '24px'; css.height = '24px' }
     if (type === 'StatusBar') css.display = 'none'

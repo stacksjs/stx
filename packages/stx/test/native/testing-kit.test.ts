@@ -78,6 +78,35 @@ onMount(async () => {
     expect(phone.context.__ticks).toBeGreaterThan(0)
   })
 
+  it('delivers modal completion after dismissal and cancels a pending completion on reopen', async () => {
+    const { code } = await compileNativeScreen(`<script client>
+const open = state(true)
+const completed = state(0)
+window.setOpen = (value) => open.set(value)
+window.completed = completed
+</script><View><Modal testID="sheet" :visible="open" @dismiss-complete="completed.set(completed() + 1)"><Text>Sheet</Text></Modal></View>`)
+    const immediate = mountNativeScreen(code, 'Screen')
+    await immediate.settle()
+    immediate.context.setOpen(false)
+    await immediate.waitFor(() => immediate.context.completed() === 1, 'modal completion')
+    expect(immediate.byTestID('sheet')?.props.visible).toBe(false)
+    immediate.unmount()
+
+    const delayed = mountNativeScreen(code, 'Screen', { modalDismissDelayMs: 200 })
+    await delayed.settle()
+    delayed.context.setOpen(false)
+    await delayed.waitFor(() => delayed.byTestID('sheet')?.props.visible === false, 'dismissed modal')
+    expect(delayed.context.completed()).toBe(0)
+    delayed.context.setOpen(true)
+    await delayed.waitFor(() => delayed.byTestID('sheet')?.props.visible === true, 'reopened modal')
+    await Bun.sleep(220)
+    expect(delayed.context.completed()).toBe(0)
+
+    delayed.context.setOpen(false)
+    await delayed.waitFor(() => delayed.context.completed() === 1, 'new modal completion')
+    expect(delayed.byTestID('sheet')?.props.visible).toBe(false)
+  })
+
   it('leaves explicit fake timers under the caller’s control', async () => {
     const scheduled: Array<() => void> = []
     const phone = mountNativeScreen('setTimeout(() => { globalThis.__fired = true }, 0)', 'FakeTimers', {

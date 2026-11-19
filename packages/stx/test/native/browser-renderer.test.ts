@@ -30,6 +30,62 @@ describe('the browser peer of the native screen renderer', () => {
     expect(root.style.paddingLeft).toBe('calc(env(safe-area-inset-left, 0px) + 10px)')
   })
 
+  it('completes a modal dismissal only after the layer is gone', async () => {
+    const { renderer, container, node, events, window } = fixture()
+    renderer.render(node('root', 'View', [node('sheet', 'Modal', [], { visible: true }, {
+      onShow: 'shown',
+      onDismiss: 'dismissed',
+      onDismissComplete: 'finished',
+      onRequestClose: 'requested',
+    })]))
+    const dialog = container.querySelector<HTMLDialogElement>('dialog')!
+    // very-happy-dom does not implement the dialog top layer. Model the
+    // browser's synchronous removal and separately delivered close event.
+    Object.defineProperties(dialog, {
+      open: { get: () => dialog.hasAttribute('open') },
+      showModal: { value: () => dialog.setAttribute('open', '') },
+      close: { value: () => {
+        dialog.removeAttribute('open')
+        queueMicrotask(() => dialog.dispatchEvent(new window.Event('close')))
+      } },
+    })
+    await Promise.resolve()
+    expect(dialog.open).toBe(true)
+    expect(events.map(event => event.id)).toEqual(['shown'])
+
+    const cancel = new window.Event('cancel', { cancelable: true })
+    dialog.dispatchEvent(cancel)
+    expect(cancel.defaultPrevented).toBe(true)
+    expect(dialog.open).toBe(true)
+    expect(events.map(event => event.id)).toEqual(['shown', 'requested'])
+
+    let revision = 0
+    const setVisible = (visible: boolean): void => {
+      renderer.mutate({ version: 1, batchId: String(revision), baseRevision: revision, revision: ++revision, operations: [
+        { op: 'updateNode', id: 'sheet', patch: { props: { visible } } },
+      ] })
+    }
+    setVisible(false)
+    expect(dialog.open).toBe(false)
+    await Bun.sleep(0)
+    expect(events.map(event => event.id)).toEqual(['shown', 'requested', 'dismissed', 'finished'])
+    expect(dialog.style.display).toBe('none')
+
+    setVisible(true)
+    await Promise.resolve()
+    setVisible(false)
+    setVisible(true)
+    await Promise.resolve()
+    expect(dialog.open).toBe(true)
+    expect(events.filter(event => event.id === 'finished')).toHaveLength(1)
+
+    setVisible(false)
+    renderer.dispose()
+    await Promise.resolve()
+    expect(dialog.isConnected).toBe(false)
+    expect(events.filter(event => event.id === 'finished')).toHaveLength(1)
+  })
+
   it('previews platform segments with live values and per-option disabled state', () => {
     const { renderer, container, node, events } = fixture()
     renderer.render(node('period', 'SegmentedControl', [], {

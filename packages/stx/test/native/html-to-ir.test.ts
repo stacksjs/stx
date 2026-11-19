@@ -201,6 +201,7 @@ describe('events', () => {
       ['end-reached', 'onEndReached'],
       ['show', 'onShow'],
       ['dismiss', 'onDismiss'],
+      ['dismiss-complete', 'onDismissComplete'],
       ['request-close', 'onRequestClose'],
       ['sliding-complete', 'onSlidingComplete'],
       ['load-start', 'onLoadStart'],

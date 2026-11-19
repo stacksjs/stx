@@ -705,6 +705,8 @@ export interface ModalProps extends BaseProps {
   onShow?: () => void
   /** Dismiss handler */
   onDismiss?: () => void
+  /** Dismissal has finished and the presented layer has been released. */
+  onDismissComplete?: () => void
 }
 
 export interface ActivityIndicatorProps extends BaseProps {

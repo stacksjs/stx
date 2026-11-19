@@ -55,6 +55,8 @@ export const NATIVE_EVENT_NAMES: Readonly<Record<string, string>> = {
   requestclose: 'onRequestClose',
   show: 'onShow',
   dismiss: 'onDismiss',
+  'dismiss-complete': 'onDismissComplete',
+  dismisscomplete: 'onDismissComplete',
   'sliding-complete': 'onSlidingComplete',
   slidingcomplete: 'onSlidingComplete',
   'load-start': 'onLoadStart',

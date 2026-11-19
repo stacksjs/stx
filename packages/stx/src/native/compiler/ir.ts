@@ -349,6 +349,7 @@ export type STXEventType =
   | 'onLongPress'
   | 'onShow'
   | 'onDismiss'
+  | 'onDismissComplete'
   | 'onRequestClose'
   // Gesture events
   | 'onSwipe'

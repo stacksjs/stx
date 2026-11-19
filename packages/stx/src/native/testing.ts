@@ -168,6 +168,8 @@ export interface NativeScreenOptions {
   snapshotWrite?: (name: string, value: unknown) => Promise<unknown>
   /** The phone's sheets (`craft.dialog`); `alert` is always recorded in `alerts`. */
   dialog?: { actionSheet?: (options: any) => Promise<string>, confirm?: (options: any) => Promise<boolean> }
+  /** Simulate host animation before reporting Modal dismissal completion. Defaults to a microtask. */
+  modalDismissDelayMs?: number
   colorScheme?: 'light' | 'dark'
   /** The screen's width in points at launch, for `sm:`/`md:`/`lg:` classes (unset: a phone). */
   viewportWidth?: number
@@ -464,6 +466,29 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
     nodes.set(node.id, node)
     for (const child of node.children || []) if (typeof child !== 'string') visit(child)
   }
+  const modalCompletions = new Map<string, { timer?: ReturnType<typeof setTimeout> }>()
+  const modalVisible = (node: NativeNode): boolean =>
+    typeof node.props.visible === 'boolean' ? node.props.visible : Boolean(node.style.display && node.style.display !== 'none')
+  const cancelModalCompletion = (id: string): void => {
+    const pending = modalCompletions.get(id)
+    if (pending?.timer !== undefined) timers.clearTimeout(pending.timer)
+    modalCompletions.delete(id)
+  }
+  const finishModalDismissal = (node: NativeNode): void => {
+    cancelModalCompletion(node.id)
+    const pending: { timer?: ReturnType<typeof setTimeout> } = {}
+    modalCompletions.set(node.id, pending)
+    const deliver = () => {
+      if (ended || modalCompletions.get(node.id) !== pending) return
+      modalCompletions.delete(node.id)
+      if (nodes.get(node.id) !== node || modalVisible(node)) return
+      const handlerId = node.events.onDismissComplete
+      if (handlerId) receive(JSON.stringify({ type: 'EVENT', payload: { handlerId, nativeEvent: {} } }))
+    }
+    const delay = options.modalDismissDelayMs ?? 0
+    if (delay > 0) pending.timer = timers.setTimeout(deliver, delay)
+    else queueMicrotask(deliver)
+  }
   const openStream = (at: string, signal?: { addEventListener?: (type: string, listener: () => void) => void }) => {
     const queue: string[] = []
     const waiting: Array<(result: { done: boolean, value?: Uint8Array }) => void> = []
@@ -657,6 +682,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
           if (operation.op === 'removeNode') {
             const drop = (node: NativeNode | undefined) => {
               if (!node) return
+              if (node.type === 'Modal') cancelModalCompletion(node.id)
               nodes.delete(node.id)
               for (const child of node.children || []) if (typeof child !== 'string') drop(child)
             }
@@ -674,10 +700,15 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
           }
           const node = nodes.get(operation.id)
           if (node && operation.patch) {
+            const wasModalVisible = node.type === 'Modal' && modalVisible(node)
             node.style = { ...node.style, ...operation.patch.style }
             node.props = { ...node.props, ...operation.patch.props }
             node.events = { ...node.events, ...operation.patch.events }
             if (operation.patch.children) node.children = operation.patch.children
+            if (node.type === 'Modal') {
+              if (modalVisible(node)) cancelModalCompletion(node.id)
+              else if (wasModalVisible && node.events.onDismissComplete) finishModalDismissal(node)
+            }
           }
         }
         // stx's bridge sends navigation as a message, as it does to Craft.
@@ -741,6 +772,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
       timeouts.clear()
       immediateTimeouts.clear()
       intervals.clear()
+      modalCompletions.clear()
       streams.forEach(stream => stream.end())
     }
   }
