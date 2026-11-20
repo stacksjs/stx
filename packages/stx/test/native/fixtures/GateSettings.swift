@@ -17,8 +17,13 @@ extension XCUIApplication {
             // Under half of it at a time, so a control is not carried from
             // below the screen to above it in one go.
             let span = max(48, bottom - top)
-            let upper = coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: top + span * 0.2))
-            let lower = coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: top + span * 0.6))
+            // Drag in the page's own margin, beside its controls rather than on
+            // one. Down the middle, sideways `forms` started each drag on the
+            // period's segmented control, which took the slow drag as its own,
+            // and the page never moved: `form-summary` was never reached.
+            let x = pageMargin()
+            let upper = coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: x, dy: top + span * 0.2))
+            let lower = coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: x, dy: top + span * 0.6))
             let above = element.exists && element.frame.midY < top
             // Drag slowly. A synthesized hold sends no touches, so UIKit keeps
             // the speed of the drag's last movement through it and the page
@@ -32,6 +37,15 @@ extension XCUIApplication {
             swipes += 1
         }
         XCTAssertTrue(element.isHittable, "\(element) cannot be scrolled onto the screen", file: file, line: line)
+    }
+
+    /// Eight points inside the left edge of the largest scroll view, which is
+    /// the page: its padding, where no control starts. The middle of the
+    /// screen when nothing scrolls.
+    private func pageMargin() -> CGFloat {
+        let pages = scrollViews.allElementsBoundByIndex.map(\.frame).filter { $0.width > 0 && $0.height > 0 }
+        guard let page = pages.max(by: { $0.width * $0.height < $1.width * $1.height }) else { return frame.midX }
+        return page.minX + 8
     }
 
     /// A point on the screen, away from any control and from anything

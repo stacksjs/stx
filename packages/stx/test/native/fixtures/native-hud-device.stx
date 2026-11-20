@@ -4,7 +4,10 @@ import * as hud from './native-hud-model'
 const mounts = state([1])
 window.hudProbe = { model: hud }
 </script>
-<section class="p-4 gap-2 bg-white dark:bg-black text-black dark:text-white">
+{{-- It scrolls, as a screen of fields does: on a phone held sideways the
+     keyboard covers the panel's buttons, and nothing else brings them back. --}}
+<div data-native="ScrollView" class="flex-1 bg-white dark:bg-black">
+<section class="p-4 gap-2 text-black dark:text-white">
   <template :for="mount in mounts()" :key="mount">
     <NativeHudPanel />
   </template>
@@ -12,3 +15,4 @@ window.hudProbe = { model: hud }
   <button testID="toggle-hud" @click="mounts.set(mounts().length ? [] : [1])">Toggle HUD</button>
   <button testID="external-increment" @click="hud.increment(1)">External update</button>
 </section>
+</div>

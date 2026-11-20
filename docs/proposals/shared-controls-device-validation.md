@@ -836,3 +836,50 @@ short of the end of its content. That is the case on every run before this
 change too. Whether the scroll view's content size is the host's is for
 Craft to say. `text-size` met the same thing at `size-row` in a batch and
 not in a run alone.
+
+## Sideways, against Craft main: 2026-11-20
+
+Run on Craft main `41b9a7731efdf324f832389b06af85399c96e92f` (after
+craft-native 0.0.521), iPhone 17 Pro, iOS 26.5, dark. Each suite ran on a
+simulator of its own, created for the run and deleted after it.
+
+**The Dialog.** [craft#561](https://github.com/craft-native/craft/issues/561)
+is fixed in Craft 0.0.512. A sheet presented sideways is now the host's own
+presentation, as wide as upright and centred over a dimmed screen, so a tap
+beside it closes it. `overlays` passes sideways, 7 of 7, without a change in
+stx.
+
+**The scroll view was not short; `reach` never scrolled it.** The forms
+screen can be scrolled to its last line. Twelve quicker drags brought
+`form-summary` from y = 394 to y = 346, inside the scroll view
+(0 to 382), and the test passed. The slow drags of `reach` started down the
+middle of the screen, which sideways was (437, 281). That point is on the
+period's segmented control ("This month", 317 to 556 across, 268 to 300
+down), and the control took the drag as its own, so the page never moved.
+Three slow drags from there moved nothing, and one from the page's padding
+moved it all the way. `reach` now drags 8 points inside the left edge of the
+largest scroll view, beside the controls. No text field was involved:
+[craft#573](https://github.com/craft-native/craft/issues/573) already hands
+a drag on an unfocused field to the scroll view.
+
+**`hud` scrolls.** The panel was a plain section, so sideways the keyboard
+covered its buttons and nothing could bring them back: the test tapped the
+keys. The fixture is now a ScrollView, as the other screens of fields are,
+and the test brings each button onto the screen before pressing it.
+
+### Recorded runs
+
+| Suite | Orientation | Result |
+| --- | --- | --- |
+| `overlays` | landscape | 7 of 7 |
+| `overlays` | portrait | 7 of 7 |
+| `forms` | landscape | 6 of 6 |
+| `forms` | portrait | 4 UI tests of 4 (the unit test failed on a diagnostic label since removed) |
+| `text-size` | landscape | 2 of 2 |
+| `lists` | landscape | 5 of 5 |
+| `hud` | landscape | 1 of 1 |
+| `hud` | portrait | 1 of 1 |
+
+With these, no suite known to fail sideways remains. Not rerun today: the
+light appearance, the other device shapes and the larger text sizes
+sideways.
