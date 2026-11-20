@@ -19,7 +19,7 @@ export function createReactiveProxy(
   isTracking: () => boolean,
   createDependency: () => { track: () => void, notify: () => void },
   batch: (fn: () => void) => void,
-) {
+): <T>(target: T) => T {
   const proxies = new WeakMap<object, object>()
   const keys = Symbol('own keys')
 

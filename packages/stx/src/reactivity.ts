@@ -331,7 +331,7 @@ export function ref<T>(initialValue: T): Ref<T> {
  * state.name = 'Vue-style STX'
  * ```
  */
-export const reactive = createReactiveProxy(
+export const reactive: <T extends object>(target: T) => T = createReactiveProxy(
   canWrapReactive,
   isLockedReactiveProperty,
   () => getActiveSubscriber() !== null,
