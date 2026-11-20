@@ -1,5 +1,6 @@
 /**
- * A tap on a page whose prefetch was refused must navigate, not freeze.
+ * A tap on a page whose prefetch was refused must navigate, not freeze
+ * (stacksjs/stx#2205).
  *
  * navigate() hands over to an in-flight prefetch rather than asking the server
  * twice: it waits on the entry in 'prefetching' and re-enters itself once that

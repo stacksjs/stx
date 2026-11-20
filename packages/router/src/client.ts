@@ -1526,7 +1526,7 @@ function routerSource(): string {
         // this same branch on an already settled promise and hands off to
         // itself on every microtask: the thread pins at 100%, the window
         // freezes for good, and there is no error, no request and nothing
-        // logged at all. Only this promise, and only while the cache is
+        // logged (#2205). Only this promise, and only while the cache is
         // still empty, so a prefetch started since is left to finish.
         if(!cache[awaitedKey]&&prefetching[awaitedKey]===awaited)delete prefetching[awaitedKey];
         navCtxNext=ctx;
@@ -3952,8 +3952,8 @@ else {
       // entry is the .finally of the chain below, which this path never
       // builds, so returning here used to leave prefetching[key] holding a
       // promise that resolves with nothing in the cache -- and navigate's
-      // hand-off branch, which waits on exactly that, then spun forever.
-      // Routine rather than rare: one observer callback queues up to
+      // hand-off branch, which waits on exactly that, then spun forever
+      // (#2205). Routine rather than rare: one observer callback queues up to
       // prefetchVisibleMax jobs before any bytes are counted (see above) and
       // two run at a time, so every job still queued when the budget is
       // crossed came through here. The delete waits a microtask on purpose,
