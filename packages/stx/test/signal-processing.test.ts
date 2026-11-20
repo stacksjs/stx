@@ -296,6 +296,13 @@ describe('convertSignalLoopsToAttributes — server-data detection', () => {
  * side by side and never the third branch.
  */
 describe('convertSignalDirectivesToAttributes: a component branch', () => {
+  it('leaves inline attribute conditions available for server rendering', () => {
+    const button = '<button title="5 > 3" @if(disabled)disabled@endif :disabled="disabled()">Save</button>'
+    const output = convertSignalDirectivesToAttributes(`${button}@if(disabled)<p>Unavailable</p>@endif`, {}, ['disabled'])
+    expect(output).toContain(button)
+    expect(output).toContain('<p @if="disabled"')
+  })
+
   const page = (body: string): string => `<script client>\nconst ready = state(false)\nconst done = state(false)\n</script>\n${body}`
 
   it('wraps a component branch of a chain instead of putting the condition on its tag', () => {
