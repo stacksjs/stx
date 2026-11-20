@@ -270,11 +270,6 @@ describe('Feature #6: Declarative data fetching (useFetch)', () => {
     expect(runtime).toContain('options.transform(result)')
   })
 
-  it('should auto-fetch on mount', () => {
-    const runtime = generateSignalsRuntimeDev()
-    expect(runtime).toContain('onMount(fetchData)')
-  })
-
   it('should support url as function for reactive fetching', () => {
     const runtime = generateSignalsRuntimeDev()
     expect(runtime).toContain("typeof urlOrFn === 'function'")

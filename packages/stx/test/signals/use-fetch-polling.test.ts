@@ -27,6 +27,22 @@ function harness() {
 const settle = async () => { for (let i = 0; i < 10; i++) await Promise.resolve() }
 
 describe('generated useFetch polling transport', () => {
+  it('starts a static request on mount and starts it again on remount', async () => {
+    const h = harness()
+    const resource = h.useFetch('/mount')
+    expect(h.calls).toHaveLength(0)
+    h.mount()
+    expect(h.calls).toHaveLength(1)
+    await settle()
+    expect(resource.data()).toEqual({ value: 1 })
+    h.destroy()
+    h.response(() => Promise.resolve(Response.json({ value: 2 })))
+    h.mount()
+    await settle()
+    expect(h.calls).toHaveLength(2)
+    expect(resource.data()).toEqual({ value: 2 })
+  })
+
   it('forwards no-store and exposes revocation status while retaining the old snapshot', async () => {
     const h = harness()
     const fetch = h.useFetch('/live/token', { immediate: false, cache: 'no-store', initialData: { old: true } })
