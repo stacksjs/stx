@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.920...v0.2.921)
+
+## 🐛 Bug Fixes
+
+- **stx**: preserve inline conditional attributes during hydration ([47c4fc9](https://github.com/stacksjs/stx/commit/47c4fc9)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **native**: project hidden accessibility subtrees ([caa9185](https://github.com/stacksjs/stx/commit/caa9185)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.921 ([8d2150d](https://github.com/stacksjs/stx/commit/8d2150d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.919...v0.2.920)
 
 ## ✨ Features
