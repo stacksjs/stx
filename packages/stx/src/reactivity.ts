@@ -143,8 +143,8 @@ export interface ReactiveScope {
 // Current Instance Tracking
 // =============================================================================
 
-import { canWrapReactive, isLockedReactiveProperty } from './reactive-target'
-import { clearDependencies, getActiveSubscriber, notifySubscribers, restoreActiveSubscriber, setActiveSubscriber, trackDependency } from './reactive-tracking'
+import { canWrapReactive, createReactiveProxy, isLockedReactiveProperty } from './reactive-target'
+import { clearDependencies, getActiveSubscriber, notifySubscribers, restoreActiveSubscriber, runBatched, setActiveSubscriber, trackDependency } from './reactive-tracking'
 
 let currentInstance: ComponentInstance | null = null
 
@@ -321,9 +321,6 @@ export function ref<T>(initialValue: T): Ref<T> {
   return refObj
 }
 
-/** WeakMap cache: target object -> reactive proxy (prevents duplicate proxies) */
-const reactiveMap = new WeakMap<object, any>()
-
 /**
  * Create a reactive object (proxy-based).
  *
@@ -334,62 +331,19 @@ const reactiveMap = new WeakMap<object, any>()
  * state.name = 'Vue-style STX'
  * ```
  */
-export function reactive<T extends object>(target: T): T {
-  if (!canWrapReactive(target)) return target
-  // Return cached proxy if already created
-  const existing = reactiveMap.get(target)
-  if (existing) return existing
-
-  const subscribers = new Map<string | symbol, Set<() => void>>()
-
-  const notify = (key: string | symbol) => {
-    const subs = subscribers.get(key)
-    if (!subs)
-      return
-
-    // Batched for the same reason a ref's subscribers are; see the note there.
-    notifySubscribers(subs)
-  }
-
-  const proxy = new Proxy(target, {
-    get(obj, prop, receiver) {
-      const value = Reflect.get(obj, prop, receiver)
-
-      // Track dependency
-      if (getActiveSubscriber()) {
-        let readers = subscribers.get(prop)
-        if (!readers) subscribers.set(prop, readers = new Set())
-        trackDependency(readers)
-      }
-
-      if (canWrapReactive(value) && !Array.isArray(value) && !isLockedReactiveProperty(obj, prop)) {
-        return reactive(value)
-      }
-
-      return value
-    },
-    set(obj, prop, value, receiver) {
-      const oldValue = Reflect.get(obj, prop, receiver)
-      const result = Reflect.set(obj, prop, value, receiver)
-
-      if (!Object.is(value, oldValue)) {
-        notify(prop)
-      }
-
-      return result
-    },
-    deleteProperty(obj, prop) {
-      const result = Reflect.deleteProperty(obj, prop)
-      notify(prop)
-      return result
-    },
-  })
-
-  // Cache the proxy
-  reactiveMap.set(target, proxy)
-
-  return proxy
-}
+export const reactive = createReactiveProxy(
+  canWrapReactive,
+  isLockedReactiveProperty,
+  () => getActiveSubscriber() !== null,
+  () => {
+    const subscribers = new Set<() => void>()
+    return {
+      track: () => trackDependency(subscribers),
+      notify: () => notifySubscribers(subscribers),
+    }
+  },
+  runBatched,
+)
 
 /**
  * Create a computed value.

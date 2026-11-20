@@ -12,18 +12,28 @@ export interface UseQueryOptions<T = unknown> {
   staleTime?: number
   /** Time in ms to keep data in cache (default: 300000 / 5 min) */
   cacheTime?: number
-  /** Custom cache key (defaults to URL) */
+  /** Logical key for invalidation and mutation snapshots (defaults to URL). */
   cacheKey?: string
-  /** Request headers */
-  headers?: Record<string, string>
+  /** Request headers. A getter can provide reactive headers. */
+  headers?: HeadersInit | (() => HeadersInit)
+  /** Match a server snapshot declared with useServerData. */
+  key?: string
+  /** Reuse matching server data (default: true when a key is provided). */
+  hydrate?: boolean
+  /** Refresh a hydrated value in the background on the initial mount. */
+  revalidateOnMount?: boolean
   /** Transform the response before storing */
-  transform?: (data: unknown) => T
+  transform?: (data: any) => T
   /** Refetch when tab regains focus */
   refetchOnFocus?: boolean
   /** Polling interval in ms */
   refetchInterval?: number
-  /** Whether to fetch immediately on mount (default: true) */
+  /** Whether to start automatically on mount (default: true). */
   immediate?: boolean
+  /** Gate automatic requests. Manual refetch and invalidate can still run. */
+  enabled?: boolean | (() => boolean)
+  /** Stop polling on the first error. */
+  stopOnError?: boolean
   /** Send initial loading and errors to the nearest Suspense boundary. */
   suspense?: boolean
   /** Success callback */
@@ -36,7 +46,7 @@ export interface UseQueryOptions<T = unknown> {
    * under the query's key; a string names it.
    */
   keep?: boolean | string
-  /** Whose answer it is, as for `keptState`. Default: the scope given to `setKeptScope`. */
+  /** Scope for shared and kept results. Defaults to the account given to setKeptScope. */
   scope?: string | number | false | null
 }
 

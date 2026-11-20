@@ -166,11 +166,22 @@ export const SIGNALS_FETCH_TRANSPORT_RUNTIME = `  // Short, ref-free repr of a v
     return (typeof h === 'function' ? h() : h) || {};
   }
 
-  async function __stxFetch(source, url, opts) {
-    var t0 = __stxDevtoolsNow();
+  function __stxCheckAbort(signal) {
+    if (signal && signal.aborted) {
+      if (typeof signal.throwIfAborted === 'function') signal.throwIfAborted();
+      var error = new Error('The operation was aborted');
+      error.name = 'AbortError';
+      throw error;
+    }
+  }
+
+  async function __stxPrepareFetch(source, url, opts) {
+    var started = __stxDevtoolsNow();
     opts = opts || {};
     // Before the hooks, so an onRequest hook sees (and may override) it.
+    var signal = opts.signal;
     await __stxPrimeCsrf(url, opts);
+    __stxCheckAbort(signal);
     __stxApplyCsrf(url, opts);
     if (__stxFetchHooks.onRequest) {
       // Normalised first so a hook can write ctx.options.headers.Authorization
@@ -183,18 +194,35 @@ export const SIGNALS_FETCH_TRANSPORT_RUNTIME = `  // Short, ref-free repr of a v
       if (reqCtx.url) url = reqCtx.url;
       opts = reqCtx.options || opts;
     }
+    __stxCheckAbort(signal);
+    return { url: url, options: opts, signal: signal, started: started };
+  }
+
+  async function __stxFetch(source, url, opts, prepared) {
+    var request = await (prepared || __stxPrepareFetch(source, url, opts));
+    var t0 = request.started;
+    url = request.url;
+    opts = request.options;
+    function checkAbort() {
+      __stxCheckAbort(request.signal);
+      __stxCheckAbort(opts.signal);
+    }
+    checkAbort();
     var method = (opts && opts.method) || 'GET';
     // A hook may hand back a Response to use in place of the original. Anything
     // else (a truthy non-Response, undefined) leaves the outcome unchanged.
     function __stxIsResponse(v) { return !!v && typeof v.ok === 'boolean'; }
     try {
       var r = await fetch(url, opts);
+      checkAbort();
       __stxDevtoolsRecordQuery({ source: source, url: String(url), method: method, status: r.status, ok: r.ok, ms: __stxDevtoolsNow() - t0 });
       if (__stxFetchHooks.onResponse) {
         await __stxFetchHooks.onResponse({ source: source, url: String(url), options: opts, response: r });
+        checkAbort();
       }
       if (!r.ok && __stxFetchHooks.onResponseError) {
         var recovered = await __stxFetchHooks.onResponseError({ source: source, url: String(url), options: opts, response: r, error: null });
+        checkAbort();
         if (__stxIsResponse(recovered)) {
           __stxDevtoolsRecordQuery({ source: source, url: String(url), method: method, status: recovered.status, ok: recovered.ok, retried: true, ms: __stxDevtoolsNow() - t0 });
           return recovered;
@@ -202,11 +230,13 @@ export const SIGNALS_FETCH_TRANSPORT_RUNTIME = `  // Short, ref-free repr of a v
       }
       return r;
     } catch (e) {
+      checkAbort();
       __stxDevtoolsRecordQuery({ source: source, url: String(url), method: method, status: 0, ok: false, error: String((e && e.message) || e), ms: __stxDevtoolsNow() - t0 });
       // A network-level failure (no Response) also reaches the hook, so a retry
       // can cover a dropped connection, not only an auth status.
       if (__stxFetchHooks.onResponseError) {
         var recoveredErr = await __stxFetchHooks.onResponseError({ source: source, url: String(url), options: opts, response: null, error: e });
+        checkAbort();
         if (__stxIsResponse(recoveredErr)) {
           __stxDevtoolsRecordQuery({ source: source, url: String(url), method: method, status: recoveredErr.status, ok: recoveredErr.ok, retried: true, ms: __stxDevtoolsNow() - t0 });
           return recoveredErr;

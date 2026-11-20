@@ -12,6 +12,7 @@ function harness() {
   const scope: any = {
     AbortController, Number, console: { error() {} },
     state: (value: unknown) => Object.assign(() => value, { set: (next: unknown) => { value = next } }),
+    batch: (fn: () => void) => fn(),
     onMount: (fn: () => void) => mounts.push(fn), onDestroy: (fn: () => void) => destroys.push(fn),
     __stxHeaders: (headers: unknown) => headers || {},
     __stxFetch: (label: string, url: string, init: RequestInit) => { calls.push(init); return respond() },

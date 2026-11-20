@@ -33,8 +33,15 @@ const empty = await useServerData('empty', () => null)
 const fetched = useFetch(${JSON.stringify(endpoint)}, { key: 'user' })
 const asyncData = useAsyncData(() => fetch(${JSON.stringify(endpoint)}).then(r => r.json()), { key: 'user', immediate: false })
 const empty = useFetch('/should-not-fetch', { key: 'empty', immediate: false })
+const query = useQuery(${JSON.stringify(url.pathname === '/missing' ? `${url.origin}/api?user=query-missing` : endpoint)}, {
+  key: 'user',
+  revalidateOnMount: ${user === 'revalidate'},
+  transform: value => ({ user: value.user, revision: value.count }),
+})
+const emptyQuery = useQuery('/should-not-fetch', { key: 'empty', initialData: 'placeholder', immediate: false })
+const ignoredQuery = useQuery('/should-not-fetch', { key: 'user', hydrate: false, immediate: false })
 const marker = state(${JSON.stringify(user)})
-window.pageData = { fetched, asyncData, empty, marker }
+window.pageData = { fetched, asyncData, empty, query, emptyQuery, ignoredQuery, marker }
 </script>
 <main><span id="user" x-text="fetched.data()?.user"></span></main>
 </body></html>`
@@ -64,6 +71,10 @@ window.pageData = { fetched, asyncData, empty, marker }
       expect(counts.get('a')).toBe(1)
       expect(await view.evaluate('pageData.asyncData.data()')).toEqual({ user: 'a', count: 1 })
       expect(await view.evaluate('pageData.empty.data()')).toBeNull()
+      expect(await view.evaluate('pageData.query.data()')).toEqual({ user: 'a', revision: 1 })
+      expect(await view.evaluate('pageData.query.loading() || pageData.query.isFetching()')).toBe(false)
+      expect(await view.evaluate('pageData.emptyQuery.data()')).toBeNull()
+      expect(await view.evaluate('pageData.ignoredQuery.data()')).toBeNull()
       expect(await view.evaluate('pageData.fetched.loading() || pageData.fetched.isFetching()')).toBe(false)
       await view.evaluate('pageData.fetched.refetch()')
       expect(counts.get('a')).toBe(2)
@@ -80,10 +91,25 @@ window.pageData = { fetched, asyncData, empty, marker }
       expect(await view.evaluate('previousData.error()')).toBeNull()
       expect(counts.get('b')).toBe(1)
       expect(await view.evaluate('pageData.asyncData.data().user')).toBe('b')
+      expect(await view.evaluate('pageData.query.data()')).toEqual({ user: 'b', revision: 1 })
+      await view.evaluate('pageData.query.refetch()')
+      expect(counts.get('b')).toBe(2)
+      expect(await view.evaluate('pageData.query.data()')).toEqual({ user: 'b', revision: 2 })
       await view.evaluate(`window.stxRouter.navigate('/missing?user=c')`)
       await ready('c')
       expect(counts.get('c')).toBe(1)
       expect(await view.evaluate('pageData.asyncData.data()')).toBeNull()
+      for (let i = 0; i < 100 && !(await view.evaluate('pageData.query.data()?.user === "query-missing"')); i++) await Bun.sleep(20)
+      expect(counts.get('query-missing')).toBe(1)
+      expect(await view.evaluate('pageData.query.data()')).toEqual({ user: 'query-missing', revision: 1 })
+
+      if (mode === 'document') {
+        await view.navigate(`${server.url}page?user=revalidate`)
+        await ready('revalidate')
+        for (let i = 0; i < 100 && !(await view.evaluate('pageData.query.data()?.revision === 2')); i++) await Bun.sleep(20)
+        expect(counts.get('revalidate')).toBe(2)
+        expect(await view.evaluate('pageData.query.data()?.revision')).toBe(2)
+      }
       // Simultaneous real HTTP SSR renders must keep the same key private.
       const responses = await Promise.all(['private-d', 'private-e'].map(user => fetch(`${server.url}page?user=${user}`).then(r => r.text())))
       expect(responses[0]).toContain('"user":"private-d"')

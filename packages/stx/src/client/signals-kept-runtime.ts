@@ -27,6 +27,7 @@ export function signalsKeptRuntime(
   var STX_KEPT_PREFIX = 'stx:kept:';
   var __stxKept = (${createKeptStoreSource})(undefined, ${indexedDbBackendSource});
   var __stxQueries = (${createQueryCacheSource})({ state: state, kept: __stxKept, prefix: STX_KEPT_PREFIX, matches: ${queryTargetMatchesSource}, sharedRequest: sharedRequest });
+  var queryScope = state(undefined);
   function stxKeptPrefix(scope) {
     return STX_KEPT_PREFIX + (scope === undefined || scope === null || scope === '' ? '' : String(scope) + ':');
   }
@@ -61,6 +62,7 @@ export function signalsKeptRuntime(
   // The account kept state and cached queries belong to when they name none.
   function setKeptScope(scope) {
     __stxQueries.setScope(scope);
+    queryScope.set(scope);
   }
   // Finish writing what is kept (before signing out, or in a test).
   function flushKeptState() {

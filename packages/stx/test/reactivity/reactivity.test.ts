@@ -157,7 +157,7 @@ describe('reactivity - reactive()', () => {
     expect(state.b).toBe(2)
   })
 
-  it('should not make arrays reactive recursively', () => {
+  it('preserves the native array shape when wrapping nested arrays', () => {
     const state = reactive({ items: [1, 2, 3] })
 
     expect(state.items).toEqual([1, 2, 3])

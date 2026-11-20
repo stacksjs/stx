@@ -211,145 +211,148 @@ export function useFetch<T = unknown>(
     return buildURL(rawURL, baseURL, query)
   }
 
-  const getCacheKey = (): string => key || getURL()
-
-  const getFromCache = (): T | null => {
-    if (cacheTime <= 0)
-      return null
-    const cached = fetchCache.get(getCacheKey())
-    if (cached && Date.now() - cached.timestamp < cacheTime)
-      return cached.data as T
-    return null
-  }
-
-  const setCache = (value: T) => {
-    if (cacheTime > 0)
-      fetchCache.set(getCacheKey(), { data: value, timestamp: Date.now() })
-  }
-
-  // `background` refreshes without touching `loading` or clearing the current
-  // error, so a poll cannot flash a spinner over data already on screen or
-  // blank a message that is still true (#1929). It is threaded through the
-  // retry recursion: a retried background run is still a background run.
-  const doFetch = async (attempt = 0, background = false): Promise<void> => {
-    const cached = getFromCache()
-    if (cached !== null) {
-      data.set(cached)
-      loading.set(false)
-      isFetching.set(false)
-      error.set(null)
-      return
-    }
-
-    // Abort previous in-flight request
-    if (abortController)
-      abortController.abort()
-    abortController = new AbortController()
-
-    if (!background)
-      loading.set(true)
-    isFetching.set(true)
-    if (!background)
-      error.set(null)
-
-    const timeoutId = setTimeout(() => abortController?.abort(), timeout)
+  const doFetch = async (background = false): Promise<void> => {
+    const previous = abortController
+    const controller = new AbortController()
+    abortController = controller
+    previous?.abort()
+    const ownsState = () => abortController === controller
+    if (!ownsState()) return
 
     try {
-      let requestBody: BodyInit | undefined
-      if (body) {
-        if (typeof body === 'object' && !(body instanceof FormData) && !(body instanceof URLSearchParams)) {
-          requestBody = JSON.stringify(body)
-          fetchOptions.headers = {
-            'Content-Type': 'application/json',
-            ...fetchOptions.headers,
-          }
-        }
-        else {
-          requestBody = body as BodyInit
-        }
+      const requestURL = getURL()
+      if (!requestURL || !ownsState()) return
+      const cacheKey = key || requestURL
+      const cached = cacheTime > 0 ? fetchCache.get(cacheKey) : undefined
+      if (cached && Date.now() - cached.timestamp < cacheTime) {
+        batch(() => {
+          data.set(cached.data as T)
+          error.set(null)
+        })
+        return
       }
 
-      const response = await fetch(getURL(), {
-        ...fetchOptions,
-        body: requestBody,
-        signal: abortController.signal,
+      batch(() => {
+        if (!background) {
+          loading.set(true)
+          error.set(null)
+        }
+        isFetching.set(true)
       })
 
-      clearTimeout(timeoutId)
-      status.set(response.status)
-      statusText.set(response.statusText)
-
-      // Read the body before throwing, and carry it on the error. Throwing a
-      // synthesized 'HTTP nnn' first made the server's own message unreachable
-      // from every stx data primitive (stacksjs/stx#1848). Kept in step with
-      // __stxHttpError in the generated runtime — same shape, same fields, per
-      // CLAUDE.md item 40.
-      if (!response.ok) {
-        let body: unknown = null
+      for (let attempt = 0; ownsState(); attempt++) {
+        const timeoutId = setTimeout(() => controller.abort(), timeout)
         try {
-          const text = await response.text()
-          if (text) {
-            try { body = JSON.parse(text) }
-            catch { body = text }
+          let requestBody: BodyInit | undefined
+          let { headers } = fetchOptions
+          if (body) {
+            if (typeof body === 'object' && !(body instanceof FormData) && !(body instanceof URLSearchParams)) {
+              requestBody = JSON.stringify(body)
+              headers = new Headers(headers)
+              if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+            }
+            else {
+              requestBody = body as BodyInit
+            }
           }
+          if (!ownsState()) return
+          const response = await fetch(requestURL, {
+            ...fetchOptions,
+            headers,
+            body: requestBody,
+            signal: controller.signal,
+          })
+          clearTimeout(timeoutId)
+          if (!ownsState() || controller.signal.aborted) return
+          batch(() => {
+            status.set(response.status)
+            statusText.set(response.statusText)
+          })
+          if (!ownsState()) return
+
+          // Read the body before throwing, and carry it on the error. Throwing a
+          // synthesized 'HTTP nnn' first made the server's own message unreachable
+          // from every stx data primitive (stacksjs/stx#1848). Kept in step with
+          // __stxHttpError in the generated runtime — same shape, same fields, per
+          // CLAUDE.md item 40.
+          if (!response.ok) {
+            let body: unknown = null
+            try {
+              const text = await response.text()
+              if (text) {
+                try { body = JSON.parse(text) }
+                catch { body = text }
+              }
+            }
+            catch { body = null }
+
+            let detail = ''
+            if (body && typeof body === 'object')
+              detail = String((body as Record<string, unknown>).message ?? (body as Record<string, unknown>).error ?? '')
+            else if (typeof body === 'string')
+              detail = body.slice(0, 200)
+
+            let message = `HTTP ${response.status}`
+            if (response.statusText)
+              message += `: ${response.statusText}`
+            if (detail)
+              message += ` - ${detail}`
+
+            const httpError = new Error(message) as Error & {
+              status?: number
+              statusText?: string
+              data?: unknown
+              response?: Response
+            }
+            httpError.status = response.status
+            httpError.statusText = response.statusText
+            httpError.data = body
+            httpError.response = response
+            throw httpError
+          }
+
+          let payload = await parseResponse(response) as T
+          if (!ownsState()) return
+          if (transform) payload = transform(payload)
+          if (!ownsState()) return
+          if (cacheTime > 0) fetchCache.set(cacheKey, { data: payload, timestamp: Date.now() })
+          batch(() => {
+            data.set(payload)
+            if (background) error.set(null)
+          })
+          return
         }
-        catch { body = null }
-
-        let detail = ''
-        if (body && typeof body === 'object')
-          detail = String((body as Record<string, unknown>).message ?? (body as Record<string, unknown>).error ?? '')
-        else if (typeof body === 'string')
-          detail = body.slice(0, 200)
-
-        let message = `HTTP ${response.status}`
-        if (response.statusText)
-          message += `: ${response.statusText}`
-        if (detail)
-          message += ` - ${detail}`
-
-        const httpError = new Error(message) as Error & {
-          status?: number
-          statusText?: string
-          data?: unknown
-          response?: Response
+        catch (err) {
+          if (!ownsState() || controller.signal.aborted || (err instanceof Error && err.name === 'AbortError')) return
+          if (!(attempt < retry)) throw err
         }
-        httpError.status = response.status
-        httpError.statusText = response.statusText
-        httpError.data = body
-        httpError.response = response
-        throw httpError
+        finally {
+          clearTimeout(timeoutId)
+        }
+
+        // Cancel queued retries on supersession as well as active network work.
+        await new Promise<void>((resolve) => {
+          const timer = setTimeout(done, retryDelay)
+          function done() {
+            clearTimeout(timer)
+            controller.signal.removeEventListener('abort', done)
+            resolve()
+          }
+          controller.signal.addEventListener('abort', done, { once: true })
+        })
       }
-
-      let payload = await parseResponse(response) as unknown
-      if (transform)
-        payload = transform(payload)
-
-      setCache(payload as T)
-      data.set(payload as T)
-      // A background run did not clear the error up front, so a recovery has to
-      // clear it here — otherwise one failed poll leaves the message on screen
-      // for the life of the page.
-      if (background)
-        error.set(null)
-      if (!background)
-        loading.set(false)
-      isFetching.set(false)
     }
     catch (err) {
-      clearTimeout(timeoutId)
-
-      if (err instanceof Error && err.name === 'AbortError')
-        return
-
-      if (attempt < retry) {
-        await new Promise(resolve => setTimeout(resolve, retryDelay))
-        return doFetch(attempt + 1, background)
+      if (ownsState()) error.set(err instanceof Error ? err : new Error(String(err)))
+    }
+    finally {
+      if (ownsState()) {
+        abortController = null
+        batch(() => {
+          loading.set(false)
+          isFetching.set(false)
+        })
       }
-
-      error.set(err instanceof Error ? err : new Error(String(err)))
-      if (!background)
-        loading.set(false)
-      isFetching.set(false)
     }
   }
 
@@ -358,19 +361,19 @@ export function useFetch<T = unknown>(
   // a spinner over a populated view on every tick, which is why a polling view
   // could not use this composable at all (#1929).
   const setupRefetchOnFocus = () => {
-    if (!refetchOnFocus || typeof window === 'undefined')
+    if (focusHandler || !refetchOnFocus || typeof window === 'undefined')
       return
     focusHandler = () => {
-      if (document.visibilityState === 'visible')
-        void doFetch(0, true)
+      if (document.visibilityState === 'visible' && !isFetching())
+        void doFetch(true)
     }
     document.addEventListener('visibilitychange', focusHandler)
   }
 
   const setupRefetchInterval = () => {
-    if (!refetchInterval || typeof window === 'undefined')
+    if (intervalId !== null || !refetchInterval || typeof window === 'undefined')
       return
-    intervalId = setInterval(() => void doFetch(0, true), refetchInterval)
+    intervalId = setInterval(() => { if (!isFetching()) void doFetch(true) }, refetchInterval)
   }
 
   if (immediate) {
@@ -386,15 +389,15 @@ export function useFetch<T = unknown>(
     error,
     status,
     statusText,
-    refetch: (refetchOptions?: RefetchOptions) => doFetch(0, !!refetchOptions?.background),
-    execute: async () => {
-      await doFetch()
+    refetch: (refetchOptions?: RefetchOptions) => doFetch(!!refetchOptions?.background),
+    execute: () => {
       setupRefetchOnFocus()
       setupRefetchInterval()
+      return doFetch()
     },
     abort: () => {
-      if (abortController)
-        abortController.abort()
+      const controller = abortController
+      abortController = null
       if (focusHandler) {
         document.removeEventListener('visibilitychange', focusHandler)
         focusHandler = null
@@ -403,6 +406,11 @@ export function useFetch<T = unknown>(
         clearInterval(intervalId)
         intervalId = null
       }
+      batch(() => {
+        loading.set(false)
+        isFetching.set(false)
+      })
+      controller?.abort()
     },
   }
 }

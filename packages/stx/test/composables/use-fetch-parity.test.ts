@@ -35,6 +35,9 @@ interface FetchResult {
   data: () => unknown
   loading: () => boolean
   error: () => Error | null
+  isFetching: () => boolean
+  status: () => number | null
+  abort: () => void
   refetch: () => Promise<void>
 }
 
@@ -181,5 +184,70 @@ for (const name of ['composable', 'runtime'] as const) {
       // Without an explicit refetch(), data must remain at initial null.
       expect(r.data()).toBeNull()
     })
+
+    for (const status of [200, 500]) {
+      it(`ignores an older HTTP ${status} body finishing after a new request`, async () => {
+        let body!: ReadableStreamDefaultController<Uint8Array>
+        const slow = new Response(new ReadableStream<Uint8Array>({
+          start(controller) { body = controller },
+        }), { status })
+        const receivedErrors: unknown[] = []
+        let calls = 0
+        globalThis.fetch = (async () => ++calls === 1 ? slow : Response.json('fresh', { status: 201 })) as typeof fetch
+        const resource = useFetch('/race', { immediate: false, onError: (error: unknown) => receivedErrors.push(error) })
+        const first = resource.refetch()
+        await flush()
+        expect(resource.status()).toBe(status)
+        await resource.refetch()
+        body.enqueue(new TextEncoder().encode(JSON.stringify({ message: 'stale' })))
+        body.close()
+        await first
+        expect(resource.status()).toBe(201)
+        expect(resource.data()).toBe('fresh')
+        expect(resource.error()).toBeNull()
+        expect(resource.loading()).toBe(false)
+        expect(resource.isFetching()).toBe(false)
+        expect(receivedErrors).toEqual([])
+      })
+    }
+
+    it('aborts and clears flags immediately even when the transport ignores abort', async () => {
+      let respond!: (response: Response) => void
+      globalThis.fetch = (() => new Promise<Response>(resolve => { respond = resolve })) as typeof fetch
+      const resource = useFetch('/aborted', { immediate: false })
+      const started = resource.refetch()
+      await flush()
+      resource.abort()
+      expect(resource.loading()).toBe(false)
+      expect(resource.isFetching()).toBe(false)
+      respond(Response.json({ message: 'late' }, { status: 500 }))
+      await started
+      expect(resource.status()).toBeNull()
+      expect(resource.error()).toBeNull()
+      expect(resource.data()).toBeNull()
+    })
   })
 }
+
+it('module useFetch cancels a queued retry when refetch starts a newer run', async () => {
+  const original = globalThis.fetch
+  let calls = 0
+  globalThis.fetch = (async () => {
+    if (++calls === 1) throw new Error('retryable')
+    return Response.json('fresh')
+  }) as typeof fetch
+  try {
+    const resource = composableModule.useFetch('/retry', { immediate: false, retry: 1, retryDelay: 40 })
+    const old = resource.refetch()
+    await flush()
+    await resource.refetch()
+    await old
+    await Bun.sleep(45)
+    expect(calls).toBe(2)
+    expect(resource.data()).toBe('fresh')
+    expect(resource.error()).toBeNull()
+  }
+  finally {
+    globalThis.fetch = original
+  }
+})

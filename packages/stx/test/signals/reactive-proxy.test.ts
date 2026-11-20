@@ -198,3 +198,56 @@ describe('proxy receivers and immutable descriptors', () => {
     })
   }
 })
+
+for (const runtime of ['browser', 'module'] as const) {
+  describe(`structural reactive tracking (${runtime})`, () => {
+    async function getRuntime() {
+      return runtime === 'browser' ? stx : {
+        reactive: (await import('../../src/reactivity')).reactive,
+        effect: (await import('../../src/signals-api')).effect,
+      }
+    }
+
+    it('tracks value, presence, and enumerable keys independently', async () => {
+      const { reactive, effect } = await getRuntime()
+      const record = reactive({ field: undefined as number | undefined })
+      delete (record as Partial<typeof record>).field
+      const values: unknown[] = []
+      const presence: boolean[] = []
+      const keys: string[][] = []
+      const stops = [
+        effect(() => { values.push(record.field) }),
+        effect(() => { presence.push('field' in record) }),
+        effect(() => { keys.push(Object.keys(record)) }),
+      ]
+      record.field = 1
+      record.field = 2
+      delete (record as Partial<typeof record>).field
+      Object.defineProperty(record, 'field', { value: 3, enumerable: false, configurable: true })
+      Object.defineProperty(record, 'field', { enumerable: true })
+      expect(values).toEqual([undefined, 1, 2, undefined, 3])
+      expect(presence).toEqual([false, true, false, true])
+      expect(keys).toEqual([[], ['field'], [], [], ['field']])
+      stops.forEach(stop => stop())
+    })
+
+    it('tracks nested sparse arrays, including implicit growth and truncation', async () => {
+      const { reactive, effect } = await getRuntime()
+      const model = reactive({ rows: [] as number[] })
+      const snapshots: unknown[][] = []
+      const stop = effect(() => {
+        snapshots.push([model.rows.length, model.rows[2], 2 in model.rows, Object.keys(model.rows)])
+      })
+      model.rows[2] = 7
+      model.rows.length = 1
+      model.rows.push(3)
+      Object.defineProperty(model.rows, '2', { value: 9, configurable: true, enumerable: true })
+      expect(snapshots).toEqual([
+        [0, undefined, false, []], [3, 7, true, ['2']], [1, undefined, false, []],
+        [2, undefined, false, ['1']], [3, 9, true, ['1', '2']],
+      ])
+      expect(reactive(model.rows)).toBe(model.rows)
+      stop()
+    })
+  })
+}

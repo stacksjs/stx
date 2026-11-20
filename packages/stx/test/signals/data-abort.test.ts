@@ -53,10 +53,49 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  for (const cleanup of g.window.stx._destroyCallbacks.splice(0)) cleanup()
+  g.window.stx.configureFetch({})
   globalThis.fetch = realFetch
 })
 
 describe('useFetch aborts (#1871)', () => {
+  it('drops a request superseded while an async interceptor was pending', async () => {
+    const stx = g.window.stx
+    let release!: () => void
+    let entered = 0
+    stx.configureFetch({ onRequest: () => {
+      if (++entered === 1) return new Promise<void>(resolve => { release = resolve })
+    } })
+    const resource = stx.useFetch('/api/slow-hook', { immediate: false })
+    const old = resource.refetch()
+    await tick()
+    const fresh = resource.refetch()
+    await tick()
+    pending[0].resolve(json('fresh'))
+    await fresh
+    release()
+    await old
+    expect(pending).toHaveLength(1)
+    expect(resource.data()).toBe('fresh')
+    expect(resource.error()).toBeNull()
+  })
+
+  it('stops following a reactive URL when its scope is destroyed', async () => {
+    const stx = g.window.stx
+    const url = stx.state('/api/retired')
+    const resource = stx.useFetch(url, { immediate: false })
+    const first = resource.refetch()
+    await tick()
+    for (const cleanup of stx._destroyCallbacks.splice(0)) cleanup()
+    await first
+    expect(pending[0].opts.signal.aborted).toBe(true)
+    url.set('/api/new')
+    await resource.refetch()
+    await tick()
+    expect(pending).toHaveLength(1)
+    expect(resource.isFetching()).toBe(false)
+  })
+
   it('passes an AbortSignal to fetch', async () => {
     const r = g.window.stx.useFetch('/api/a', { immediate: false })
     r.refetch()

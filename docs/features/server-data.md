@@ -1,6 +1,6 @@
 # Server data and client hydration
 
-`useServerData(key, loader)` loads JSON data once per key **within a server render**. A matching `useFetch` or `useAsyncData` key initializes client signals from that result instead of repeating the initial request.
+`useServerData(key, loader)` loads JSON data once per key **within a server render**. A matching `useFetch`, `useQuery`, or `useAsyncData` key initializes client signals from that result and skips the initial request.
 
 ```html
 <script server>
@@ -35,6 +35,10 @@ const profile = useAsyncData(
 )
 ```
 
+Use the same `key` with `useQuery` to opt into hydration. Set
+`revalidateOnMount: true` to refresh the hydrated value in the background on
+the first mount. The query's `cacheKey` controls client invalidation separately.
+
 Only `<script server>` runs on the server. The framework does **not** execute client loaders to discover their data requirements. `useServerData` is available directly in server scripts and through an import from `stx` / `@stacksjs/stx`; imported helper functions can call it while a server script is executing. Calls outside that render scope throw. Always await the server loader.
 
 ## Keys, isolation, and serialization
@@ -53,9 +57,9 @@ Only `<script server>` runs on the server. The framework does **not** execute cl
 | Missing, malformed, or failed server payload | Follow the client's normal fetching behavior. `immediate: false` still defers fetching. |
 | `hydrate: false` | Ignore the snapshot and use the ordinary client lifecycle. |
 | `refetch()` / `execute()` | Run the existing client request path, ignoring hydration. Existing client cache options still apply. |
-| Reactive `useFetch` URL changes | Fetch the new URL; hydration suppresses only the initial evaluation. |
+| Reactive URL changes | `useFetch` and active `useQuery` fetch the new URL. Hydration applies to the initial URL. |
 | `clearServerData(key)` | Forget that key for future consumers. Existing signals are unchanged; call their `refetch()` to update them. Omit the key to clear all hydration data. |
 | SPA navigation | Replace the snapshot at the committed swap, before new page scripts run. An absent payload clears the outgoing snapshot. Prefetch alone does not change current data. |
 | Cached route revisit | Hydrate from that route's cached HTML snapshot. Invalidate the router cache (`invalidateRoute`) or refresh the route to request a fresh server render. Clearing hydration data alone does not evict cached HTML. |
 
-Hydration does not change `useQuery` deduplication, client request supersession, or scope-teardown cancellation. Existing requests and persistent layout components are not refreshed automatically when another page's snapshot arrives.
+Each query consumer transforms its own server snapshot. Snapshots belong to the current render and initialize the consumer directly. The shared query cache receives client request results.

@@ -615,21 +615,26 @@ const { data, loading, isStale, refetch, invalidate } = useQuery('/api/users', {
 </script>
 ```
 
-**QueryOptions (extends FetchOptions):**
+**Query options**
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `staleTime` | `number` | `0` | ms before cached data is stale |
 | `cacheTime` | `number` | `300000` (5 min) | ms before cache entry is evicted |
-| `cacheKey` | `string` | URL | Custom cache key |
+| `cacheKey` | `string` | URL | Logical key for invalidation and mutation snapshots |
+| `key` | `string` | — | Key passed to `useServerData` |
+| `hydrate` | `boolean` | `true` | Use a matching server snapshot |
+| `revalidateOnMount` | `boolean` | `false` | Refresh a hydrated result in the background on the first mount |
 | `initialData` | `any` | `null` | Initial data |
 | `transform` | `(result: any) => any` | — | Transform response |
 | `refetchOnFocus` | `boolean` | `false` | Refetch when tab regains focus |
 | `refetchInterval` | `number` | — | Auto-refetch interval in ms |
 | `immediate` | `boolean` | `true` | Fetch on mount |
+| `enabled` | `boolean \| (() => boolean)` | `true` | Allow automatic requests |
 | `onSuccess` | `(data: any) => void` | — | Success callback |
 | `onError` | `(error: Error) => void` | — | Error callback |
-| `headers` | `Record<string, string>` | `{ 'Content-Type': 'application/json' }` | Request headers |
+| `headers` | `HeadersInit \| (() => HeadersInit)` | `{ 'Content-Type': 'application/json' }` | Request headers |
+| `scope` | `string \| number \| false \| null` | Current kept scope | Scope shared and kept results by account or tenant |
 
 **QueryResult:**
 
@@ -640,12 +645,24 @@ const { data, loading, isStale, refetch, invalidate } = useQuery('/api/users', {
 | `isFetching` | `Signal<boolean>` | True while **any** request is open, background ones included |
 | `error` | `Signal<string \| null>` | Error message |
 | `isStale` | `Signal<boolean>` | Whether current data is stale |
-| `refetch` | `(options?: { background?: boolean }) => Promise<void>` | Force re-fetch |
-| `invalidate` | `(options?: { background?: boolean }) => Promise<void>` | Clear cache and re-fetch |
+| `refetch` | `(options?: { background?: boolean }) => Promise<void>` | Read current data, using a fresh cached result when available |
+| `invalidate` | `(options?: { background?: boolean }) => Promise<void>` | Clear this logical key and fetch again |
 
 `refetchInterval` and `refetchOnFocus` are **background** refreshes: they update
 `data` without touching `loading`, so a poll does not put a spinner over a view
 that already has data. Bind `isFetching` for a subtle in-flight indicator.
+
+Requests share in-flight work and cached results when their URL, normalized
+headers, scope, and logical key match. Request interceptors run before reuse so
+the effective GET can be compared. Use `setKeptScope` or `scope` when the
+server selects data through cookies or other session state.
+
+Once active, a URL or header getter can drive a new request. Switching to a
+new request identity cancels the old consumer and clears its displayed data
+before loading the new result. `immediate: false` defers the first load.
+An explicit `refetch()` or `invalidate()` can run even when `enabled` is false.
+Use a distinct `cacheKey` for each representation you want to address in a
+mutation response or persist by name with `keep`.
 
 ### useMutation
 
@@ -708,8 +725,9 @@ async function createUser(request: Request) {
 
 Use the same key in the client's `invalidateQueries`. The response's main
 result still goes through the mutation's `transform` and `onSuccess`.
-Matching active queries apply their own transforms to the supplied values.
-An omitted key still triggers the regular shared GET. Return only queries the
+Matching active queries apply their transforms and publish the supplied values
+in the same batch as the mutation result. Omitted or ambiguous keys trigger
+the regular GET for each request variant. Return only queries the
 caller is authorized to read, and omit any refresh that could not be obtained
 after the write. The helper marks responses `Cache-Control: no-store`.
 

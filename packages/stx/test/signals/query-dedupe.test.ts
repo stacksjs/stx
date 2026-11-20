@@ -62,6 +62,10 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  const destroy = g.window.stx._destroyCallbacks
+  for (const cleanup of destroy.splice(0)) cleanup()
+  g.window.stx.configureFetch({})
+  g.window.stx.setKeptScope(undefined)
   globalThis.fetch = realFetch
 })
 
@@ -70,6 +74,65 @@ let seq = 0
 const key = () => `/api/dedupe/${++seq}`
 
 describe('dedupe across instances (#1869)', () => {
+  it('uses normalized headers for both deduplication and cached results', async () => {
+    const url = key()
+    const stx = g.window.stx
+    const options = { immediate: false, staleTime: 60_000 }
+    const fr = stx.useQuery(url, { ...options, headers: { 'Accept-Language': 'fr' } })
+    const same = stx.useQuery(url, { ...options, headers: [['accept-language', ' fr ']] })
+    const en = stx.useQuery(url, { ...options, headers: new Headers({ 'Accept-Language': 'en' }) })
+    const reads = [fr.refetch(), same.refetch(), en.refetch()]
+    await tick()
+    const languages = pending.map(request => new Headers(request.opts.headers).get('accept-language'))
+    expect(languages).toEqual(['fr', 'en'])
+    pending.forEach((request, index) => request.resolve(json(languages[index])))
+    await Promise.all(reads)
+    expect([fr.data(), same.data(), en.data()]).toEqual(['fr', 'fr', 'en'])
+    await Promise.all([fr.refetch(), en.refetch()])
+    expect([fr.data(), en.data()]).toEqual(['fr', 'en'])
+    expect(pending).toHaveLength(2)
+  })
+
+  it('identifies the effective request after a request interceptor', async () => {
+    const url = key()
+    const stx = g.window.stx
+    let language = 'fr'
+    stx.configureFetch({ onRequest: (ctx: { options: { headers: Record<string, string> } }) => {
+      ctx.options.headers['Accept-Language'] = language
+    } })
+    const options = { immediate: false, staleTime: 60_000 }
+    const first = stx.useQuery(url, options)
+    const same = stx.useQuery(url, options)
+    const other = stx.useQuery(url, options)
+    const reads = [first.refetch(), same.refetch()]
+    await tick()
+    language = 'en'
+    reads.push(other.refetch())
+    await tick()
+    expect(pending.map(request => request.opts.headers['Accept-Language'])).toEqual(['fr', 'en'])
+    pending[0].resolve(json('fr'))
+    pending[1].resolve(json('en'))
+    await Promise.all(reads)
+    expect([first.data(), same.data(), other.data()]).toEqual(['fr', 'fr', 'en'])
+    await first.refetch()
+    expect(first.data()).toBe('en')
+    expect(pending).toHaveLength(2)
+  })
+
+  it('shares only within the same query scope', async () => {
+    const url = key()
+    const stx = g.window.stx
+    const first = stx.useQuery(url, { immediate: false, scope: 'first', cacheTime: 0 })
+    const second = stx.useQuery(url, { immediate: false, scope: 'second', cacheTime: 0 })
+    const reads = [first.refetch(), second.refetch()]
+    await tick()
+    expect(pending).toHaveLength(2)
+    pending[0].resolve(json(1))
+    pending[1].resolve(json(2))
+    await Promise.all(reads)
+    expect([first.data(), second.data()]).toEqual([1, 2])
+  })
+
   it('two instances asking for one key issue one request', async () => {
     const url = key()
     const a = g.window.stx.useQuery(url, { immediate: false })
@@ -223,6 +286,78 @@ describe('dedupe does not break #1871 abort semantics', () => {
 })
 
 describe('query refresh supersession', () => {
+  it('follows the selected URL after hydrating with the initial request deferred', async () => {
+    const stx = g.window.stx
+    const first = key()
+    const second = key()
+    const url = stx.state(first)
+    const snapshot = g.window.__STX_DATA__
+    g.window.__STX_DATA__ = { initial: 'server' }
+    try {
+      const query = stx.useQuery(url, { key: 'initial', immediate: false, cacheTime: 0 })
+      expect(query.data()).toBe('server')
+      expect(pending).toHaveLength(0)
+      url.set(second)
+      await tick()
+      expect(pending.map(request => request.url)).toEqual([second])
+      pending[0].resolve(json('client'))
+      await tick()
+      expect(query.data()).toBe('client')
+    }
+    finally {
+      g.window.__STX_DATA__ = snapshot
+    }
+  })
+
+  it('supersedes an in-flight request when the reactive URL changes under the same logical key', async () => {
+    const stx = g.window.stx
+    const paris = key()
+    const oslo = key()
+    const url = stx.state(paris)
+    const query = stx.useQuery(url, { immediate: false, cacheKey: key(), staleTime: 60_000 })
+    const first = query.refetch()
+    await tick()
+    url.set(oslo)
+    await tick()
+    expect(pending.map(request => request.url)).toEqual([paris, oslo])
+    expect(pending[0].opts.signal.aborted).toBe(true)
+    pending[0].resolve(json('Paris'))
+    await first
+    expect(query.data()).toBeNull()
+    pending[1].resolve(json('Oslo'))
+    await tick()
+    expect(query.data()).toBe('Oslo')
+    url.set('')
+    await tick()
+    expect(query.data()).toBeNull()
+    expect(query.isFetching()).toBe(false)
+    expect(pending).toHaveLength(2)
+  })
+
+  it('reacts to scope and enabled changes without publishing the departed scope', async () => {
+    const stx = g.window.stx
+    const enabled = stx.state(true)
+    const query = stx.useQuery(key(), { immediate: false, enabled, cacheTime: 0 })
+    stx.setKeptScope('before')
+    const first = query.refetch()
+    await tick()
+    enabled.set(false)
+    stx.setKeptScope('after')
+    await first
+    expect(pending[0].opts.signal.aborted).toBe(true)
+    expect(query.isFetching()).toBe(false)
+    expect(pending).toHaveLength(1)
+    enabled.set(true)
+    await tick()
+    expect(pending).toHaveLength(2)
+    pending[1].resolve(json('current account'))
+    await tick()
+    expect(query.data()).toBe('current account')
+    enabled.set(false)
+    stx.setKeptScope(undefined)
+    expect(query.data()).toBeNull()
+  })
+
   it('keeps the newest consumer and cache result while a shared older read can still finish', async () => {
     const url = key()
     const a = g.window.stx.useQuery(url, { immediate: false })
@@ -417,6 +552,8 @@ describe('mutation query snapshots', () => {
       invalidateQueries: [list, missing],
       transform: (result: { ok: boolean }) => result.ok,
     })
+    const observed: unknown[][] = []
+    const dispose = stx.effect(() => { observed.push([mutation.loading(), mutation.data(), a.data(), b.data()]) })
     const write = mutation.mutate({})
     await tick()
     const response = mutationResponse({ ok: true }, { [list]: 2, [unrelated]: 99 }, { status: 201 })
@@ -427,6 +564,8 @@ describe('mutation query snapshots', () => {
     await tick()
     expect(pending.map(request => request.url)).toEqual([list, missing, unrelated, '/write', missing])
     expect([a.data(), b.data(), c.data(), d.data()]).toEqual([2, 20, 1, 1])
+    expect(observed).toEqual([[false, null, 1, 10], [true, null, 1, 10], [false, true, 2, 20]])
+    dispose()
 
     const cacheReader = stx.useQuery(list, options)
     await cacheReader.refetch()
@@ -435,6 +574,31 @@ describe('mutation query snapshots', () => {
     pending[4].resolve(json(3))
     await tick()
     expect(c.data()).toBe(3)
+  })
+
+  it('revalidates every active variant when a snapshot key is ambiguous', async () => {
+    const stx = g.window.stx
+    const url = key()
+    const cacheKey = key()
+    const options = { immediate: false, cacheKey, staleTime: 60_000 }
+    const fr = stx.useQuery(url, { ...options, headers: { 'Accept-Language': 'fr' } })
+    const en = stx.useQuery(url, { ...options, headers: { 'Accept-Language': 'en' } })
+    const first = [fr.refetch(), en.refetch()]
+    await tick()
+    pending[0].resolve(json('fr 1'))
+    pending[1].resolve(json('en 1'))
+    await Promise.all(first)
+    const write = stx.useMutation('/write', { invalidateQueries: [cacheKey] }).mutate()
+    await tick()
+    pending[2].resolve(mutationResponse(true, { [cacheKey]: 'ambiguous' }))
+    await write
+    await tick()
+    expect([fr.data(), en.data()]).toEqual(['fr 1', 'en 1'])
+    expect(pending.slice(3).map(request => new Headers(request.opts.headers).get('accept-language'))).toEqual(['fr', 'en'])
+    pending[3].resolve(json('fr 2'))
+    pending[4].resolve(json('en 2'))
+    await tick()
+    expect([fr.data(), en.data()]).toEqual(['fr 2', 'en 2'])
   })
 
   it('does not apply an older snapshot and still revalidates an older write arriving late', async () => {

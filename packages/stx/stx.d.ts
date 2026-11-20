@@ -318,7 +318,7 @@ declare function useFetch<T = any>(_url: string | (() => string), _options?: any
 declare function useServerData<T>(_key: string, _loader: () => T | Promise<T>): Promise<T>
 /** Clear a hydration snapshot without changing existing signals. */
 declare function clearServerData(_key?: string): void
-declare function useQuery<T = any>(_url: string | (() => string), _options?: any): StxQueryResult<T>
+declare function useQuery<T = any>(_url: string | (() => string), _options?: import('@stacksjs/stx/composables').UseQueryOptions<T>): StxQueryResult<T>
 declare function useMutation<T = any>(_url: string | (() => string), _options?: any): StxMutationResult<T>
 
 /** Context handed to a request interceptor. Mutate it; the return is ignored. */

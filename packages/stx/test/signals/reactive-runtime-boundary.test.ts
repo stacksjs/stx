@@ -13,7 +13,7 @@ describe('signals reactive runtime boundary', () => {
 
   it('keeps compatibility aliases with the object proxy', () => {
     expect(SIGNALS_REACTIVE_RUNTIME).toContain('var ref = state')
-    expect(SIGNALS_REACTIVE_RUNTIME).toContain('function reactive(target)')
+    expect(SIGNALS_REACTIVE_RUNTIME).toContain('var reactive = (')
     expect(SIGNALS_REACTIVE_RUNTIME).toContain('var computed = derived')
     expect(SIGNALS_REACTIVE_RUNTIME).toContain('var watchEffect = function(fn)')
   })
