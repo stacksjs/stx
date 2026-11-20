@@ -174,6 +174,72 @@ describe('the newest navigation wins', () => {
     expect(window.location.pathname).toBe('/')
     expect(main(window)).toBe('/')
   })
+
+  it('lets Forward during a load win over the load', async () => {
+    const { window } = install(page('Home'), async (path) => {
+      if (path === '/slow')
+        await sleep(120)
+      return fragment(`<p>${path}</p>`)
+    })
+    await window.stxRouter.navigate('/a')
+    window.history.back()
+    // Back swaps behind the 120ms fallback fade.
+    await sleep(250)
+    expect(main(window)).toBe('/')
+    const slow = window.stxRouter.navigate('/slow')
+    await sleep(10)
+    window.history.forward()
+    await sleep(40)
+    expect(await slow).toBe(false)
+    await sleep(150)
+    expect(window.location.pathname).toBe('/a')
+    expect(main(window)).toBe('/a')
+  })
+
+  it('draws no retry over the newer page when the superseded load fails late', async () => {
+    const errors: unknown[] = []
+    const { window, navigations } = install(page('Home'), async (path) => {
+      if (path === '/slow') {
+        await sleep(120)
+        throw new TypeError('Failed to fetch')
+      }
+      return fragment(`<p>${path}</p>`)
+    })
+    window.addEventListener('stx:navigate-error', (e: any) => errors.push(e.detail))
+    const slow = window.stxRouter.navigate('/slow')
+    await sleep(10)
+    expect(await window.stxRouter.navigate('/fast')).toBe(true)
+    expect(await slow).toBe(false)
+    await sleep(50)
+    expect(main(window)).toBe('/fast')
+    expect(window.document.querySelector('[data-stx-retry]')).toBeNull()
+    expect(window.location.pathname).toBe('/fast')
+    expect(errors).toEqual([])
+    expect(navigations).toEqual([])
+  })
+
+  it('leaves the title and the announcement to the page that won', async () => {
+    const titled = (path: string, title: string): Response => {
+      const response = fragment(`<h1>${title} heading</h1>`)
+      response.headers.set('X-STX-Title', encodeURIComponent(title))
+      return response
+    }
+    const { window } = install(page('Home'), async (path) => {
+      if (path === '/slow') {
+        await sleep(120)
+        return titled(path, 'Slow')
+      }
+      return titled(path, 'Fast')
+    })
+    const slow = window.stxRouter.navigate('/slow')
+    await sleep(10)
+    expect(await window.stxRouter.navigate('/fast')).toBe(true)
+    expect(await slow).toBe(false)
+    await sleep(250)
+    expect(window.document.title).toBe('Fast')
+    expect(window.document.getElementById('stx-route-announcer')?.textContent).toBe('Fast heading')
+    expect(main(window)).toBe('Fast heading')
+  })
 })
 
 describe('a page that cannot be loaded', () => {

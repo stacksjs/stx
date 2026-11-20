@@ -175,3 +175,72 @@ it('keeps hover help open across the trigger gap and dismisses it with Escape fr
   }
   finally { view.close(); server.stop(true) }
 }, 60_000)
+
+it('stops positioning an open tooltip that is disabled or torn down', async () => {
+  const root = join(import.meta.dir, '..')
+  const html = await processDirectives(`@import('Tooltip', '${join(root, 'src/ui/tooltip/Tooltip.stx')}')
+<!doctype html><html><head></head><body>
+<script client>
+const off = state(false)
+const shown = state(true)
+window.probe = { off, shown }
+</script>
+<main>
+<Tooltip content="Disable me" pressToToggle :disabled="off()"><button id="disable-help" type="button">Help</button></Tooltip>
+<div :if="shown()"><Tooltip content="Remove me" pressToToggle><button id="remove-help" type="button">Help</button></Tooltip></div>
+</main>
+</body></html>`, {}, join(root, 'tooltip-teardown-fixture.stx'), { ...defaultConfig, root, cache: false, debug: false }, new Set())
+  const css = await generateCss(html, root)
+  const instrumentation = `<script>
+    const active = { scroll: new Set(), resize: new Set() };
+    const add = window.addEventListener.bind(window);
+    const remove = window.removeEventListener.bind(window);
+    window.addEventListener = (type, handler, options) => { active[type]?.add(handler); add(type, handler, options) };
+    window.removeEventListener = (type, handler, options) => { active[type]?.delete(handler); remove(type, handler, options) };
+    window.listenerCount = () => [active.scroll.size, active.resize.size];
+    window.pageErrors = [];
+    add('error', event => window.pageErrors.push(String(event.message)));
+  </script>`
+  const page = html.replace('<head>', '<head>' + instrumentation).replace('</head>', '<style>' + css + '</style></head>')
+  const server = Bun.serve({ hostname: '127.0.0.1', port: 0, fetch: () => new Response(page, { headers: { 'Content-Type': 'text/html' } }) })
+  const view = new WebView({ headless: true, width: 800, height: 600, backend: { type: 'chrome', url: false } })
+  try {
+    await view.navigate(server.url.href)
+    const read = (id: string) => view.evaluate(`(() => {
+      const button = document.querySelector('#${id}');
+      const describedBy = button?.getAttribute('aria-describedby');
+      const panel = describedBy && document.getElementById(describedBy);
+      return { count: listenerCount(), ready: !!panel, visible: !!panel && getComputedStyle(panel).display !== 'none', errors: pageErrors };
+    })()`) as Promise<{ count: number[], ready: boolean, visible: boolean, errors: string[] }>
+    const waitFor = async (id: string, predicate: (data: Awaited<ReturnType<typeof read>>) => boolean) => {
+      for (let i = 0; i < 80; i++) {
+        if (predicate(await read(id))) return
+        await Bun.sleep(20)
+      }
+      expect(await read(id)).toSatisfy(predicate)
+    }
+
+    await waitFor('disable-help', data => data.ready)
+    await waitFor('remove-help', data => data.ready)
+    expect((await read('disable-help')).count).toEqual([0, 0])
+
+    await view.click('#disable-help')
+    await waitFor('disable-help', data => data.visible)
+    expect((await read('disable-help')).count).toEqual([1, 1])
+    await view.evaluate('probe.off.set(true)')
+    await waitFor('disable-help', data => !data.visible)
+    expect((await read('disable-help')).count).toEqual([0, 0])
+
+    await view.click('#remove-help')
+    await waitFor('remove-help', data => data.visible)
+    expect((await read('remove-help')).count).toEqual([1, 1])
+    await view.evaluate('probe.shown.set(false)')
+    for (let i = 0; i < 80 && await view.evaluate(`!!document.querySelector('#remove-help')`); i++) await Bun.sleep(20)
+    expect(await view.evaluate(`!!document.querySelector('#remove-help')`)).toBe(false)
+    expect(await view.evaluate('listenerCount()')).toEqual([0, 0])
+    // The panel was portaled to the body; it leaves with its tooltip.
+    expect(await view.evaluate(`Array.from(document.querySelectorAll('[role="tooltip"]')).map(el => el.textContent.trim())`)).toEqual(['Disable me'])
+    expect(await view.evaluate('pageErrors')).toEqual([])
+  }
+  finally { view.close(); server.stop(true) }
+}, 60_000)

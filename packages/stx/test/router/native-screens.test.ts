@@ -478,6 +478,67 @@ describe('the newest navigation wins', () => {
     expect(browser.document.body.textContent).not.toContain('deeper')
   })
 
+  it('keeps a later push when the page it superseded answers late, and Back skips it', async () => {
+    const { browser, life } = await start()
+    const serve = (globalThis as any).fetch
+    ;(globalThis as any).fetch = async (input: unknown, init: any) => {
+      if (String(input).includes('detail'))
+        await sleep(150)
+      return serve(input, init)
+    }
+    const slow = browser.window.stxRouter.navigate('/today/detail')
+    await sleep(20)
+    expect(await browser.window.stxRouter.navigate('/today/deeper')).toBe(true)
+    expect(await slow).toBe(false)
+    await sleep(200)
+    expect(browser.window.location.pathname).toBe('/today/deeper')
+    expect(shownText(browser)).toBe('Deeper')
+    expect(life.mounts).not.toContain('detail')
+    expect(browser.document.getElementById('detail-text')).toBeNull()
+    await back(browser)
+    expect(browser.window.location.pathname).toBe('/today')
+    expect(shownText(browser)).toBe('Today')
+    expect(browser.errors).toEqual([])
+  })
+
+  it('draws no retry over a later push when the page it superseded fails late', async () => {
+    const { browser } = await start()
+    const serve = (globalThis as any).fetch
+    ;(globalThis as any).fetch = async (input: unknown, init: any) => {
+      if (String(input).includes('detail')) {
+        await sleep(150)
+        throw new TypeError('Failed to fetch')
+      }
+      return serve(input, init)
+    }
+    const errors: unknown[] = []
+    browser.window.addEventListener('stx:navigate-error', (e: any) => errors.push(e.detail))
+    const slow = browser.window.stxRouter.navigate('/today/detail')
+    await sleep(20)
+    expect(await browser.window.stxRouter.navigate('/today/deeper')).toBe(true)
+    expect(await slow).toBe(false)
+    await sleep(200)
+    expect(shownText(browser)).toBe('Deeper')
+    expect(browser.document.querySelector('[data-stx-retry]')).toBeNull()
+    expect(errors).toEqual([])
+  })
+
+  it('builds and disposes one screen per entry, however often it is entered again', async () => {
+    const { browser, life } = await start()
+    for (let i = 0; i < 3; i++) {
+      await tap(browser, '#to-detail')
+      expect(shownText(browser)).toBe('Detail')
+      expect(browser.document.querySelectorAll('[data-stx-screen]').length).toBe(2)
+      await back(browser)
+      expect(shownText(browser)).toBe('Today')
+      expect(browser.document.querySelectorAll('[data-stx-screen]').length).toBe(1)
+    }
+    expect(life.mounts.filter(name => name === 'detail')).toHaveLength(3)
+    expect(life.destroys.filter(name => name === 'detail')).toHaveLength(3)
+    expect(life.destroys).not.toContain('today')
+    expect(browser.errors).toEqual([])
+  })
+
   it('does not swallow a tap while another page loads', async () => {
     const { browser } = await start()
     const css = browser.document.getElementById('stx-r-css').textContent
