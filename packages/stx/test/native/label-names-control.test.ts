@@ -76,14 +76,14 @@ describe('a <label for> names its control', () => {
 })
 
 describe('aria-hidden reaches the host', () => {
-  it('is the role a host leaves out, and wins over the role the node had', () => {
-    expect(projectAccessibility({ 'aria-hidden': 'true' })).toEqual({ accessibilityRole: 'none' })
-    expect(projectAccessibility({ 'aria-hidden': '' })).toEqual({ accessibilityRole: 'none' })
-    expect(projectAccessibility({ 'aria-hidden': 'true', 'role': 'button', 'aria-label': 'Close' })).toMatchObject({ accessibilityRole: 'none' })
+  it('hides descendants and provides a node-level fallback for older hosts', () => {
+    expect(projectAccessibility({ 'aria-hidden': 'true' })).toEqual({ accessibilityHidden: true, accessibilityRole: 'none' })
+    expect(projectAccessibility({ 'aria-hidden': '' })).toEqual({ accessibilityHidden: true, accessibilityRole: 'none' })
+    expect(projectAccessibility({ 'aria-hidden': 'true', 'role': 'button', 'aria-label': 'Close' })).toMatchObject({ accessibilityHidden: true, accessibilityRole: 'none' })
     expect(projectAccessibility({ 'aria-hidden': 'false', 'role': 'button' })).toEqual({ accessibilityRole: 'button' })
     expect(projectAccessibility({ 'aria-hidden': null, 'role': 'button' })).toEqual({ accessibilityRole: 'button' })
-    // The native spelling is deliberate when both are written.
-    expect(projectAccessibility({ 'aria-hidden': 'true', 'accessibilityRole': 'image' })).toEqual({ accessibilityRole: 'image' })
+    expect(projectAccessibility({ 'aria-hidden': 'true', 'accessibilityRole': 'image' })).toEqual({ accessibilityHidden: true, accessibilityRole: 'image' })
+    expect(projectAccessibility({ 'aria-hidden': 'true', 'accessibilityHidden': false, 'role': 'button' })).toEqual({ accessibilityHidden: false, accessibilityRole: 'button' })
   })
 
   it.each(['ios', 'android'] as const)('follows a bound value on %s', async (platform) => {
@@ -95,9 +95,11 @@ window.probe = { quiet }
     const phone = mountNativeScreen(code, 'Screen', { platform })
     await phone.settle()
     expect(phone.byTestID('note')!.props.accessibilityRole).toBe('none')
+    expect(phone.byTestID('note')!.props.accessibilityHidden).toBe(true)
     phone.context.probe.quiet.set(false)
     await phone.settle()
     expect(phone.byTestID('note')!.props.accessibilityRole).toBe('image')
+    expect(phone.byTestID('note')!.props.accessibilityHidden ?? null).toBeNull()
     phone.context.probe.quiet.set(true)
     await phone.settle()
     expect(phone.byTestID('note')!.props.accessibilityRole).toBe('none')

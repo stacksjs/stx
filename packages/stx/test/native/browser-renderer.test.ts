@@ -15,6 +15,16 @@ function fixture() {
 }
 
 describe('the browser peer of the native screen renderer', () => {
+  it('removes and restores a subtree in the accessibility tree without hiding its content', () => {
+    const { renderer, container, node } = fixture()
+    renderer.render(node('summary', 'View', [node('detail', 'Text', ['Workout detail'])], { accessibilityHidden: true }))
+    const summary = container.querySelector('[data-stx-node="summary"]')!
+    expect(summary.getAttribute('aria-hidden')).toBe('true')
+    expect(summary.textContent).toBe('Workout detail')
+    renderer.mutate({ version: 1, batchId: 'expose-detail', baseRevision: 0, revision: 1, operations: [{ op: 'updateNode', id: 'summary', patch: { props: { accessibilityHidden: null } } }] })
+    expect(summary.hasAttribute('aria-hidden')).toBe(false)
+  })
+
   it('adds safe-area env insets to authored padding and honors selected edges', () => {
     const { renderer, container, node } = fixture()
     const safeRoot = node('root', 'SafeAreaView', [node('content', 'View')], { edges: ['top', 'bottom'] })

@@ -338,6 +338,8 @@ export class BrowserScreenRenderer {
     else element.removeAttribute('aria-label')
     if (props.accessibilityHint != null) element.setAttribute('aria-description', String(props.accessibilityHint))
     else element.removeAttribute('aria-description')
+    if (props.accessibilityHidden === true) element.setAttribute('aria-hidden', 'true')
+    else element.removeAttribute('aria-hidden')
     if (type === 'Link') {
       const destination = ['href', 'to'].map(name => props[name]).find(value => typeof value === 'string' && value.trim() !== '')
       if (destination) element.setAttribute('href', String(destination))

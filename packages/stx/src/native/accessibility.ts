@@ -164,14 +164,13 @@ export function applyStaticAccessibility(props: Record<string, unknown>): void {
     const patch = accessibilityPatch(name, value, derived)
     if (patch) Object.assign(derived, patch)
   }
-  // `aria-hidden` takes a node out of what a screen reader reaches. Both hosts
-  // do that for the role "none", so it has to win over the node's own role:
-  // a decorative image is not an image to anyone listening, and the word
-  // "image" was what VoiceOver said on reaching one. It hides the node it is
-  // written on, not what is inside it: a host has no prop for a subtree.
-  if (stateValue('aria-hidden', props['aria-hidden']) === true)
+  // New hosts hide the entire subtree. Keep the node-level role fallback for
+  // older hosts, which only understand "none".
+  if (stateValue('aria-hidden', props['aria-hidden']) === true && props.accessibilityHidden !== false) {
     derived.accessibilityRole = 'none'
-  for (const key of ['accessibilityLabel', 'accessibilityRole', 'accessibilityValue']) {
+    derived.accessibilityHidden = true
+  }
+  for (const key of ['accessibilityLabel', 'accessibilityRole', 'accessibilityValue', 'accessibilityHidden']) {
     if (props[key] === undefined && derived[key] !== undefined && derived[key] !== null)
       props[key] = derived[key]
   }
@@ -181,7 +180,7 @@ export function applyStaticAccessibility(props: Record<string, unknown>): void {
 }
 
 /** Fields derived from web semantics at the native transport boundary. */
-export const ACCESSIBILITY_FIELDS = ['accessibilityLabel', 'accessibilityRole', 'accessibilityState', 'accessibilityValue'] as const
+export const ACCESSIBILITY_FIELDS = ['accessibilityLabel', 'accessibilityRole', 'accessibilityState', 'accessibilityValue', 'accessibilityHidden'] as const
 
 /**
  * Keep authored props separate from this projection: an ARIA attribute may

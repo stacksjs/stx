@@ -5,7 +5,7 @@ const NATIVE_PROP_NAMES = [
   // A drawing's attributes: `viewbox` from the HTML parser, `stroke-width`
   // from a template, both read as one spelling by the renderers.
   ...SVG_PROP_NAMES,
-  'accessibilityHint', 'accessibilityLabel', 'accessibilityRole', 'accessibilityState', 'accessibilityValue',
+  'accessibilityHidden', 'accessibilityHint', 'accessibilityLabel', 'accessibilityRole', 'accessibilityState', 'accessibilityValue',
   'barStyle', 'activeOpacity', 'alwaysBounceHorizontal', 'alwaysBounceVertical', 'animationType', 'autoCapitalize',
   'autoComplete', 'autoCorrect', 'autoFocus', 'contentContainerStyle', 'currentTime', 'defaultSource', 'defaultValue',
   'ellipsizeMode', 'hidesWhenStopped', 'hitSlop', 'imageStyle', 'initialNumToRender',
