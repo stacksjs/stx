@@ -2039,8 +2039,14 @@ async function processOtherDirectives(
   // For templates that use signals, convert @if/@for directive blocks to attribute-style
   // MUST run BEFORE processLoops/processConditionals so signal loops aren't evaluated server-side
   // Pass context so loops referencing server-side data are kept for server-side processing
-  if (usesSignalsInScript(output) || Array.isArray(context.__stx_client_signal_names)) {
-    output = convertSignalDirectivesToAttributes(output, context)
+  const hasSignalScript = usesSignalsInScript(output)
+  // Web components have already extracted their setup script at this point.
+  const componentSignals = !opts._nativeHostAttrs && Array.isArray(context.__stx_client_signal_names)
+    ? context.__stx_client_signal_names as string[]
+    : []
+  if (hasSignalScript || componentSignals.length > 0)
+    output = convertSignalDirectivesToAttributes(output, context, componentSignals)
+  if (hasSignalScript) {
     output = convertSignalLoopsToAttributes(output, context)
     // And the reverse: a `:for` written directly over `<script server>` data
     // becomes a server loop, instead of reaching the client and rendering zero

@@ -544,13 +544,15 @@ function isBalancedForTag(inner: string, tag: string): boolean {
  *
  * Note: Uses <template> wrapper for branches with multiple children or text nodes.
  */
-export function convertSignalDirectivesToAttributes(template: string, context?: Record<string, any>): string {
+export function convertSignalDirectivesToAttributes(template: string, context?: Record<string, any>, componentSignals: readonly string[] = []): string {
   // Names of locally-declared signals — used (together with the server `context`)
   // to tell a client-reactive conditional from a server/loop-data one that must
   // stay textual for processConditionals. Extracted once from the full template
   // (the `<script>` scope) so recursive calls on a branch body — which has no
   // script of its own — still classify nested conditions against the same signals.
-  const signalNames = extractClientSignalNames(template, context)
+  const signalNames = extractClientSignalNames(template)
+  for (const name of componentSignals)
+    signalNames.add(name)
 
   // Convert one nesting level of @if(expr)...@endif blocks, recursing into the
   // body of each block we actually rewrite.
