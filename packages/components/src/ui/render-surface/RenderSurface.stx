@@ -1,0 +1,137 @@
+<script server>
+/*
+ * <RenderSurface>: a box shared TypeScript draws into, frame by frame, with
+ * no WebView (stacksjs/stx#2108, craft-native/craft#578).
+ *
+ *   <RenderSurface class="flex-1" filter="nearest"
+ *     @ready="loop = startRenderLoop($event.surface, paint)"
+ *     @restored="loop.wake()" @error="report($event)" />
+ *
+ * On a native screen it is the host's RenderSurface, drawn with Metal; in a
+ * browser it is a <canvas>. Frames go in through `presentFrame` or
+ * `startRenderLoop` from `@stacksjs/components/render-surface`, by the name
+ * `ready` carries.
+ *
+ * Props:
+ * - `surface`: the name frames are given to. Unique on the screen; when it is
+ *   left out each instance gets its own. A second live surface of a name
+ *   already taken stays blank and reports `DUPLICATE`.
+ * - `filter`: `nearest` (the default, for pixel art) or `linear`, used when a
+ *   frame's size differs from the box's pixels.
+ * - `opaque`: true by default. A surface that is not opaque takes
+ *   premultiplied alpha.
+ * - `label`: what a screen reader says for it.
+ * - `unavailableText`: what shows in its place where nothing can draw one.
+ *
+ * Events:
+ * - `ready` the first time it has a size, then `resize` on each change, both
+ *   `{ surface, width, height, scale, pixelWidth, pixelHeight }`;
+ * - `lost` (`{ surface, reason }`) when the app goes to the background on a
+ *   phone, and `restored` (the metrics again) when it returns: nothing is
+ *   kept across a loss, so draw a whole frame again;
+ * - `error` with `{ surface, code, message }`: `UNAVAILABLE` where this device
+ *   cannot draw one (the box then says so rather than staying blank), or
+ *   `DUPLICATE`.
+ */
+export const surface = $props.surface || `surface-${$uid}`
+export const filter = $props.filter === 'linear' ? 'linear' : 'nearest'
+export const opaque = $bool($props.opaque, true)
+export const className = $props.className || $props.class || ''
+export const label = $props.label || ''
+export const unavailableText = $props.unavailableText || 'This device cannot draw this view.'
+</script>
+
+<script client>
+import { claimCanvasSurface, renderSurfaceHost } from './render-surface'
+
+const emit = defineEmits(['ready', 'resize', 'lost', 'restored', 'error'])
+const name = {{ surface }}
+const filter = {{ filter }}
+const opaque = {{ opaque }}
+const nativeHost = !!window.stx._host.isNative
+const canvasRef = useRef('canvasRef')
+const unavailable = state(false)
+let claim = null
+let observer = null
+let sized = false
+
+// A host event carries its payload as nativeEvent; the shared runtime may
+// also hand it over as it is.
+function payload(event) {
+  return (event && event.nativeEvent) || event || {}
+}
+
+function metrics(event) {
+  const m = payload(event)
+  return { surface: name, width: m.width, height: m.height, scale: m.scale, pixelWidth: m.pixelWidth, pixelHeight: m.pixelHeight }
+}
+
+function fail(error) {
+  if (error.code === 'UNAVAILABLE') unavailable.set(true)
+  // Reported, never swallowed: a DUPLICATE is a page mistake, and the box
+  // stays blank until it is fixed.
+  emit('error', { surface: name, code: String(error.code || 'ERROR'), message: String(error.message || '') })
+}
+
+function hostReady(event) { emit('ready', metrics(event)) }
+function hostResize(event) { emit('resize', metrics(event)) }
+function hostLost(event) { emit('lost', { surface: name, reason: String(payload(event).reason || 'background') }) }
+function hostRestored(event) { emit('restored', metrics(event)) }
+function hostError(event) { fail(payload(event)) }
+
+// A browser has no surface events of its own. The canvas's size stands in
+// for them: its first size is `ready`, each change after it `resize`.
+function measure() {
+  const canvas = canvasRef.value
+  if (!canvas || !claim || claim.error) return
+  const box = canvas.getBoundingClientRect()
+  if (box.width <= 0 || box.height <= 0) return
+  const scale = window.devicePixelRatio || 1
+  const detail = { surface: name, width: box.width, height: box.height, scale, pixelWidth: Math.round(box.width * scale), pixelHeight: Math.round(box.height * scale) }
+  emit(sized ? 'resize' : 'ready', detail)
+  sized = true
+}
+
+onMount(() => {
+  // Per mount: an :if can take the surface away and bring it back with the
+  // same setup, and coming back is a new surface with a ready of its own.
+  sized = false
+  if (nativeHost) {
+    // The host also says UNAVAILABLE once at mount; knowing it here shows the
+    // fallback without waiting for that.
+    if (renderSurfaceHost() === 'none') unavailable.set(true)
+    return
+  }
+  const canvas = canvasRef.value
+  if (!canvas) return
+  canvas.style.imageRendering = filter === 'nearest' ? 'pixelated' : 'auto'
+  claim = claimCanvasSurface(name, canvas, { opaque })
+  if (claim.error) { fail(claim.error); return }
+  // The observer's first answer, after layout, is the ready. Measured here
+  // instead, a surface mounted again under an :if said ready before the
+  // page's listener was back on it, and the page never heard.
+  if (typeof ResizeObserver === 'function') {
+    observer = new ResizeObserver(() => measure())
+    observer.observe(canvas)
+  }
+  else setTimeout(measure, 0)
+})
+
+onDestroy(() => {
+  sized = false
+  if (observer) observer.disconnect()
+  observer = null
+  if (claim && claim.release) claim.release()
+  claim = null
+})
+
+defineExpose({ surface: name, unavailable })
+</script>
+
+{{-- data-stx-layout-root: a phone has no display:contents, so the scope around
+     this root is a real box there, and an unsized one left the surface 0
+     points wide in a row: the host never said ready. --}}
+<div class="relative flex flex-col min-h-0 min-w-0 {{ className }}" data-render-surface data-stx-layout-root>
+  <canvas data-native="RenderSurface" ref="canvasRef" surface="{{ surface }}" filter="{{ filter }}" :opaque="{{ opaque }}" role="img" @if(label) aria-label="{{ label }}" @endif class="flex-1 block w-full min-h-0 min-w-0" @ready="hostReady($event)" @resize="hostResize($event)" @lost="hostLost($event)" @restored="hostRestored($event)" @error="hostError($event)"></canvas>
+  <div :show="unavailable()" role="status" class="absolute inset-0 flex items-center justify-center p-4 text-center text-sm text-fg-muted">{{ unavailableText }}</div>
+</div>

@@ -47,6 +47,11 @@
       "bun": "./stx-plugin.ts",
       "import": "./stx-plugin.ts"
     },
+    "./render-surface": {
+      "types": "./dist/ui/render-surface/render-surface.d.ts",
+      "bun": "./dist/render-surface/render-surface.js",
+      "import": "./dist/render-surface/render-surface.js"
+    },
     "./biometric": {
       "types": "./dist/ui/auth/biometric.d.ts",
       "bun": "./dist/biometric/biometric.js",

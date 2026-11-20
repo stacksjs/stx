@@ -175,6 +175,19 @@ if (!biometricResult.success) {
   process.exit(1)
 }
 
+// Frames for a <RenderSurface> from an app's own <script client>: the root
+// would reach the syntax highlighter, as for the overlay stack.
+const renderSurfaceResult = await Bun.build({
+  entrypoints: ['./src/ui/render-surface/render-surface.ts'],
+  outdir: './dist/render-surface',
+  target: 'browser',
+  minify: false,
+})
+if (!renderSurfaceResult.success) {
+  for (const log of renderSurfaceResult.logs) console.error(log)
+  process.exit(1)
+}
+
 // A component's exposed methods, from the page that uses it. Browser code, and
 // an entry of its own for the same reason the overlay stack has one.
 const apiResult = await Bun.build({

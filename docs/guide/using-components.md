@@ -342,6 +342,7 @@ Use `pressToToggle` for a dedicated help button. Each activation opens or closes
 |---|---|---|---|
 | `<Audio>` | `src` (`''`), `autoplay` (`false`), `loop` (`false`), `muted` (`false`), `controls` (`true`), `preload` (`'metadata'`), `className` (`''`), `showWaveform` (`false`), +1 more | — | — |
 | `<Image>` | `src` (`''`), `srcSet` (`''`), `sizes` (`''`), `webpSrc` (`''`), `webpSrcSet` (`''`), `alt` (`''`), `width`, `height`, +11 more | — | — |
+| `<RenderSurface>` | `surface` (one per instance), `filter` (`'nearest'`), `opaque` (`true`), `label` (`''`), `unavailableText`, `className` (`''`) | `@ready`, `@resize`, `@lost`, `@restored`, `@error` | — |
 | `<Video>` | `src` (`''`), `poster` (`''`), `autoplay` (`false`), `loop` (`false`), `muted` (`false`), `controls` (`true`), `preload` (`'metadata'`), `width`, +4 more | — | — |
 
 ### Auth & payments
