@@ -9,7 +9,7 @@ on:
 jobs:
   native-signing:
     name: Verify native signing on macOS 15
-    runs-on: macos-15
+    runs-on: macos-26
     permissions:
       contents: read
     steps:
