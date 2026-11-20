@@ -43,6 +43,19 @@ describe('media queries on a native screen', () => {
     expect(heard).toEqual([true, false])
     expect(wide.matches).toBe(false)
   })
+
+  it('starts watching from the current value after an unwatched change', () => {
+    const media = createNativeMedia()
+    const motion = media.matchMedia('(prefers-reduced-motion: reduce)')
+    const heard: boolean[] = []
+    const listen = (event: { matches: boolean }) => heard.push(event.matches)
+    motion.addEventListener('change', listen)
+    motion.removeEventListener('change', listen)
+    media.update({ reducedMotion: true })
+    motion.addEventListener('change', listen)
+    media.update({ reducedMotion: false })
+    expect(heard).toEqual([false])
+  })
 })
 
 async function mount(source: string, components: Record<string, string>, options: NativeScreenOptions) {
@@ -101,5 +114,21 @@ const dark = useMediaQuery('(prefers-color-scheme: dark)')
     screen.appearance('dark')
     await screen.settle()
     expect(screen.texts()).toContain('dark')
+  })
+
+  it('uses Craft’s initial Reduce Motion setting and follows updates', async () => {
+    const screen = await mount(`<script client>
+const motion = useMediaQuery('(prefers-reduced-motion: reduce)')
+</script><View><Text>{{ motion() ? 'Still' : 'Moving' }}</Text></View>`, {}, { platform: 'ios', reducedMotion: true })
+    expect(screen.texts()).toContain('Still')
+    screen.appearance('light', false)
+    await screen.settle()
+    expect(screen.texts()).toContain('Moving')
+    screen.appearance('dark')
+    await screen.settle()
+    expect(screen.texts()).toContain('Moving')
+    screen.appearance('dark', true)
+    await screen.settle()
+    expect(screen.texts()).toContain('Still')
   })
 })

@@ -876,7 +876,7 @@ export function installJSCGlobals(target: AnyRecord = globalThis as AnyRecord): 
       width: Number(bridge.viewportWidth) || 0,
       height: Number(bridge.viewportHeight) || 0,
       colorScheme: bridge.colorScheme === 'dark' ? 'dark' : 'light',
-      reducedMotion: bridge.reducedMotion === true,
+      reducedMotion: (bridge.appearance?.reduceMotion ?? bridge.reducedMotion) === true,
       pointer: bridge.platform === 'macos',
     })
     target.__stxNativeMedia = media

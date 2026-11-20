@@ -116,10 +116,15 @@ export function createNativeMedia(initial: Partial<NativeMediaState> = {}): Nati
   function matchMedia(query: string): NativeMediaQueryList {
     const media = String(query)
     const entry = { list: null as unknown as NativeMediaQueryList, matches: evaluateMediaQuery(media, state), listeners: new Set<(event: { matches: boolean, media: string }) => void>() }
+    const watch = () => {
+      if (watched.has(entry)) return
+      entry.matches = evaluateMediaQuery(media, state)
+      watched.add(entry)
+    }
     const listen = (listener: (event: { matches: boolean, media: string }) => void): void => {
       if (typeof listener !== 'function') return
       entry.listeners.add(listener)
-      watched.add(entry)
+      watch()
     }
     const forget = (listener: (event: { matches: boolean, media: string }) => void): void => {
       entry.listeners.delete(listener)
@@ -132,7 +137,7 @@ export function createNativeMedia(initial: Partial<NativeMediaState> = {}): Nati
       get onchange() { return onchange },
       set onchange(value) {
         onchange = typeof value === 'function' ? value : null
-        if (onchange) watched.add(entry)
+        if (onchange) watch()
         else if (!entry.listeners.size) watched.delete(entry)
       },
       addEventListener: (type, listener) => { if (type === 'change') listen(listener) },

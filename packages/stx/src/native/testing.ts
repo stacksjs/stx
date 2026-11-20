@@ -171,6 +171,7 @@ export interface NativeScreenOptions {
   /** Simulate host animation before reporting Modal dismissal completion. Defaults to a microtask. */
   modalDismissDelayMs?: number
   colorScheme?: 'light' | 'dark'
+  reducedMotion?: boolean
   /** The screen's width in points at launch, for `sm:`/`md:`/`lg:` classes (unset: a phone). */
   viewportWidth?: number
   /** The params the screen was opened with (`craft.route.params`). */
@@ -315,7 +316,7 @@ export interface NativeScreen {
   background: () => void
   /** The app back in the foreground. */
   resume: () => void
-  appearance: (scheme: 'light' | 'dark') => void
+  appearance: (scheme: 'light' | 'dark', reduceMotion?: boolean) => void
   /** The screen resized (rotation, split view, a resized window), as the host reports it. */
   viewport: (width: number, height?: number) => void
   /** The screen shown again, as the host says when what was over it was popped or its tab chosen again. */
@@ -654,6 +655,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
       platform: options.platform ?? 'ios',
       capabilityTimeoutMs: options.capabilityTimeoutMs ?? 100,
       colorScheme: options.colorScheme ?? 'light',
+      appearance: { reduceMotion: options.reducedMotion },
       ...(options.viewportWidth === undefined ? {} : { viewportWidth: options.viewportWidth }),
       capabilities: options.capabilities ?? [],
       initialAppState: options.initialAppState ?? 'active',
@@ -836,7 +838,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
     background: () => appState('background'),
     /** The app back in the foreground. */
     resume: () => appState('active'),
-    appearance: (scheme: 'light' | 'dark') => send('APPEARANCE', { colorScheme: scheme }),
+    appearance: (scheme: 'light' | 'dark', reduceMotion?: boolean) => send('APPEARANCE', { colorScheme: scheme, reduceMotion }),
     viewport: (width: number, height = 800) => send('VIEWPORT', { width, height }),
     /** The screen shown again, as the host says when what was over it was popped or its tab chosen again. */
     appear: () => send('SCREEN_FOCUS', { focused: true }),

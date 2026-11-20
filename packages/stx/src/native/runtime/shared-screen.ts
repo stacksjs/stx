@@ -72,12 +72,18 @@ export function prepareSharedNativeScreen(
   // Optional host hook: browser bindings retain their existing diagnostics.
   Object.assign(host, { reportBindingError: createBindingDiagnostics(document.meta.source ?? 'native screen') })
   protocol.on<any>('APPEARANCE', (message) => {
-    const scheme = message.payload?.colorScheme
-    if (scheme === 'light' || scheme === 'dark') {
+    const { colorScheme: scheme, reduceMotion } = message.payload ?? {}
+    const media = (globalThis as Record<string, any>).__stxNativeMedia
+    const hasColorScheme = scheme === 'light' || scheme === 'dark'
+    if (hasColorScheme) {
       bridge.colorScheme = scheme
       host.setColorScheme(scheme)
-      ;(globalThis as Record<string, any>).__stxNativeMedia?.update({ colorScheme: scheme })
     }
+    if (typeof reduceMotion === 'boolean') bridge.reducedMotion = reduceMotion
+    media?.update({
+      ...(hasColorScheme ? { colorScheme: scheme } : {}),
+      ...(typeof reduceMotion === 'boolean' ? { reducedMotion: reduceMotion } : {}),
+    })
   })
   // A rotation, a resized window, split view: `md:` and `lg:` classes follow.
   protocol.on<any>('VIEWPORT', (message) => {

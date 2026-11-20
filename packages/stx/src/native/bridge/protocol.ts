@@ -777,6 +777,9 @@ export interface NativeBridgeInterface {
   /** The person asked the system for reduced motion, for `prefers-reduced-motion`. */
   reducedMotion?: boolean
 
+  /** Initial preferences captured by the host. Updates arrive through APPEARANCE. */
+  appearance?: { reduceMotion?: boolean }
+
   /** The secure-storage key the host keeps the signed-in token under (Craft, `auth.token` by default). */
   sessionTokenKey?: string
 

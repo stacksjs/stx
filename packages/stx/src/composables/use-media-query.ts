@@ -27,42 +27,35 @@ export interface MediaQueryRef {
 export function useMediaQuery(query: string): MediaQueryRef {
   const subscribers = new Set<(matches: boolean) => void>()
 
-  const isClient = typeof window !== 'undefined'
-  let mediaQuery: MediaQueryList | null = null
-  let currentMatches = false
+  const mediaQuery = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia(query)
+    : null
 
-  if (isClient) {
-    mediaQuery = window.matchMedia(query)
-    currentMatches = mediaQuery.matches
-
-    const handler = (event: MediaQueryListEvent) => {
-      currentMatches = event.matches
-      for (const callback of subscribers) {
-        try {
-          callback(event.matches)
-        }
-catch (e) {
-          console.error('[useMediaQuery] Subscriber error:', e)
-        }
+  const handler = (event: MediaQueryListEvent) => {
+    for (const callback of subscribers) {
+      try {
+        callback(event.matches)
       }
-    }
-
-    // Modern browsers
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handler)
-    }
-else {
-      // Legacy browsers
-      mediaQuery.addListener(handler)
+      catch (e) {
+        console.error('[useMediaQuery] Subscriber error:', e)
+      }
     }
   }
 
   return {
-    get matches() { return currentMatches },
+    get matches() { return mediaQuery?.matches ?? false },
     subscribe: (callback) => {
+      if (!subscribers.size) {
+        if (mediaQuery?.addEventListener) mediaQuery.addEventListener('change', handler)
+        else mediaQuery?.addListener(handler)
+      }
       subscribers.add(callback)
-      callback(currentMatches)
-      return () => subscribers.delete(callback)
+      callback(mediaQuery?.matches ?? false)
+      return () => {
+        if (!subscribers.delete(callback) || subscribers.size) return
+        if (mediaQuery?.removeEventListener) mediaQuery.removeEventListener('change', handler)
+        else mediaQuery?.removeListener(handler)
+      }
     },
   }
 }
