@@ -23,6 +23,9 @@
  * @module vue-template
  */
 
+import { scanHtmlTags } from './html-masking'
+import { isRuntimeOwnedColonAttr } from './runtime-globals'
+
 // =============================================================================
 // Constants
 // =============================================================================
@@ -219,6 +222,33 @@ function replaceTagAttrs(html: string, parsed: ParsedTag, newAttrs: string): str
  */
 export function hasVueTemplateSyntax(template: string): boolean {
   return /\bv-(?:if|else-if|else|for|show|model|html|text|pre|once|cloak|memo|bind|on|slot)\b/.test(template)
+    || sameNameBinding.test(template)
+}
+
+const sameNameBinding = /\s(?:v-bind)?:[a-zA-Z_][\w-]*(?=[\s/>])(?!\s*=)/
+
+/** Normalize Vue 3.4 same-name bindings into the ordinary expression form. */
+function expandSameNameBindings(html: string): string {
+  if (!sameNameBinding.test(html)) return html
+
+  const attribute = /([^\s="'<>]+)(\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>]+))?/g
+  const bindingName = /^(?:v-bind)?:([a-zA-Z_][\w-]*)$/
+  const parts: string[] = []
+  let cursor = 0
+  for (const tag of scanHtmlTags(html)) {
+    if (tag.closing || !tag.attributes.includes(':')) continue
+    const attrs = tag.attributes.replace(attribute, (original, name: string, value?: string) => {
+      const binding = value === undefined ? bindingName.exec(name)?.[1] : undefined
+      if (!binding || isRuntimeOwnedColonAttr(binding)) return original
+      const expression = binding.replace(/-([a-zA-Z0-9])/g, (_, letter: string) => letter.toUpperCase())
+      return `:${binding}="${expression}"`
+    })
+    if (attrs === tag.attributes) continue
+    const start = tag.start + tag.name.length + 1
+    parts.push(html.slice(cursor, start), attrs)
+    cursor = start + tag.attributes.length
+  }
+  return parts.length ? parts.join('') + html.slice(cursor) : html
 }
 
 /**
@@ -678,7 +708,7 @@ export function processVueTemplate(template: string): string {
     return template
   }
 
-  let result = template
+  let result = expandSameNameBindings(template)
 
   // Order matters:
   // 1. v-for first (wraps elements in blocks)

@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
+import { dirname } from 'node:path'
 import stxPlugin from 'bun-plugin-stx'
-import { processVueTemplate, hasVueTemplateSyntax } from '../../src/vue-template'
+import { renderComponentWithSlot } from '../../src/utils'
+import { hasVueTemplateSyntax, processVueTemplate } from '../../src/vue-template'
 import { cleanupTestDirs, createTestFile, getHtmlOutput, OUTPUT_DIR, setupTestDirs } from '../utils'
 
 describe('Vue Template Syntax Detection', () => {
@@ -14,6 +16,10 @@ describe('Vue Template Syntax Detection', () => {
 
   it('should detect v-bind: prefix', () => {
     expect(hasVueTemplateSyntax('<div v-bind:class="active">hello</div>')).toBe(true)
+  })
+
+  it('should detect same-name shorthand without other Vue directives', () => {
+    expect(hasVueTemplateSyntax('<svg :width><line :x1 /></svg>')).toBe(true)
   })
 
   it('should detect v-model', () => {
@@ -109,6 +115,13 @@ describe('Vue Template Directive Transform', () => {
     expect(output).toContain('@bind:class="classes"')
   })
 
+  it('expands same-name bindings while preserving values and STX directives', () => {
+    const input = '<svg :width v-bind:height :class = "classes"><line :stroke-width data-label="literal :width here" /></svg><div :else></div>'
+    expect(processVueTemplate(input)).toBe('<svg :width="width" :height="height" :class = "classes"><line :stroke-width="strokeWidth" data-label="literal :width here" /></svg><div :else></div>')
+    const opaque = '<!-- <svg :width> --><script>const html = "<svg :width>"</script><textarea><svg :width></textarea>'
+    expect(processVueTemplate(opaque)).toBe(opaque)
+  })
+
   it('should transform v-on: to @ events', () => {
     const input = '<button v-on:click="handleClick">Click</button>'
     const output = processVueTemplate(input)
@@ -165,6 +178,13 @@ describe('Vue Template Directive Transform', () => {
 describe('Vue Template Integration', () => {
   beforeAll(setupTestDirs)
   afterAll(cleanupTestDirs)
+
+  it('renders same-name HTML and SVG bindings from a .stx component', async () => {
+    const file = await createTestFile('arrow.stx', '<template><svg :width v-bind:height><line :x1 :y1 :stroke-width /></svg><button :disabled>Save</button></template>')
+    const props = { width: 100, height: 35, x1: 5, y1: 7, strokeWidth: 3, disabled: true }
+    const html = await renderComponentWithSlot('arrow', props, '', dirname(file), {}, file, {}, undefined, new Set())
+    expect(html).toBe('<svg width="100" height="35"><line x1="5" y1="7" stroke-width="3" /></svg><button disabled>Save</button>')
+  })
 
   it('should process v-if through the full stx pipeline', async () => {
     const testFile = await createTestFile('vue-if.stx', `
