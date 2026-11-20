@@ -1,0 +1,57 @@
+{{-- A RenderSurface on a phone (stacksjs/stx#2108, craft-native/craft#578):
+     drawn by the host, refused once removed, ready again when back, and a
+     second surface of a taken name reported. Compiled by STX and run in the
+     maintained iOS gate as the `surface` suite. --}}
+@import('RenderSurface', '../../../../components/src/ui/render-surface/RenderSurface.stx')
+<script client>
+import { presentFrame, renderSurfaceHost } from '../../../../components/src/ui/render-surface/render-surface'
+const shown = state(true)
+const twin = state(false)
+const status = state('waiting')
+const readies = state(0)
+const twinStatus = state('none')
+const removed = state('not yet')
+const host = state('unknown')
+onMount(() => host.set(renderSurfaceHost()))
+
+// A 4 x 4 frame of one colour, scaled to the box.
+function fill(word) {
+  return presentFrame('game', new Uint32Array(16).fill(word), 4, 4)
+}
+
+function ready(event) {
+  readies.set(readies() + 1)
+  const size = 'ready ' + Math.round(event.width) + 'x' + Math.round(event.height)
+  try { status.set(size + ' ' + fill(0xFFFF0000)) }
+  catch (error) { status.set(size + ' threw ' + String(error.code || error.name) + ': ' + String(error.message)) }
+}
+
+function remove() {
+  shown.set(false)
+  setTimeout(() => {
+    try { fill(0xFF0000FF); removed.set('drew') }
+    catch (error) { removed.set(String(error.code || error.message)) }
+  }, 300)
+}
+</script>
+<div data-native="ScrollView" class="flex-1 bg-white dark:bg-black">
+<section class="p-4 gap-3 text-black dark:text-white">
+  {{-- Sized the way a page sizes one: flex-1 in a row of a fixed height. --}}
+  <div class="h-40 flex">
+    <div :if="shown()" class="flex-1 flex">
+      <RenderSurface testID="game-surface" surface="game" class="flex-1" label="Game" @ready="ready($event)" @error="status.set('error ' + $event.code)" />
+    </div>
+  </div>
+  <div :if="twin()" class="h-10 flex">
+    <RenderSurface surface="game" class="flex-1" @error="twinStatus.set($event.code)" />
+  </div>
+  <span testID="surface-status" :text="status()"></span>
+  <span testID="surface-readies" :text="'Ready: ' + readies()"></span>
+  <span testID="surface-host" :text="'Host: ' + host()"></span>
+  <span testID="twin-status" :text="'Twin: ' + twinStatus()"></span>
+  <span testID="removed-status" :text="'Removed: ' + removed()"></span>
+  <button testID="add-twin" @click="twin.set(true)">Add twin</button>
+  <button testID="remove-surface" @click="remove()">Remove</button>
+  <button testID="restore-surface" @click="shown.set(true)">Restore</button>
+</section>
+</div>

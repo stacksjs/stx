@@ -37,10 +37,12 @@ const suites: Record<string, { source: string, tests: string, count: number, uni
   lists: { source: 'shared-lists-device.stx', tests: 'SharedListsUITests', count: 3, unitTests: 'SharedListsNativeTests', unitCount: 2, support: ['SpokenStops.swift'] },
   'text-size': { source: 'shared-text-size-device.stx', tests: 'SharedTextSizeUITests', count: 1, unitTests: 'SharedTextSizeNativeTests', unitCount: 1, contentSize: 'accessibility-extra-extra-extra-large' },
   forms: { source: 'shared-forms-device.stx', tests: 'SharedFormsUITests', count: 4, unitTests: 'SharedFormsNativeTests', unitCount: 2, support: ['SpokenStops.swift'] },
+  // A RenderSurface drawn by the host's Metal layer (craft-native/craft#578).
+  surface: { source: 'render-surface-device.stx', tests: 'RenderSurfaceUITests', count: 1 },
 }
 if (!values['craft-root'] || !values.simulator || !['light', 'dark'].includes(values.appearance!) || !suites[values.suite!]
   || !['portrait', 'landscape'].includes(values.orientation!) || !['ltr', 'rtl'].includes(values.direction!))
-  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|controls|hud|images|videos|toggles|accessibility|forms|lists|text-size|streams] [--content-size large|accessibility-extra-extra-extra-large|...] [--orientation portrait|landscape] [--direction ltr|rtl] [--increase-contrast]')
+  throw new Error('Usage: bun scripts/native-portability-ios.ts --craft-root /path/to/craft --simulator OWNED_BOOTED_UUID [--appearance light|dark] [--suite overlays|controls|hud|images|videos|toggles|accessibility|forms|lists|text-size|streams|surface] [--content-size large|accessibility-extra-extra-extra-large|...] [--orientation portrait|landscape] [--direction ltr|rtl] [--increase-contrast]')
 const suite = suites[values.suite!]
 const contentSize = values['content-size'] ?? suite.contentSize ?? 'large'
 
