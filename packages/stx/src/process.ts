@@ -58,7 +58,7 @@ import { injectSeoTags, processMetaDirectives, processSeoDirective, processStruc
 import { fileExists, resolveTemplatePath, scopeSequenceKey } from './utils'
 import { runComposers } from './view-composers'
 import { processServerBindings } from './server-bindings'
-import { processVueTemplate } from './vue-template'
+import { normalizeVueSetupScripts, processVueTemplate } from './vue-template'
 import { processDynamicComponents } from './dynamic-components'
 import { dedupeScopedStyles, processScopedStyles } from './style-scoping'
 import { injectColorModeBootScript, normalizeCriticalHeadOrder } from './color-mode-boot'
@@ -729,6 +729,8 @@ export async function processDirectives(
   if (options.ssr === false && !options.autoShell && (options.buildMode as string) === 'spa') {
     return template
   }
+
+  template = normalizeVueSetupScripts(template, filePath)
 
   // Track if this is the top-level call (not a recursive call from layout/include)
   // Single preservation gate (#1800): decide preserve-vs-interpolate ONCE, on
@@ -2037,7 +2039,7 @@ async function processOtherDirectives(
   // For templates that use signals, convert @if/@for directive blocks to attribute-style
   // MUST run BEFORE processLoops/processConditionals so signal loops aren't evaluated server-side
   // Pass context so loops referencing server-side data are kept for server-side processing
-  if (usesSignalsInScript(output)) {
+  if (usesSignalsInScript(output) || Array.isArray(context.__stx_client_signal_names)) {
     output = convertSignalDirectivesToAttributes(output, context)
     output = convertSignalLoopsToAttributes(output, context)
     // And the reverse: a `:for` written directly over `<script server>` data

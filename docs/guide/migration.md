@@ -6,6 +6,13 @@ This section provides detailed guides for migrating from other frameworks to stx
 
 ### From Vue.js
 
+Save single-file components with the `.stx` extension to use Vue template
+directives such as `v-if`, `v-for`, `v-bind`, and `v-on`. In a
+`<script setup>` block, STX resolves named imports for its compatible APIs,
+including `ref`, `computed`, `reactive`, `watch`, `watchEffect`, and
+`nextTick`, through its own client runtime. Signal-driven `v-if` and
+`v-else` branches update when component state changes.
+
 #### Template Syntax Changes
 
 Vue.js templates to stx templates:

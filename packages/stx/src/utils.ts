@@ -49,6 +49,7 @@ import { validateClientScript } from './script-validation'
 import { escapeScriptBody } from './script-emit'
 import { literalValue, parsePropsDeclaration } from './props-declaration'
 import { scriptAttributes, scriptContainsCode } from './script-attributes'
+import { normalizeVueSetupScripts } from './vue-template'
 
 /** Resolve external resource attributes after every server block has run. */
 function renderExternalComponentScript(script: string, context: Record<string, unknown>, filePath: string): string | null {
@@ -1599,7 +1600,7 @@ export async function renderComponentWithSlot(
         // Stamped BEFORE the read: a write that lands in between leaves a stale
         // stamp, so the next request reads again rather than trusting the content.
         const stamp = fileStamp(componentFilePath)
-        componentContent = await Bun.file(componentFilePath).text()
+        componentContent = normalizeVueSetupScripts(await Bun.file(componentFilePath).text(), componentFilePath)
         // Cache for future use
         componentsCache.set(componentFilePath, componentContent)
         componentStamps.set(componentFilePath, stamp)

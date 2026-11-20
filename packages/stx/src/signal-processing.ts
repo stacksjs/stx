@@ -304,8 +304,10 @@ function hasTopLevelElseBranch(content: string): boolean {
  * via `state()`/etc., so they never land in this set — which is exactly why a
  * server-loop `@if/@else` chain is left alone.
  */
-export function extractClientSignalNames(template: string): Set<string> {
-  const names = new Set<string>()
+export function extractClientSignalNames(template: string, context?: Record<string, unknown>): Set<string> {
+  const inherited = context?.__stx_client_signal_names
+  // Components pass their client declarations separately after extracting scripts.
+  const names = new Set<string>(Array.isArray(inherited) ? inherited.filter(name => typeof name === 'string') : [])
   // Non-server, non-src <script> blocks only — same gating as usesSignalsInScript.
   const scriptRe = /<script\b(?![^>]*\bserver\b)(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi
   const declRe = /\b(?:const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=\s*(?:state|derived|computed|ref|reactive|signal|useModel)\s*(?:<[^>]*>)?\s*\(/g
@@ -548,7 +550,7 @@ export function convertSignalDirectivesToAttributes(template: string, context?: 
   // stay textual for processConditionals. Extracted once from the full template
   // (the `<script>` scope) so recursive calls on a branch body — which has no
   // script of its own — still classify nested conditions against the same signals.
-  const signalNames = extractClientSignalNames(template)
+  const signalNames = extractClientSignalNames(template, context)
 
   // Convert one nesting level of @if(expr)...@endif blocks, recursing into the
   // body of each block we actually rewrite.
@@ -1128,20 +1130,7 @@ export function convertServerLoopAttributesToDirectives(
   if (!LOOP_ATTRS.some(attr => template.includes(`${attr}=`)))
     return template
 
-  const signalNames = extractClientSignalNames(template)
-  // A component's template arrives here with its `<script client>` already
-  // lifted out, so the scan above finds nothing in it. The renderer records the
-  // names that script declares on the context instead. Without them a signal
-  // named after one of the component's props (`const options =
-  // derived(() => rawOptions().map(...))` beside an `options` prop) looked like
-  // server data, and the loop became an `@foreach` over `options()`, which is
-  // not callable on the server: NativeSegmentedControl rendered no segments.
-  if (Array.isArray(context.__stx_client_signal_names)) {
-    for (const name of context.__stx_client_signal_names as unknown[]) {
-      if (typeof name === 'string')
-        signalNames.add(name)
-    }
-  }
+  const signalNames = extractClientSignalNames(template, context)
   let output = template
 
   // Rebuilt from the end so earlier offsets stay valid.

@@ -23,8 +23,44 @@
  * @module vue-template
  */
 
-import { scanHtmlTags } from './html-masking'
+import { scanHtmlScriptElements, scanHtmlTags } from './html-masking'
 import { isRuntimeOwnedColonAttr } from './runtime-globals'
+import { scriptAttributes, scriptContainsCode } from './script-attributes'
+import { stripCommentsAndLiterals } from './strip-literals'
+
+const vueSetupApis = new Set([
+  'computed', 'inject', 'nextTick', 'onBeforeMount', 'onBeforeUnmount', 'onMounted',
+  'onUnmounted', 'provide', 'reactive', 'ref', 'useSlots', 'watch', 'watchEffect',
+])
+
+/** Resolve supported named Vue imports in .stx setup blocks through the STX client runtime. */
+export function normalizeVueSetupScripts(template: string, filePath: string): string {
+  if (!filePath.endsWith('.stx') || !template.includes('vue') || !template.includes('setup')) return template
+
+  const declaration = /^([ \t]*import\s*\{)([^}]*)(\}\s*from\s*)(['"])vue\4/gm
+  const specifier = /^([A-Za-z_$][\w$]*)(?:\s+as\s+[A-Za-z_$][\w$]*)?$/
+  const parts: string[] = []
+  let cursor = 0
+  for (const block of scanHtmlScriptElements(template)) {
+    const attrs = scriptAttributes(block.attrs)
+    if (!attrs.has('setup') || attrs.has('server') || attrs.has('src') || !scriptContainsCode(attrs)) continue
+    const source = template.slice(block.bodyStart, block.bodyEnd)
+    if (!source.includes('vue')) continue
+    const tokens = stripCommentsAndLiterals(source)
+    const result = source.replace(declaration, (statement, start: string, imports: string, from: string, quote: string, offset: number) => {
+      if (tokens.slice(offset, offset + start.length).trimStart().slice(0, 6) !== 'import') return statement
+      const supported = imports.split(',').filter(name => name.trim()).every((name) => {
+        const exported = specifier.exec(name.trim())?.[1]
+        return exported !== undefined && vueSetupApis.has(exported)
+      })
+      return supported ? start + imports + from + quote + 'stx' + quote : statement
+    })
+    if (result === source) continue
+    parts.push(template.slice(cursor, block.bodyStart), result)
+    cursor = block.bodyEnd
+  }
+  return parts.length ? parts.join('') + template.slice(cursor) : template
+}
 
 // =============================================================================
 // Constants
