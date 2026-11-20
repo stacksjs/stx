@@ -42,6 +42,8 @@ export type STXComponentType =
   | 'MapPolyline'
   | 'MapPolygon'
   | 'MapMarker'
+  /** A box shared TypeScript draws into, frame by frame (`craft.renderSurface`, craft-native/craft#578). */
+  | 'RenderSurface'
   // Lists
   | 'FlatList'
   | 'SectionList'
@@ -350,6 +352,11 @@ export type STXEventType =
   | 'onShow'
   | 'onDismiss'
   | 'onDismissComplete'
+  // A RenderSurface's life
+  | 'onReady'
+  | 'onResize'
+  | 'onLost'
+  | 'onRestored'
   | 'onRequestClose'
   // Gesture events
   | 'onSwipe'

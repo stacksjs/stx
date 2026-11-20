@@ -460,6 +460,17 @@ export interface NativeCraft {
   haptic: (style?: string) => Promise<void>
   clipboard: { write: (text: string) => Promise<unknown>, read: () => Promise<string> }
   device: { getInfo: () => Promise<Record<string, unknown>> }
+  /**
+   * Frames for a RenderSurface (`capabilities.renderSurface`, craft-native/craft#578).
+   * The host's own function, installed before the screen bundle runs: the
+   * runtime never defines it. `present` copies `width * height` 0xAARRGGBB
+   * words where the script runs and answers false while the surface is not
+   * ready or is lost; it throws a TypeError for a wrong array or size, and an
+   * Error with `code` NOT_FOUND (no live surface of that name) or UNAVAILABLE.
+   */
+  renderSurface?: {
+    present: (surface: string, pixels: Uint32Array, width: number, height: number) => boolean
+  }
   biometrics: {
     isAvailable: () => Promise<boolean>
     getBiometricType: () => Promise<string | null>

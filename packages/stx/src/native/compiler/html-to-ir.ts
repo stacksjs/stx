@@ -111,6 +111,9 @@ const UNWRAP = new Set(['template', 'body', 'html', 'main', 'fragment'])
 /** Nothing is mapped to a bare box any more; kept for the shape of `open`. */
 const BOX_ONLY = new Set<string>()
 
+/** Events only a RenderSurface raises (craft-native/craft#578). */
+const SURFACE_EVENTS = ['onReady', 'onResize', 'onLost', 'onRestored'] as const
+
 /**
  * Every event name at least one renderer dispatches on.
  *
@@ -129,6 +132,10 @@ export const NATIVE_EVENTS = new Set([
   'onError',
   'onFocus',
   'onPageSelected',
+  'onReady',
+  'onResize',
+  'onLost',
+  'onRestored',
   'onLayout',
   'onLoad',
   'onLoadEnd',
@@ -185,6 +192,7 @@ const NATIVE_TYPES = new Set([
   'Switch', 'Checkbox', 'Slider', 'Picker', 'SegmentedControl', 'DatePicker',
   'Modal', 'ActivityIndicator',
   'StatusBar', 'RefreshControl',
+  'RenderSurface',
   ...SVG_NODE_TYPES,
 ])
 
@@ -688,6 +696,17 @@ export async function translateHtmlToIR(
       for (const [lowerName, publicName] of SHARED_RUNTIME_UNSUPPORTED_LIST_PROPS) {
         if (names.has(lowerName))
           diagnostics.push({ kind: 'unsupported-list-prop', tag: type, name: publicName })
+      }
+    }
+    // Only a RenderSurface raises these. Anywhere else `@ready`, `@lost` and
+    // `@restored` are a component's own events, which reach their listener
+    // through the shared runtime, and `@resize` is the browser's, reported as
+    // it always was.
+    if (type !== 'RenderSurface') {
+      for (const name of SURFACE_EVENTS) {
+        if (events[name] === undefined) continue
+        delete events[name]
+        if (name === 'onResize') diagnostics.push({ kind: 'unread-event', tag, name: '@resize' })
       }
     }
     const node = createNode(type, props, style, events)

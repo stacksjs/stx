@@ -65,6 +65,13 @@ export const NATIVE_EVENT_NAMES: Readonly<Record<string, string>> = {
   'load-end': 'onLoadEnd',
   loadend: 'onLoadEnd',
   error: 'onError',
+  // A RenderSurface's life (craft-native/craft#578): its first size in a
+  // window, each change of it, and the loss and return of its drawable when
+  // the app goes to the background.
+  ready: 'onReady',
+  resize: 'onResize',
+  lost: 'onLost',
+  restored: 'onRestored',
   // A video's playback, in the web's names.
   play: 'onPlay',
   playing: 'onPlay',

@@ -43,6 +43,10 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     files: capabilities.has('files'),
     media: capabilities.has('media'),
     biometric: capabilities.has('biometric'),
+    // A device with a Metal GPU draws a RenderSurface. The host installs
+    // craft.renderSurface itself, a function rather than a message, so this
+    // adapter never defines or replaces it (craft-native/craft#578).
+    renderSurface: capabilities.has('renderSurface'),
     pushNotifications: capabilities.has('push'),
     secureStorage: capabilities.has('secureStorage'),
     storage: capabilities.has('storage'),

@@ -51,7 +51,7 @@ export const NATIVE_BOOLEAN_PROPS = new Set([
   'refreshing', 'scrollEnabled', 'secureTextEntry', 'selectTextOnFocus', 'showsHorizontalScrollIndicator',
   'showsVerticalScrollIndicator', 'transparent', 'visible', 'nonModal', 'dismissOnOutsideTap',
   'fitToBounds', 'showsUserLocation', 'zoomEnabled', 'rotateEnabled', 'pitchEnabled', 'showsCompass', 'showsScale',
-  'pictureInPicture', 'grabberVisible', 'iconOnly',
+  'pictureInPicture', 'grabberVisible', 'iconOnly', 'opaque',
 ])
 
 const nativePropNames = new Map(
