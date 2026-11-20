@@ -1,5 +1,39 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.919...v0.2.920)
+
+## ✨ Features
+
+- **components**: <RenderSurface>, a box shared code draws frames into ([c44e99f](https://github.com/stacksjs/stx/commit/c44e99f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2108](https://github.com/stacksjs/stx/issues/2108), [craft-native/craft#578](https://github.com/craft-native/craft/issues/578))
+- **native**: compile a RenderSurface for craft.renderSurface ([9de50ab](https://github.com/stacksjs/stx/commit/9de50ab)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2108](https://github.com/stacksjs/stx/issues/2108), [craft-native/craft#578](https://github.com/craft-native/craft/issues/578))
+
+## 🐛 Bug Fixes
+
+- **native**: honor the host reduce motion preference ([342617d](https://github.com/stacksjs/stx/commit/342617d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: retain native conditional rendering during Vue setup ([c04dea7](https://github.com/stacksjs/stx/commit/c04dea7)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: support Vue setup imports and reactive conditionals ([6e01c20](https://github.com/stacksjs/stx/commit/6e01c20)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: support Vue same-name attribute bindings ([67d2f97](https://github.com/stacksjs/stx/commit/67d2f97)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 📝 Documentation
+
+- **router**: cite #2205 for the prefetch hand-off freeze ([708d9e0](https://github.com/stacksjs/stx/commit/708d9e0)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2205](https://github.com/stacksjs/stx/issues/2205))
+
+## ✅ Tests
+
+- **native**: a RenderSurface on an iOS simulator, as the surface suite ([e7d865c](https://github.com/stacksjs/stx/commit/e7d865c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2108](https://github.com/stacksjs/stx/issues/2108), [craft-native/craft#578](https://github.com/craft-native/craft/issues/578))
+- **native**: reach drags beside the page's controls, and the hud panel scrolls (#2184) ([3264f6b](https://github.com/stacksjs/stx/commit/3264f6b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2184](https://github.com/stacksjs/stx/issues/2184))
+- pin the remaining acceptance cases of #2202 and #2204 ([4a4b510](https://github.com/stacksjs/stx/commit/4a4b510)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2202](https://github.com/stacksjs/stx/issues/2202), [#2204](https://github.com/stacksjs/stx/issues/2204))
+
+## 🔧 Chores
+
+- release v0.2.920 ([8766871](https://github.com/stacksjs/stx/commit/8766871)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **deps**: ts-css 0.3.27 ([40bbe70](https://github.com/stacksjs/stx/commit/40bbe70)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([stacksjs/ts-css#38](https://github.com/stacksjs/ts-css/issues/38))
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.918...v0.2.919)
 
 ## 🐛 Bug Fixes
