@@ -279,7 +279,8 @@ interface StxFetchResult<T> {
  * inverse mistake is worse — declaring `invalidate` on `useFetch` would
  * type-check a call to something that is undefined at runtime.
  */
-interface StxQueryResult<T> extends StxFetchResult<T> {
+interface StxQueryResult<T> extends Omit<StxFetchResult<T>, 'error'> {
+  error: StxSignal<string | null>
   /** True when cached data is on screen while a revalidation runs. */
   isStale: StxSignal<boolean>
   /** Drop this key from the cache and refetch. */
@@ -289,8 +290,9 @@ interface StxQueryResult<T> extends StxFetchResult<T> {
 interface StxMutationResult<T> {
   data: StxSignal<T | null>
   loading: StxSignal<boolean>
-  error: StxSignal<Error | null>
+  error: StxSignal<string | null>
   mutate: (body?: unknown) => Promise<T>
+  reset: () => void
 }
 
 interface StxAsyncDataOptions<T> {
@@ -311,13 +313,13 @@ interface StxAsyncDataResult<T> extends StxFetchResult<T> {
 }
 
 declare function useAsyncData<T>(fetcher: (signal: AbortSignal) => T | PromiseLike<T>, options?: StxAsyncDataOptions<T>): StxAsyncDataResult<T>
-declare function useFetch<T = any>(_url: string, _options?: any): StxFetchResult<T>
+declare function useFetch<T = any>(_url: string | (() => string), _options?: any): StxFetchResult<T>
 /** Server-only, keyed JSON data exposed to this render's client hydration. */
 declare function useServerData<T>(_key: string, _loader: () => T | Promise<T>): Promise<T>
 /** Clear a hydration snapshot without changing existing signals. */
 declare function clearServerData(_key?: string): void
-declare function useQuery<T = any>(_url: string, _options?: any): StxQueryResult<T>
-declare function useMutation<T = any>(_url: string, _options?: any): StxMutationResult<T>
+declare function useQuery<T = any>(_url: string | (() => string), _options?: any): StxQueryResult<T>
+declare function useMutation<T = any>(_url: string | (() => string), _options?: any): StxMutationResult<T>
 
 /** Context handed to a request interceptor. Mutate it; the return is ignored. */
 interface StxFetchRequestContext {
@@ -383,7 +385,7 @@ declare function configureFetch(_config: {
 declare function useOptimistic<T = any, A = any>(
   _base: StxSignal<T> | (() => T) | T,
   _reducer: (_current: T, _action: A) => T,
-): [StxSignal<T>, (_action: A, _settleWhen?: PromiseLike<unknown>) => () => void]
+): [StxSignal<T>, (_action: A, _settleWhen?: PromiseLike<unknown> | false) => (commit?: () => void) => void]
 
 // ============================================================================
 // DOM utilities

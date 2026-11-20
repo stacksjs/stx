@@ -203,7 +203,7 @@ ${development ? SIGNALS_EFFECT_RUNTIME : signalsEffectRuntime(false)}
 ${SIGNALS_LIFECYCLE_RUNTIME}
 ${SIGNALS_WEBSOCKET_RUNTIME}
 ${signalsFetchRuntime(readHydratedData.toString(), clearServerData.toString())}
-  var __stxAsyncDataCache = new Map();
+  var __stxAsyncDataCache = { keyed: new Map(), loaders: new WeakMap() };
   var createAsyncData = ${createAsyncData.toString()};
   function useAsyncData(fetcher, options) {
     var resource = createAsyncData(fetcher, options || {}, state, batch, readHydratedData, __stxAsyncDataCache, trackAsyncDataRead);

@@ -588,7 +588,7 @@ A matching `useServerData` key supplies the initial value, including `null`.
 |--------|------|---------|-------------|
 | `immediate` | `boolean` | `true` | Load on creation if there is no server snapshot |
 | `initialData` | `T \| null` | — | Value to show while the loader runs |
-| `key` | `string` | — | Identity for hydration and caching |
+| `key` | `string` | — | Identity for hydration and shared caching. Without a key, caching uses the loader function identity. |
 | `hydrate` | `boolean` | `true` | Use the matching server snapshot |
 | `cacheTime` | `number` | `0` | Milliseconds to reuse a client result |
 | `transform` | `(value: T) => T` | — | Transform the loaded value for this consumer |
@@ -689,12 +689,36 @@ consumers share the refresh and keep any current data visible. The mutation
 promise resolves after the write. Use the query's `isFetching()` to track
 the refresh separately.
 
+#### Return fresh queries with a mutation
+
+In an API handler, return `mutationResponse` to include fresh queries in the
+same response as a successful write:
+
+```typescript
+import { mutationResponse } from '@stacksjs/stx'
+
+async function createUser(request: Request) {
+  const account = await requireAccount(request)
+  const created = await insertUser(account, await request.json())
+  return mutationResponse(created, {
+    '/api/users': await listUsers(account),
+  }, { status: 201 })
+}
+```
+
+Use the same key in the client's `invalidateQueries`. The response's main
+result still goes through the mutation's `transform` and `onSuccess`.
+Matching active queries apply their own transforms to the supplied values.
+An omitted key still triggers the regular shared GET. Return only queries the
+caller is authorized to read, and omit any refresh that could not be obtained
+after the write. The helper marks responses `Cache-Control: no-store`.
+
 **MutationResult:**
 
 | Property | Type | Description |
 |----------|------|-------------|
 | `data` | `Signal<T \| null>` | Response data |
-| `loading` | `Signal<boolean>` | Loading state |
+| `loading` | `Signal<boolean>` | True until all pending writes settle |
 | `error` | `Signal<string \| null>` | Error message |
 | `mutate` | `(body: any) => Promise<T>` | Execute the mutation |
 | `reset` | `() => void` | Reset data, error, and loading state |

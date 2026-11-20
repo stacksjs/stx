@@ -290,51 +290,39 @@ const { data: users, loading, error, refresh } = useFetch('/api/users')
 
 ### useOptimistic
 
-React-19-style optimistic state, adapted to signals. Shows an immediate value
-layered on top of a base signal while an async action is in flight, then falls
-back to the base as the source of truth once the real update lands — so you stop
-hand-rolling snapshot/rollback in every mutation.
-
-`useOptimistic(base, reducer)` returns `[optimistic, addOptimistic]`:
-
-- **`optimistic`** — a derived signal: `base` with every pending action folded in
-  via `reducer`. Read it in templates as the bare name (`optimistic`), in scripts
-  as a call (`optimistic()`).
-- **`addOptimistic(action)`** — queues an optimistic action (visible immediately)
-  and returns a `settle()` to remove it. Pass a promise as the 2nd arg to auto-settle.
-
-Pass the **signal** (or a getter) as `base` so the overlay stays reactive — unlike
-React there's no render cycle to re-read a plain value.
+`useOptimistic(base, reducer)` returns a derived value and an `addOptimistic`
+function. Pending edits are folded over the latest base in the order they
+were added. Pass a signal or getter so the base stays reactive.
 
 ```html
 <script client>
-  const likes = useStore('reviews').likes   // a shared signal
-  const [optimisticLikes, addOptimistic] = useOptimistic(likes, (cur, delta) => cur + delta)
+  const likes = useStore('reviews').likes
+  const [optimisticLikes, addOptimistic] = useOptimistic(likes, (current, delta) => current + delta)
 
-  async function toggleLike() {
-    const settle = addOptimistic(liked() ? -1 : 1)   // optimisticLikes() updates instantly
+  async function like() {
+    const settle = addOptimistic(1, false)
     try {
-      await authFetch('/api/reviews/16/like', { method: 'POST' })
-      // On success the store updates `likes` → the overlay is discarded automatically.
+      const response = await authFetch('/api/reviews/16/like', { method: 'POST' })
+      if (!response.ok) throw new Error('Could not save like')
+      const { count } = await response.json()
+      settle(() => likes.set(count))
     }
     catch {
-      settle()   // On error, base never changed — roll back this entry.
+      settle()
     }
   }
 </script>
 
-<button @click="toggleLike()">
-  ♥ <span x-text="optimisticLikes"></span>
-</button>
+<button @click="like()">♥ <span x-text="optimisticLikes"></span></button>
 ```
 
-The overlay is discarded the moment `base` changes (the server/store confirmed the
-real value), so the happy path needs no cleanup. For list mutations the reducer can
-append: `useOptimistic(comments, (list, draft) => [...list, draft])`.
+`settle()` removes just that edit. Pass a callback to apply an acknowledged
+server update in the same batch. Pass a promise to `addOptimistic` to remove
+the edit when that promise settles, or pass `false` for explicit settlement.
 
-> Available as a bare identifier in `<script client>` and on `window.stx`
-> (`window.stx.useOptimistic`). Implemented in both reactive impls with parity
-> (`signals-api.ts` + the client runtime).
+A lone edit added without a settlement policy still clears when the base
+changes. When edits overlap, settle each one individually. An incoming base
+value carries no information about which edit it acknowledges.
 
 ### `useAsyncData` and `<Suspense>`
 

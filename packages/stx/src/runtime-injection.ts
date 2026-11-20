@@ -15,6 +15,7 @@ import { getOwnedRouteMatchers } from './owned-routes'
 import { toScriptJson } from './script-json'
 import { findBodyOpenTag, replaceBodyOpenTag } from './find-body-tag'
 import { findFirstScriptTag } from './first-script-tag'
+import { scanHtmlTags } from './html-masking'
 // Static: `builtins/tooltip` exports one pure function and imports nothing, so
 // there is no cycle and no cost to pulling it in here.
 import { getTooltipRuntime } from './builtins/tooltip'
@@ -200,6 +201,11 @@ export function pageShipsSignalsRuntime(fullPageHtml: string): boolean {
  * onto every static page that sets a theme.
  */
 export function outputNeedsSignalsRuntime(html: string): boolean {
+  // The built-in boundary owns initially hidden content even without a script.
+  if (html.includes('data-stx-suspense') && scanHtmlTags(html).some(tag =>
+    !tag.closing && /^\s+data-stx-suspense(?=\s|$)/.test(tag.attributes),
+  )) return true
+
   // `window.stx.<name>` — a property read, e.g. .mount( or ._scopes
   // `} = window.stx;` — the runtime-globals destructure, with no `|| window`
   const reach = /window\.stx\s*\.\s*[A-Za-z_$]|\}\s*=\s*window\.stx\s*;/g

@@ -85,6 +85,8 @@ export interface FetchOptions<T = unknown> extends Omit<RequestInit, 'body'> {
   baseURL?: string
   /** Query parameters */
   query?: Record<string, string | number | boolean | undefined>
+  /** Send initial loading and errors to the nearest Suspense boundary in .stx. */
+  suspense?: boolean
   /** Fetch immediately on creation (default: true) */
   immediate?: boolean
   /** Transform response data */
@@ -416,7 +418,11 @@ export interface AsyncDataOptions<T> {
   suspense?: boolean
 }
 
-type AsyncDataCache<T = unknown> = Map<string, { data?: T, timestamp?: number }>
+interface AsyncDataCache {
+  keyed: Map<string, AsyncDataCacheEntry>
+  loaders: WeakMap<object, AsyncDataCacheEntry>
+}
+interface AsyncDataCacheEntry { data?: unknown, timestamp?: number }
 
 /** @internal Closure-free so the browser and module runtimes use the same request lifecycle. */
 export function createAsyncData<T>(
@@ -436,7 +442,8 @@ export function createAsyncData<T>(
   const error = state<Error | null>(snapshot?.error ?? null)
   let hasValue = snapshot ? !snapshot.error : options.initialData !== undefined
   let current: AbortController | undefined
-  const cacheKey = cacheTime > 0 ? (key || fetcher.toString()) : undefined
+  const cacheKey = key || fetcher
+
 
   async function load(): Promise<void> {
     const previous = current
@@ -445,12 +452,15 @@ export function createAsyncData<T>(
     previous?.abort()
     if (current !== request) return
 
-    const cached = cacheKey === undefined ? undefined : cache.get(cacheKey)
+    const entries = cacheTime > 0
+      ? (typeof cacheKey === 'string' ? cache.keyed : cache.loaders) as Pick<Map<typeof cacheKey, AsyncDataCacheEntry>, 'get' | 'set' | 'delete'>
+      : undefined
+    const cached = entries?.get(cacheKey)
     const cacheHit = cached?.timestamp !== undefined && Date.now() - cached.timestamp < cacheTime
     // Give the latest loader ownership of the cache record, even across consumers.
     const cacheRun: { data?: T, timestamp?: number } = {}
     if (!cacheHit) {
-      if (cacheKey !== undefined) cache.set(cacheKey, cacheRun)
+      entries?.set(cacheKey, cacheRun)
       batch(() => {
         loading.set(!hasValue)
         isFetching.set(true)
@@ -479,7 +489,7 @@ export function createAsyncData<T>(
       if (current === request) error.set(failure instanceof Error ? failure : new Error(String(failure)))
     }
     finally {
-      if (cacheKey !== undefined && cacheRun.timestamp === undefined && cache.get(cacheKey) === cacheRun) cache.delete(cacheKey)
+      if (cacheRun.timestamp === undefined && entries?.get(cacheKey) === cacheRun) entries.delete(cacheKey)
       finish(request)
     }
   }
@@ -520,7 +530,7 @@ export function createAsyncData<T>(
   }
 }
 
-const asyncDataCache: AsyncDataCache = new Map()
+const asyncDataCache: AsyncDataCache = { keyed: new Map(), loaders: new WeakMap() }
 
 /** Resolve arbitrary async data into a signal and keep its last good value during refresh. */
 export function useAsyncData<T>(
@@ -565,11 +575,12 @@ export function usePost<T = unknown, B = unknown>(
 export function clearFetchCache(key?: string): void {
   if (key) {
     fetchCache.delete(key)
-    asyncDataCache.delete(key)
+    asyncDataCache.keyed.delete(key)
   }
   else {
     fetchCache.clear()
-    asyncDataCache.clear()
+    asyncDataCache.keyed.clear()
+    asyncDataCache.loaders = new WeakMap()
   }
 }
 

@@ -3,9 +3,8 @@ export const SIGNALS_OPTIMISTIC_RUNTIME = `  // ================================
   // Optimistic State (useOptimistic) — stacksjs/stx#1742
   // ==========================================================================
   // Mirrors signals-api.ts useOptimistic. Shows base + pending actions while an
-  // async action is in flight; the overlay is discarded the moment base changes
-  // (server confirmed). Returns [optimistic, addOptimistic]. addOptimistic
-  // returns a settle() to roll back; pass a promise as the 2nd arg to auto-settle.
+  // async action is in flight. A lone unmanaged edit can settle when the base
+  // changes. Overlapping edits settle independently.
   function useOptimistic(base, reducer) {
     var readBase = (typeof base === 'function') ? base : function() { return base; };
     var pending = state([]);
@@ -16,17 +15,25 @@ export const SIGNALS_OPTIMISTIC_RUNTIME = `  // ================================
     effect(function() {
       readBase(); // track base only
       if (!primed) { primed = true; return; }
-      if (peek(function() { return pending().length; })) pending.set([]);
+      var entries = peek(pending);
+      if (entries.length === 1 && entries[0].autoSettle) pending.set([]);
     });
     function addOptimistic(action, settleWhen) {
-      var entry = { action: action };
-      pending.set(pending().concat([entry]));
-      var settle = function() {
-        var next = pending().filter(function(e) { return e !== entry; });
-        if (next.length !== pending().length) pending.set(next);
+      var entries = peek(pending);
+      entries.forEach(function(edit) { edit.autoSettle = false; });
+      var entry = { action: action, autoSettle: settleWhen === undefined && entries.length === 0 };
+      pending.set(entries.concat([entry]));
+      var settle = function(commit) {
+        var current = peek(pending);
+        if (!current.includes(entry)) return;
+        batch(function() {
+          pending.set(current.filter(function(edit) { return edit !== entry; }));
+          if (commit) commit();
+        });
       };
-      if (settleWhen && typeof settleWhen.then === 'function') {
-        Promise.resolve(settleWhen).then(settle, settle);
+      if (settleWhen) {
+        var complete = function() { settle(); };
+        Promise.resolve(settleWhen).then(complete, complete);
       }
       return settle;
     }

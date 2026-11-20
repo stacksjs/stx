@@ -34,6 +34,7 @@ ${development ? `      if (++depth === 10 && !reportedReentry) {
         reportEffectReentry(scopeId);
       }` : ''}
       if (__stxDevtoolsTracking) { runEffect._runCount++; __stxDevtoolsStats.effectRuns++; }
+      dependencyTracker.clear(runEffect);
       if (cleanup) {
         const pending = cleanup;
         cleanup = undefined;
@@ -65,6 +66,11 @@ ${development ? `      if (++depth === 10 && !reportedReentry) {
         // Auto-dispose effects that fail — prevents zombie subscriptions
         // from body-level processElement walking into mount-scoped content.
         isDisposed = true;
+        dependencyTracker.clear(runEffect);
+        if (readBoundary) {
+          updateSuspenseReads(readBoundary, runEffect, bindingNode, null);
+          readBoundary = null;
+        }
         // Only log if this is likely a real error, not a stale SPA effect.
         // Stale effects reference variables from a previous page's scope that no longer exist.
         //
@@ -86,7 +92,9 @@ ${development ? `      if (++depth === 10 && !reportedReentry) {
         activeEffect = prev;
         activeSuspenseReads = previousReads;
 ${development ? '        depth--;' : ''}
-        if (!isDisposed) {
+        if (isDisposed) {
+          dependencyTracker.clear(runEffect);
+        } else {
           if (readBoundary && readBoundary !== nextBoundary) updateSuspenseReads(readBoundary, runEffect, bindingNode, null);
           readBoundary = nextBoundary;
           if (readBoundary) updateSuspenseReads(readBoundary, runEffect, bindingNode, reads);
@@ -101,6 +109,8 @@ ${development ? '        depth--;' : ''}
     if (options.immediate !== false) runEffect();
     const dispose = () => {
       isDisposed = true;
+      dependencyTracker.clear(runEffect);
+      pendingEffects.delete(runEffect);
       if (readBoundary) {
         updateSuspenseReads(readBoundary, runEffect, bindingNode, null);
         readBoundary = null;

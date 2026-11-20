@@ -12,7 +12,7 @@ describe('signals suspense runtime boundary', () => {
   })
 
   it('keeps loading, error, and content states together', () => {
-    expect(SIGNALS_SUSPENSE_RUNTIME).toContain('function bindSuspense(el, scope)')
+    expect(SIGNALS_SUSPENSE_RUNTIME).toContain('function bindSuspense(el, scope, bindContent = true)')
     expect(SIGNALS_SUSPENSE_RUNTIME).toContain('[data-stx-suspense-fallback]')
     expect(SIGNALS_SUSPENSE_RUNTIME).toContain('[data-stx-suspense-error]')
     expect(SIGNALS_SUSPENSE_RUNTIME).toContain('[data-stx-suspense-content]')

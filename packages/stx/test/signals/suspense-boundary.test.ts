@@ -16,12 +16,10 @@
  * Assertions are on the INITIAL render (the query's state is set before the
  * boundary binds), which is deterministic even when several test files each
  * execute the runtime IIFE in one process. Live `.set()`-driven transitions work
- * with a single runtime instance (verified in isolation) but cross-instance
- * effect tracking is the known multi-instance limitation, so they aren't asserted
- * here. The registry lives on `window`, so the boundary claims the right queries
- * regardless of which instance binds.
+ * with a single runtime instance. The late-registration cases drive the query
+ * and fetch composables through the same lifecycle hooks as a mounted scope.
  */
-import { beforeAll, beforeEach, describe, expect, it } from 'bun:test'
+import { beforeAll, describe, expect, it } from 'bun:test'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { flushEffects, setupStxTestDom, shimAttributes } from '../../src/testing'
 
@@ -37,11 +35,6 @@ describe('<Suspense> boundary (#1742)', () => {
     setupStxTestDom()
     // eslint-disable-next-line no-new-func
     new Function(generateSignalsRuntimeDev())()
-  })
-
-  beforeEach(() => {
-    // One registry per page — clear it so entries don't leak between tests.
-    window.__stx_suspense_registry = []
   })
 
   // Register a fake suspense query (loading/error signals) tagged to `el`,
@@ -104,6 +97,28 @@ describe('<Suspense> boundary (#1742)', () => {
     expect(isHidden(b.content)).toBe(true)
     expect(isHidden(b.fallback)).toBe(true)
   })
+
+  for (const primitive of ['useQuery', 'useFetch'] as const) {
+    it(`tracks late ${primitive} registration, destroy and remount`, async () => {
+      const id = `susp_late_${primitive}`
+      const b = mount(id, { withQuery: false })
+      await flushEffects()
+      const child = document.querySelector('.child')
+      child.setAttribute('data-stx-scope', id)
+      window.__STX_CURRENT_ELEMENT__ = child
+      const resource = window.stx[primitive]('/delayed', { suspense: true, immediate: false })
+      window.__STX_CURRENT_ELEMENT__ = null
+
+      resource.loading.set(true)
+      expect(isHidden(b.fallback)).toBe(false)
+      const owner = window.stx._scopes[id]
+      for (const dispose of owner.__destroyHooks) dispose()
+      expect(isHidden(b.fallback)).toBe(true)
+      for (const attach of owner.__mountHooks) attach()
+      resource.error.set('failed')
+      expect(isHidden(b.errorEl)).toBe(false)
+    })
+  }
 
   it('shows content immediately when there are no suspense queries', async () => {
     const b = mount('susp_none', { withQuery: false })

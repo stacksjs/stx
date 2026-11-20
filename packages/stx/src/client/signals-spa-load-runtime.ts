@@ -185,6 +185,7 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
     mountCallbacks.length = 0;
 
     // Everything that should have hydrated has now had its chance (#1773).
+    bindUnclaimedSuspense(document, componentScope);
     auditHydration(container, 'stx:load');
   }
 `

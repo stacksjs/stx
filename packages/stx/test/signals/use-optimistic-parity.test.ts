@@ -15,7 +15,7 @@ interface OptimisticImpl {
   useOptimistic: <T, A>(
     base: { (): T } | (() => T) | T,
     reducer: (cur: T, action: A) => T,
-  ) => [{ (): T }, (action: A, settleWhen?: PromiseLike<unknown>) => () => void]
+  ) => [{ (): T }, api.AddOptimistic<A>]
 }
 
 beforeAll(() => {
@@ -84,6 +84,40 @@ for (const name of ['signals-api', 'runtime'] as const) {
       expect(optimistic()).toBe(2)
       settleA()
       expect(optimistic()).toBe(1)
+    })
+
+    it('settles only the acknowledged edit and batches its authoritative update', () => {
+      const likes = impl.state(10)
+      const [optimistic, add] = impl.useOptimistic<number, number>(likes, (c, d) => c + d)
+      const settleFirst = add(1)
+      const settleSecond = add(2)
+      expect(optimistic()).toBe(13)
+      likes.set(20)
+      expect(optimistic()).toBe(23)
+      settleSecond(() => likes.set(22))
+      expect(optimistic()).toBe(23)
+      settleSecond(() => likes.set(0))
+      expect(optimistic()).toBe(23)
+      settleFirst()
+      expect(optimistic()).toBe(22)
+    })
+
+    it('keeps individually owned edits until their promise or settlement completes', async () => {
+      const likes = impl.state(10)
+      const [optimistic, add] = impl.useOptimistic<number, number>(likes, (c, d) => c + d)
+      const explicit = add(3, false)
+      likes.set(20)
+      expect(optimistic()).toBe(23)
+      const deferred = Promise.withResolvers<void>()
+      add(2, deferred.promise)
+      likes.set(30)
+      expect(optimistic()).toBe(35)
+      deferred.resolve()
+      await deferred.promise
+      await Promise.resolve()
+      expect(optimistic()).toBe(33)
+      explicit()
+      expect(optimistic()).toBe(30)
     })
 
     it('accepts a plain (non-signal) base', () => {

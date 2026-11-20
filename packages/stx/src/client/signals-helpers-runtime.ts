@@ -170,7 +170,7 @@ catch (e) {
     if (!depsMap) targetMap.set(target, (depsMap = new Map()));
     let deps = depsMap.get(key);
     if (!deps) depsMap.set(key, (deps = new Set()));
-    deps.add(activeEffect);
+    dependencyTracker.track(activeEffect, deps);
   }
 
   function trigger(target, key) {

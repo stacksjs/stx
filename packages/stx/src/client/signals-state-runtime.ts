@@ -20,7 +20,7 @@ export const SIGNALS_STATE_RUNTIME = `  // =====================================
 
     const signal = () => {
       if (activeEffect) {
-        effects.add(activeEffect);
+        dependencyTracker.track(activeEffect, effects);
       }
       return value;
     };
@@ -97,6 +97,7 @@ export const SIGNALS_STATE_RUNTIME = `  // =====================================
       const previousReads = activeSuspenseReads;
       const reads = suspenseSourcesCreated ? new Set() : null;
       activeSuspenseReads = reads;
+      dependencyTracker.clear(markDirty);
       activeEffect = markDirty;
       effectStack.push(markDirty);
       try {
@@ -150,10 +151,10 @@ finally {
 
     const signal = () => {
       if (activeEffect) {
-        effects.add(activeEffect);
+        dependencyTracker.track(activeEffect, effects);
         if (equals && activeSuspenseReads) {
           if (!suspenseConsumers) suspenseConsumers = new Set();
-          suspenseConsumers.add(activeEffect);
+          dependencyTracker.track(activeEffect, suspenseConsumers);
         }
       }
       try {
@@ -166,6 +167,10 @@ finally {
       }
     };
 
+    if (typeof activeDisposers !== 'undefined' && activeDisposers) activeDisposers.push(function() {
+      dependencyTracker.clear(markDirty);
+      isDirty = true;
+    });
     signal._isDerived = true;
     signal._effects = effects; // DevTools: the subscriber set (reactive graph)
 

@@ -71,7 +71,37 @@ export const SIGNALS_SUSPENSE_RUNTIME = `  // <Suspense> boundary (#1742). Aggre
     observed.changed.trigger();
   }
 
-  function bindSuspense(el, scope) {
+  // Setup can register before its DOM is attached. Mount or a new boundary
+  // gets another chance to claim those entries.
+  var pendingSuspenseEntries = new Set();
+
+  function registerSuspense(loading, error) {
+    var node = window.__STX_CURRENT_ELEMENT__;
+    if (!node) return;
+    var entry = { loading: loading, error: error };
+    var reads = new Set([entry]);
+    var boundary = null;
+    function attach() {
+      var next = nearestSuspenseBoundary(node);
+      if (boundary && boundary !== next) updateSuspenseReads(boundary, entry, node, null);
+      boundary = next;
+      if (!boundary) {
+        pendingSuspenseEntries.add(attach);
+        return;
+      }
+      pendingSuspenseEntries.delete(attach);
+      updateSuspenseReads(boundary, entry, node, reads);
+    }
+    attach();
+    onMount(attach);
+    onDestroy(function() {
+      pendingSuspenseEntries.delete(attach);
+      if (boundary) updateSuspenseReads(boundary, entry, node, null);
+      boundary = null;
+    });
+  }
+
+  function bindSuspense(el, scope, bindContent = true) {
     if (el.__stx_suspense_bound) return;
     el.__stx_suspense_bound = true;
 
@@ -80,17 +110,12 @@ export const SIGNALS_SUSPENSE_RUNTIME = `  // <Suspense> boundary (#1742). Aggre
     var errorEl = regions.find(function(child) { return child.hasAttribute('data-stx-suspense-error'); });
     var contentEl = regions.find(function(child) { return child.hasAttribute('data-stx-suspense-content'); }) || el;
 
-    // Claim the descendant queries this boundary owns. closest() returns the
-    // DEEPEST [data-stx-suspense] ancestor, so nested boundaries don't steal
-    // each other's queries.
-    var claimed = suspenseRegistry().filter(function(entry) {
-      return entry.el && el.contains(entry.el) && entry.el.closest('[data-stx-suspense]') === el;
-    });
+    Array.from(pendingSuspenseEntries).forEach(function(attach) { attach(); });
 
     var asyncReads = suspenseReadState(el);
     var sources = derived(function() {
       asyncReads.changed();
-      var entries = new Set(claimed);
+      var entries = new Set();
       asyncReads.readers.forEach(function(reader) {
         if (reader.attached) reader.reads.forEach(function(entry) { entries.add(entry); });
       });
@@ -127,7 +152,24 @@ export const SIGNALS_SUSPENSE_RUNTIME = `  // <Suspense> boundary (#1742). Aggre
 
     // Bind the content subtree (inline :if / {{ }} / @click etc.). Nested
     // component scopes are still processed independently by the scope loop.
-    var contentRoot = (contentEl === el) ? el : contentEl;
-    Array.from(contentRoot.childNodes).forEach(function(child) { processElement(child, scope); });
+    if (bindContent) {
+      Array.from(contentEl.childNodes).forEach(function(child) { processElement(child, scope); });
+    }
+  }
+
+  // Boundaries in a static layout may never be reached by a scope walk.
+  function bindUnclaimedSuspense(root, scope) {
+    root.querySelectorAll('[data-stx-suspense]').forEach(function(el) {
+      if (el.__stx_suspense_bound) return;
+      for (var node = el; node; node = node.parentElement) {
+        if (node.hasAttribute('stx-hydrate') && !node.__stx_hydrated) return;
+      }
+      var previous = el.__stx_disposers;
+      var dispose = trackEffects(function() { bindSuspense(el, scope, false); });
+      el.__stx_disposers = function() {
+        if (previous) previous();
+        dispose();
+      };
+    });
   }
 `

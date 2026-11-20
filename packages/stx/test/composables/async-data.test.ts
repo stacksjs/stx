@@ -46,6 +46,26 @@ for (const target of ['module', 'browser'] as const) {
       expect(resource.data()).toBe(3)
     })
 
+    it('keys unlabelled loaders by identity and reuses only the same function', async () => {
+      const asyncData = useData()
+      const options = { cacheTime: 60_000, immediate: false }
+      let calls = 0
+      const factory = (id: string) => () => { calls++; return id }
+      const firstLoader = factory('first')
+      const first = asyncData(firstLoader, options)
+      const second = asyncData(factory('second'), options)
+      const repeated = asyncData(firstLoader, options)
+      await first.execute()
+      await second.execute()
+      await repeated.execute()
+      expect([first.data(), second.data(), repeated.data(), calls]).toEqual(['first', 'second', 'first', 2])
+      if (target === 'module') {
+        clearFetchCache()
+        await repeated.execute()
+        expect(calls).toBe(3)
+      }
+    })
+
     it('caches the newest payload for a key and applies each consumer’s transform', async () => {
       const asyncData = useData()
       const key = `async-data-cache-${target}`

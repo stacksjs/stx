@@ -35,6 +35,16 @@
  * @module reactive-tracking
  */
 
+import { createDependencyTracker } from './reactive-dependencies'
+
+const dependencyTracker = createDependencyTracker()
+export const clearDependencies = dependencyTracker.clear
+
+/** Record the source against the current calculation for its next rerun or disposal. */
+export function trackDependency(source: Set<() => void>): void {
+  if (activeSubscriber) dependencyTracker.track(activeSubscriber, source)
+}
+
 /** The effect currently collecting dependencies, if any. */
 let activeSubscriber: (() => void) | null = null
 
@@ -76,6 +86,7 @@ export function getActiveSubscriber(): (() => void) | null {
 export function setActiveSubscriber(subscriber: () => void): (() => void) | null {
   const previous = activeSubscriber
 
+  clearDependencies(subscriber)
   subscriberStack.push(subscriber)
   activeSubscriber = subscriber
 
@@ -124,7 +135,8 @@ export function markAsForwarder(subscriber: () => void, collect: (into: Set<() =
 
 /** Gather the effects a change reaches, walking through derived values. */
 export function collectSubscribers(subscribers: Iterable<() => void>, into: Set<() => void>): void {
-  for (const subscriber of subscribers) {
+  // An eager memo may remove and re-add its edge during this traversal.
+  for (const subscriber of [...subscribers]) {
     const collect = collectors.get(subscriber)
     if (collect)
       collect(into)

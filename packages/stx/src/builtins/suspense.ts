@@ -74,11 +74,8 @@ export const SuspenseBuiltin: BuiltinComponentDef = {
       ?? resolveProp(props, 'errorFallback', 'error-fallback')
       ?? '<div class="stx-suspense-error">Something went wrong.</div>'
 
-    // Content starts hidden + fallback shown: descendant suspense queries are
-    // client-side, so there's nothing real to show until they resolve. The
-    // runtime reveals content the instant the queries settle (or immediately if
-    // there are none). Content stays in the DOM (hidden) so its scripts run and
-    // register their queries.
+    // Hidden content stays mounted so its scripts and read bindings can
+    // register. The runtime reveals it as soon as its first loads settle.
     return `<div data-stx-suspense>`
       + `<div data-stx-suspense-fallback>${fallback}</div>`
       + `<div data-stx-suspense-error hidden>${errorFallback}</div>`

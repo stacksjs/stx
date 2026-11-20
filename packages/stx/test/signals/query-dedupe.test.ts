@@ -22,6 +22,7 @@
  * forever.
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
+import { mutationResponse } from '../../src/mutation-response'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 
 const g = globalThis as any
@@ -338,5 +339,136 @@ describe('query refresh supersession', () => {
     expect(a.data()).toEqual({ version: 2 })
     expect(b.data()).toBe(20)
     expect(deferred.data()).toBeNull()
+  })
+})
+
+describe('overlapping mutations', () => {
+  it('keeps a newer success and stays pending until an older write settles', async () => {
+    const mutation = g.window.stx.useMutation('/write', { optimisticData: (value: unknown) => value })
+    const old = mutation.mutate(1).catch((error: Error) => error)
+    const next = mutation.mutate(2)
+    await tick()
+    expect(mutation.data()).toBe(2)
+    pending[1].resolve(json(20))
+    expect(await next).toBe(20)
+    expect(mutation.data()).toBe(20)
+    expect(mutation.loading()).toBe(true)
+
+    pending[0].resolve(new Response('older failed', { status: 500 }))
+    expect(await old).toBeInstanceOf(Error)
+    expect(mutation.data()).toBe(20)
+    expect(mutation.loading()).toBe(false)
+    expect(mutation.error()).toBeNull()
+  })
+
+  it('rolls back only the failed optimistic value, including a falsy optimistic result', async () => {
+    const mutation = g.window.stx.useMutation('/write', { optimisticData: (value: unknown) => value })
+    const old = mutation.mutate(1)
+    const next = mutation.mutate(false).catch((error: Error) => error)
+    await tick()
+    expect(mutation.data()).toBe(false)
+    pending[0].resolve(json(10))
+    await old
+    expect(mutation.data()).toBe(false)
+    expect(mutation.loading()).toBe(true)
+    pending[1].resolve(new Response('second failed', { status: 500 }))
+    expect(await next).toBeInstanceOf(Error)
+    expect(mutation.data()).toBe(10)
+    expect(mutation.error()).toContain('second failed')
+  })
+
+  it('reset detaches old results without cancelling the server write', async () => {
+    const mutation = g.window.stx.useMutation('/write')
+    const old = mutation.mutate(1)
+    await tick()
+    mutation.reset()
+    expect(mutation.loading()).toBe(false)
+    const next = mutation.mutate(2)
+    await tick()
+    pending[0].resolve(json(10))
+    await old
+    expect(mutation.loading()).toBe(true)
+    expect(mutation.data()).toBeNull()
+    pending[1].resolve(json(20))
+    await next
+    expect(mutation.data()).toBe(20)
+    expect(mutation.loading()).toBe(false)
+  })
+})
+
+describe('mutation query snapshots', () => {
+  it('updates active readers from a typed response and fetches only the missing keys', async () => {
+    const stx = g.window.stx
+    const list = key()
+    const missing = key()
+    const unrelated = key()
+    const options = { immediate: false, staleTime: 60_000 }
+    const a = stx.useQuery(list, options)
+    const b = stx.useQuery(list, { ...options, transform: (value: number) => value * 10 })
+    const c = stx.useQuery(missing, options)
+    const d = stx.useQuery(unrelated, options)
+    const first = [a.refetch(), b.refetch(), c.refetch(), d.refetch()]
+    await tick()
+    expect(pending.map(request => request.url)).toEqual([list, missing, unrelated])
+    pending.slice().forEach(item => item.resolve(json(1)))
+    await Promise.all(first)
+
+    const mutation = stx.useMutation('/write', {
+      invalidateQueries: [list, missing],
+      transform: (result: { ok: boolean }) => result.ok,
+    })
+    const write = mutation.mutate({})
+    await tick()
+    const response = mutationResponse({ ok: true }, { [list]: 2, [unrelated]: 99 }, { status: 201 })
+    expect(response.status).toBe(201)
+    expect(response.headers.get('Cache-Control')).toBe('no-store')
+    pending[3].resolve(response)
+    expect(await write).toBe(true)
+    await tick()
+    expect(pending.map(request => request.url)).toEqual([list, missing, unrelated, '/write', missing])
+    expect([a.data(), b.data(), c.data(), d.data()]).toEqual([2, 20, 1, 1])
+
+    const cacheReader = stx.useQuery(list, options)
+    await cacheReader.refetch()
+    expect(cacheReader.data()).toBe(2)
+    expect(pending).toHaveLength(5)
+    pending[4].resolve(json(3))
+    await tick()
+    expect(c.data()).toBe(3)
+  })
+
+  it('does not apply an older snapshot and still revalidates an older write arriving late', async () => {
+    const stx = g.window.stx
+    const url = key()
+    const query = stx.useQuery(url, { immediate: false })
+    const initial = query.refetch()
+    await tick()
+    pending[0].resolve(json(0))
+    await initial
+    const mutation = stx.useMutation('/write', { invalidateQueries: [url] })
+    const first = mutation.mutate(1)
+    const second = mutation.mutate(2)
+    await tick()
+    pending[2].resolve(mutationResponse(2, { [url]: null }))
+    await second
+    expect(query.data()).toBeNull()
+    expect(pending).toHaveLength(3)
+    pending[1].resolve(mutationResponse(1, { [url]: 1 }))
+    await first
+    await tick()
+    expect(query.data()).toBeNull()
+    expect(pending.map(request => request.url)).toEqual([url, '/write', '/write', url])
+    pending[3].resolve(json(3))
+    await tick()
+    expect(query.data()).toBe(3)
+  })
+
+  it('accepts the existing JSON result shape without treating it as a snapshot envelope', async () => {
+    const mutation = g.window.stx.useMutation('/write')
+    const result = { data: 'plain', queries: { incidental: 'metadata' } }
+    const write = mutation.mutate({})
+    await tick()
+    pending[0].resolve(json(result))
+    expect(await write).toEqual(result)
   })
 })

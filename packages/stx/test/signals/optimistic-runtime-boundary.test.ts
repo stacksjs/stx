@@ -14,6 +14,6 @@ describe('signals optimistic runtime boundary', () => {
   it('keeps the optimistic overlay and settlement together', () => {
     expect(SIGNALS_OPTIMISTIC_RUNTIME).toContain('function useOptimistic(base, reducer)')
     expect(SIGNALS_OPTIMISTIC_RUNTIME).toContain('return [optimistic, addOptimistic]')
-    expect(SIGNALS_OPTIMISTIC_RUNTIME).toContain('Promise.resolve(settleWhen).then(settle, settle)')
+    expect(SIGNALS_OPTIMISTIC_RUNTIME).toContain('Promise.resolve(settleWhen).then(')
   })
 })

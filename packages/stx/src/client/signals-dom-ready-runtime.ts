@@ -322,6 +322,7 @@ catch (e) {
     });
 
     // Everything that should have hydrated has now had its chance (#1773).
+    bindUnclaimedSuspense(document, componentScope);
     auditHydration(document.body, 'DOMContentLoaded');
   };
   window.__stxDomReadyHandler = stxDomReadyHandler;

@@ -1,11 +1,14 @@
 /** Change notification shared by state, derived and reactive objects in the client runtime. */
+import { createDependencyTracker } from '../reactive-dependencies'
+
 export const SIGNALS_NOTIFY_RUNTIME = `  // ==========================================================================
   // Notify
   // ==========================================================================
 
+  var dependencyTracker = (${createDependencyTracker.toString()})();
   // Gather the effects a change reaches, walking through derived values.
   function collectSubscribers(subscribers, into) {
-    subscribers.forEach(function(sub) {
+    Array.from(subscribers).forEach(function(sub) {
       if (sub._stxCollect) sub._stxCollect(into);
       else into.add(sub);
     });

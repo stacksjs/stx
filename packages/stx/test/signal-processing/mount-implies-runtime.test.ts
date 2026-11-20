@@ -131,6 +131,13 @@ describe('the unguarded-reach predicate', () => {
       expect(outputNeedsSignalsRuntime(`<script>${code}</script>`)).toBe(false)
   })
 
+  it('requires a runtime for real Suspense markup without matching text', () => {
+    expect(outputNeedsSignalsRuntime('<div data-stx-suspense><p>Ready</p></div>')).toBe(true)
+    expect(outputNeedsSignalsRuntime('<div data-stx-suspense-fallback>Wait</div>')).toBe(false)
+    expect(outputNeedsSignalsRuntime('<script>const markup = "<div data-stx-suspense>"</script>')).toBe(false)
+    expect(outputNeedsSignalsRuntime('<!-- <div data-stx-suspense> -->')).toBe(false)
+  })
+
   it('says nothing about a page with no scripts', () => {
     expect(outputNeedsSignalsRuntime('<main><h1>Hi</h1></main>')).toBe(false)
   })

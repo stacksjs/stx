@@ -24,6 +24,8 @@ export interface UseQueryOptions<T = unknown> {
   refetchInterval?: number
   /** Whether to fetch immediately on mount (default: true) */
   immediate?: boolean
+  /** Send initial loading and errors to the nearest Suspense boundary. */
+  suspense?: boolean
   /** Success callback */
   onSuccess?: (data: T) => void
   /** Error callback */

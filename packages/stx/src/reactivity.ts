@@ -144,7 +144,7 @@ export interface ReactiveScope {
 // =============================================================================
 
 import { canWrapReactive, isLockedReactiveProperty } from './reactive-target'
-import { getActiveSubscriber, notifySubscribers, restoreActiveSubscriber, setActiveSubscriber } from './reactive-tracking'
+import { clearDependencies, getActiveSubscriber, notifySubscribers, restoreActiveSubscriber, setActiveSubscriber, trackDependency } from './reactive-tracking'
 
 let currentInstance: ComponentInstance | null = null
 
@@ -283,10 +283,7 @@ export function ref<T>(initialValue: T): Ref<T> {
   const refObj: Ref<T> = {
     get value() {
       // Track dependency if we're in an effect (computed / watchEffect)
-      const subscriber = getActiveSubscriber()
-      if (subscriber) {
-        effectSubscribers.add(subscriber)
-      }
+      trackDependency(effectSubscribers)
       return value
     },
     set value(newValue: T) {
@@ -351,17 +348,7 @@ export function reactive<T extends object>(target: T): T {
       return
 
     // Batched for the same reason a ref's subscribers are; see the note there.
-    notifySubscribers([...subs])
-  }
-
-  const subscribe = (key: string | symbol, callback: () => void) => {
-    if (!subscribers.has(key)) {
-      subscribers.set(key, new Set())
-    }
-    subscribers.get(key)!.add(callback)
-    return () => {
-      subscribers.get(key)?.delete(callback)
-    }
+    notifySubscribers(subs)
   }
 
   const proxy = new Proxy(target, {
@@ -369,9 +356,10 @@ export function reactive<T extends object>(target: T): T {
       const value = Reflect.get(obj, prop, receiver)
 
       // Track dependency
-      const subscriber = getActiveSubscriber()
-      if (subscriber) {
-        subscribe(prop, subscriber)
+      if (getActiveSubscriber()) {
+        let readers = subscribers.get(prop)
+        if (!readers) subscribers.set(prop, readers = new Set())
+        trackDependency(readers)
       }
 
       if (canWrapReactive(value) && !Array.isArray(value) && !isLockedReactiveProperty(obj, prop)) {
@@ -434,35 +422,46 @@ export function computed<T>(getter: () => T): Ref<T> {
       // Re-run getter in effect context to re-track dependencies
       // (handles conditional branches that change which deps are used)
       const prevEffect = setActiveSubscriber(markDirty)
-      cachedValue = getter()
-      restoreActiveSubscriber(prevEffect)
-      dirty = false
+      try {
+        cachedValue = getter()
+        dirty = false
+      }
+      finally {
+        restoreActiveSubscriber(prevEffect)
+      }
 
       if (!Object.is(cachedValue, oldValue)) {
         for (const callback of subscribers) {
           callback(cachedValue, oldValue)
         }
         // Notify effect subscribers (downstream computeds, watchEffect)
-        for (const effect of effectSubscribers) {
-          effect()
-        }
+        notifySubscribers(effectSubscribers)
       }
     }
   }
 
   // Initial computation
   const prevEffect = setActiveSubscriber(markDirty)
-  cachedValue = getter()
-  dirty = false
-  restoreActiveSubscriber(prevEffect)
+  try {
+    cachedValue = getter()
+    dirty = false
+  }
+  catch (error) {
+    clearDependencies(markDirty)
+    throw error
+  }
+  finally {
+    restoreActiveSubscriber(prevEffect)
+  }
+  currentInstance?.scope.cleanups.push(() => {
+    clearDependencies(markDirty)
+    dirty = true
+  })
 
   return {
     get value() {
       // Track dependency for chained computeds and watchEffect
-      const subscriber = getActiveSubscriber()
-      if (subscriber) {
-        effectSubscribers.add(subscriber)
-      }
+      trackDependency(effectSubscribers)
       update()
       return cachedValue
     },
@@ -683,15 +682,20 @@ export function watch<T>(
     }
   }
   else {
-    // Function and array sources re-subscribe automatically inside
-    // getValueTracking(). The `stopped` flag is the only teardown — existing
-    // subscribers on refs read by the source still fire onChange but bail
-    // because stopped is true.
-    cleanup = () => { stopped = true }
+    cleanup = () => {
+      stopped = true
+      clearDependencies(onChange)
+    }
   }
 
-  // Get initial value (also performs initial subscription for function sources)
-  oldValue = getValueTracking()
+  // Get the initial value and release partial subscriptions if it throws.
+  try {
+    oldValue = getValueTracking()
+  }
+  catch (error) {
+    cleanup?.()
+    throw error
+  }
   if (deep && oldValue !== null && typeof oldValue === 'object') {
     try {
       oldValue = structuredClone(oldValue) as T
@@ -775,34 +779,37 @@ export function watchEffect(effect: () => void | (() => void)): () => void {
   let cleanup: (() => void) | void
   let stopped = false
 
+  const dispose = () => {
+    stopped = true
+    clearDependencies(run)
+    const previousCleanup = cleanup
+    cleanup = undefined
+    previousCleanup?.()
+  }
+
   const run = () => {
     if (stopped) return
+    const previousCleanup = cleanup
+    cleanup = undefined
+    previousCleanup?.()
 
-    // Clean up previous effect
-    if (cleanup) {
-      cleanup()
+    const previous = setActiveSubscriber(run)
+    try {
+      cleanup = effect()
     }
-
-    // Set current effect for dependency tracking
-    const prevEffect = setActiveSubscriber(run)
-    cleanup = effect()
-    restoreActiveSubscriber(prevEffect)
+    catch (error) {
+      clearDependencies(run)
+      throw error
+    }
+    finally {
+      if (stopped) clearDependencies(run)
+      restoreActiveSubscriber(previous)
+    }
   }
 
   run()
-
-  // Register cleanup in current instance
-  if (currentInstance) {
-    currentInstance.scope.cleanups.push(() => {
-      stopped = true
-      if (cleanup) cleanup()
-    })
-  }
-
-  return () => {
-    stopped = true
-    if (cleanup) cleanup()
-  }
+  currentInstance?.scope.cleanups.push(dispose)
+  return dispose
 }
 
 // =============================================================================

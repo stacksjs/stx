@@ -153,7 +153,8 @@ export type LifecycleCallback = () => void | CleanupFn | Promise<void>
 
 import {
   collectSubscribers,
-  getActiveSubscriber,
+  clearDependencies,
+  trackDependency,
   markAsForwarder,
   notifySubscribers,
   restoreActiveSubscriber,
@@ -237,10 +238,7 @@ export function state<T>(initialValue: T): Signal<T> {
   // The signal function (getter)
   const signal = (() => {
     // Track this signal as a dependency of the current effect
-    const subscriber = getActiveSubscriber()
-    if (subscriber) {
-      effects.add(subscriber)
-    }
+    trackDependency(effects)
     return value
   }) as Signal<T>
 
@@ -392,10 +390,7 @@ export function derived<T>(compute: () => T, options: DerivedOptions<T> = {}): D
 
   const signal = (() => {
     // Track this derived signal as a dependency
-    const subscriber = getActiveSubscriber()
-    if (subscriber) {
-      effects.add(subscriber)
-    }
+    trackDependency(effects)
 
     // Recompute if dirty
     if (isDirty)
@@ -486,8 +481,9 @@ export function effect(fn: () => void | CleanupFn, options: EffectOptions = {}):
     // Don't run if disposed
     if (isDisposed) return
 
-    // Run previous cleanup
+    // The old dependencies cannot invalidate this run during its own cleanup.
     if (cleanup) {
+      clearDependencies(runEffect)
       const pending = cleanup
       cleanup = undefined
       try {
@@ -515,9 +511,11 @@ export function effect(fn: () => void | CleanupFn, options: EffectOptions = {}):
       // set() that ran this effect and stopped that set() notifying every
       // subscriber after it. Same contract as the client runtime.
       isDisposed = true
+      clearDependencies(runEffect)
       console.error('[stx] effect error (the effect is disposed):', error)
     }
     finally {
+      if (isDisposed) clearDependencies(runEffect)
       restoreActiveSubscriber(prevEffect)
     }
   }
@@ -532,6 +530,7 @@ export function effect(fn: () => void | CleanupFn, options: EffectOptions = {}):
   // runs, so a second dispose -- or a cleanup that throws -- never runs it again.
   return () => {
     isDisposed = true
+    clearDependencies(runEffect)
     if (cleanup) {
       const pending = cleanup
       cleanup = undefined
@@ -758,85 +757,58 @@ export function peek<T>(fn: () => T): T {
 }
 
 /**
- * The function returned by {@link useOptimistic} to apply an optimistic update.
- * Returns a `settle` function that removes this specific optimistic entry (call
- * it to roll back, e.g. in a `catch`). If a `settleWhen` promise is passed, the
- * entry is removed automatically when that promise settles (success or error).
+ * Add one optimistic edit and return its settlement function. Pass a promise
+ * to settle when it completes, or false to manage settlement explicitly.
  */
-export type AddOptimistic<A> = (action: A, settleWhen?: PromiseLike<unknown>) => () => void
+export type AddOptimistic<A> = (action: A, settleWhen?: PromiseLike<unknown> | false) => (commit?: () => void) => void
 
 /**
- * React-19-style optimistic state, adapted to signals.
- *
- * Shows an immediate, optimistic value layered on top of `base` while an async
- * action is in flight, then falls back to `base` as the source of truth once the
- * real update lands. Returns `[optimistic, addOptimistic]`:
- *
- * - `optimistic` is a derived signal: `base` with every pending action folded in
- *   via `reducer`.
- * - `addOptimistic(action)` queues an optimistic action (visible immediately) and
- *   returns a `settle()` to remove it. Pass a promise as the 2nd arg to auto-settle.
- *
- * The optimistic overlay is discarded automatically the moment `base` changes —
- * i.e. when the server/store confirms the real value — so the happy path needs
- * no cleanup. On error, `base` doesn't change, so call the returned `settle()`
- * (or pass the action promise) to roll back.
- *
- * Unlike React, there is no render cycle: pass the SIGNAL (or a getter) as `base`
- * so the overlay stays reactive. A plain value is accepted but won't track changes.
- *
- * ```ts
- * const likes = state(10)
- * const [optimisticLikes, addOptimistic] = useOptimistic(likes, (cur, delta) => cur + delta)
- *
- * async function toggleLike() {
- *   const settle = addOptimistic(liked() ? -1 : 1)   // optimisticLikes() updates now
- *   try { await api.like() }                          // on success, `likes` updates → overlay clears
- *   catch { settle() }                                // on error, roll back
- * }
- * ```
- *
- * @see stacksjs/stx#1742
+ * Overlay pending edits on a reactive base. A lone edit without a settlement
+ * policy can auto-settle on a base change. Overlapping edits require individual
+ * settlement because a new base value cannot identify the acknowledged edits.
  */
 export function useOptimistic<T, A>(
   base: Signal<T> | DerivedSignal<T> | (() => T) | T,
   reducer: (current: T, action: A) => T,
 ): [DerivedSignal<T>, AddOptimistic<A>] {
   const readBase = (typeof base === 'function' ? base : () => base) as () => T
-  // Each entry is a unique object so settle() removes exactly the one it owns,
-  // even when two identical action values are queued.
-  interface Entry { action: A }
+  interface Entry { action: A, autoSettle: boolean }
   const pending = state<Entry[]>([])
 
   const optimistic = derived<T>(() =>
     pending().reduce<T>((acc, entry) => reducer(acc, entry.action), readBase()),
   )
 
-  // When the real base value changes (the action landed / store confirmed), the
-  // optimistic overlay is stale — discard it so base is the source of truth.
-  // `peek` the pending read so this effect only re-runs on base change, not when
-  // addOptimistic queues a new entry (which would clear it instantly).
   let primed = false
   effect(() => {
-    readBase() // track base only
+    readBase()
     if (!primed) {
       primed = true
       return
     }
-    if (peek(() => pending().length))
+    const entries = peek(() => pending())
+    if (entries.length === 1 && entries[0].autoSettle)
       pending.set([])
   })
 
   const addOptimistic: AddOptimistic<A> = (action, settleWhen) => {
-    const entry: Entry = { action }
-    pending.set([...pending(), entry])
-    const settle = (): void => {
-      const next = pending().filter(e => e !== entry)
-      if (next.length !== pending().length)
-        pending.set(next)
+    const entries = peek(() => pending())
+    // Once writes overlap, a base update cannot identify which one completed.
+    for (const pendingEdit of entries)
+      pendingEdit.autoSettle = false
+    const entry = { action, autoSettle: settleWhen === undefined && entries.length === 0 }
+    pending.set([...entries, entry])
+    const settle = (commit?: () => void): void => {
+      const current = peek(() => pending())
+      if (!current.includes(entry)) return
+      batch(() => {
+        pending.set(current.filter(edit => edit !== entry))
+        if (commit) commit()
+      })
     }
-    if (settleWhen && typeof settleWhen.then === 'function') {
-      Promise.resolve(settleWhen).then(settle, settle)
+    if (settleWhen) {
+      const complete = () => settle()
+      Promise.resolve(settleWhen).then(complete, complete)
     }
     return settle
   }

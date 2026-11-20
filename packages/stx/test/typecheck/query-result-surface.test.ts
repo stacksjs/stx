@@ -38,6 +38,19 @@ async function check(name: string, script: string) {
 }
 
 describe('what useQuery declares', () => {
+  it('accepts URL getters and matches the query and mutation error signals', async () => {
+    const result = await check('query-contract.stx', [
+      `const query = useQuery(() => '/api/rows')`,
+      `const mutation = useMutation(() => '/api/rows')`,
+      `const queryError: string | null = query.error()`,
+      `const mutationError: string | null = mutation.error()`,
+      `const fetchError: Error | null = useFetch(() => '/api/rows').error()`,
+      `mutation.reset()`,
+      `void queryError; void mutationError; void fetchError`,
+    ].join('\n'))
+    expect(result.diagnostics).toHaveLength(0)
+  })
+
   it('exposes isStale and invalidate', async () => {
     const result = await check('query-surface.stx', [
       `const q = useQuery<{ id: number }[]>('/api/rows')`,

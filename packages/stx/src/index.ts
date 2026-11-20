@@ -8,6 +8,7 @@
 export { type BuildResult } from './build-optimizer'
 export { bodyCloseIndex, headCloseIndex, insertBeforeBodyClose, insertBeforeHeadClose } from './document-tags'
 export { findSfcTemplateBlock, isClientTemplateTag } from './sfc-template'
+export { mutationResponse } from './mutation-response'
 export { useServerData } from './server-data'
 export { useRuntimeConfig, useServerRuntimeConfig } from './runtime-config-server'
 export type { RuntimeConfigDefaults, PublicRuntimeConfig } from './runtime-config-types'

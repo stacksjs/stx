@@ -34,6 +34,7 @@ interface ReactiveImpl {
     subscribe: (cb: (next: T, prev: T) => void) => () => void
     value: T
     _isSignal: true
+    _effects?: Set<() => void>
   }
   derived: <T>(fn: () => T) => { (): T, readonly value: T, _isDerived: true }
   effect: (fn: () => void) => () => void
@@ -75,6 +76,44 @@ for (const name of ['signals-api', 'runtime'] as const) {
       impl = getImpls()[name]
       if (!impl)
         throw new Error(`impl ${name} not available — happy-dom or runtime setup failed`)
+    })
+
+    it('unlinks inactive direct dependencies and removes all subscriptions on dispose', () => {
+      const flag = impl.state(true)
+      const a = impl.state(1)
+      const b = impl.state(2)
+      const seen: number[] = []
+      const destroy = impl.effect(() => { seen.push(flag() ? a() : b()) })
+      flag.set(false)
+      a.set(3)
+      expect(seen).toEqual([1, 2])
+      b.set(4)
+      expect(seen).toEqual([1, 2, 4])
+      destroy()
+      b.set(5)
+      expect(seen).toEqual([1, 2, 4])
+      if (name === 'runtime') {
+        expect([flag, a, b].map(signal => signal._effects?.size)).toEqual([0, 0, 0])
+      }
+    })
+
+    it('retracks only the active memo branch without revisiting a subscriber during notification', () => {
+      const flag = impl.state(true)
+      const a = impl.state(1)
+      const b = impl.state(2)
+      let computed = 0
+      const value = impl.derived(() => {
+        computed++
+        return flag() ? a() : b()
+      })
+      const seen: number[] = []
+      const destroy = impl.effect(() => { seen.push(value()) })
+      flag.set(false)
+      a.set(3)
+      b.set(4)
+      expect(seen).toEqual([1, 2, 4])
+      expect(computed).toBe(3)
+      destroy()
     })
 
     // ── state() basics ──

@@ -123,3 +123,41 @@ window.asyncTest = { pending, second, showFirst, showRetained, displayRuns }
     fixture.close()
   }
 }, 30_000)
+
+it('tracks a late query only while its reader belongs to the boundary', async () => {
+  const source = `<!doctype html><html><body><main>
+    <Suspense fallback="Waiting">
+      <section id="reader">Ready</section>
+    </Suspense>
+  </main></body></html>`
+  const html = await processDirectives(source, {}, '/tmp/late-query-suspense.stx', { cache: false }, new Set())
+  const fixture = createBrowserFixture({
+    createView: () => new WebView({ headless: true, backend: isolatedBrowserBackend() }),
+    createServer: () => Bun.serve({
+      port: 0,
+      hostname: '127.0.0.1',
+      fetch: () => new Response(html, { headers: { 'Content-Type': 'text/html' } }),
+    }),
+  })
+  try {
+    const showing = "!document.querySelector('[data-stx-suspense-fallback]').hidden"
+    await fixture.view.navigate(fixture.url)
+    expect(await fixture.waitFor<boolean>(`!!window.stx && !(${showing})`, Boolean)).toBe(true)
+    await fixture.view.evaluate(`(() => {
+      window.reader = document.querySelector('#reader');
+      window.readerParent = reader.parentElement;
+      window.__STX_CURRENT_ELEMENT__ = reader;
+      window.query = stx.useQuery('/late', { suspense: true, immediate: false });
+      window.__STX_CURRENT_ELEMENT__ = null;
+      query.loading.set(true);
+    })()`)
+    expect(await fixture.view.evaluate(showing)).toBe(true)
+    await fixture.view.evaluate('reader.remove()')
+    expect(await fixture.waitFor<boolean>(showing, shown => !shown)).toBe(false)
+    await fixture.view.evaluate('readerParent.appendChild(reader)')
+    expect(await fixture.waitFor<boolean>(showing, Boolean)).toBe(true)
+  }
+  finally {
+    fixture.close()
+  }
+}, 30_000)
