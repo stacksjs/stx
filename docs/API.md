@@ -4896,7 +4896,7 @@ await invalidate()
 const { data, loading, error, mutate, reset } = useMutation('/api/users', {
   method: 'POST',
   onSuccess: (user) => console.log('Created:', user.name),
-  invalidateQueries: ['/api/users'],  // Bust cache on success
+  invalidateQueries: ['/api/users'],  // Evict the cache and refresh active queries on success
 })
 
 // Execute the mutation
@@ -4918,7 +4918,7 @@ const { mutate: updateTodo } = useMutation('/api/todos', {
 | `headers` | `object` | - | Request headers |
 | `transform` | `function` | - | Transform response |
 | `optimisticData` | `T \| function` | - | Optimistic update data |
-| `invalidateQueries` | `string[]` | - | Cache keys to invalidate on success |
+| `invalidateQueries` | `string[]` | - | Cache keys to evict and revalidate for active consumers on success |
 | `onSuccess` | `function` | - | Success callback |
 | `onError` | `function` | - | Error callback |
 

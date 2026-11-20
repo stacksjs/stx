@@ -3,14 +3,71 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
   // Advanced Data Fetching (useQuery / useMutation)
   // ==========================================================================
 
-  var _queryCache = {};
-  // Requests currently in flight, keyed exactly like _queryCache. _queryCache
-  // is written only after the body parses, so the whole in-flight window was a
-  // cache miss and N components mounting together issued N identical requests
-  // (#1869). Refcounted: a caller that loses interest must not cancel a
-  // response another caller is still waiting on.
-  var _queryInflight = {};
-  var __stxQueryInstance = 0;
+  var _queryCache = new Map();
+  var _queryInflight = new Map();
+  var _activeQueries = new Set();
+
+  function evictQuery(key) {
+    var cached = _queryCache.get(key);
+    if (cached) clearTimeout(cached.timer);
+    _queryCache.delete(key);
+  }
+
+  function startQuery(key, url, headers, cacheTime) {
+    var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var entry = { key: key, controller: controller, refs: 0, settled: false };
+    _queryInflight.set(key, entry);
+    entry.promise = (async function() {
+      try {
+        var response = await __stxFetch('useQuery', url, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json', ...__stxHeaders(headers) },
+          signal: controller ? controller.signal : undefined
+        });
+        if (!response.ok) throw await __stxHttpError(response);
+        var result = await response.json();
+        // Only the newest request for a key can publish to the shared cache.
+        // Older requests may still have consumers and settle independently.
+        if (_queryInflight.get(key) === entry && cacheTime > 0) {
+          evictQuery(key);
+          var cached = { data: result, timestamp: Date.now(), timer: null };
+          cached.timer = setTimeout(function() {
+            if (_queryCache.get(key) === cached) _queryCache.delete(key);
+          }, cacheTime);
+          _queryCache.set(key, cached);
+        }
+        return result;
+      } finally {
+        entry.settled = true;
+        if (_queryInflight.get(key) === entry) _queryInflight.delete(key);
+      }
+    })();
+    return entry;
+  }
+
+  function releaseQuery(run) {
+    if (!run || !run.entry) return;
+    var entry = run.entry;
+    run.entry = null;
+    if (--entry.refs !== 0 || entry.settled) return;
+    if (_queryInflight.get(entry.key) === entry) _queryInflight.delete(entry.key);
+    if (entry.controller) entry.controller.abort();
+  }
+
+  function refreshActiveQueries(keys) {
+    var invalidated = new Set(keys);
+    invalidated.forEach(function(key) {
+      evictQuery(key);
+      // A read started before the mutation cannot satisfy revalidation.
+      _queryInflight.delete(key);
+    });
+    Array.from(_activeQueries).forEach(function(query) {
+      if (!invalidated.has(query.key())) return;
+      query.refresh().catch(function(error) {
+        console.error('[stx] query refresh error:', error);
+      });
+    });
+  }
 
   // Suspense registry (#1742). A query created with { suspense: true } pushes
   // { el, loading, error } here at creation time (which runs during partial-scope
@@ -32,7 +89,7 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
   function useQuery(url, options) {
     options = options || {};
     var staleTime = options.staleTime || 0;
-    var cacheTime = options.cacheTime || 300000; // 5 min default
+    var cacheTime = options.cacheTime ?? 300000; // 5 min default
     var cacheKey = options.cacheKey || (typeof url === 'function' ? null : url);
     // keep: the answer is kept on the device per account (setKeptScope, or
     // options.scope) and seeds the next visit synchronously, refreshed behind.
@@ -45,7 +102,7 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
     };
     // What is shown is the last answer with the outbox's waiting writes on
     // top, so a change made offline is not undone by a refetch.
-    var base = options.initialData || null;
+    var base = options.initialData ?? null;
     var seeded = keepKey ? __stxQueries.seed(keepKey, options.scope) : undefined;
     if (seeded) base = seeded.data;
     var data = state(seeded ? __stxQueries.overlay(queryTarget(), base) : base);
@@ -54,11 +111,13 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
       data.set(__stxQueries.overlay(queryTarget(), value));
     };
     var answered = false;
-    var loading = state(!seeded);
+    var hasValue = !!seeded || options.initialData !== undefined;
+    var disposed = false;
+    var loading = state(options.immediate !== false && !hasValue);
     // See useFetch: loading means "nothing to show yet", isFetching means "a
     // request is open" — including a background refresh, which is the case that
     // makes the distinction necessary (#1929).
-    var isFetching = state(true);
+    var isFetching = state(options.immediate !== false);
     var error = state(null);
     var isStale = state(!!seeded);
     if (options.suspense) registerSuspense(loading, error);
@@ -66,157 +125,122 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
     // shows unless an answer came first.
     if (keepKey && !seeded) {
       __stxQueries.restore(keepKey, options.scope).then(function(found) {
-        if (!found || answered) return;
+        if (!found || answered || disposed) return;
+        hasValue = true;
         show(found.data);
         loading.set(false);
         isStale.set(true);
       });
     }
 
-    // Per-run AbortController: a newer run aborts the previous in-flight one and
-    // onDestroy aborts the last, so a resolved request can't write into a
-    // torn-down scope (#1871).
-    var __stxAbort = null;
-    // Identity, so dedup can tell "another component wants this key" from
-    // "this component asked again". They must behave differently: joining is
-    // right for the first, and wrong for the second — refetch() after a
-    // mutation has to hit the network, not adopt the pre-mutation request that
-    // happens to still be open (#1869).
-    var __instanceId = ++__stxQueryInstance;
-    // The shared entry this instance is currently attached to, so superseding
-    // can release its claim without cancelling a request someone else joined.
-    var __joined = null;
+    var currentRun = null;
+    var subscriber = {
+      key: function() {
+        var target = queryTarget();
+        return target.url ? (cacheKey || target.url) : null;
+      },
+      refresh: function() {
+        return fetchData({ background: hasValue });
+      }
+    };
 
-    // runOptions: { background: true } refreshes without touching loading or
-    // clearing the current error. A poll must not flash a spinner over data
-    // that is already on screen (#1929).
     var fetchData = async function(runOptions) {
+      if (disposed) return;
       var background = !!(runOptions && runOptions.background);
-      var resolvedUrl = typeof url === 'function' ? url() : url;
-      if (!resolvedUrl) { if (!background) loading.set(false); isFetching.set(false); return; }
-      var key = cacheKey || resolvedUrl;
+      var previous = currentRun;
+      var run = { entry: null };
+      currentRun = run;
+      // A refetch cannot rejoin the request it is meant to supersede.
+      var previousEntry = previous && previous.entry;
+      releaseQuery(previous);
+      if (currentRun !== run) return;
 
-      // Check cache
-      var cached = _queryCache[key];
-      if (cached && (Date.now() - cached.timestamp < staleTime)) {
-        answered = true;
-        show(cached.data);
-        if (!background) loading.set(false);
-        isFetching.set(false);
-        isStale.set(false);
-        if (options.onSuccess) options.onSuccess(cached.data);
-        return;
-      }
-
-      // Stale-while-revalidate
-      if (cached) {
-        show(cached.data);
-        isStale.set(true);
-      }
-
-      // Join a request ANOTHER instance already has open for this key. Not one
-      // of our own: this instance calling refetch() means "I want fresh data",
-      // and adopting its own pre-mutation request would silently return stale
-      // data — so an own-instance run still supersedes, exactly as #1871 says.
-      var shared = _queryInflight[key];
-      if (shared && shared.owner !== __instanceId) {
-        shared.refs++;
-        __joined = shared;
-        if (!background) loading.set(true);
-        isFetching.set(true);
-        if (!background) error.set(null);
-        try {
-          var joinedResult = await shared.promise;
-          var joinedTransformed = options.transform ? options.transform(joinedResult) : joinedResult;
-          answered = true;
-          show(joinedTransformed);
-          if (keepKey) __stxQueries.persist(keepKey, joinedTransformed, options.scope);
-          if (background) error.set(null);
-          isStale.set(false);
-          if (options.onSuccess) options.onSuccess(joinedTransformed);
-        }
-        catch (e) {
-          if (e && e.name === 'AbortError') return;
-          error.set(e.message || 'Query failed');
-          if (options.onError) options.onError(e);
-        }
-        finally {
-          shared.refs--;
-          if (__joined === shared) __joined = null;
-          if (!background) loading.set(false);
-          isFetching.set(false);
-        }
-        return;
-      }
-
-      // Superseding this instance's own run. Abort ONLY if nobody joined it —
-      // cancelling a request another component is waiting on would leave it
-      // loading forever, which would turn #1871's fix into a worse bug.
-      if (__stxAbort) {
-        if (__joined && __joined.refs > 1) __joined.refs--;
-        else __stxAbort.abort();
-      }
-      __joined = null;
-      __stxAbort = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-      var __signal = __stxAbort ? __stxAbort.signal : undefined;
-      if (!background) loading.set(true);
-      isFetching.set(true);
-      if (!background) error.set(null);
       try {
-        var fetchOpts = { method: 'GET', headers: { 'Content-Type': 'application/json', ...__stxHeaders(options.headers) }, signal: __signal };
-        // Published BEFORE it is awaited, so a caller starting in the same tick
-        // finds it. The network part only — transform, cache write and
-        // onSuccess stay per-caller, since each may transform differently.
-        var netPromise = (async function() {
-          var response = await __stxFetch('useQuery', resolvedUrl, fetchOpts);
-          if (!response.ok) throw await __stxHttpError(response);
-          return await response.json();
-        })();
-        var entry = { owner: __instanceId, refs: 1, controller: __stxAbort, promise: netPromise };
-        _queryInflight[key] = entry;
-        __joined = entry;
-        // Cleared on settle, both ways. A settled entry left behind would turn
-        // dedup into a permanent cache and no request for this key would ever
-        // be issued again.
-        var releaseEntry = function() { if (_queryInflight[key] === entry) delete _queryInflight[key]; };
-        netPromise.then(releaseEntry, releaseEntry);
+        var resolvedUrl = typeof url === 'function' ? url() : url;
+        if (currentRun !== run) return;
+        if (!resolvedUrl) {
+          _activeQueries.delete(subscriber);
+          return;
+        }
+        _activeQueries.add(subscriber);
+        var key = cacheKey || resolvedUrl;
+        var cached = _queryCache.get(key);
+        var transform = function(value) {
+          return options.transform ? options.transform(value) : value;
+        };
+        if (cached) {
+          var cachedResult = transform(cached.data);
+          if (currentRun !== run) return;
+          hasValue = true;
+          show(cachedResult);
+          if (currentRun !== run) return;
+          if (Date.now() - cached.timestamp < staleTime) {
+            answered = true;
+            error.set(null);
+            isStale.set(false);
+            if (options.onSuccess) options.onSuccess(cachedResult);
+            return;
+          }
+          isStale.set(true);
+        }
 
-        var result = await netPromise;
-        if (__signal && __signal.aborted) return;
-        var transformed = options.transform ? options.transform(result) : result;
+        var entry = _queryInflight.get(key);
+        if (!entry || entry === previousEntry) entry = startQuery(key, resolvedUrl, options.headers, cacheTime);
+        run.entry = entry;
+        entry.refs++;
+        batch(function() {
+          if (!background) {
+            loading.set(true);
+            error.set(null);
+          }
+          isFetching.set(true);
+        });
+        var rawResult = await entry.promise;
+        if (currentRun !== run) return;
+        var result = transform(rawResult);
+        if (currentRun !== run) return;
         answered = true;
-        show(transformed);
-        if (keepKey) __stxQueries.persist(keepKey, transformed, options.scope);
-        if (background) error.set(null);
-        isStale.set(false);
-        _queryCache[key] = { data: transformed, timestamp: Date.now() };
-        if (options.onSuccess) options.onSuccess(transformed);
-        // Schedule cache eviction
-        setTimeout(function() { delete _queryCache[key]; }, cacheTime);
-      }
-catch (e) {
-        // A superseded/unmounted request rejects with AbortError — expected;
-        // the run that superseded it owns the state (#1871).
-        if (e && e.name === 'AbortError') return;
-        error.set(e.message || 'Query failed');
+        hasValue = true;
+        batch(function() {
+          show(result);
+          error.set(null);
+          isStale.set(false);
+        });
+        if (currentRun !== run) return;
+        if (keepKey) __stxQueries.persist(keepKey, result, options.scope);
+        if (options.onSuccess) options.onSuccess(result);
+      } catch (e) {
+        if (currentRun !== run || (e && e.name === 'AbortError')) return;
+        error.set(e && e.message || 'Query failed');
         if (options.onError) options.onError(e);
-      }
-finally {
-        if (!__signal || !__signal.aborted) {
-          if (!background) loading.set(false);
-          isFetching.set(false);
+      } finally {
+        releaseQuery(run);
+        if (currentRun === run) {
+          currentRun = null;
+          batch(function() {
+            loading.set(false);
+            isFetching.set(false);
+          });
         }
       }
     };
 
+    function invalidate(runOptions) {
+      var key = subscriber.key();
+      if (key !== null) {
+        evictQuery(key);
+        _queryInflight.delete(key);
+      }
+      return fetchData(runOptions);
+    }
+
     // A refetch nobody asked for does not set loading (see backgroundRun below).
     var backgroundRun = { background: true };
 
-    if (options.immediate !== false) {
-      // Seeded from the device: the kept copy is on screen, so the first
-      // fetch refreshes it behind rather than putting a spinner over it.
-      onMount(function() { return seeded ? fetchData(backgroundRun) : fetchData(); });
-    }
+    onMount(function() {
+      disposed = false;
+      if (options.immediate !== false) return fetchData(hasValue ? backgroundRun : undefined);
+    });
 
     // The worker has a newer answer for this URL, or the outbox changed: a
     // write waiting on it is shown on top, and one that reached the server
@@ -224,13 +248,13 @@ finally {
     var unwatch = __stxQueries.watch({
       target: queryTarget,
       updated: function() {
-        delete _queryCache[cacheKey || queryTarget().url];
+        evictQuery(cacheKey || queryTarget().url);
         fetchData(backgroundRun);
       },
       outbox: function(sent) {
         if (sent) {
           base = __stxQueries.overlay(queryTarget(), base, sent.id);
-          delete _queryCache[cacheKey || queryTarget().url];
+          evictQuery(cacheKey || queryTarget().url);
           fetchData(backgroundRun);
         }
         show(base);
@@ -272,8 +296,12 @@ finally {
       onDestroy(function() { clearInterval(intervalId); });
     }
 
-    // Abort an in-flight request when the owning scope is destroyed (#1871).
-    onDestroy(function() { if (__stxAbort) __stxAbort.abort(); });
+    onDestroy(function() {
+      disposed = true;
+      _activeQueries.delete(subscriber);
+      releaseQuery(currentRun);
+      currentRun = null;
+    });
 
     return {
       data: data,
@@ -282,11 +310,7 @@ finally {
       error: error,
       isStale: isStale,
       refetch: fetchData,
-      invalidate: function(runOptions) {
-        var key = cacheKey || (typeof url === 'function' ? url() : url);
-        delete _queryCache[key];
-        return fetchData(runOptions);
-      }
+      invalidate: invalidate
     };
   }
 
@@ -322,11 +346,8 @@ finally {
         var result = await response.json();
         var transformed = options.transform ? options.transform(result) : result;
         data.set(transformed);
+        if (options.invalidateQueries) refreshActiveQueries(options.invalidateQueries);
         if (options.onSuccess) options.onSuccess(transformed);
-        // Invalidate related queries
-        if (options.invalidateQueries) {
-          options.invalidateQueries.forEach(function(key) { delete _queryCache[key]; });
-        }
         return transformed;
       }
 catch (e) {

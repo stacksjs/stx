@@ -293,6 +293,24 @@ interface StxMutationResult<T> {
   mutate: (body?: unknown) => Promise<T>
 }
 
+interface StxAsyncDataOptions<T> {
+  immediate?: boolean
+  transform?: (data: T) => T
+  initialData?: T | null
+  key?: string
+  hydrate?: boolean
+  cacheTime?: number
+  suspense?: boolean
+}
+
+interface StxAsyncDataResult<T> extends StxFetchResult<T> {
+  status: StxSignal<number | null>
+  statusText: StxSignal<string | null>
+  execute: () => Promise<void>
+  abort: () => void
+}
+
+declare function useAsyncData<T>(fetcher: (signal: AbortSignal) => T | PromiseLike<T>, options?: StxAsyncDataOptions<T>): StxAsyncDataResult<T>
 declare function useFetch<T = any>(_url: string, _options?: any): StxFetchResult<T>
 /** Server-only, keyed JSON data exposed to this render's client hydration. */
 declare function useServerData<T>(_key: string, _loader: () => T | Promise<T>): Promise<T>
@@ -978,6 +996,7 @@ interface StxRuntimeRegistry {
 
   // Composables
   useFetch: typeof useFetch
+  useAsyncData: typeof useAsyncData
   clearServerData: typeof clearServerData
   useRef: typeof useRef
   useQuery: typeof useQuery

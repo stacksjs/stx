@@ -35,7 +35,7 @@
  * ```
  */
 import type { Signal } from '../signals-api'
-import { state } from '../signals-api'
+import { batch, state } from '../signals-api'
 
 /** @internal Closure-free: also embedded in the generated browser runtime. */
 export function readHydratedData(key?: string, hydrate = true, transform?: (data: any) => unknown): { data: unknown, error?: Error } | undefined {
@@ -405,110 +405,129 @@ export function useFetch<T = unknown>(
   }
 }
 
-/**
- * Generic async data fetcher. Same Signal shape as `useFetch`.
- */
-export function useAsyncData<T>(
-  fetcher: () => Promise<T>,
-  options: {
-    immediate?: boolean
-    transform?: (data: T) => T
-    initialData?: T | null
-    key?: string
-    hydrate?: boolean
-    cacheTime?: number
-  } = {},
-): FetchRef<T> {
-  const {
-    immediate = true,
-    transform,
-    initialData = null as T | null,
-    key,
-    hydrate = true,
-    cacheTime = 0,
-  } = options
+export interface AsyncDataOptions<T> {
+  immediate?: boolean
+  transform?: (data: T) => T
+  initialData?: T | null
+  key?: string
+  hydrate?: boolean
+  cacheTime?: number
+  /** Let a template's nearest Suspense boundary show first-load and error UI. Default true. */
+  suspense?: boolean
+}
 
-  const hydrated = readHydratedData(key, hydrate, transform)
-  const hydratedValue = hydrated ? hydrated.data as T : initialData
-  const data = state<T | null>(hydratedValue)
+type AsyncDataCache<T = unknown> = Map<string, { data?: T, timestamp?: number }>
+
+/** @internal Closure-free so the browser and module runtimes use the same request lifecycle. */
+export function createAsyncData<T>(
+  fetcher: (signal: AbortSignal) => T | PromiseLike<T>,
+  options: AsyncDataOptions<T>,
+  state: typeof import('../signals-api').state,
+  batch: typeof import('../signals-api').batch,
+  readHydratedData: typeof import('./use-fetch').readHydratedData,
+  cache: AsyncDataCache,
+  trackRead?: (data: Signal<T | null>, loading: Signal<boolean>, error: () => Error | null) => Signal<T | null>,
+): FetchRef<T> {
+  const { immediate = true, transform, initialData = null, key, hydrate = true, cacheTime = 0 } = options
+  const snapshot = readHydratedData(key, hydrate, transform)
+  const data = state<T | null>(snapshot ? snapshot.data as T | null : initialData)
   const loading = state(false)
   const isFetching = state(false)
-  const error = state<Error | null>(hydrated?.error ?? null)
-  // status / statusText are not meaningful for arbitrary async fetchers,
-  // but exposed for shape parity with useFetch.
-  const status = state<number | null>(null)
-  const statusText = state<string | null>(null)
+  const error = state<Error | null>(snapshot?.error ?? null)
+  let hasValue = snapshot ? !snapshot.error : options.initialData !== undefined
+  let current: AbortController | undefined
+  const cacheKey = cacheTime > 0 ? (key || fetcher.toString()) : undefined
 
-  const getCacheKey = (): string => key || fetcher.toString()
+  async function load(): Promise<void> {
+    const previous = current
+    const request = new AbortController()
+    current = request
+    previous?.abort()
+    if (current !== request) return
 
-  const getFromCache = (): T | null => {
-    if (cacheTime <= 0)
-      return null
-    const cached = fetchCache.get(getCacheKey())
-    if (cached && Date.now() - cached.timestamp < cacheTime)
-      return cached.data as T
-    return null
-  }
-
-  const setCache = (value: T) => {
-    if (cacheTime > 0)
-      fetchCache.set(getCacheKey(), { data: value, timestamp: Date.now() })
-  }
-
-  const doFetch = async (background = false): Promise<void> => {
-    const cached = getFromCache()
-    if (cached !== null) {
-      data.set(cached)
-      loading.set(false)
-      isFetching.set(false)
-      error.set(null)
-      return
+    const cached = cacheKey === undefined ? undefined : cache.get(cacheKey)
+    const cacheHit = cached?.timestamp !== undefined && Date.now() - cached.timestamp < cacheTime
+    // Give the latest loader ownership of the cache record, even across consumers.
+    const cacheRun: { data?: T, timestamp?: number } = {}
+    if (!cacheHit) {
+      if (cacheKey !== undefined) cache.set(cacheKey, cacheRun)
+      batch(() => {
+        loading.set(!hasValue)
+        isFetching.set(true)
+        if (!hasValue) error.set(null)
+      })
     }
-
-    if (!background)
-      loading.set(true)
-    isFetching.set(true)
-    if (!background)
-      error.set(null)
 
     try {
-      // `payload` is typed as Awaited<T> from the await; transform takes T
-      // and returns T. TS's strict variance check sees the two as
-      // distinct, so we narrow through `unknown` to satisfy both sides.
-      let payload = (await fetcher()) as unknown as T
-      if (transform)
-        payload = transform(payload)
-
-      setCache(payload)
-      data.set(payload)
-      if (background)
+      if (current !== request) return
+      // TypeScript cannot reduce Awaited<T> for an unconstrained T.
+      const payload = cacheHit ? cached.data as T : await fetcher(request.signal) as T
+      if (current !== request) return
+      const value = transform ? transform(payload) : payload
+      if (current !== request) return
+      if (!cacheHit) {
+        cacheRun.data = payload
+        cacheRun.timestamp = Date.now()
+      }
+      hasValue = true
+      batch(() => {
+        data.set(value)
         error.set(null)
-      if (!background)
-        loading.set(false)
-      isFetching.set(false)
+      })
     }
-    catch (err) {
-      error.set(err instanceof Error ? err : new Error(String(err)))
-      if (!background)
-        loading.set(false)
-      isFetching.set(false)
+    catch (failure) {
+      if (current === request) error.set(failure instanceof Error ? failure : new Error(String(failure)))
+    }
+    finally {
+      if (cacheKey !== undefined && cacheRun.timestamp === undefined && cache.get(cacheKey) === cacheRun) cache.delete(cacheKey)
+      finish(request)
     }
   }
 
-  if (immediate && !hydrated)
-    void doFetch()
+  function finish(request: AbortController): void {
+    if (current !== request) return
+    current = undefined
+    batch(() => {
+      loading.set(false)
+      isFetching.set(false)
+    })
+  }
+
+  const trackedData = trackRead && options.suspense !== false
+    ? trackRead(data, loading, () => {
+      const failure = error()
+      return hasValue ? null : failure
+    })
+    : data
+
+  if (immediate && !snapshot) void load()
 
   return {
-    data,
+    data: trackedData,
     loading,
     isFetching,
     error,
-    status,
-    statusText,
-    refetch: (refetchOptions?: RefetchOptions) => doFetch(!!refetchOptions?.background),
-    execute: () => doFetch(),
-    abort: () => {},
+    status: state<number | null>(null),
+    statusText: state<string | null>(null),
+    refetch: load,
+    execute: load,
+    abort() {
+      const request = current
+      if (!request) return
+      finish(request)
+      request.abort()
+    },
   }
+}
+
+const asyncDataCache: AsyncDataCache = new Map()
+
+/** Resolve arbitrary async data into a signal and keep its last good value during refresh. */
+export function useAsyncData<T>(
+  fetcher: (signal: AbortSignal) => T | PromiseLike<T>,
+  options: AsyncDataOptions<T> = {},
+): FetchRef<T> {
+  return createAsyncData(fetcher, options, state, batch, readHydratedData, asyncDataCache)
 }
 
 /**
@@ -544,10 +563,14 @@ export function usePost<T = unknown, B = unknown>(
 
 /** Clear fetch cache (one key or all). */
 export function clearFetchCache(key?: string): void {
-  if (key)
+  if (key) {
     fetchCache.delete(key)
-  else
+    asyncDataCache.delete(key)
+  }
+  else {
     fetchCache.clear()
+    asyncDataCache.clear()
+  }
 }
 
 /** Prefetch data into cache. */

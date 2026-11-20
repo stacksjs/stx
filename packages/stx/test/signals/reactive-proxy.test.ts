@@ -171,3 +171,30 @@ describe('ref() is unaffected (#1885)', () => {
     expect(seen).toEqual([0, 1])
   })
 })
+
+describe('proxy receivers and immutable descriptors', () => {
+  for (const runtime of ['browser', 'module'] as const) {
+    it(`${runtime} preserves class identity, including private fields`, async () => {
+      const reactive = runtime === 'browser' ? stx.reactive : (await import('../../src/reactivity')).reactive
+      class Counter {
+        #count = 42
+        get count() { return this.#count }
+      }
+      const counter = new Counter()
+      const dates = new Map([['now', new Date(0)]])
+      expect(reactive(counter)).toBe(counter)
+      expect(reactive({ counter }).counter.count).toBe(42)
+      expect(reactive({ dates }).dates.get('now')).toEqual(new Date(0))
+    })
+
+    it(`${runtime} reads locked object properties without violating proxy invariants`, async () => {
+      const reactive = runtime === 'browser' ? stx.reactive : (await import('../../src/reactivity')).reactive
+      const nested = { count: 42 }
+      const frozen = reactive(Object.freeze({ nested }))
+      expect(frozen.nested).toBe(nested)
+      expect(Reflect.set(frozen, 'nested', {})).toBe(false)
+      expect(Reflect.deleteProperty(frozen, 'nested')).toBe(false)
+      expect(frozen.nested.count).toBe(42)
+    })
+  }
+})

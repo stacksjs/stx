@@ -86,6 +86,7 @@ declare module 'stx' {
   export const useDebouncedValue: typeof globalThis.useDebouncedValue
   export const useDocumentVisibility: typeof globalThis.useDocumentVisibility
   export const useEventListener: typeof globalThis.useEventListener
+  export const useAsyncData: typeof globalThis.useAsyncData
   export const useFetch: typeof globalThis.useFetch
   export const useFocus: typeof globalThis.useFocus
   export const useHead: typeof globalThis.useHead

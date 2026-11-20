@@ -11,7 +11,7 @@
 import { state, derived, effect, batch, onMount, onDestroy, isSignal, isDerived, untrack, peek } from './signals-api'
 import { runtimeDirectiveNamesLiteral, runtimeEventRegexLiteral, runtimeHandledXAttrsLiteral } from './runtime-globals'
 import { createModelSignal } from './component-model'
-import { readHydratedData, clearServerData } from './composables/use-fetch'
+import { createAsyncData, readHydratedData, clearServerData } from './composables/use-fetch'
 import { createKeptStore, indexedDbBackend } from './offline/kept-store'
 import { createQueryCache, queryTargetMatches } from './offline/query-cache'
 import { sharedRequest } from './shared-request'
@@ -33,7 +33,7 @@ import { SIGNALS_DIALOG_RUNTIME } from './client/signals-dialog-runtime'
 import { SIGNALS_DEVTOOLS_RUNTIME } from './client/signals-devtools-runtime'
 import { SIGNALS_DOM_READY_RUNTIME } from './client/signals-dom-ready-runtime'
 import { SIGNALS_DRAWER_RUNTIME } from './client/signals-drawer-runtime'
-import { SIGNALS_EFFECT_RUNTIME } from './client/signals-effect-runtime'
+import { SIGNALS_EFFECT_RUNTIME, signalsEffectRuntime } from './client/signals-effect-runtime'
 import { SIGNALS_EVENT_SHORTHAND_RUNTIME } from './client/signals-event-shorthand-runtime'
 import { SIGNALS_EXPRESSION_COMPILER_RUNTIME } from './client/signals-expression-compiler-runtime'
 import { SIGNALS_EXPRESSION_RUNTIME } from './client/signals-expression-runtime'
@@ -118,7 +118,7 @@ export function generateSignalsRuntime(options: SignalsRuntimeOptions = {}): str
   // to production, and the only symptom was a console full of `[stx] signal.set:`
   // in a consumer's DevTools with nothing to explain it. Minification is the
   // optional part; removing the logs is not. See #1873.
-  const stripped = stripConsoleLog(generateSignalsRuntimeDev(options))
+  const stripped = stripConsoleLog(buildSignalsRuntime(options, false))
 
   // Use Bun.Transpiler for minification, then fix ASI edge cases. Bun.Transpiler
   // strips newlines but doesn't always insert semicolons at statement boundaries
@@ -188,6 +188,10 @@ function stripConsoleLog(src: string): string {
  * @returns Human-readable JavaScript runtime code
  */
 export function generateSignalsRuntimeDev(options: SignalsRuntimeOptions = {}): string {
+  return buildSignalsRuntime(options, true)
+}
+
+function buildSignalsRuntime(options: SignalsRuntimeOptions, development: boolean): string {
   return `${SIGNALS_PREAMBLE_RUNTIME}${SIGNALS_HOST_RUNTIME}
 ${signalsReactiveCoreBootstrapRuntime(SIGNALS_CLOAK_RUNTIME, SIGNALS_EXPRESSION_COMPILER_RUNTIME, SIGNALS_FETCH_TRANSPORT_RUNTIME)}
 
@@ -195,10 +199,26 @@ ${SIGNALS_HELPERS_RUNTIME}
 ${SIGNALS_PROXY_RUNTIME}
 ${SIGNALS_PIPE_RUNTIME}
 ${SIGNALS_STATE_RUNTIME}
-${SIGNALS_EFFECT_RUNTIME}
+${development ? SIGNALS_EFFECT_RUNTIME : signalsEffectRuntime(false)}
 ${SIGNALS_LIFECYCLE_RUNTIME}
 ${SIGNALS_WEBSOCKET_RUNTIME}
 ${signalsFetchRuntime(readHydratedData.toString(), clearServerData.toString())}
+  var __stxAsyncDataCache = new Map();
+  var createAsyncData = ${createAsyncData.toString()};
+  function useAsyncData(fetcher, options) {
+    var resource = createAsyncData(fetcher, options || {}, state, batch, readHydratedData, __stxAsyncDataCache, trackAsyncDataRead);
+    var restart = false;
+    onDestroy(function() {
+      restart = resource.loading();
+      resource.abort();
+    });
+    if (currentLifecycleScope()) onMount(function() {
+      if (!restart) return;
+      restart = false;
+      return resource.execute();
+    });
+    return resource;
+  }
 ${SIGNALS_REF_RUNTIME}
 ${SIGNALS_NAVIGATION_RUNTIME}
 ${SIGNALS_QUERY_RUNTIME}
@@ -261,6 +281,7 @@ ${SIGNALS_MOUNT_RUNTIME}
 
 ${SIGNALS_GLOBALS_RUNTIME}
 ${SIGNALS_DEVTOOLS_RUNTIME}
+${development ? '  window.__stxDevtools.diagnostics = function() { return effectDiagnostics.map(function(d) { return { ...d }; }); };' : ''}
 ${SIGNALS_DOM_READY_RUNTIME}
 ${SIGNALS_SCOPE_DISPOSAL_RUNTIME}
 ${SIGNALS_HYDRATION_AUDIT_RUNTIME}

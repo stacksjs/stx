@@ -336,7 +336,35 @@ append: `useOptimistic(comments, (list, draft) => [...list, draft])`.
 > (`window.stx.useOptimistic`). Implemented in both reactive impls with parity
 > (`signals-api.ts` + the client runtime).
 
-### `<Suspense>` + query suspense mode
+### `useAsyncData` and `<Suspense>`
+
+Use `useAsyncData` when a template consumes the result of an async loader. The
+loader can live in a page, layout, or composable. The closest `<Suspense>`
+around the **template binding that reads** `data()` handles the first load,
+including reads through a `derived()` or `memo()`.
+
+```html
+<script client>
+const profile = useAsyncData(async (signal) => {
+  const response = await fetch('/api/profile', { signal })
+  if (!response.ok) throw new Error('Could not load profile')
+  return response.json()
+})
+</script>
+
+<Suspense fallback="Loading profile…" error-fallback="Could not load profile.">
+  <h2 x-text="profile.data()?.name"></h2>
+</Suspense>
+<button @click="profile.refetch()">Refresh profile</button>
+```
+
+A refresh keeps the last successful value visible. Use `isFetching()` to show
+refresh progress and `error()` to show a failed refresh alongside that value.
+A newer load aborts the previous loader's signal and ignores any late result.
+Pass `{ suspense: false }` to handle loading and errors in the template yourself.
+You can also [seed the first result on the server](/features/server-data).
+
+### `<Suspense>` with `useQuery` and `useFetch`
 
 `<Suspense>` is a client **loading boundary**: one wrapper handles the loading
 (and error) state of every data-fetching component inside it, replacing the

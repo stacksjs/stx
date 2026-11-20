@@ -79,7 +79,7 @@ export interface UseMutationOptions<T = unknown> {
   /** Optimistic data to set before the request completes */
   // eslint-disable-next-line pickier/no-unused-vars
   optimisticData?: T | ((body: unknown) => T)
-  /** Query cache keys to invalidate on success */
+  /** Evict these keys and refresh active consumers in the background on success. */
   invalidateQueries?: string[]
   /** Success callback */
   onSuccess?: (data: T) => void

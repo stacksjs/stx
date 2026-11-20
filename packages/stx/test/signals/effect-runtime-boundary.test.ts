@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'bun:test'
+import { describe, expect, it, spyOn } from 'bun:test'
 import { SIGNALS_EFFECT_RUNTIME } from '../../src/client/signals-effect-runtime'
 import { SIGNALS_NOTIFY_RUNTIME } from '../../src/client/signals-notify-runtime'
 import { SIGNALS_STATE_RUNTIME } from '../../src/client/signals-state-runtime'
-import { generateSignalsRuntimeDev } from '../../src/signals'
+import { generateSignalsRuntime, generateSignalsRuntimeDev } from '../../src/signals'
 
 function loadReactivity(): Record<string, any> {
   const prelude = `
@@ -19,7 +19,7 @@ function loadReactivity(): Record<string, any> {
     function __stxShort(value) { return String(value); }
     ${SIGNALS_NOTIFY_RUNTIME}
   `
-  const runtime = `${prelude}\n${SIGNALS_STATE_RUNTIME}\n${SIGNALS_EFFECT_RUNTIME}\nreturn { state, derived, effect, batch }`
+  const runtime = `${prelude}\n${SIGNALS_STATE_RUNTIME}\n${SIGNALS_EFFECT_RUNTIME}\nreturn { state, derived, effect, batch, effectDiagnostics }`
   return new Function(runtime)() as Record<string, any>
 }
 
@@ -45,4 +45,28 @@ describe('signals effect runtime boundary', () => {
 
     expect(seen).toEqual([0, 2])
   })
+})
+
+it('reports repeated synchronous effect reentry once in development', () => {
+  const { state, effect, effectDiagnostics } = loadReactivity()
+  const count = state(0)
+  const warning = spyOn(console, 'warn').mockImplementation(() => {})
+  try {
+    effect(function incrementOwnDependency() {
+      const value = count()
+      if (value < 15) count.set(value + 1)
+    })
+    expect(count()).toBe(15)
+    expect(warning).toHaveBeenCalledTimes(1)
+    expect(effectDiagnostics).toHaveLength(1)
+    expect(effectDiagnostics[0]).toMatchObject({ code: 'STX_EFFECT_REENTRY' })
+    expect(effectDiagnostics[0].stack).toContain('incrementOwnDependency')
+  }
+  finally {
+    warning.mockRestore()
+  }
+})
+
+it('leaves reentry diagnostics out of production builds', () => {
+  expect(generateSignalsRuntime()).not.toContain('STX_EFFECT_REENTRY')
 })

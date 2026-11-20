@@ -569,6 +569,31 @@ onMount(() => {
 <ul :for="row in data()" :key="row.id"><li x-text="row.name"></li></ul>
 ```
 
+### useAsyncData
+
+```typescript
+useAsyncData<T>(
+  fetcher: (signal: AbortSignal) => T | PromiseLike<T>,
+  options?: AsyncDataOptions<T>,
+): FetchRef<T>
+```
+
+`data()` retains the last successful value during refresh. `loading()` tracks
+the first value, `isFetching()` tracks any active load, and `error()` reports
+the latest failure. Use `refetch()` or `execute()` to run the loader and
+`abort()` to cancel it. Pass the loader's signal to APIs such as `fetch`.
+A matching `useServerData` key supplies the initial value, including `null`.
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `immediate` | `boolean` | `true` | Load on creation if there is no server snapshot |
+| `initialData` | `T \| null` | — | Value to show while the loader runs |
+| `key` | `string` | — | Identity for hydration and caching |
+| `hydrate` | `boolean` | `true` | Use the matching server snapshot |
+| `cacheTime` | `number` | `0` | Milliseconds to reuse a client result |
+| `transform` | `(value: T) => T` | — | Transform the loaded value for this consumer |
+| `suspense` | `boolean` | `true` | Let the nearest template boundary show first-load and error UI |
+
 ### useQuery
 
 ```typescript
@@ -656,8 +681,13 @@ function createUser() {
 | `transform` | `(result: any) => any` | — | Transform response |
 | `onSuccess` | `(data: any) => void` | — | Success callback |
 | `onError` | `(error: Error) => void` | — | Error callback |
-| `invalidateQueries` | `string[]` | — | Cache keys to invalidate on success |
+| `invalidateQueries` | `string[]` | — | Cache keys to evict and revalidate for active consumers on success |
 | `optimisticData` | `any \| (body: any) => any` | — | Optimistic update data (rolled back on error) |
+
+Use a query's `cacheKey` or its URL in `invalidateQueries`. Matching active
+consumers share the refresh and keep any current data visible. The mutation
+promise resolves after the write. Use the query's `isFetching()` to track
+the refresh separately.
 
 **MutationResult:**
 

@@ -349,6 +349,6 @@ else if (!value && isInserted) {
           else setTimeout(hydrateShownBranch, 0);
         }
       }
-    });
+    }, { bindingNode: placeholder });
   }
 `

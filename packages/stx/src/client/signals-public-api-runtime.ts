@@ -28,6 +28,7 @@ export function signalsPublicApiRuntime(componentApiRuntime: string): string {
     onBeforeUnmount: onDestroy,
     onUnmounted: onDestroy,
     useFetch,
+    useAsyncData,
     clearServerData,
     useRef,
     navigate,

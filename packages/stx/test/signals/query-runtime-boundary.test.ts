@@ -14,7 +14,7 @@ describe('signals query runtime boundary', () => {
   it('keeps query deduplication and mutation invalidation together', () => {
     expect(SIGNALS_QUERY_RUNTIME).toContain('function useQuery(url, options)')
     expect(SIGNALS_QUERY_RUNTIME).toContain('function useMutation(url, options)')
-    expect(SIGNALS_QUERY_RUNTIME).toContain('var _queryInflight = {}')
-    expect(SIGNALS_QUERY_RUNTIME).toContain('delete _queryCache[key]')
+    expect(SIGNALS_QUERY_RUNTIME).toContain('function startQuery(key, url, headers, cacheTime)')
+    expect(SIGNALS_QUERY_RUNTIME).toContain('refreshActiveQueries(options.invalidateQueries)')
   })
 })

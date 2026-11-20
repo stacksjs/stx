@@ -103,6 +103,18 @@ effect(() => {
 </script>
 ```
 
+### Reactivity diagnostics
+
+`stx typecheck` reports `STX_UNTRACKED_SETUP_READ` with the `.stx` file and
+position when a template uses a direct signal snapshot taken in setup. Move
+the read into the template or use `derived(() => …)` for a reactive value.
+Use `peek(() => …)` when you deliberately need a one-time snapshot.
+
+With `debug: true`, the browser runtime reports `STX_EFFECT_REENTRY` when
+an effect repeatedly triggers itself before it returns. The console and
+`window.__stxDevtools.diagnostics()` include a stack trace. Use a derived
+value for a computation, or move the write to the event that caused it.
+
 ## Stores with `defineStore()`
 
 Stores are for state that must persist across SPA page navigations. They live in the `stores/` directory (configurable via `storesDir` in your config).

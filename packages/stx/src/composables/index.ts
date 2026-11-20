@@ -178,6 +178,7 @@ export {
 export {
   useFetch,
   useAsyncData,
+  type AsyncDataOptions,
   usePost,
   clearFetchCache,
   clearServerData,

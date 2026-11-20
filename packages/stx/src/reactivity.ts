@@ -143,6 +143,7 @@ export interface ReactiveScope {
 // Current Instance Tracking
 // =============================================================================
 
+import { canWrapReactive, isLockedReactiveProperty } from './reactive-target'
 import { getActiveSubscriber, notifySubscribers, restoreActiveSubscriber, setActiveSubscriber } from './reactive-tracking'
 
 let currentInstance: ComponentInstance | null = null
@@ -337,6 +338,7 @@ const reactiveMap = new WeakMap<object, any>()
  * ```
  */
 export function reactive<T extends object>(target: T): T {
+  if (!canWrapReactive(target)) return target
   // Return cached proxy if already created
   const existing = reactiveMap.get(target)
   if (existing) return existing
@@ -372,13 +374,8 @@ export function reactive<T extends object>(target: T): T {
         subscribe(prop, subscriber)
       }
 
-      // Recursively make nested plain objects reactive
-      // Skip non-plain objects (Date, RegExp, Map, Set, etc.)
-      if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-        const proto = Object.getPrototypeOf(value)
-        if (proto === Object.prototype || proto === null) {
-          return reactive(value)
-        }
+      if (canWrapReactive(value) && !Array.isArray(value) && !isLockedReactiveProperty(obj, prop)) {
+        return reactive(value)
       }
 
       return value

@@ -48,7 +48,7 @@ export const STX_RUNTIME_GLOBALS: readonly string[] = [
   'invalidateRoute', 'isDerived', 'isSignal', 'keptState', 'memo', 'navigate',
   'nextTick', 'onBeforeMount', 'onBeforeUnmount', 'onDestroy', 'onMount', 'onMounted', 'onUnmounted',
   'peek', 'provide', 'reactive',
-  'ref', 'refDebounced', 'refresh', 'registerStoresClient', 'setKeptScope', 'setRouteParams', 'sharedRequest', 'state', 'untrack', 'useAsync', 'useBroadcastStream', 'useClickOutside', 'useColorMode',
+  'ref', 'refDebounced', 'refresh', 'registerStoresClient', 'setKeptScope', 'setRouteParams', 'sharedRequest', 'state', 'untrack', 'useAsync', 'useAsyncData', 'useBroadcastStream', 'useClickOutside', 'useColorMode',
   'useCookie', 'useCounter', 'useDark', 'useDebounce', 'useDebounceFn', 'useDebouncedValue', 'useDocumentVisibility', 'useEventListener',
   'useFetch', 'useFocus', 'useHead', 'useId', 'useInterval', 'useLocalStorage', 'useMediaQuery',
   'useModel', 'useMutation', 'useNativeDesktop', 'useOptimistic', 'usePreferredContrast', 'usePreferredDark',
@@ -151,17 +151,12 @@ export const NON_CLIENT_PRIMITIVES: Readonly<Record<string, { category: NonClien
   // equivalent of redirect() is navigate(), which IS a runtime global.
   redirect: { category: 'server-only', reason: 'returns an HTTP Response for <script server>/edge/build; use navigate() on the client.' },
 
-  // Demand-bundled: reachable from a client script when referenced (inlined by
-  // framework-composables from src/composables) — just not a bare global.
-  useAsyncData: { category: 'browser-composable', reason: 'inlined on demand from src/composables when a script references it; reachable, not a bare global.' },
-
   // Template surface, resolved at compile time — used as a tag, never called.
   Teleport: { category: 'compile-time-directive', reason: 'template tag resolved by processTeleportDirectives; not a script callable.' },
   StxModalBuiltin: { category: 'builtin-component', reason: 'builtin component used as a template tag; drive open/close from the modal store.' },
   StxToastBuiltin: { category: 'builtin-component', reason: 'builtin component used as a template tag; push toasts via the toast store.' },
 
-  // Demand-bundled reactive form primitive: lives in a composable, inlined on
-  // demand exactly like useAsyncData (#1846).
+  // The browser inlines these form composables on first reference (#1846).
   useForm: { category: 'browser-composable', reason: 'reactive form primitive; lives in src/composables/use-form.ts and is inlined on demand when a <script client> references it (#1846).' },
   defineForm: { category: 'browser-composable', reason: 'deprecated alias of useForm, kept for a minor (#1843). Same delivery path — inlined on demand from src/composables/use-form.ts.' },
 

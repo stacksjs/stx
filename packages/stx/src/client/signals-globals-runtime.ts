@@ -8,6 +8,7 @@ export const SIGNALS_GLOBALS_RUNTIME = `  // Also expose globally for convenienc
   window.onMount = onMount;
   window.onDestroy = onDestroy;
   window.useFetch = useFetch;
+  window.useAsyncData = useAsyncData;
   window.clearServerData = clearServerData;
   window.useRef = useRef;
   window.navigate = navigate;

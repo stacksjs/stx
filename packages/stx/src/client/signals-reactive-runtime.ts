@@ -1,6 +1,10 @@
 /** Vue-compatible reactive helpers used by the generated client runtime. */
+import { canWrapReactive, isLockedReactiveProperty } from '../reactive-target'
+
 export const SIGNALS_REACTIVE_RUNTIME = `  // Vue-compat aliases
   var ref = state;
+  var canWrapReactive = ${canWrapReactive.toString()};
+  var isLockedReactiveProperty = ${isLockedReactiveProperty.toString()};
 
   // reactive() used to be a bare alias of state(), which made it the most
   // dangerous name in the runtime. state({n:0}) returns a SIGNAL, so the Vue
@@ -19,7 +23,7 @@ export const SIGNALS_REACTIVE_RUNTIME = `  // Vue-compat aliases
   function reactive(target) {
     // Primitives have no properties to track. Returning them unchanged keeps
     // reactive(0) from silently becoming an object.
-    if (!target || typeof target !== 'object') return target;
+    if (!canWrapReactive(target)) return target;
     var existing = __stxReactiveProxies.get(target);
     if (existing) return existing;
 
@@ -40,12 +44,12 @@ export const SIGNALS_REACTIVE_RUNTIME = `  // Vue-compat aliases
         // Nested objects are wrapped too, and cached in the WeakMap, so
         // identity is stable across reads — a fresh proxy each time would
         // break === comparisons and defeat keyed list reuse.
-        return (value && typeof value === 'object') ? reactive(value) : value;
+        return canWrapReactive(value) && !isLockedReactiveProperty(t, prop) ? reactive(value) : value;
       },
       set: function(t, prop, value) {
         if (typeof prop === 'symbol') return Reflect.set(t, prop, value);
         var had = Object.prototype.hasOwnProperty.call(t, prop);
-        t[prop] = value;
+        if (!Reflect.set(t, prop, value)) return false;
         // Write the plain target FIRST so a signal created later reads the
         // current value, then notify anyone already watching this property.
         if (propSignals[prop]) propSignals[prop].set(value);
@@ -54,7 +58,7 @@ export const SIGNALS_REACTIVE_RUNTIME = `  // Vue-compat aliases
       },
       deleteProperty: function(t, prop) {
         var had = Object.prototype.hasOwnProperty.call(t, prop);
-        delete t[prop];
+        if (!Reflect.deleteProperty(t, prop)) return false;
         if (had && propSignals[prop]) propSignals[prop].set(undefined);
         return true;
       },

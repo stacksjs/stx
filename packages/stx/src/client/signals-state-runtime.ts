@@ -3,6 +3,16 @@ export const SIGNALS_STATE_RUNTIME = `  // =====================================
   // State Signal
   // ==========================================================================
 
+  var activeSuspenseReads = null;
+  var suspenseSourcesCreated = false;
+
+  function sameSuspenseReads(before, after) {
+    if (!before || !before.size) return !after || !after.size;
+    if (!after || before.size !== after.size) return false;
+    for (var entry of after) if (!before.has(entry)) return false;
+    return true;
+  }
+
   function state(initialValue) {
     let value = initialValue;
     const subscribers = new Set();
@@ -77,11 +87,16 @@ export const SIGNALS_STATE_RUNTIME = `  // =====================================
     let cached;
     let isDirty = true;
     let hasValue = false;
+    let asyncReads = null;
+    let suspenseConsumers = null;
     const effects = new Set();
     const equals = options && typeof options.equals === 'function' ? options.equals : null;
 
     function recompute() {
       const prev = activeEffect;
+      const previousReads = activeSuspenseReads;
+      const reads = suspenseSourcesCreated ? new Set() : null;
+      activeSuspenseReads = reads;
       activeEffect = markDirty;
       effectStack.push(markDirty);
       try {
@@ -91,18 +106,22 @@ export const SIGNALS_STATE_RUNTIME = `  // =====================================
 finally {
         effectStack.pop();
         activeEffect = prev;
+        activeSuspenseReads = previousReads;
+        asyncReads = reads;
       }
       isDirty = false;
     }
 
-    // Recompute now and say whether the value changed. A compute that throws
-    // counts as a change: the reader recomputes and sees the error.
-    function changedNow() {
+    // Equal values still propagate a changed async dependency to a boundary
+    // reader. Ordinary value subscribers keep the memo's equality behavior.
+    function affectedByRecompute() {
       const before = cached;
+      const beforeReads = asyncReads;
       const had = hasValue;
       try { recompute(); }
-      catch (e) { isDirty = true; return true; }
-      return !had || !equals(before, cached);
+      catch (e) { isDirty = true; return effects; }
+      if (!had || !equals(before, cached)) return effects;
+      return suspenseConsumers && !sameSuspenseReads(beforeReads, asyncReads) ? suspenseConsumers : null;
     }
 
     // Passes a change on to what read this value. A signal's notification
@@ -111,7 +130,8 @@ finally {
     const markDirty = () => {
       if (isDirty) return;
       if (equals && effects.size) {
-        if (changedNow()) notifySubscribers(effects);
+        const affected = affectedByRecompute();
+        if (affected) notifySubscribers(affected);
         return;
       }
       isDirty = true;
@@ -120,7 +140,8 @@ finally {
     markDirty._stxCollect = (into) => {
       if (isDirty) return;
       if (equals && effects.size) {
-        if (changedNow()) collectSubscribers(effects, into);
+        const affected = affectedByRecompute();
+        if (affected) collectSubscribers(affected, into);
         return;
       }
       isDirty = true;
@@ -128,9 +149,21 @@ finally {
     };
 
     const signal = () => {
-      if (activeEffect) effects.add(activeEffect);
-      if (isDirty) recompute();
-      return cached;
+      if (activeEffect) {
+        effects.add(activeEffect);
+        if (equals && activeSuspenseReads) {
+          if (!suspenseConsumers) suspenseConsumers = new Set();
+          suspenseConsumers.add(activeEffect);
+        }
+      }
+      try {
+        if (isDirty) recompute();
+        return cached;
+      } finally {
+        if (activeSuspenseReads && asyncReads) {
+          asyncReads.forEach(function(entry) { activeSuspenseReads.add(entry); });
+        }
+      }
     };
 
     signal._isDerived = true;

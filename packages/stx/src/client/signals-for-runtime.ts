@@ -753,6 +753,6 @@ catch (e) {
       // the group rendered so the next update animates.
       if (tgReady && tgFirst) tgFlip(newElements, tgFirst, tgName);
       if (tgIsGroup) parent.__stx_tg_init = true;
-    });
+    }, { bindingNode: placeholder });
   }
 `

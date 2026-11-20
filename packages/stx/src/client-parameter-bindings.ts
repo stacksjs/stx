@@ -263,7 +263,7 @@ export function declaredNames(source: string): Set<string> {
 }
 
 /** Module declarations only; expressions, nested bindings and literal text never export names. */
-export function topLevelDeclarationSites(source: string): Array<{ name: string, start: number }> {
+export function topLevelDeclarationSites(source: string): Array<{ name: string, start: number, nameEnd: number }> {
   const analysis = analyze(source)
   const masked = stripBindingLiterals(source)
   const { depths } = bracketDepths(masked)
@@ -271,7 +271,7 @@ export function topLevelDeclarationSites(source: string): Array<{ name: string, 
   // endings matter for ASI). Scan them once, then locate each declaration's
   // preceding token, rather than tokenizing its entire source prefix again.
   const boundaries = [...masked.matchAll(/[A-Za-z_$][\w$]*|\d+(?:[.]\d+)?|[^\s]/g)]
-  const result: Array<{ name: string, start: number }> = []
+  const result: Array<{ name: string, start: number, nameEnd: number }> = []
   for (const site of analysis.sites) {
     if (site.file || site.declarationToken === undefined) continue
     const keyword = analysis.tokens[site.declarationToken]!
@@ -293,7 +293,7 @@ export function topLevelDeclarationSites(source: string): Array<{ name: string, 
         if (!/[\r\n]/.test(gap) || !/^(?:[\w$]+|[)\]])$/.test(previous[0]) || ['return', 'throw', 'yield', 'await', 'new'].includes(previous[0])) continue
       }
     }
-    result.push({ name: site.name, start: keyword.start })
+    result.push({ name: site.name, start: keyword.start, nameEnd: analysis.tokens[site.token].end })
   }
   return result
 }

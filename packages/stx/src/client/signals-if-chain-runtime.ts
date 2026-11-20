@@ -279,7 +279,7 @@ catch (e) { /* a disposer of its own is not this branch's problem */ }
       }
 
       currentIdx = pickedIdx;
-    });
+    }, { bindingNode: chain[0].placeholder });
   }
 
   // Shown branches whose deferred bind found them off the page: an enclosing

@@ -52,6 +52,16 @@ export function signalsProcessElementRuntime(
   // knows where the rest are. The manifest path passes it for every entry, so
   // the tree is never walked; see processFromManifest.
   function processElement(el, scope = componentScope, skipChildren) {
+    var previousElement = suspenseBindingElement;
+    suspenseBindingElement = el && (el.nodeType === Node.ELEMENT_NODE ? el : el.parentElement);
+    try {
+      bindElement(el, scope, skipChildren);
+    } finally {
+      suspenseBindingElement = previousElement;
+    }
+  }
+
+  function bindElement(el, scope, skipChildren) {
     scope = projectedSlotCallerScope(el, scope) || scope;
     // Lazy hydration: if this element has stx-hydrate and hasn't been hydrated
     // yet, defer its subtree processing until the trigger fires.

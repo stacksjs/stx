@@ -1,14 +1,38 @@
 /** Effects, batching, tracking, and signal utility helpers for the client runtime. */
-export const SIGNALS_EFFECT_RUNTIME = `  // ==========================================================================
+export const SIGNALS_EFFECT_RUNTIME = signalsEffectRuntime(true)
+
+export function signalsEffectRuntime(development: boolean): string {
+  return `  // ==========================================================================
   // Effect
   // ==========================================================================
+
+${development ? `  const effectDiagnostics = [];
+  function reportEffectReentry(scopeId) {
+    var code = 'STX_EFFECT_REENTRY';
+    var message = 'Effect repeatedly retriggered before finishing. Move the write to an event or derive the value without writing a dependency.';
+    var trace = new Error(message);
+    effectDiagnostics.push({ code: code, message: message, scopeId: scopeId, stack: trace.stack });
+    if (effectDiagnostics.length > 100) effectDiagnostics.shift();
+    console.warn('[stx] [' + code + '] ' + message, trace);
+  }` : ''}
+  var suspenseBindingElement = null;
 
   function effect(fn, options = {}) {
     let cleanup;
     let isDisposed = false;
+    const bindingNode = options.bindingNode || suspenseBindingElement;
+    let readBoundary = null;
+${development ? `    let depth = 0;
+    let reportedReentry = false;
+    const owner = typeof window !== 'undefined' && window.__STX_CURRENT_ELEMENT__;
+    const scopeId = owner && owner.getAttribute ? owner.getAttribute('data-stx-scope') : null;` : ''}
 
     const runEffect = () => {
       if (isDisposed) return;
+${development ? `      if (++depth === 10 && !reportedReentry) {
+        reportedReentry = true;
+        reportEffectReentry(scopeId);
+      }` : ''}
       if (__stxDevtoolsTracking) { runEffect._runCount++; __stxDevtoolsStats.effectRuns++; }
       if (cleanup) {
         const pending = cleanup;
@@ -17,6 +41,12 @@ export const SIGNALS_EFFECT_RUNTIME = `  // ====================================
         catch (e) { console.error('[stx] effect cleanup error:', e); }
       }
       const prev = activeEffect;
+      const previousReads = activeSuspenseReads;
+      const nextBoundary = suspenseSourcesCreated && bindingNode
+        ? (nearestSuspenseBoundary(bindingNode) || (!bindingNode.isConnected ? readBoundary : null))
+        : null;
+      const reads = nextBoundary ? new Set() : null;
+      activeSuspenseReads = reads;
       activeEffect = runEffect;
       effectStack.push(runEffect);
       try {
@@ -54,6 +84,13 @@ export const SIGNALS_EFFECT_RUNTIME = `  // ====================================
       finally {
         effectStack.pop();
         activeEffect = prev;
+        activeSuspenseReads = previousReads;
+${development ? '        depth--;' : ''}
+        if (!isDisposed) {
+          if (readBoundary && readBoundary !== nextBoundary) updateSuspenseReads(readBoundary, runEffect, bindingNode, null);
+          readBoundary = nextBoundary;
+          if (readBoundary) updateSuspenseReads(readBoundary, runEffect, bindingNode, reads);
+        }
       }
     };
 
@@ -64,6 +101,10 @@ export const SIGNALS_EFFECT_RUNTIME = `  // ====================================
     if (options.immediate !== false) runEffect();
     const dispose = () => {
       isDisposed = true;
+      if (readBoundary) {
+        updateSuspenseReads(readBoundary, runEffect, bindingNode, null);
+        readBoundary = null;
+      }
       // Idempotent. A removed :for row is disposed on removal, and the page
       // tracker that collected its effects on first render still holds the
       // same disposer, which cleanupContainer calls on SPA navigation (#1954).
@@ -160,23 +201,30 @@ finally {
   function untrack(v) {
     if (!(isSignal(v) || (typeof v === 'function' && v._isDerived))) return v;
     const prev = activeEffect;
+    const previousReads = activeSuspenseReads;
     activeEffect = null;
+    activeSuspenseReads = null;
     try {
       return v();
     }
 finally {
-      activeEffect = prev;
+        activeEffect = prev;
+      activeSuspenseReads = previousReads;
     }
   }
 
   function peek(fn) {
     const prev = activeEffect;
+    const previousReads = activeSuspenseReads;
     activeEffect = null;
+    activeSuspenseReads = null;
     try {
       return fn();
     }
 finally {
-      activeEffect = prev;
+        activeEffect = prev;
+      activeSuspenseReads = previousReads;
     }
   }
 `
+}

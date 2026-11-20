@@ -58,6 +58,7 @@ import { inheritedContextBindings, inheritedContextContract } from './inherited-
 import { nativeComponentContext } from './native-component-context'
 import type { NativeComponentContext } from './native-component-context'
 import { stxImportDiagnostics } from './stx-module-imports'
+import { stxReactivityDiagnostics } from './reactivity-diagnostics'
 import { findStxPluginEntry } from './stx-plugin-config'
 
 export type { ScriptBlock, ScriptKind } from './stx-virtual-ts'
@@ -75,6 +76,8 @@ export interface TypecheckDiagnostic {
   line: number
   column: number
   code: number
+  /** Stable identifier for a framework diagnostic. */
+  diagnosticId?: string
   message: string
   category: 'error' | 'warning' | 'suggestion' | 'message'
   blockKind: DiagnosticOrigin
@@ -541,8 +544,8 @@ export async function typecheckStxFiles(
   const virtualFiles = new Map<string, VirtualEntry>()
   /** Per file: the bridge names still crossing implicitly, and where to say so. */
   const scrapedByFile = new Map<string, { names: string[], line: number, kind: ScriptKind }>()
-  /** Names imported from `stx` into a block kind that does not receive them. */
-  const importDiagnostics: TypecheckDiagnostic[] = []
+  /** Framework diagnostics from the original source. */
+  const authoringDiagnostics: TypecheckDiagnostic[] = []
   const checkedFiles: string[] = []
   let blockCount = 0
   let expressionCount = 0
@@ -579,8 +582,9 @@ export async function typecheckStxFiles(
     const interpolationScope = interpolationScopeCode(extractScriptBlocks(source))
     const component = nativeComponentContext(source)
 
+    authoringDiagnostics.push(...stxReactivityDiagnostics(file, source, blocks))
     for (const d of stxImportDiagnostics(source, blocks)) {
-      importDiagnostics.push({
+      authoringDiagnostics.push({
         file,
         line: d.line,
         column: d.column,
@@ -642,7 +646,7 @@ export async function typecheckStxFiles(
   }
 
   if (virtualFiles.size === 0)
-    return { diagnostics: importDiagnostics, checkedFiles, blockCount: 0, expressionCount: 0 }
+    return { diagnostics: authoringDiagnostics, checkedFiles, blockCount: 0, expressionCount: 0 }
 
   /*
    * Resolved against the caller's cwd, not left relative (#1906).
@@ -916,7 +920,7 @@ export async function typecheckStxFiles(
     }
   }
 
-  diagnostics.push(...importDiagnostics)
+  diagnostics.push(...authoringDiagnostics)
 
   // Deduplicate: an expression that appears twice in a file produces the same
   // diagnostic at the same place once per occurrence only if they really are
@@ -949,7 +953,7 @@ export async function typecheckStxFiles(
    * discarded, and calling that "did not run" would make the checker cry wolf
    * on a genuinely clean page.
    */
-  const brokenLib = firstPassAmbient > 0 && unique.length === 0
+  const brokenLib = firstPassAmbient > 0 && !unique.some(d => !d.diagnosticId)
   const abortedSilently = exitCode !== 0 && firstPassPrinted === 0
   const failure = brokenLib || abortedSilently
     ? `${brokenLib
@@ -972,7 +976,7 @@ export function formatTypecheckDiagnostics(diagnostics: TypecheckDiagnostic[]): 
       const where = d.blockKind === 'template'
         ? `[template: ${d.expression ?? ''}]`
         : `[${d.blockKind === 'plain' ? '<script>' : `<script ${d.blockKind}>`}]`
-      return `${d.file}:${d.line}:${d.column}  ${d.category} TS${d.code}  ${d.message}  ${where}`
+      return `${d.file}:${d.line}:${d.column}  ${d.category} ${d.diagnosticId ?? `TS${d.code}`}  ${d.message}  ${where}`
     })
     .join('\n')
 }
