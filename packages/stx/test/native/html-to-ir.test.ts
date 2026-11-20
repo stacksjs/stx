@@ -197,6 +197,7 @@ describe('events', () => {
     const cases = [
       ['press-in', 'onPressIn'],
       ['press-out', 'onPressOut'],
+      ['swipe', 'onSwipe'],
       ['layout', 'onLayout'],
       ['end-reached', 'onEndReached'],
       ['show', 'onShow'],

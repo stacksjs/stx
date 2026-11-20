@@ -12,6 +12,7 @@ export const NATIVE_EVENT_NAMES: Readonly<Record<string, string>> = {
   pressout: 'onPressOut',
   'long-press': 'onLongPress',
   longpress: 'onLongPress',
+  swipe: 'onSwipe',
   contextmenu: 'onLongPress',
   input: 'onChangeText',
   onchange: 'onChange',
