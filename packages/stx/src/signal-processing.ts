@@ -17,7 +17,7 @@ import { escapeScriptBody } from './script-emit'
 import { transformStoreImports } from './store-imports'
 import { shouldTranspileTypeScript, transpileTypeScript } from './utils'
 import { injectSignalsRuntime } from './runtime-injection'
-import { evictOldest, matchScriptElement, scanAtElementPosition } from './html-masking'
+import { evictOldest, matchScriptElement, scanAtElementPosition, scanHtmlTags } from './html-masking'
 import { importOnce } from './lazy-module'
 import { findBodyOpenTag } from './find-body-tag'
 import { stripCommentsAndLiterals } from './strip-literals'
@@ -567,7 +567,10 @@ export function convertSignalDirectivesToAttributes(template: string, context?: 
   // but the SPA router's innerHTML swap reproduces it verbatim, nesting a second
   // <main> inside the container and aborting the view transition. See #1784.
   function convert(input: string): string {
+    if (!input.includes('@if')) return input
     let output = input
+    const tags = scanHtmlTags(input)
+    let tagIndex = 0
     const clientLoopScopes = collectClientLoopScopes(input)
     const loopVarsAt = (position: number): Set<string> => {
       const vars = new Set<string>()
@@ -588,6 +591,10 @@ export function convertSignalDirectivesToAttributes(template: string, context?: 
 
     while ((match = ifDirectiveStart.exec(output)) !== null) {
       const startIdx = match.index
+      while (tagIndex < tags.length && tags[tagIndex]!.end <= startIdx) tagIndex++
+      // Inline attribute directives are evaluated by the server. A reactive
+      // template in their place would end the surrounding opening tag.
+      if (tags[tagIndex] && tags[tagIndex]!.start < startIdx) continue
       const exprStart = startIdx + match[0].length
 
       // Find balanced closing paren for the condition
