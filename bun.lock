@@ -5,7 +5,7 @@
     "": {
       "name": "stx",
       "dependencies": {
-        "@stacksjs/ts-css": "^0.3.21",
+        "@stacksjs/ts-css": "^0.3.27",
         "very-happy-dom": "^0.4.1",
       },
       "devDependencies": {
@@ -1669,7 +1669,7 @@
         "@stacksjs/clapp": "^0.2.17",
         "@stacksjs/desktop": "workspace:*",
         "@stacksjs/sanitizer": "workspace:*",
-        "@stacksjs/ts-css": "^0.3.21",
+        "@stacksjs/ts-css": "^0.3.27",
         "@stacksjs/ts-i18n": "^0.1.11",
         "@types/dom-speech-recognition": "^0.0.12",
         "bun-plugin-stx": "workspace:*",
@@ -2239,7 +2239,7 @@
 
     "@stacksjs/ts-cloud": ["@stacksjs/ts-cloud@0.16.15", "", { "dependencies": { "@stacksjs/ts-xml": "^0.1.2", "@ts-cloud/aws-types": "0.16.15", "@ts-cloud/core": "0.16.15", "hash-wasm": "^4.12.0" }, "bin": { "cloud": "./dist/bin/cli.js" } }, "sha512-hbgzS9URgliBi+tlPeImHtR5Of65nB7wh4ETSb2M3hv23iw0qK7Fj+fB/20fWbFLRBadx0EGIiozLEfENybZXg=="],
 
-    "@stacksjs/ts-css": ["@stacksjs/ts-css@0.3.21", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "bunfig": "^0.15.17" }, "bin": { "cssx": "./dist/bin/cssx.js", "ts-css": "./dist/bin/cli.js" } }, "sha512-OxZEExFdZjcEyW5009o7zIJk4FHLmNZHJ1c2QCSGp+2/SSVxnYKqlQHRp2SaSxkStNxklH1Oi5OGNCjEnF4HgQ=="],
+    "@stacksjs/ts-css": ["@stacksjs/ts-css@0.3.27", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "bunfig": "^0.15.17" }, "bin": { "cssx": "./dist/bin/cssx.js", "ts-css": "./dist/bin/cli.js" } }, "sha512-JM/yQ+fVWgTnGPvwvrlQV1iXQZ9a9ssW/vjiNpvKvlleEEMBIp94PLF7sWb9vEFqAHzM5yeSzkQW0oWQ/ScYBg=="],
 
     "@stacksjs/ts-i18n": ["@stacksjs/ts-i18n@0.1.11", "", { "dependencies": { "@stacksjs/clapp": "^0.2.9", "bunfig": "^0.15.6" }, "bin": { "i18n": "./dist/cli.js" } }, "sha512-33FM0gKdxBy6EUsUZLGAMe0D7QUZ4f/BQXRsQIyzkZgs2+juruUTevPuJGCjWSZsgJuiaBfEJn8Oq8ctuo1OWQ=="],
 
