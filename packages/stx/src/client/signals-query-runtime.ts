@@ -9,6 +9,7 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
   var _queryInflight = new Map();
   var _activeQueries = new Set();
   var _queryWrites = new Map();
+  var _offlineRefreshes = new Map();
 
   function evictQuery(key) {
     var cached = _queryCache.get(key);
@@ -38,20 +39,23 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
     _queryInflight.set(key, entry);
     entry.promise = (async function() {
       try {
-        var response = await __stxFetch('useQuery', selection.url, {
+        var init = {
           method: 'GET',
           headers: { ...selection.headers },
           signal: controller ? controller.signal : undefined
-        }, prepared);
+        };
+        var response = await __stxFetch('useQuery', selection.url, init, prepared);
+        entry.reusable = canReuseDataResponse(response, prepared ? prepared.options : init);
+        if (!entry.reusable && _queryInflight.get(key) === entry) evictQuery(key);
         if (!response.ok) throw await __stxHttpError(response);
         var result = await response.json();
-        // Only the newest request for a key can publish to the shared cache.
-        // Older requests may still have consumers and settle independently.
-        if (_queryInflight.get(key) === entry) cacheQueryResult(key, group, result, cacheTime);
+        // Only the latest request for an identity may update its shared cache.
+        if (entry.reusable && _queryInflight.get(key) === entry) cacheQueryResult(key, group, result, cacheTime);
         return result;
       } finally {
+        entry.latest = _queryInflight.get(key) === entry;
         entry.settled = true;
-        if (_queryInflight.get(key) === entry) _queryInflight.delete(key);
+        if (entry.latest) _queryInflight.delete(key);
       }
     })();
     return entry;
@@ -90,37 +94,59 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
     });
   }
 
-  function refreshActiveQueries(keys, queries, write) {
-    var active = [];
+  function refreshActiveQueries(keys, queries, write, callbacks, extra) {
+    var active = new Map();
     var snapshotTargets = new Map();
     keys.forEach(evictQueryGroup);
     _activeQueries.forEach(function(query) {
       var target = query.target();
       if (!target || !keys.has(target.key)) return;
       var identity = query.identity();
-      active.push({ query: query, target: target, identity: identity });
-      if (target.scope !== write.scope) return;
+      active.set(query, { target: target, identity: identity });
+      if (!write || target.scope !== write.scope) return;
       if (!snapshotTargets.has(target.key)) snapshotTargets.set(target.key, identity);
       else if (snapshotTargets.get(target.key) !== identity) snapshotTargets.set(target.key, null);
     });
+    if (extra) extra.forEach(function(item, query) { active.set(query, item); });
+
     var snapshots = new Map();
-    active.forEach(function(item) {
-      var target = item.target;
-      var key = target.key;
-      var snapshot;
-      // An unnamed header variant or an ambiguous key needs its own GET.
-      // An older overlapping write can also have a superseded snapshot.
-      if (queries && target.scope === write.scope
-        && (target.named || (!target.customHeaders && !__stxFetchHooks.onRequest))
-        && snapshotTargets.get(key) === item.identity
-        && _queryWrites.get(key).latest === write && Object.hasOwn(queries, key)) {
-        snapshot = snapshots.get(key);
-        if (!snapshot) snapshots.set(key, snapshot = { data: queries[key], cached: false });
-      }
-      item.query.refresh(snapshot, target).catch(function(error) {
-        console.error('[stx] query refresh error:', error);
+    var pending = [];
+    batch(function() {
+      active.forEach(function(item, query) {
+        var target = item.target;
+        var key = target.key;
+        var snapshot;
+        // An unnamed header variant or an ambiguous key needs its own GET.
+        if (queries && target.scope === write.scope
+          && (target.named || (!target.customHeaders && !__stxFetchHooks.onRequest))
+          && snapshotTargets.get(key) === item.identity
+          && _queryWrites.get(key).latest === write && Object.hasOwn(queries, key)) {
+          snapshot = snapshots.get(key);
+          if (!snapshot) snapshots.set(key, snapshot = { data: queries[key], cached: false });
+        }
+        pending.push(query.refresh(snapshot, target, callbacks, item).catch(function(error) {
+          console.error('[stx] query refresh error:', error);
+        }));
       });
     });
+    return Promise.all(pending);
+  }
+
+  function queueOfflineRefresh(query, target) {
+    var key = target.key;
+    if (!key || !target.url) return;
+    var pending = _offlineRefreshes.get(key);
+    if (!pending) {
+      _offlineRefreshes.set(key, pending = new Map());
+      queueMicrotask(function() {
+        _offlineRefreshes.delete(key);
+        pending.forEach(function(item, subscriber) {
+          if (subscriber.target() !== item.target) pending.delete(subscriber);
+        });
+        if (pending.size) refreshActiveQueries(new Set([key]), null, null, null, pending);
+      });
+    }
+    pending.set(query, { target: target, runOptions: { background: true } });
   }
 
   function useQuery(url, options) {
@@ -169,6 +195,8 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
     var started = !!hydrated;
     var disposed = false;
     var currentRun = null;
+    var latestRun = null;
+    var reusable = true;
     var effectiveIdentity;
     var stopSelection;
     var stopOffline;
@@ -225,15 +253,16 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
     var subscriber = {
       target: function() { return enabled && target.url ? target : null; },
       identity: function() { return effectiveIdentity || target.identity; },
-      refresh: async function(snapshot, selection) {
-        if (enabled && target === selection) await fetchData({ background: hasValue }, snapshot, selection);
+      refresh: async function(snapshot, selection, callbacks, item) {
+        if ((enabled || item.manual) && target === selection)
+          await fetchData(item.runOptions || { background: hasValue }, snapshot, selection, callbacks);
       }
     };
     if (enabled && hydrated && target.url) _activeQueries.add(subscriber);
 
     function cancel() {
       var previous = currentRun;
-      currentRun = null;
+      currentRun = latestRun = null;
       releaseQuery(previous);
     }
 
@@ -241,9 +270,10 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
       if (next.identity === target.identity && next.failure?.message === target.failure?.message) return false;
       target = next;
       effectiveIdentity = undefined;
+      reusable = true;
       skipInitial = false;
       var previous = currentRun;
-      currentRun = null;
+      currentRun = latestRun = null;
       var key = storageKey(next);
       var saved = key ? __stxQueries.seed(key, next.scope) : undefined;
       answered = false;
@@ -260,7 +290,7 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
       return true;
     }
 
-    async function fetchData(runOptions, snapshot, selection) {
+    async function fetchData(runOptions, snapshot, selection, callbacks) {
       if (disposed) return;
       started = true;
       var background = !!(runOptions && runOptions.background);
@@ -269,11 +299,47 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
       selection = target;
       var previous = currentRun;
       var run = { entry: null, preparing: null };
-      currentRun = run;
+      currentRun = latestRun = run;
       // A refetch cannot rejoin the request it is meant to supersede.
       var previousEntry = previous && previous.entry;
       releaseQuery(previous);
       if (currentRun !== run) return;
+
+      function finish(publish) {
+        if (currentRun !== run) return;
+        batch(function() {
+          if (publish) publish();
+          if (currentRun !== run) return;
+          currentRun = null;
+          loading.set(false);
+          if (!currentRun) isFetching.set(false);
+        });
+      }
+
+      function notifyAfterCommit(callback) {
+        var notify = function() { if (latestRun === run) callback(); };
+        if (callbacks) callbacks.push(notify);
+        else notify();
+      }
+
+      function succeeded(result) {
+        if (!options.onSuccess) return;
+        notifyAfterCommit(function() {
+          try { options.onSuccess(result); }
+          catch (failure) {
+            if (latestRun !== run) return;
+            error.set(failure && failure.message || 'Query failed');
+            if (options.onError) options.onError(failure);
+          }
+        });
+      }
+
+      function discardIfRequired(entry) {
+        if (!entry || entry.reusable !== false) return;
+        reusable = false;
+        var key = storageKey(selection);
+        if (key && entry.latest) __stxQueries.discard(key, selection.scope);
+      }
 
       try {
         if (selection.failure) throw selection.failure;
@@ -328,22 +394,24 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
           hasValue = true;
           var fresh = Date.now() - cached.timestamp < staleTime;
           if (fresh) answered = true;
-          batch(function() {
+          var publishCached = function() {
             show(cachedResult);
             if (fresh) error.set(null);
             isStale.set(!fresh);
-          });
-          if (currentRun !== run) return;
+          };
           if (fresh) {
-            if (options.onSuccess) options.onSuccess(cachedResult);
+            finish(publishCached);
+            succeeded(cachedResult);
             return;
           }
+          batch(publishCached);
+          if (currentRun !== run) return;
         }
 
         var rawResult;
         if (snapshot) {
           rawResult = snapshot.data;
-          if (!snapshot.cached && cacheTime > 0 && !__stxFetchHooks.onRequest) {
+          if (reusable && !snapshot.cached && cacheTime > 0 && !__stxFetchHooks.onRequest) {
             cacheQueryResult(key, selection.key, rawResult, cacheTime);
             snapshot.cached = true;
           }
@@ -363,41 +431,41 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
             isFetching.set(true);
           });
           rawResult = await entry.promise;
+          if (currentRun !== run) return;
+          if (entry.reusable) reusable = true;
+          else discardIfRequired(entry);
         }
         if (currentRun !== run) return;
         var result = transform(rawResult);
         if (currentRun !== run) return;
         answered = true;
         hasValue = true;
-        batch(function() {
+        var keep = storageKey(selection);
+        if (keep && reusable && (snapshot || entry.latest)) __stxQueries.persist(keep, result, selection.scope);
+        finish(function() {
           show(result);
           error.set(null);
           isStale.set(false);
         });
-        if (currentRun !== run) return;
-        var keep = storageKey(selection);
-        if (keep) __stxQueries.persist(keep, result, selection.scope);
-        if (options.onSuccess) options.onSuccess(result);
+        succeeded(result);
       } catch (e) {
         if (currentRun !== run || (e && e.name === 'AbortError')) return;
-        error.set(e && e.message || 'Query failed');
-        if (currentRun === run && options.onError) options.onError(e);
+        discardIfRequired(entry);
+        finish(function() { error.set(e && e.message || 'Query failed'); });
+        if (options.onError) notifyAfterCommit(function() { options.onError(e); });
       } finally {
         releaseQuery(run);
-        if (currentRun === run) {
-          currentRun = null;
-          batch(function() {
-            loading.set(false);
-            isFetching.set(false);
-          });
-        }
+        finish();
       }
     }
 
-    function invalidate(runOptions) {
+    async function invalidate(runOptions) {
+      if (disposed) return;
       var next = peek(readTarget);
-      if (next.key) evictQueryGroup(next.key);
-      return fetchData(runOptions, undefined, next);
+      select(next);
+      if (!target.key) return fetchData(runOptions, undefined, target);
+      var extra = new Map([[subscriber, { target: target, runOptions: runOptions || {}, manual: true }]]);
+      await refreshActiveQueries(new Set([target.key]), null, null, null, extra);
     }
 
     var backgroundRun = { background: true };
@@ -428,12 +496,12 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
       stopOffline = __stxQueries.watch({
         target: overlayTarget,
         updated: function() {
-          if (peek(readEnabled)) invalidate(backgroundRun);
+          if (peek(readEnabled)) queueOfflineRefresh(subscriber, target);
         },
         outbox: function(sent) {
           if (sent && peek(readEnabled)) {
             base = __stxQueries.overlay(overlayTarget(), base, sent.id);
-            invalidate(backgroundRun);
+            queueOfflineRefresh(subscriber, target);
           }
           show(base);
         }
@@ -550,6 +618,7 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
           result = result.data;
         }
         var transformed = options.transform ? options.transform(result) : result;
+        var afterCommit = [];
         batch(function() {
           if (pending.has(id)) {
             if (id > committedId) {
@@ -560,7 +629,11 @@ export const SIGNALS_QUERY_RUNTIME = `  // =====================================
             pending.delete(id);
             publish();
           }
-          if (keys.size) refreshActiveQueries(keys, queries, write);
+          if (keys.size) refreshActiveQueries(keys, queries, write, afterCommit);
+        });
+        afterCommit.forEach(function(notify) {
+          try { notify(); }
+          catch (error) { console.error('[stx] query refresh callback error:', error); }
         });
         if (options.onSuccess) options.onSuccess(transformed);
         return transformed;

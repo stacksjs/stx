@@ -53,6 +53,21 @@ const stops: Array<() => void> = []
 afterEach(() => { while (stops.length) stops.pop()!() })
 
 describe('cachedQuery', () => {
+  it('keeps no reusable copy when the response says no-store', async () => {
+    const first = setUp()
+    let calls = 0
+    const options = {
+      url: '/api/current', initial: 0, staleTime: 60_000,
+      fetch: async () => Response.json(++calls, { headers: { 'Cache-Control': 'no-store' } }),
+    }
+    const query = first.cache.cachedQuery('current', options)
+    expect(await query.load()).toBe(1)
+    expect(await query.load()).toBe(2)
+    const next = setUp(first.storage, first.backend)
+    const reloaded = next.cache.cachedQuery('current', options)
+    expect(reloaded.data()).toBe(0)
+    expect(await reloaded.load()).toBe(3)
+  })
   it('seeds synchronously from what this account kept, and only this account', async () => {
     const first = setUp()
     first.server.answer = () => ({ days: 7 })

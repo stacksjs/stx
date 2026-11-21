@@ -22,12 +22,24 @@ const showFirst = state(true)
 const showRetained = state(true)
 const rows = useAsyncData(savedLoader('rows'))
 const condition = useAsyncData(savedLoader('condition'))
+const selection = state('first')
+const streams = []
+const streamed = useAsyncData(selection, (value, signal) => ({
+  [Symbol.asyncIterator]() {
+    const stream = { value, signal, closed: false, next: null }
+    streams.push(stream)
+    return {
+      next: () => new Promise(resolve => { stream.next = resolve }),
+      return: () => { stream.closed = true; return Promise.resolve({ done: true }) },
+    }
+  },
+}))
 const displayed = memo(() => showFirst() ? first.data()?.name : second.data()?.name)
 const displayRuns = []
 // Populate the memo before any boundary reads it. A plain effect should not
 // rerun when its value is equal and only the async dependency changed.
 effect(() => displayRuns.push(displayed()))
-window.asyncTest = { pending, second, showFirst, showRetained, displayRuns }
+window.asyncTest = { pending, second, showFirst, showRetained, displayRuns, selection, streams, streamed }
 </script>
 <main>
   <Suspense fallback="Outer pending">
@@ -49,6 +61,9 @@ window.asyncTest = { pending, second, showFirst, showRetained, displayRuns }
     </Suspense>
     <Suspense fallback="Untracked pending">
       <span id="ignored" x-text="inactive.data()?.name ?? ''"></span>
+    </Suspense>
+    <Suspense fallback="Stream pending">
+      <span id="stream" x-text="streamed.data() ?? ''"></span>
     </Suspense>
   </Suspense>
 </main>
@@ -82,6 +97,18 @@ window.asyncTest = { pending, second, showFirst, showRetained, displayRuns }
     expect(await region('retained')).toBe('Retained pending')
     expect(await region('rows')).toBe('Rows pending')
     expect(await region('condition')).toBe('Condition pending')
+    expect(await region('stream')).toBe('Stream pending')
+    await run("asyncTest.streams[0].next({ done: false, value: 'first value' })")
+    expect(await region('stream')).toBe('first value')
+    expect(await view.evaluate('asyncTest.streamed.isFetching()')).toBe(true)
+    await run("asyncTest.selection.set('second')")
+    expect(await region('stream')).toBe('Stream pending')
+    expect(await view.evaluate('asyncTest.streams[0].signal.aborted && asyncTest.streams[0].closed')).toBe(true)
+    expect(await view.evaluate('asyncTest.streams[1].value')).toBe('second')
+    await run("asyncTest.streams[0].next({ done: true }); asyncTest.streams[1].next({ done: false, value: 'second value' })")
+    expect(await region('stream')).toBe('second value')
+    await run('asyncTest.streams[1].next({ done: true })')
+    expect(await view.evaluate('asyncTest.streamed.isFetching()')).toBe(false)
     await run('asyncTest.showRetained.set(false)')
     expect(await region('retained')).toBe('')
     await run('asyncTest.showRetained.set(true)')

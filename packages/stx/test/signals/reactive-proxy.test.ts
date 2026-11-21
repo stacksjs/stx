@@ -208,6 +208,24 @@ for (const runtime of ['browser', 'module'] as const) {
       }
     }
 
+    it('reports native array mutations atomically and preserves method receivers', async () => {
+      const { reactive, effect } = await getRuntime()
+      const list = reactive([1, 2, 3])
+      const seen: string[] = []
+      const stop = effect(() => { seen.push(list.join(',')) })
+      const reverse = list.reverse
+      expect(reverse).toBe(list.reverse)
+      expect(reverse.call(list)).toBe(list)
+      expect(list.splice(1, 1, 9, 8)).toEqual([2])
+      list.sort((a, b) => a - b)
+      expect(seen).toEqual(['1,2,3', '3,2,1', '3,9,8,1', '1,3,8,9'])
+      const custom = function () { return this }
+      Object.defineProperty(list, 'reverse', { value: custom })
+      expect(list.reverse).toBe(custom)
+      expect(list.reverse()).toBe(list)
+      stop()
+    })
+
     it('tracks value, presence, and enumerable keys independently', async () => {
       const { reactive, effect } = await getRuntime()
       const record = reactive({ field: undefined as number | undefined })

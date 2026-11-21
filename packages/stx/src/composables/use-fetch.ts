@@ -35,7 +35,8 @@
  * ```
  */
 import type { Signal } from '../signals-api'
-import { batch, state } from '../signals-api'
+import { canReuseDataResponse } from '../http-cache-policy'
+import { batch, effect, peek, state } from '../signals-api'
 
 /** @internal Closure-free: also embedded in the generated browser runtime. */
 export function readHydratedData(key?: string, hydrate = true, transform?: (data: any) => unknown): { data: unknown, error?: Error } | undefined {
@@ -99,7 +100,7 @@ export interface FetchOptions<T = unknown> extends Omit<RequestInit, 'body'> {
   retry?: number
   /** Retry delay in milliseconds (default: 1000) */
   retryDelay?: number
-  /** Cache key for deduplication */
+  /** Hydration key and optional namespace for cached responses. */
   key?: string
   /** Reuse matching useServerData data for the initial load (default: true). */
   hydrate?: boolean
@@ -148,7 +149,26 @@ export interface FetchRef<T> {
 }
 
 // Simple in-memory cache shared across useFetch instances.
-const fetchCache = new Map<string, { data: unknown, timestamp: number }>()
+interface FetchCacheEntry {
+  group: string
+  data: unknown
+  timestamp: number
+  status: number
+  statusText: string
+}
+const fetchCache = new Map<string, FetchCacheEntry>()
+const cacheWriters = new Map<string, { group: string }>()
+const parserIds = new WeakMap<NonNullable<FetchOptions['parseResponse']>, number>()
+let nextParserId = 0
+const readJSON = (response: Response): Promise<unknown> => response.json()
+
+function requestBody(body: FetchOptions['body'], headers: Headers): BodyInit | null | undefined {
+  if (body == null || typeof body === 'string') return body
+  if (body instanceof FormData || body instanceof URLSearchParams || body instanceof Blob
+    || body instanceof ReadableStream || body instanceof ArrayBuffer || ArrayBuffer.isView(body)) return body as BodyInit
+  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+  return JSON.stringify(body)
+}
 
 function buildURL(url: string, baseURL?: string, query?: Record<string, string | number | boolean | undefined>): string {
   let fullURL = baseURL ? `${baseURL.replace(/\/$/, '')}/${url.replace(/^\//, '')}` : url
@@ -174,10 +194,14 @@ export function useFetch<T = unknown>(
   url: string | (() => string),
   options: FetchOptions<T> = {},
 ): FetchRef<T> {
+  return createFetch(url, options).resource
+}
+
+function createFetch<T>(url: string | (() => string), options: FetchOptions<T>) {
   const {
     immediate = true,
     transform,
-    parseResponse = (r: Response) => r.json(),
+    parseResponse = readJSON,
     timeout = 30000,
     retry = 0,
     retryDelay = 1000,
@@ -189,8 +213,6 @@ export function useFetch<T = unknown>(
     initialData = null as T | null,
     baseURL,
     query,
-    body,
-    ...fetchOptions
   } = options
 
   const hydrated = readHydratedData(key, hydrate, transform)
@@ -205,13 +227,15 @@ export function useFetch<T = unknown>(
   let abortController: AbortController | null = null
   let focusHandler: (() => void) | null = null
   let intervalId: ReturnType<typeof setInterval> | null = null
+  let stopURL: (() => void) | undefined
+  let lastURL: string | undefined
 
   const getURL = (): string => {
     const rawURL = typeof url === 'function' ? url() : url
-    return buildURL(rawURL, baseURL, query)
+    return rawURL ? buildURL(rawURL, baseURL, query) : ''
   }
 
-  const doFetch = async (background = false): Promise<void> => {
+  const doFetch = async (background = false, selectedURL?: string, body = options.body): Promise<T | undefined> => {
     const previous = abortController
     const controller = new AbortController()
     abortController = controller
@@ -219,17 +243,62 @@ export function useFetch<T = unknown>(
     const ownsState = () => abortController === controller
     if (!ownsState()) return
 
+    function finish(publish?: () => void) {
+      if (!ownsState()) return
+      batch(() => {
+        publish?.()
+        if (!ownsState()) return
+        abortController = null
+        loading.set(false)
+        if (!abortController) isFetching.set(false)
+      })
+    }
+
+    let cacheKey: string | undefined
+    let writer: { group: string } | undefined
     try {
-      const requestURL = getURL()
+      const requestURL = selectedURL ?? getURL()
+      if (ownsState()) lastURL = requestURL
       if (!requestURL || !ownsState()) return
-      const cacheKey = key || requestURL
-      const cached = cacheTime > 0 ? fetchCache.get(cacheKey) : undefined
-      if (cached && Date.now() - cached.timestamp < cacheTime) {
-        batch(() => {
-          data.set(cached.data as T)
-          error.set(null)
-        })
-        return
+      const headers = new Headers(options.headers)
+      const init: RequestInit = {
+        headers,
+        body: requestBody(body, headers),
+        signal: controller.signal,
+        method: options.method,
+        cache: options.cache,
+        credentials: options.credentials,
+        integrity: options.integrity,
+        keepalive: options.keepalive,
+        mode: options.mode,
+        redirect: options.redirect,
+        referrer: options.referrer,
+        referrerPolicy: options.referrerPolicy,
+      }
+      const method = (init.method || 'GET').toUpperCase()
+      // Cache parsed raw data only for equivalent read requests.
+      if (cacheTime > 0 && (method === 'GET' || method === 'HEAD') && init.body == null) {
+        let parserId = parserIds.get(parseResponse)
+        if (parserId === undefined) parserIds.set(parseResponse, parserId = ++nextParserId)
+        const group = key || requestURL
+        cacheKey = JSON.stringify([group, requestURL, method, [...headers], parserId,
+          init.credentials, init.mode, init.redirect, init.referrer, init.referrerPolicy, init.integrity])
+        const cached = fetchCache.get(cacheKey)
+        if (cached && init.cache !== 'reload' && init.cache !== 'no-cache' && init.cache !== 'no-store'
+          && Date.now() - cached.timestamp < cacheTime) {
+          const payload = transform ? transform(cached.data) : cached.data as T
+          if (!ownsState()) return
+          finish(() => {
+            status.set(cached.status)
+            statusText.set(cached.statusText)
+            data.set(payload)
+            error.set(null)
+          })
+          return payload
+        }
+        if (cached && Date.now() - cached.timestamp >= cacheTime) fetchCache.delete(cacheKey)
+        writer = { group }
+        cacheWriters.set(cacheKey, writer)
       }
 
       batch(() => {
@@ -243,27 +312,13 @@ export function useFetch<T = unknown>(
       for (let attempt = 0; ownsState(); attempt++) {
         const timeoutId = setTimeout(() => controller.abort(), timeout)
         try {
-          let requestBody: BodyInit | undefined
-          let { headers } = fetchOptions
-          if (body) {
-            if (typeof body === 'object' && !(body instanceof FormData) && !(body instanceof URLSearchParams)) {
-              requestBody = JSON.stringify(body)
-              headers = new Headers(headers)
-              if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
-            }
-            else {
-              requestBody = body as BodyInit
-            }
-          }
           if (!ownsState()) return
-          const response = await fetch(requestURL, {
-            ...fetchOptions,
-            headers,
-            body: requestBody,
-            signal: controller.signal,
-          })
+          const response = await fetch(requestURL, init)
           clearTimeout(timeoutId)
           if (!ownsState() || controller.signal.aborted) return
+          const reusable = cacheKey !== undefined && canReuseDataResponse(response, init)
+          if (!reusable && cacheKey !== undefined && cacheWriters.get(cacheKey) === writer)
+            fetchCache.delete(cacheKey)
           batch(() => {
             status.set(response.status)
             statusText.set(response.statusText)
@@ -311,16 +366,17 @@ export function useFetch<T = unknown>(
             throw httpError
           }
 
-          let payload = await parseResponse(response) as T
+          const raw = await parseResponse(response)
           if (!ownsState()) return
-          if (transform) payload = transform(payload)
+          const payload = transform ? transform(raw) : raw as T
           if (!ownsState()) return
-          if (cacheTime > 0) fetchCache.set(cacheKey, { data: payload, timestamp: Date.now() })
-          batch(() => {
+          if (reusable && cacheKey !== undefined && writer && cacheWriters.get(cacheKey) === writer)
+            fetchCache.set(cacheKey, { group: writer.group, data: raw, timestamp: Date.now(), status: response.status, statusText: response.statusText })
+          finish(() => {
             data.set(payload)
-            if (background) error.set(null)
+            error.set(null)
           })
-          return
+          return payload
         }
         catch (err) {
           if (!ownsState() || controller.signal.aborted || (err instanceof Error && err.name === 'AbortError')) return
@@ -343,16 +399,11 @@ export function useFetch<T = unknown>(
       }
     }
     catch (err) {
-      if (ownsState()) error.set(err instanceof Error ? err : new Error(String(err)))
+      finish(() => error.set(err instanceof Error ? err : new Error(String(err))))
     }
     finally {
-      if (ownsState()) {
-        abortController = null
-        batch(() => {
-          loading.set(false)
-          isFetching.set(false)
-        })
-      }
+      if (cacheKey !== undefined && cacheWriters.get(cacheKey) === writer) cacheWriters.delete(cacheKey)
+      finish()
     }
   }
 
@@ -376,43 +427,66 @@ export function useFetch<T = unknown>(
     intervalId = setInterval(() => { if (!isFetching()) void doFetch(true) }, refetchInterval)
   }
 
+  const followURL = (fetchInitially: boolean) => {
+    if (typeof url !== 'function' || stopURL) return
+    let first = true
+    stopURL = effect(() => {
+      const selected = getURL()
+      if (!first && selected === lastURL) return
+      lastURL = selected
+      const shouldFetch = !first || fetchInitially
+      first = false
+      if (shouldFetch) peek(() => { void doFetch(false, selected) })
+    })
+  }
+
+  const execute = (body?: FetchOptions['body']) => {
+    followURL(false)
+    setupRefetchOnFocus()
+    setupRefetchInterval()
+    return doFetch(false, undefined, body)
+  }
+
+  followURL(immediate && !hydrated)
   if (immediate) {
-    if (!hydrated) void doFetch()
+    if (typeof url !== 'function' && !hydrated) void doFetch()
     setupRefetchOnFocus()
     setupRefetchInterval()
   }
 
-  return {
+  const resource: FetchRef<T> = {
     data,
     loading,
     isFetching,
     error,
     status,
     statusText,
-    refetch: (refetchOptions?: RefetchOptions) => doFetch(!!refetchOptions?.background),
-    execute: () => {
-      setupRefetchOnFocus()
-      setupRefetchInterval()
-      return doFetch()
+    refetch: async (refetchOptions?: RefetchOptions) => {
+      followURL(false)
+      await doFetch(!!refetchOptions?.background)
     },
+    execute: async () => { await execute() },
     abort: () => {
       const controller = abortController
       abortController = null
+      stopURL?.()
+      stopURL = undefined
       if (focusHandler) {
         document.removeEventListener('visibilitychange', focusHandler)
         focusHandler = null
       }
-      if (intervalId) {
+      if (intervalId !== null) {
         clearInterval(intervalId)
         intervalId = null
       }
       batch(() => {
         loading.set(false)
-        isFetching.set(false)
+        if (!abortController) isFetching.set(false)
       })
       controller?.abort()
     },
   }
+  return { resource, execute }
 }
 
 export interface AsyncDataOptions<T> {
@@ -426,22 +500,48 @@ export interface AsyncDataOptions<T> {
   suspense?: boolean
 }
 
-interface AsyncDataCache {
-  keyed: Map<string, AsyncDataCacheEntry>
-  loaders: WeakMap<object, AsyncDataCacheEntry>
-}
-interface AsyncDataCacheEntry { data?: unknown, timestamp?: number }
+export type AsyncDataValue<T> = T | AsyncIterable<T> | PromiseLike<T | AsyncIterable<T>>
 
-/** @internal Closure-free so the browser and module runtimes use the same request lifecycle. */
-export function createAsyncData<T>(
-  fetcher: (signal: AbortSignal) => T | PromiseLike<T>,
+type AsyncDataUpdate =
+  | { kind: 'value', value: unknown }
+  | { kind: 'done', result?: { value: unknown } }
+  | { kind: 'error', cause: unknown }
+
+interface AsyncDataEntry {
+  controller: AbortController
+  listeners: Set<(update: AsyncDataUpdate) => void>
+  cacheTime: number
+  iterator?: AsyncIterator<unknown>
+  result?: { value: unknown }
+  timestamp?: number
+  settled: boolean
+}
+
+type AsyncDataSources = Map<unknown, AsyncDataEntry>
+interface AsyncDataCache {
+  keyed: Map<string, AsyncDataSources>
+  loaders: WeakMap<object, AsyncDataSources>
+}
+
+interface AsyncDataRun {
+  entry?: AsyncDataEntry
+  release?: () => void
+  resolve: () => void
+}
+
+/** @internal Closure-free so the browser and module runtimes use the same resource. */
+export function createAsyncData<T, S>(
+  fetcher: ((signal: AbortSignal) => AsyncDataValue<T>) | ((source: S, signal: AbortSignal) => AsyncDataValue<T>),
   options: AsyncDataOptions<T>,
   state: typeof import('../signals-api').state,
   batch: typeof import('../signals-api').batch,
+  observe: typeof import('../signals-api').effect,
+  peek: typeof import('../signals-api').peek,
   readHydratedData: typeof import('./use-fetch').readHydratedData,
   cache: AsyncDataCache,
+  source?: () => S,
   trackRead?: (data: Signal<T | null>, loading: Signal<boolean>, error: () => Error | null) => Signal<T | null>,
-): FetchRef<T> {
+): { resource: FetchRef<T>, pause: () => void, resume: () => void } {
   const { immediate = true, transform, initialData = null, key, hydrate = true, cacheTime = 0 } = options
   const snapshot = readHydratedData(key, hydrate, transform)
   const data = state<T | null>(snapshot ? snapshot.data as T | null : initialData)
@@ -449,65 +549,210 @@ export function createAsyncData<T>(
   const isFetching = state(false)
   const error = state<Error | null>(snapshot?.error ?? null)
   let hasValue = snapshot ? !snapshot.error : options.initialData !== undefined
-  let current: AbortController | undefined
-  const cacheKey = key || fetcher
+  let current: AsyncDataRun | undefined
+  let stopSource: (() => void) | undefined
+  let selected: S | undefined
+  let observedSource = false
+  let restart = false
+  let paused = false
 
+  function cancelIterator(iterator?: AsyncIterator<unknown>) {
+    try { void Promise.resolve(iterator?.return?.()).catch(() => {}) }
+    catch { /* A canceled iterator may already be closed. */ }
+  }
 
-  async function load(): Promise<void> {
-    const previous = current
-    const request = new AbortController()
-    current = request
-    previous?.abort()
-    if (current !== request) return
+  function retire(entry: AsyncDataEntry, remove: () => void) {
+    if (entry.settled || entry.listeners.size) return
+    entry.settled = true
+    remove()
+    entry.controller.abort()
+    const iterator = entry.iterator
+    entry.iterator = undefined
+    cancelIterator(iterator)
+  }
 
-    const entries = cacheTime > 0
-      ? (typeof cacheKey === 'string' ? cache.keyed : cache.loaders) as Pick<Map<typeof cacheKey, AsyncDataCacheEntry>, 'get' | 'set' | 'delete'>
-      : undefined
-    const cached = entries?.get(cacheKey)
-    const cacheHit = cached?.timestamp !== undefined && Date.now() - cached.timestamp < cacheTime
-    // Give the latest loader ownership of the cache record, even across consumers.
-    const cacheRun: { data?: T, timestamp?: number } = {}
-    if (!cacheHit) {
-      entries?.set(cacheKey, cacheRun)
-      batch(() => {
-        loading.set(!hasValue)
-        isFetching.set(true)
-        if (!hasValue) error.set(null)
-      })
+  async function pump(
+    entry: AsyncDataEntry,
+    input: S | undefined,
+    remove: () => void,
+    stored: () => boolean,
+  ): Promise<void> {
+    function publish(update: AsyncDataUpdate) {
+      for (const listener of [...entry.listeners]) listener(update)
+    }
+
+    function settle(update: AsyncDataUpdate) {
+      if (entry.settled) return
+      entry.settled = true
+      if (update.kind === 'done' && entry.result && entry.cacheTime > 0 && stored()) {
+        entry.timestamp = Date.now()
+        if (Number.isFinite(entry.cacheTime)) {
+          const timer = setTimeout(remove, entry.cacheTime) as unknown as { unref?: () => void }
+          timer.unref?.()
+        }
+      }
+      else remove()
+      publish(update)
+      entry.listeners.clear()
     }
 
     try {
-      if (current !== request) return
-      // TypeScript cannot reduce Awaited<T> for an unconstrained T.
-      const payload = cacheHit ? cached.data as T : await fetcher(request.signal) as T
-      if (current !== request) return
-      const value = transform ? transform(payload) : payload
-      if (current !== request) return
-      if (!cacheHit) {
-        cacheRun.data = payload
-        cacheRun.timestamp = Date.now()
+      const result = await (source
+        ? (fetcher as (input: S, signal: AbortSignal) => AsyncDataValue<T>)(input as S, entry.controller.signal)
+        : (fetcher as (signal: AbortSignal) => AsyncDataValue<T>)(entry.controller.signal))
+      const iterable = result as AsyncIterable<T> | null | undefined
+      if (typeof iterable?.[Symbol.asyncIterator] === 'function') {
+        const iterator = iterable[Symbol.asyncIterator]()
+        if (entry.settled) {
+          cancelIterator(iterator)
+          return
+        }
+        entry.iterator = iterator
+        while (!entry.settled) {
+          const step = await iterator.next()
+          if (entry.settled) return
+          if (step.done) {
+            entry.iterator = undefined
+            settle({ kind: 'done' })
+            return
+          }
+          entry.result = { value: step.value }
+          publish({ kind: 'value', value: step.value })
+        }
       }
-      hasValue = true
-      batch(() => {
-        data.set(value)
-        error.set(null)
-      })
+      else if (!entry.settled) {
+        entry.result = { value: result }
+        settle({ kind: 'done', result: entry.result })
+      }
     }
-    catch (failure) {
-      if (current === request) error.set(failure instanceof Error ? failure : new Error(String(failure)))
-    }
-    finally {
-      if (cacheRun.timestamp === undefined && entries?.get(cacheKey) === cacheRun) entries.delete(cacheKey)
-      finish(request)
+    catch (cause) {
+      if (entry.settled) return
+      const iterator = entry.iterator
+      entry.iterator = undefined
+      settle({ kind: 'error', cause })
+      cancelIterator(iterator)
     }
   }
 
-  function finish(request: AbortController): void {
-    if (current !== request) return
-    current = undefined
+  function complete(run: AsyncDataRun, publish?: () => void) {
+    if (current !== run) return
     batch(() => {
+      publish?.()
+      if (current !== run) return
+      current = undefined
       loading.set(false)
-      isFetching.set(false)
+      if (!current) isFetching.set(false)
+    })
+    run.release?.()
+    run.resolve()
+  }
+
+  function load(input: S | undefined): Promise<void> {
+    let resolve!: () => void
+    const done = new Promise<void>((finish) => { resolve = finish })
+    const previous = current
+    const run: AsyncDataRun = { resolve }
+    current = run
+    previous?.release?.()
+    previous?.resolve()
+    if (current !== run) return done
+
+    const bucket = key ? cache.keyed.get(key) : cache.loaders.get(fetcher)
+    const entries = bucket || new Map<unknown, AsyncDataEntry>()
+    if (!bucket) {
+      if (key) cache.keyed.set(key, entries)
+      else cache.loaders.set(fetcher, entries)
+    }
+
+    function receive(update: AsyncDataUpdate) {
+      if (current !== run) return
+      try {
+        if (update.kind === 'error') {
+          complete(run, () => error.set(update.cause instanceof Error ? update.cause : new Error(String(update.cause))))
+          return
+        }
+        const result = update.kind === 'value' ? update : update.result
+        const raw = result?.value as T
+        const value = result && transform ? transform(raw) : raw
+        if (current !== run) return
+        const publish = () => {
+          if (result) {
+            hasValue = true
+            data.set(value)
+          }
+          if (current === run) error.set(null)
+        }
+        if (update.kind === 'done') complete(run, publish)
+        else batch(() => {
+          publish()
+          if (current === run) loading.set(false)
+        })
+      }
+      catch (cause) {
+        complete(run, () => error.set(cause instanceof Error ? cause : new Error(String(cause))))
+      }
+    }
+
+    const found = entries.get(input)
+    if (cacheTime > 0 && found?.timestamp !== undefined && Date.now() - found.timestamp < cacheTime) {
+      receive({ kind: 'done', result: found.result })
+      return done
+    }
+
+    // Distinct consumers join one run. Refetching your own run starts a new
+    // one while other readers can finish with the entry they already own.
+    const joined = found && !found.settled && found !== previous?.entry
+    const entry: AsyncDataEntry = joined
+      ? found
+      : { controller: new AbortController(), listeners: new Set(), cacheTime, settled: false }
+    if (!joined) entries.set(input, entry)
+    else entry.cacheTime = Math.max(entry.cacheTime, cacheTime)
+
+    const stored = () => entries.get(input) === entry
+    const remove = () => {
+      if (!stored()) return
+      entries.delete(input)
+      if (entries.size) return
+      if (key && cache.keyed.get(key) === entries) cache.keyed.delete(key)
+      if (!key && cache.loaders.get(fetcher) === entries) cache.loaders.delete(fetcher)
+    }
+    run.entry = entry
+    run.release = () => {
+      entry.listeners.delete(receive)
+      retire(entry, remove)
+    }
+    entry.listeners.add(receive)
+    batch(() => {
+      loading.set(!hasValue)
+      isFetching.set(true)
+      if (!hasValue) error.set(null)
+    })
+    // Reactive observers may transfer their interest to a second consumer
+    // before this creator finishes publishing its loading state.
+    if (!joined && !entry.settled) void pump(entry, input, remove, stored)
+    else if (joined && current === run && entry.result) receive({ kind: 'value', value: entry.result.value })
+    return done
+  }
+
+  function followSource(fetchInitially: boolean) {
+    if (!source || stopSource) return
+    let first = true
+    stopSource = observe(() => {
+      const next = source()
+      if (!first && Object.is(selected, next)) return
+      const changed = observedSource && !Object.is(selected, next)
+      const shouldFetch = first ? fetchInitially || changed : true
+      selected = next
+      observedSource = true
+      first = false
+      if (!shouldFetch) return
+      peek(() => batch(() => {
+        if (changed) {
+          hasValue = false
+          data.set(null)
+        }
+        void load(next)
+      }))
     })
   }
 
@@ -518,34 +763,79 @@ export function createAsyncData<T>(
     })
     : data
 
-  if (immediate && !snapshot) void load()
+  followSource(immediate && !snapshot)
+  if (!source && immediate && !snapshot) void load(undefined)
+
+  function pause(restartPending = true) {
+    if (paused) {
+      if (!restartPending) restart = false
+      return
+    }
+    paused = true
+    restart = restartPending && !!current
+    stopSource?.()
+    stopSource = undefined
+    if (current) complete(current)
+  }
+
+  function resume() {
+    if (!paused) return
+    paused = false
+    const pending = restart
+    restart = false
+    followSource(pending)
+    if (!source && pending) void load(undefined)
+  }
+
+  function refetch(): Promise<void> {
+    const input = source ? peek(source) : undefined
+    const changed = observedSource && !Object.is(selected, input)
+    selected = input
+    if (paused) {
+      paused = false
+      restart = false
+      followSource(false)
+    }
+    if (!changed) return load(input)
+    let result!: Promise<void>
+    batch(() => {
+      hasValue = false
+      data.set(null)
+      result = load(input)
+    })
+    return result
+  }
 
   return {
-    data: trackedData,
-    loading,
-    isFetching,
-    error,
-    status: state<number | null>(null),
-    statusText: state<string | null>(null),
-    refetch: load,
-    execute: load,
-    abort() {
-      const request = current
-      if (!request) return
-      finish(request)
-      request.abort()
+    resource: {
+      data: trackedData,
+      loading,
+      isFetching,
+      error,
+      status: state<number | null>(null),
+      statusText: state<string | null>(null),
+      refetch,
+      execute: refetch,
+      abort: () => pause(false),
     },
+    pause,
+    resume,
   }
 }
 
 const asyncDataCache: AsyncDataCache = { keyed: new Map(), loaders: new WeakMap() }
 
-/** Resolve arbitrary async data into a signal and keep its last good value during refresh. */
-export function useAsyncData<T>(
-  fetcher: (signal: AbortSignal) => T | PromiseLike<T>,
+/** Resolve a loader, optionally following a reactive source and consuming async iterables. */
+export function useAsyncData<T>(fetcher: (signal: AbortSignal) => AsyncDataValue<T>, options?: AsyncDataOptions<T>): FetchRef<T>
+export function useAsyncData<S, T>(source: () => S, fetcher: (value: S, signal: AbortSignal) => AsyncDataValue<T>, options?: AsyncDataOptions<T>): FetchRef<T>
+export function useAsyncData<T, S>(
+  sourceOrFetcher: (() => S) | ((signal: AbortSignal) => AsyncDataValue<T>),
+  optionsOrFetcher: AsyncDataOptions<T> | ((value: S, signal: AbortSignal) => AsyncDataValue<T>) = {},
   options: AsyncDataOptions<T> = {},
 ): FetchRef<T> {
-  return createAsyncData(fetcher, options, state, batch, readHydratedData, asyncDataCache)
+  if (typeof optionsOrFetcher === 'function')
+    return createAsyncData(optionsOrFetcher, options, state, batch, effect, peek, readHydratedData, asyncDataCache, sourceOrFetcher as () => S).resource
+  return createAsyncData(sourceOrFetcher as (signal: AbortSignal) => AsyncDataValue<T>, optionsOrFetcher, state, batch, effect, peek, readHydratedData, asyncDataCache).resource
 }
 
 /**
@@ -558,35 +848,23 @@ export function usePost<T = unknown, B = unknown>(
     execute: (body?: B) => Promise<T | null>
     state: FetchRef<T>
   } {
-  let requestBody: B | undefined
-
-  const fetchState = useFetch<T>(url, {
-    ...options,
-    method: 'POST',
-    immediate: false,
-    get body() {
-      return requestBody as Record<string, unknown>
-    },
-  })
-
+  const request = createFetch<T>(url, { ...options, method: 'POST', hydrate: false, immediate: false })
   return {
-    execute: async (body?: B) => {
-      requestBody = body
-      await fetchState.execute()
-      return fetchState.data()
-    },
-    state: fetchState,
+    execute: async body => (await request.execute(body as FetchOptions['body'])) ?? null,
+    state: request.resource,
   }
 }
 
 /** Clear fetch cache (one key or all). */
 export function clearFetchCache(key?: string): void {
   if (key) {
-    fetchCache.delete(key)
+    for (const [id, entry] of fetchCache) if (entry.group === key) fetchCache.delete(id)
+    for (const [id, writer] of cacheWriters) if (writer.group === key) cacheWriters.delete(id)
     asyncDataCache.keyed.delete(key)
   }
   else {
     fetchCache.clear()
+    cacheWriters.clear()
     asyncDataCache.keyed.clear()
     asyncDataCache.loaders = new WeakMap()
   }

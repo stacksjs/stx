@@ -30,6 +30,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
 import * as composableModule from '../../src/composables/use-fetch'
 import { generateSignalsRuntimeDev } from '../../src/signals'
+import { effect, state } from '../../src/signals-api'
 
 interface FetchResult {
   data: () => unknown
@@ -185,6 +186,17 @@ for (const name of ['composable', 'runtime'] as const) {
       expect(r.data()).toBeNull()
     })
 
+    it('publishes a first result and terminal flags in one update', async () => {
+      const track = name === 'composable' ? effect : window.stx!.effect
+      globalThis.fetch = (async () => Response.json('ready')) as typeof fetch
+      const resource = useFetch('/atomic', { immediate: false })
+      const seen: unknown[][] = []
+      const cleanup = track(() => { seen.push([resource.data(), resource.loading(), resource.isFetching()]) })
+      await resource.refetch()
+      expect(seen).toEqual([[null, false, false], [null, true, true], ['ready', false, false]])
+      cleanup()
+    })
+
     for (const status of [200, 500]) {
       it(`ignores an older HTTP ${status} body finishing after a new request`, async () => {
         let body!: ReadableStreamDefaultController<Uint8Array>
@@ -249,5 +261,63 @@ it('module useFetch cancels a queued retry when refetch starts a newer run', asy
   }
   finally {
     globalThis.fetch = original
+  }
+})
+
+it('usePost sends each execution body, including overlapping requests', async () => {
+  const original = globalThis.fetch
+  const sent: { init: RequestInit, resolve: (response: Response) => void }[] = []
+  globalThis.fetch = ((_url: string, init: RequestInit) => new Promise<Response>(resolve => sent.push({ init, resolve }))) as typeof fetch
+  try {
+    const post = composableModule.usePost<string, { title: string }>('/post', { cacheTime: 60_000 })
+    const first = post.execute({ title: 'first' })
+    const second = post.execute({ title: 'second' })
+    expect(sent.map(({ init }) => [init.method, init.body, new Headers(init.headers).get('Content-Type')])).toEqual([
+      ['POST', '{"title":"first"}', 'application/json'],
+      ['POST', '{"title":"second"}', 'application/json'],
+    ])
+    expect(sent[0].init.signal?.aborted).toBe(true)
+    sent[1].resolve(Response.json('second'))
+    expect(await second).toBe('second')
+    sent[0].resolve(Response.json('first'))
+    expect(await first).toBeNull()
+    expect(post.state.data()).toBe('second')
+  }
+  finally {
+    globalThis.fetch = original
+  }
+})
+
+it('module useFetch follows URL changes and caches raw data per request variant', async () => {
+  const original = globalThis.fetch
+  const calls: unknown[][] = []
+  globalThis.fetch = (async (url: string, init: RequestInit) => {
+    const language = new Headers(init.headers).get('Accept-Language')
+    calls.push([url, language])
+    return Response.json({ city: url.slice(1), language })
+  }) as typeof fetch
+  const key = 'fetch-parity-city'
+  try {
+    const url = state('/Paris')
+    const options = { key, cacheTime: 60_000, immediate: false, headers: { 'Accept-Language': 'fr' } }
+    const first = composableModule.useFetch(url, { ...options, transform: value => (value as { city: string }).city })
+    await first.refetch()
+    expect(first.data()).toBe('Paris')
+    url.set('/Oslo')
+    await flush()
+    expect(first.data()).toBe('Oslo')
+    const location = (value: unknown) => (value as { language: string }).language
+    const same = composableModule.useFetch('/Oslo', { ...options, transform: location })
+    await same.refetch()
+    expect(same.data()).toBe('fr')
+    const other = composableModule.useFetch('/Oslo', { ...options, headers: { 'accept-language': 'en' }, transform: location })
+    await other.refetch()
+    expect(other.data()).toBe('en')
+    expect(calls).toEqual([['/Paris', 'fr'], ['/Oslo', 'fr'], ['/Oslo', 'en']])
+    first.abort()
+  }
+  finally {
+    globalThis.fetch = original
+    composableModule.clearFetchCache(key)
   }
 })

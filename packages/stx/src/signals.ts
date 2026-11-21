@@ -205,19 +205,17 @@ ${SIGNALS_WEBSOCKET_RUNTIME}
 ${signalsFetchRuntime(readHydratedData.toString(), clearServerData.toString())}
   var __stxAsyncDataCache = { keyed: new Map(), loaders: new WeakMap() };
   var createAsyncData = ${createAsyncData.toString()};
-  function useAsyncData(fetcher, options) {
-    var resource = createAsyncData(fetcher, options || {}, state, batch, readHydratedData, __stxAsyncDataCache, trackAsyncDataRead);
-    var restart = false;
-    onDestroy(function() {
-      restart = resource.loading();
-      resource.abort();
-    });
-    if (currentLifecycleScope()) onMount(function() {
-      if (!restart) return;
-      restart = false;
-      return resource.execute();
-    });
-    return resource;
+  function useAsyncData(sourceOrFetcher, optionsOrFetcher, options) {
+    var hasSource = typeof optionsOrFetcher === 'function';
+    var stateful = createAsyncData(
+      hasSource ? optionsOrFetcher : sourceOrFetcher,
+      (hasSource ? options : optionsOrFetcher) || {},
+      state, batch, effect, peek, readHydratedData, __stxAsyncDataCache,
+      hasSource ? sourceOrFetcher : undefined, trackAsyncDataRead
+    );
+    onDestroy(stateful.pause);
+    if (currentLifecycleScope()) onMount(stateful.resume);
+    return stateful.resource;
   }
 ${SIGNALS_REF_RUNTIME}
 ${SIGNALS_NAVIGATION_RUNTIME}

@@ -286,6 +286,45 @@ describe('dedupe does not break #1871 abort semantics', () => {
 })
 
 describe('query refresh supersession', () => {
+  it('invalidates all active readers and joins one fresh request', async () => {
+    const stx = g.window.stx
+    const url = key()
+    const options = { immediate: false, cacheTime: 0 }
+    const a = stx.useQuery(url, options)
+    const b = stx.useQuery(url, options)
+    const deferred = stx.useQuery(url, options)
+    const original = [a.refetch(), b.refetch()]
+    await tick()
+    expect(pending).toHaveLength(1)
+    const refreshed = a.invalidate()
+    await tick()
+    expect(pending).toHaveLength(2)
+    expect(pending[0].opts.signal.aborted).toBe(true)
+    pending[1].resolve(json('fresh'))
+    await refreshed
+    pending[0].resolve(json('outdated'))
+    await Promise.all(original)
+    expect([a.data(), b.data(), deferred.data()]).toEqual(['fresh', 'fresh', null])
+  })
+
+  it('queries again when the last response declared no-store or Vary: *', async () => {
+    const stx = g.window.stx
+    for (const headers of [{ 'Cache-Control': 'private, NO-STORE' }, { Vary: '*' }]) {
+      const query = stx.useQuery(key(), { immediate: false, staleTime: 60_000 })
+      const first = query.refetch()
+      await tick()
+      pending.at(-1)!.resolve(Response.json('first', { headers }))
+      await first
+      const count = pending.length
+      const second = query.refetch()
+      await tick()
+      expect(pending).toHaveLength(count + 1)
+      pending.at(-1)!.resolve(json('second'))
+      await second
+      expect(query.data()).toBe('second')
+    }
+  })
+
   it('follows the selected URL after hydrating with the initial request deferred', async () => {
     const stx = g.window.stx
     const first = key()
@@ -532,6 +571,59 @@ describe('overlapping mutations', () => {
 })
 
 describe('mutation query snapshots', () => {
+  it('defers a snapshot transform error callback until the other readers have committed', async () => {
+    const stx = g.window.stx
+    const first = key()
+    const second = key()
+    const observed: unknown[] = []
+    const a = stx.useQuery(first, {
+      immediate: false,
+      transform(value: number) {
+        if (value === 10) throw new Error('transform failed')
+        return value
+      },
+      onError: (error: Error) => observed.push([error.message, b.data(), b.isFetching()]),
+    })
+    const b = stx.useQuery(second, { immediate: false })
+    const initial = [a.refetch(), b.refetch()]
+    await tick()
+    pending[0].resolve(json(1))
+    pending[1].resolve(json(2))
+    await Promise.all(initial)
+    const write = stx.useMutation('/write', { invalidateQueries: [first, second] }).mutate()
+    await tick()
+    pending[2].resolve(mutationResponse('done', { [first]: 10, [second]: 20 }))
+    await write
+    expect(observed).toEqual([['transform failed', 20, false]])
+    expect(a.data()).toBe(1)
+    expect(a.error()).toBe('transform failed')
+  })
+
+  it('only notifies completion callbacks after all snapshots have committed', async () => {
+    const stx = g.window.stx
+    const first = key()
+    const second = key()
+    const observed: unknown[][] = []
+    const a = stx.useQuery(first, {
+      immediate: false,
+      onSuccess: () => observed.push([a.data(), b.data(), a.isFetching(), b.isFetching(), mutation.loading()]),
+    })
+    const b = stx.useQuery(second, { immediate: false })
+    const mutation = stx.useMutation('/write', { invalidateQueries: [first, second] })
+    const initial = [a.refetch(), b.refetch()]
+    await tick()
+    pending[0].resolve(json(1))
+    pending[1].resolve(json(2))
+    await Promise.all(initial)
+    observed.length = 0
+    const write = mutation.mutate({})
+    await tick()
+    pending[2].resolve(mutationResponse('done', { [first]: 10, [second]: 20 }))
+    await write
+    expect(observed).toEqual([[10, 20, false, false, false]])
+    expect(pending).toHaveLength(3)
+  })
+
   it('updates active readers from a typed response and fetches only the missing keys', async () => {
     const stx = g.window.stx
     const list = key()

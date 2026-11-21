@@ -543,7 +543,14 @@ const { data: posts } = useFetch('/api/posts', {
 | `hasError` | `boolean` (getter) | Convenience: `!!error()` |
 | `isEmpty` | `boolean` (getter) | Convenience: `!loading() && !data()` |
 
-When `url` is a function, it is watched with `effect()` — changing the signal it reads triggers a refetch.
+When `url` is a function, a change to its reactive inputs triggers a refetch in
+the module and browser runtimes. Module `useFetch` can reuse raw read responses
+with `cacheTime`. Its cache groups equivalent URLs, headers, and request
+options, and each consumer applies its own transform.
+
+Module `usePost(url)` from `@stacksjs/stx/composables` exposes `execute(body)` and the request's reactive
+`state`. Each execution uses its own body. A newer execution supersedes an
+older one, which resolves to `null` if canceled.
 
 #### Background refresh
 
@@ -573,7 +580,13 @@ onMount(() => {
 
 ```typescript
 useAsyncData<T>(
-  fetcher: (signal: AbortSignal) => T | PromiseLike<T>,
+  loader: (signal: AbortSignal) => T | AsyncIterable<T> | PromiseLike<T | AsyncIterable<T>>,
+  options?: AsyncDataOptions<T>,
+): FetchRef<T>
+
+useAsyncData<S, T>(
+  source: () => S,
+  loader: (value: S, signal: AbortSignal) => T | AsyncIterable<T> | PromiseLike<T | AsyncIterable<T>>,
   options?: AsyncDataOptions<T>,
 ): FetchRef<T>
 ```
@@ -581,8 +594,28 @@ useAsyncData<T>(
 `data()` retains the last successful value during refresh. `loading()` tracks
 the first value, `isFetching()` tracks any active load, and `error()` reports
 the latest failure. Use `refetch()` or `execute()` to run the loader and
-`abort()` to cancel it. Pass the loader's signal to APIs such as `fetch`.
+`abort()` to stop an active load and pause source tracking until the next
+manual load. Pass the loader's signal to APIs such as `fetch`.
 A matching `useServerData` key supplies the initial value, including `null`.
+
+Use a source getter when the loader depends on reactive input.
+
+```typescript
+const profile = useAsyncData(
+  () => userId(),
+  (id, signal) => fetch(`/api/users/${id}`, { signal }).then(response => response.json()),
+)
+```
+
+A source change clears the previous value and starts a load for the new
+source. Source values use identity for sharing and caching. Consumers of the
+same key or loader and source share an in-flight load. Each consumer applies
+its own transform.
+
+An async iterable publishes each yield. The first yield clears `loading()`
+while `isFetching()` stays true until the iterator ends. The last consumer
+to leave aborts the loader and closes the iterator. A successfully completed
+stream can cache its final value.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -646,7 +679,7 @@ const { data, loading, isStale, refetch, invalidate } = useQuery('/api/users', {
 | `error` | `Signal<string \| null>` | Error message |
 | `isStale` | `Signal<boolean>` | Whether current data is stale |
 | `refetch` | `(options?: { background?: boolean }) => Promise<void>` | Read current data, using a fresh cached result when available |
-| `invalidate` | `(options?: { background?: boolean }) => Promise<void>` | Clear this logical key and fetch again |
+| `invalidate` | `(options?: { background?: boolean }) => Promise<void>` | Clear this logical key and refresh its active readers |
 
 `refetchInterval` and `refetchOnFocus` are **background** refreshes: they update
 `data` without touching `loading`, so a poll does not put a spinner over a view
@@ -656,6 +689,9 @@ Requests share in-flight work and cached results when their URL, normalized
 headers, scope, and logical key match. Request interceptors run before reuse so
 the effective GET can be compared. Use `setKeptScope` or `scope` when the
 server selects data through cookies or other session state.
+An invalidation or offline update refreshes each active request variant once.
+Responses with `Cache-Control: no-store` bypass both in-memory reuse and
+`keep` storage.
 
 Once active, a URL or header getter can drive a new request. Switching to a
 new request identity cancels the old consumer and clears its displayed data
@@ -726,7 +762,8 @@ async function createUser(request: Request) {
 Use the same key in the client's `invalidateQueries`. The response's main
 result still goes through the mutation's `transform` and `onSuccess`.
 Matching active queries apply their transforms and publish the supplied values
-in the same batch as the mutation result. Omitted or ambiguous keys trigger
+in the same batch as the mutation result. Completion callbacks run after that
+batch commits. Omitted or ambiguous keys trigger
 the regular GET for each request variant. Return only queries the
 caller is authorized to read, and omit any refresh that could not be obtained
 after the write. The helper marks responses `Cache-Control: no-store`.
@@ -775,7 +812,8 @@ await calendar.refresh() // a pull to refresh: past every cache
 A request for another `url()` is never answered by one for the URL before, and
 an answer for a URL the query no longer reads is not shown. Writes waiting in
 the outbox with `affects: [key or url]` stay applied on top of `data()` until
-they reach the server.
+they reach the server. HTTP responses with `Cache-Control: no-store` remain
+visible for the current read and bypass reuse and kept storage.
 
 ### sharedRequest
 

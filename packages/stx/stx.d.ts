@@ -312,7 +312,10 @@ interface StxAsyncDataResult<T> extends StxFetchResult<T> {
   abort: () => void
 }
 
-declare function useAsyncData<T>(fetcher: (signal: AbortSignal) => T | PromiseLike<T>, options?: StxAsyncDataOptions<T>): StxAsyncDataResult<T>
+type StxAsyncDataValue<T> = T | AsyncIterable<T> | PromiseLike<T | AsyncIterable<T>>
+
+declare function useAsyncData<T>(fetcher: (signal: AbortSignal) => StxAsyncDataValue<T>, options?: StxAsyncDataOptions<T>): StxAsyncDataResult<T>
+declare function useAsyncData<S, T>(source: () => S, fetcher: (value: S, signal: AbortSignal) => StxAsyncDataValue<T>, options?: StxAsyncDataOptions<T>): StxAsyncDataResult<T>
 declare function useFetch<T = any>(_url: string | (() => string), _options?: any): StxFetchResult<T>
 /** Server-only, keyed JSON data exposed to this render's client hydration. */
 declare function useServerData<T>(_key: string, _loader: () => T | Promise<T>): Promise<T>

@@ -30,8 +30,10 @@ export function signalsFetchRuntime(readHydratedDataSource: string, clearServerD
     // A request owns state through response parsing and callbacks, even when
     // an interceptor or a body reader does not honor its AbortSignal.
     let current = null;
+    let latest = null;
     let disposed = false;
     let stopUrl = null;
+    let lastUrl;
     let __stxPoll = null;
     let __stxFocus = null;
 
@@ -40,10 +42,20 @@ export function signalsFetchRuntime(readHydratedDataSource: string, clearServerD
       const background = !!(runOptions && runOptions.background);
       const previous = current;
       const run = { controller: typeof AbortController !== 'undefined' ? new AbortController() : null };
-      current = run;
+      current = latest = run;
       if (previous && previous.controller) previous.controller.abort();
       const ownsState = () => current === run;
       if (!ownsState()) return;
+      const finish = (publish) => {
+        if (!ownsState()) return;
+        batch(() => {
+          if (publish) publish();
+          if (!ownsState()) return;
+          current = null;
+          loading.set(false);
+          if (!current) isFetching.set(false);
+        });
+      };
 
       batch(() => {
         if (!background) {
@@ -56,13 +68,15 @@ export function signalsFetchRuntime(readHydratedDataSource: string, clearServerD
 
       try {
         const url = trackedUrl !== undefined ? trackedUrl : (typeof urlOrFn === 'function' ? urlOrFn() : urlOrFn);
+        if (ownsState()) lastUrl = url;
         if (!url || !ownsState()) return;
 
+        const headers = __stxHeaders(options.headers);
         const fetchOptions = {
           method: options.method || 'GET',
           headers: {
             'Content-Type': 'application/json',
-            ...__stxHeaders(options.headers)
+            ...headers
           },
           signal: run.controller ? run.controller.signal : undefined
         };
@@ -72,10 +86,14 @@ export function signalsFetchRuntime(readHydratedDataSource: string, clearServerD
           if (options[key] !== undefined) fetchOptions[key] = options[key];
         }
 
-        if (options.body) {
-          fetchOptions.body = typeof options.body === 'string'
-            ? options.body
-            : JSON.stringify(options.body);
+        const body = options.body;
+        if (body != null) {
+          if (__stxRawBody(body) || (typeof ReadableStream !== 'undefined' && body instanceof ReadableStream)) {
+            fetchOptions.headers = headers;
+            fetchOptions.body = body;
+          } else {
+            fetchOptions.body = typeof body === 'string' ? body : JSON.stringify(body);
+          }
         }
 
         if (!ownsState()) return;
@@ -93,25 +111,19 @@ export function signalsFetchRuntime(readHydratedDataSource: string, clearServerD
         if (!ownsState()) return;
         const transformed = options.transform ? options.transform(result) : result;
         if (!ownsState()) return;
-        batch(() => {
+        finish(() => {
           data.set(transformed);
-          if (background) error.set(null);
+          error.set(null);
         });
       }
       catch (e) {
         if (!ownsState() || (e && e.name === 'AbortError')) return;
         console.error('[STX] useFetch error:', e);
-        error.set(e instanceof Error ? e : new Error(String(e)));
-        if (ownsState() && options.onError) options.onError(e);
+        finish(() => error.set(e instanceof Error ? e : new Error(String(e))));
+        if (latest === run && options.onError) options.onError(e);
       }
       finally {
-        if (ownsState()) {
-          current = null;
-          batch(() => {
-            loading.set(false);
-            isFetching.set(false);
-          });
-        }
+        finish();
       }
     };
 
@@ -120,16 +132,15 @@ export function signalsFetchRuntime(readHydratedDataSource: string, clearServerD
     const reactiveURL = typeof urlOrFn === 'function';
     const followURL = (fetchInitially) => {
       let firstUrlRun = true;
-      let previousUrl;
       stopUrl = effect(() => {
         const url = urlOrFn();
         if (firstUrlRun) {
           firstUrlRun = false;
-          previousUrl = url;
+          lastUrl = url;
           if (!fetchInitially) return;
         }
-        else if (url === previousUrl) return;
-        previousUrl = url;
+        else if (url === lastUrl) return;
+        lastUrl = url;
         peek(() => fetchData(undefined, url));
       });
     };
@@ -137,7 +148,7 @@ export function signalsFetchRuntime(readHydratedDataSource: string, clearServerD
 
     const abort = function() {
       const run = current;
-      current = null;
+      current = latest = null;
       if (__stxPoll !== null) clearInterval(__stxPoll);
       __stxPoll = null;
       if (__stxFocus) document.removeEventListener('visibilitychange', __stxFocus);

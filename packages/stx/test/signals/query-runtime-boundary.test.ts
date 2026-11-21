@@ -15,6 +15,6 @@ describe('signals query runtime boundary', () => {
     expect(SIGNALS_QUERY_RUNTIME).toContain('function useQuery(url, options)')
     expect(SIGNALS_QUERY_RUNTIME).toContain('function useMutation(url, options)')
     expect(SIGNALS_QUERY_RUNTIME).toContain('function startQuery(')
-    expect(SIGNALS_QUERY_RUNTIME).toContain('refreshActiveQueries(keys, queries, write)')
+    expect(SIGNALS_QUERY_RUNTIME).toContain('function refreshActiveQueries(')
   })
 })

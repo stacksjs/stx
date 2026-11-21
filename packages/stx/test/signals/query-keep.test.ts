@@ -55,6 +55,38 @@ const settle = () => new Promise(resolve => setTimeout(resolve, 20))
 let seq = 0
 
 describe('useQuery({ keep })', () => {
+  it('coalesces a worker update across readers of the same request', async () => {
+    const url = `/api/keep/${++seq}`
+    let version = 1
+    answer = () => version
+    const stx = g.window.stx
+    const options = { immediate: false, staleTime: 60_000 }
+    const a = stx.useQuery(url, options)
+    const b = stx.useQuery(url, options)
+    await Promise.all([a.refetch(), b.refetch()])
+    version = 2
+    g.window.dispatchEvent(new g.window.CustomEvent('stx:updated', { detail: { kind: 'api', url: `http://localhost${url}` } }))
+    await settle()
+    expect(calls).toEqual([url, url])
+    expect([a.data(), b.data()]).toEqual([2, 2])
+  })
+
+  it('replaces a previously kept answer when the server responds with no-store', async () => {
+    const url = `/api/keep/${++seq}`
+    answer = () => 'was reusable'
+    const stx = g.window.stx
+    const options = { immediate: false, keep: true, cacheTime: 0, scope: 'no-store' }
+    const query = stx.useQuery(url, options)
+    await query.refetch()
+    expect(stx.useQuery(url, options).data()).toBe('was reusable')
+    g.fetch = async () => Response.json('never store', { headers: { 'Cache-Control': 'no-store' } })
+    await query.refetch()
+    expect(query.data()).toBe('never store')
+    expect(stx.useQuery(url, options).data()).toBeNull()
+    await stx.flushKeptState()
+    expect(local.getItem(`stx:kept:no-store:query:${url}`)).not.toContain('never store')
+  })
+
   it('keeps the answer per account and seeds the next visit with it, refreshed behind', async () => {
     const url = `/api/keep/${++seq}`
     answer = () => ({ n: 1 })

@@ -27,6 +27,7 @@
 
 import type { KeptStore } from './kept-store'
 import type { SharedRequest, SharedRequestOptions } from '../shared-request'
+import { canReuseDataResponse } from '../http-cache-policy'
 
 /** The part of a signal this needs. */
 export interface QuerySignal<T> {
@@ -122,6 +123,8 @@ export interface QueryCache {
   /** A kept answer, from anywhere it is kept. */
   restore: (key: string, scope?: KeptScope) => Promise<{ data: unknown, at: number } | undefined>
   persist: (key: string, data: unknown, scope?: KeptScope) => void
+  /** Replace a kept answer with a marker that carries no response data. */
+  discard: (key: string, scope?: KeptScope) => void
   /** `data` with the outbox's waiting writes for this target applied (only entry `onlyId`, when given). */
   overlay: <T>(target: QueryTarget, data: T, onlyId?: string) => T
   watch: (watcher: QueryWatcher) => () => void
@@ -155,7 +158,7 @@ export function queryTargetMatches(item: string, target: QueryTarget): boolean {
 }
 
 /** The query layer, for one page. Closure-free. */
-export function createQueryCache(env: QueryCacheEnv): QueryCache {
+export function createQueryCache(env: QueryCacheEnv, mayReuse = canReuseDataResponse): QueryCache {
   const prefix = env.prefix || 'stx:kept:'
   const matches = env.matches || ((item: string, target: QueryTarget) => item === target.key || item === target.url)
   const watchers = new Set<QueryWatcher>()
@@ -200,6 +203,11 @@ export function createQueryCache(env: QueryCacheEnv): QueryCache {
       if (at)
         env.kept.set(at, { d: data, at: Date.now() })
     },
+    discard(key, scope) {
+      const at = keyFor(key, scope)
+      if (at)
+        env.kept.set(at, null)
+    },
     overlay(target, data, onlyId) {
       const boxes = outboxes()
       if (!boxes || !boxes.size)
@@ -237,6 +245,7 @@ export function createQueryCache(env: QueryCacheEnv): QueryCache {
       let scope = scopeNow()
       let base: T = initial
       let fetchedAt = 0
+      let reusable = true
       // Keyed by the scope generation and the URL: a request for another URL,
       // or one sent before signing in as someone else, is never joined.
       const requests = env.sharedRequest<string, T>()
@@ -287,7 +296,9 @@ export function createQueryCache(env: QueryCacheEnv): QueryCache {
           restoreFrom(scope)
       }
 
-      const request = (force: boolean, url: string | null): Promise<T> => {
+      const request = (force: boolean, url: string | null): Promise<{ value: T, reusable: boolean }> => {
+        if (!opts.load && !url)
+          return Promise.resolve({ value: data(), reusable: false })
         const timeout = opts.timeoutMs || 15000
         const controller = typeof AbortController !== 'undefined' ? new AbortController() : null
         let timer: ReturnType<typeof setTimeout> | null = null
@@ -299,10 +310,11 @@ export function createQueryCache(env: QueryCacheEnv): QueryCache {
           }, timeout)
         })
         let work: Promise<unknown>
+        let canReuse = true
         if (opts.load) {
           work = opts.load({ force, url, signal: controller ? controller.signal : undefined })
         }
-        else if (url) {
+        else {
           const send = opts.fetch || ((u: string, init: RequestInit) => fetch(u, init))
           const init: RequestInit = { method: 'GET', headers: { Accept: 'application/json' } }
           // Past the offline worker's kept copy and the HTTP cache: a pull to
@@ -311,22 +323,20 @@ export function createQueryCache(env: QueryCacheEnv): QueryCache {
             init.cache = 'no-cache'
           if (controller)
             init.signal = controller.signal
-          work = send(url, init).then((response) => {
+          work = send(url!, init).then((response) => {
             if (!response.ok) {
               return response.json().catch(() => null).then((body: any) => {
                 throw new Error((body && (body.error || body.message)) || `Request failed (${response.status})`)
               })
             }
+            canReuse = mayReuse(response, init)
             return response.json()
           })
-        }
-        else {
-          return Promise.resolve(data())
         }
         return Promise.race([work, expired]).then((raw) => {
           if (timer)
             clearTimeout(timer)
-          return (opts.transform ? opts.transform(raw) : raw) as T
+          return { value: (opts.transform ? opts.transform(raw) : raw) as T, reusable: canReuse }
         }, (cause) => {
           if (timer)
             clearTimeout(timer)
@@ -362,18 +372,20 @@ export function createQueryCache(env: QueryCacheEnv): QueryCache {
               loading.set(false)
             }
           }
-          return request(force, url).then((value) => {
+          return request(force, url).then((answer) => {
             // Another account's data by now, or an answer for a URL the query
             // no longer reads: not what to show.
             if (asked !== generation || url !== urlNow()) {
               done()
               return data()
             }
-            base = value
+            base = answer.value
+            reusable = answer.reusable
             fetchedAt = Date.now()
             updatedAt.set(fetchedAt)
             error.set(null)
-            cache.persist(key, value, scope)
+            if (reusable) cache.persist(key, base, scope)
+            else cache.discard(key, scope)
             show()
             done()
             return data()
@@ -397,7 +409,7 @@ export function createQueryCache(env: QueryCacheEnv): QueryCache {
         get key() { return key },
         load(force) {
           followScope()
-          if (!force && fetchedAt && Date.now() - fetchedAt < (opts.staleTime || 0))
+          if (!force && reusable && fetchedAt && Date.now() - fetchedAt < (opts.staleTime || 0))
             return Promise.resolve(data())
           return run(!!force)
         },

@@ -22,6 +22,23 @@ export function createReactiveProxy(
 ): <T>(target: T) => T {
   const proxies = new WeakMap<object, object>()
   const keys = Symbol('own keys')
+  const mutators = new Map<PropertyKey, Function>()
+  for (const name of ['copyWithin', 'fill', 'pop', 'push', 'reverse', 'shift', 'sort', 'splice', 'unshift'])
+    mutators.set(name, Reflect.get(Array.prototype, name))
+  const batchedMethods = new WeakMap<Function, Function>()
+
+  function batchMethod(method: Function): Function {
+    let wrapped = batchedMethods.get(method)
+    if (!wrapped) {
+      wrapped = function (this: unknown, ...args: unknown[]) {
+        let result: unknown
+        batch(() => { result = Reflect.apply(method, this, args) })
+        return result
+      }
+      batchedMethods.set(method, wrapped)
+    }
+    return wrapped
+  }
 
   function reactive<T>(target: T): T {
     if (!canWrap(target)) return target
@@ -82,7 +99,10 @@ export function createReactiveProxy(
       get(obj, key, receiver) {
         track(values, key)
         const value = Reflect.get(obj, key, receiver)
-        return isLocked(obj, key) ? value : reactive(value)
+        if (isLocked(obj, key)) return value
+        if (array && typeof value === 'function' && value === mutators.get(key) && !Object.hasOwn(obj, key))
+          return batchMethod(value)
+        return reactive(value)
       },
       has(obj, key) {
         track(presence, key)

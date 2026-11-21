@@ -1,4 +1,6 @@
 /** Kept-state and cached-query helpers used by the generated client runtime. */
+import { canReuseDataResponse } from '../http-cache-policy'
+
 export function signalsKeptRuntime(
   createKeptStoreSource: string,
   indexedDbBackendSource: string,
@@ -26,7 +28,8 @@ export function signalsKeptRuntime(
   // are read where they are.
   var STX_KEPT_PREFIX = 'stx:kept:';
   var __stxKept = (${createKeptStoreSource})(undefined, ${indexedDbBackendSource});
-  var __stxQueries = (${createQueryCacheSource})({ state: state, kept: __stxKept, prefix: STX_KEPT_PREFIX, matches: ${queryTargetMatchesSource}, sharedRequest: sharedRequest });
+  var canReuseDataResponse = ${canReuseDataResponse.toString()};
+  var __stxQueries = (${createQueryCacheSource})({ state: state, kept: __stxKept, prefix: STX_KEPT_PREFIX, matches: ${queryTargetMatchesSource}, sharedRequest: sharedRequest }, canReuseDataResponse);
   var queryScope = state(undefined);
   function stxKeptPrefix(scope) {
     return STX_KEPT_PREFIX + (scope === undefined || scope === null || scope === '' ? '' : String(scope) + ':');
