@@ -59,7 +59,8 @@ writeFileSync(join(smokeRoot, 'bunfig.toml'), '[install]\nlinker = "hoisted"\n')
 // unshipped source files visible and cannot prove a published consumer works.
 await using registry = await packageCandidateRegistry(publicTypeArchives)
 const scopes = [...new Set(publicTypeArchives.map(owner => owner.name.startsWith('@') ? owner.name.split('/')[0] : '').filter(Boolean))]
-writeFileSync(join(smokeRoot, '.npmrc'), [`registry=${registry.url}`, 'always-auth=false', ...scopes.map(scope => `${scope}:registry=${registry.url}`), ''].join('\n'))
+const npmConfig = [`registry=${registry.url}`, 'always-auth=false', ...scopes.map(scope => `${scope}:registry=${registry.url}`), ''].join('\n')
+writeFileSync(join(smokeRoot, '.npmrc'), npmConfig)
 // A cache of this run's own. Bun keys its install cache by name, version and
 // registry host, and a candidate has the version of the release before it and
 // always comes from 127.0.0.1: a second run on one machine, after a commit
@@ -303,12 +304,25 @@ if (!invalid.some(d => d.code === 2322) || invalid.filter(d => d.code === 2339).
   throw new Error('Published mouse types failed to reject invalid options/properties: ' + JSON.stringify(invalid))
 `])
 
-await run([process.execPath, 'node_modules/@stacksjs/stx/dist/cli.js', 'build', '--pages', 'pages', '--out', 'dist', '--no-minify'])
+// Install the compiler alone so the full SDK fixture cannot mask a stale plugin dependency.
+const standalone = createTempDir('installed-standalone')
+mkdirSync(join(standalone, 'pages'))
+copyFileSync(join(smokeRoot, 'pages/index.stx'), join(standalone, 'pages/index.stx'))
+writeFileSync(join(standalone, '.npmrc'), npmConfig)
+writeFileSync(join(standalone, 'package.json'), JSON.stringify({
+  name: 'stx-standalone-smoke',
+  private: true,
+  dependencies: { '@stacksjs/stx': dependencies['@stacksjs/stx'] },
+}))
+await run([process.execPath, '--no-env-file', 'install', `--registry=${registry.url}`], standalone, { BUN_INSTALL_CACHE_DIR: installCache })
+assert.doesNotMatch(readFileSync(join(standalone, 'bun.lock'), 'utf8'), /"bun-plugin-stx"/, 'Installing STX alone must not install the optional Bun plugin package')
+await run([process.execPath, 'node_modules/@stacksjs/stx/dist/cli.js', 'build', '--pages', 'pages', '--out', 'dist', '--no-minify'], standalone)
 await run([process.execPath, '-e', `
 const html = await Bun.file('dist/index.html').text()
 if (!html.includes('Lumen & Lather')) throw new Error('missing page title')
 if (!html.includes('Cedar Wick Candle')) throw new Error('missing rendered product')
-`])
+`], standalone)
+removeTempDir(standalone)
 
 await registry.stop()
 removeTempDir(smokeRoot)

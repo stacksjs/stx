@@ -1,0 +1,446 @@
+/* eslint-disable style/max-statements-per-line */
+import type { BunPlugin } from 'bun'
+import type { StxOptions } from './types'
+import fs from 'node:fs'
+import path from 'node:path'
+
+interface PluginRuntime {
+  readMarkdownFile: typeof import('./assets').readMarkdownFile
+  cacheTemplate: typeof import('./caching').cacheTemplate
+  checkCache: typeof import('./caching').checkCache
+  processClientScript: typeof import('./client-script').processClientScript
+  withinBundlerCallback: typeof import('./client-script-bundler').withinBundlerCallback
+  defaultConfig: typeof import('./config').defaultConfig
+  loadStxConfig: typeof import('./config').loadStxConfig
+  insertBeforeBodyClose: typeof import('./document-tags').insertBeforeBodyClose
+  processDirectives: typeof import('./process').processDirectives
+  classifyAllScripts: typeof import('./script-classifier').classifyAllScripts
+  findSfcTemplateBlock: typeof import('./sfc-template').findSfcTemplateBlock
+  extractVariables: typeof import('./variable-extractor').extractVariables
+  buildWebComponents: typeof import('./web-components').buildWebComponents
+}
+
+/**
+ * Escape HTML entities in error messages to prevent XSS in error pages.
+ * Matches the escaping behavior in @stacksjs/stx/expressions.
+ */
+function escapeHtmlForError(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+/**
+ * Generate a styled error page HTML
+ * Consistent with error handling in @stacksjs/stx/plugin
+ */
+function generateErrorPage(title: string, message: string, filePath?: string): string {
+  const escapedMessage = escapeHtmlForError(message)
+  const escapedPath = filePath ? escapeHtmlForError(filePath) : ''
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <title>stx Error</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 2rem; background: #1a1a2e; color: #eee; }
+    h1 { color: #ff6b6b; }
+    pre { background: #16213e; padding: 1rem; border-radius: 4px; overflow-x: auto; border-left: 4px solid #ff6b6b; }
+    .file-path { color: #888; font-size: 0.9rem; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>${title}</h1>
+  ${escapedPath ? `<div class="file-path">File: ${escapedPath}</div>` : ''}
+  <pre>${escapedMessage}</pre>
+</body>
+</html>`
+}
+
+/**
+ * Create a Bun plugin for processing .stx and .md files
+ *
+ * @param userOptions - Optional configuration to override defaults
+ * @returns BunPlugin instance
+ *
+ * @example
+ * ```typescript
+ * // Basic usage
+ * const plugin = stxPlugin()
+ *
+ * // With options
+ * const plugin = stxPlugin({
+ *   debug: true,
+ *   cache: true,
+ *   cachePath: '.stx/cache'
+ * })
+ * ```
+ */
+export function createStxPlugin(runtime: PluginRuntime, userOptions?: StxOptions): BunPlugin {
+  const {
+    readMarkdownFile,
+    cacheTemplate,
+    checkCache,
+    processClientScript,
+    withinBundlerCallback,
+    defaultConfig,
+    loadStxConfig,
+    insertBeforeBodyClose,
+    processDirectives,
+    classifyAllScripts,
+    findSfcTemplateBlock,
+    extractVariables,
+    buildWebComponents,
+  } = runtime
+
+  return {
+    name: 'bun-plugin-stx',
+    async setup(build) {
+      // Merge user options over the project's stx config, over the defaults.
+      //
+      // The project config used to be skipped entirely here, so a bundled
+      // build behaved differently from the dev server for the same app: only
+      // `serve.ts` called `loadStxConfig`. An app that sets `root: 'resources'`
+      // (the Stacks layout, where components/layouts/partials live under
+      // `resources/`) rendered correctly under `stx dev` and shipped
+      // "[Error loading component]" text in place of every `<Nav />` and
+      // `<Footer />` from `buildStaticSite`. Worse, the failure compounded:
+      // with the components gone, nothing on the page carried reactive syntax,
+      // so the signals runtime was never injected — while the store bundle
+      // still was, and the deployed page died on `defineStore is not defined`.
+      //
+      // `loadStxConfig` caches per directory, so this is a map lookup after
+      // the first call. Its failure is non-fatal: a project with no stx config
+      // gets `defaultConfig` back, which is exactly the previous behavior.
+      let projectConfig: StxOptions = {}
+      try {
+        projectConfig = await loadStxConfig(process.cwd())
+      }
+      catch {
+        // No readable stx config — fall through to defaults, as before.
+      }
+
+      const options: StxOptions = {
+        ...defaultConfig,
+        ...projectConfig,
+        ...userOptions,
+      }
+
+      // Track all dependencies for web component building
+      const allDependencies = new Set<string>()
+
+      // Auto-set root to common ancestor of entrypoints for flat output paths
+      if (!build.config.root && build.config.entrypoints?.length) {
+        const dirs = build.config.entrypoints.map(e => path.dirname(path.resolve(e)))
+        const commonRoot = dirs.reduce((a, b) => {
+          const aParts = a.split(path.sep)
+          const bParts = b.split(path.sep)
+          let i = 0
+          while (i < aParts.length && i < bParts.length && aParts[i] === bParts[i]) i++
+          return aParts.slice(0, i).join(path.sep)
+        })
+        build.config.root = commonRoot
+      }
+
+      // Get web components output path
+      const webComponentsPath = options.webComponents?.enabled
+        ? `./${path.relative(path.dirname(build.config?.outdir || 'dist'), options.webComponents.outputDir || 'dist/web-components')}`
+        : '/web-components'
+
+      // Build web components if enabled
+      const builtComponents: string[] = []
+      if (options.webComponents?.enabled) {
+        try {
+          const components = await buildWebComponents(options, allDependencies)
+          builtComponents.push(...components)
+          if (options.debug && components.length > 0) {
+            console.log(`Successfully built ${components.length} web components`)
+          }
+        }
+        catch (error) {
+          console.error('Failed to build web components:', error)
+        }
+      }
+
+      // Treat root-relative URLs (e.g. /favicon.svg, /images/og.jpg) as
+      // runtime references rather than module imports. Bun's HTML loader
+      // walks <link>, <script src>, <img src>, etc. and tries to resolve
+      // each href as a module — but pages frequently point at static
+      // public assets (served verbatim from CDN or copied from public/)
+      // whose absolute URL is exactly what the browser needs at runtime.
+      // Marking them external keeps them in the emitted HTML untouched.
+      build.onResolve({ filter: /^\// }, (args) => {
+        // Bare absolute paths only — don't intercept Windows drive paths
+        // or schemeless URLs (//cdn.example.com/...).
+        if (args.path.startsWith('//')) return null
+        // Don't intercept entrypoints — when entrypoints are passed as
+        // absolute paths (common in tests and tooling), they have no
+        // importer. Marking those external would tell Bun to skip them
+        // entirely and emit no output. We only want to externalize
+        // *imports* originating from inside another module.
+        if (!args.importer) return null
+        return { external: true, path: args.path }
+      })
+
+      // Handler for .md files
+      build.onLoad({ filter: /\.md$/ }, async (args) => {
+        const filePath = args.path
+        try {
+          // Process the markdown file with frontmatter
+          const { content: htmlContent, data: frontmatter } = await readMarkdownFile(filePath, options)
+
+          // Generate JavaScript module exports
+          const jsContent = `// ${filePath}
+const content = ${JSON.stringify(htmlContent)};
+const data = ${JSON.stringify(frontmatter)};
+
+export { content, data };
+export { content as default };
+`
+
+          return {
+            contents: jsContent,
+            loader: 'js',
+          }
+        }
+        catch (error: any) {
+          console.error('Markdown Processing Error:', error)
+          const errorContent = generateErrorPage(
+            'Markdown Processing Error',
+            error.message || 'Unknown error',
+            filePath,
+          )
+          const jsContent = `// ${filePath}
+const content = ${JSON.stringify(errorContent)};
+const data = {};
+
+export { content, data };
+export { content as default };
+`
+          return {
+            contents: jsContent,
+            loader: 'js',
+          }
+        }
+      })
+
+      // Handler for .jsx and .tsx files (JSX component support)
+      build.onLoad({ filter: /\.(jsx|tsx)$/ }, async (args) => {
+        const filePath = args.path
+        try {
+          const source = await Bun.file(filePath).text()
+
+          // Use Bun's built-in transpiler with stx as the JSX import source
+          const loader = filePath.endsWith('.tsx') ? 'tsx' : 'jsx'
+          const transpiler = new Bun.Transpiler({
+            loader,
+            jsxOptimizationInline: true,
+          })
+
+          const code = transpiler.transformSync(source)
+
+          return {
+            contents: code,
+            loader: 'js',
+          }
+        }
+        catch (error: any) {
+          console.error('JSX Processing Error:', error)
+          return {
+            contents: `export default function() { return null; }`,
+            loader: 'js',
+          }
+        }
+      })
+
+      const renderStxFile = async (filePath: string): Promise<{ contents: string, loader: 'html' }> => {
+        try {
+          // Track dependencies for caching
+          const dependencies = new Set<string>()
+
+          // Check for cached content if caching is enabled
+          if (options.cache && options.cachePath) {
+            const cachedOutput = await checkCache(filePath, options)
+            if (cachedOutput) {
+              if (options.debug) {
+                console.log(`Using cached version of ${filePath}`)
+              }
+              return {
+                contents: cachedOutput,
+                loader: 'html',
+              }
+            }
+          }
+
+          const content = await Bun.file(filePath).text()
+
+          // SFC support: a page may wrap its markup in one bare <template>.
+          //
+          // Only a bare one. A <template #sidebar> (or v-slot, slot=, :for, @if)
+          // is content: a named slot handed to a component, or a client loop.
+          // Taking the first <template> of any kind made such a page's whole
+          // document that one slot's inside, so a build dropped the rest of the
+          // page, its @nolayout with it, and wrapped what was left in the
+          // default layout. The shared scanner knows the difference.
+          let workingContent = content
+          const sfcTemplate = findSfcTemplateBlock(content)
+          if (sfcTemplate) {
+            workingContent = sfcTemplate.content.trim()
+          }
+
+          // Extract all script tags and categorize them using the unified
+          // classifier. This must go through classifyAllScripts rather than a
+          // local `/<script…>…<\/script>/g` loop: the shared scanner skips HTML
+          // comments, so a comment that merely mentions a script tag no longer
+          // produces a bogus span that the removal pass below would delete.
+          const classified = classifyAllScripts(content)
+          const clientScripts: string[] = classified.client.map(s => s.fullTag)
+          const serverScripts: string[] = classified.server.map(s => s.content)
+          // signals scripts are intentionally left in `templateContent` for
+          // processSignals — the removal loops below skip them
+
+          // Remove non-signals script tags from template, keep signals scripts for processSignals
+          let templateContent = workingContent
+          // Remove server scripts and client scripts, but keep signals scripts
+          for (const script of serverScripts) {
+            const escapedScript = script.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            templateContent = templateContent.replace(new RegExp(`<script\\b[^>]*>${escapedScript}<\\/script>`, 'gi'), '')
+          }
+          for (const script of clientScripts) {
+            const escapedScript = script.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            templateContent = templateContent.replace(escapedScript, '')
+          }
+
+          // Create a sandbox environment to execute the script
+          const context: Record<string, any> = {
+            // Add some useful globals
+            __filename: filePath,
+            __dirname: path.dirname(filePath),
+            // Add stx config info
+            __stx: {
+              webComponentsPath,
+              builtComponents,
+            },
+            // Add stx options for directives that need them (like @component)
+            __stx_options: options,
+            // Enable SFC mode: events.ts will collect bindings instead of
+            // generating standalone scripts, so we can inject them into
+            // the component's <script client> scope
+            __stx_sfc_mode: true,
+          }
+
+          // Execute server script content to extract variables
+          for (const scriptContent of serverScripts) {
+            await extractVariables(scriptContent, context, filePath)
+          }
+
+          // Process template directives
+          let output = templateContent
+
+          // Process all directives
+          output = await processDirectives(output, context, filePath, options, dependencies)
+
+          // Transform and inject client scripts before </body>
+          // processClientScript resolves @stores imports, injects event
+          // bindings into the script scope, and auto-wraps in a scoped IIFE
+          if (clientScripts.length > 0) {
+            const eventBindings = (context.__stx_event_bindings || []) as any[]
+            // processClientScript is async (resolves @stores imports, etc.) — must
+            // await each one before joining, otherwise `[object Promise]` ends up
+            // stringified into the rendered HTML.
+            const transformedScripts = await Promise.all(clientScripts.map(async (fullScript: string) => {
+              const contentMatch = fullScript.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)
+              if (!contentMatch) return fullScript
+              return processClientScript(contentMatch[1], { eventBindings, templateContent: output })
+            }))
+            const scriptsHtml = transformedScripts.join('\n')
+            output = insertBeforeBodyClose(output, scriptsHtml)
+            // Clear event bindings after use
+            context.__stx_event_bindings = []
+          }
+
+          // Track dependencies for this file
+          dependencies.forEach(dep => allDependencies.add(dep))
+
+          // Cache the processed output if caching is enabled
+          if (options.cache && options.cachePath) {
+            await cacheTemplate(filePath, output, dependencies, options)
+            if (options.debug) {
+              console.log(`Cached template ${filePath} with ${dependencies.size} dependencies`)
+            }
+          }
+
+          return {
+            contents: output,
+            loader: 'html',
+          }
+        }
+        catch (error: any) {
+          console.error('stx Plugin Error:', error)
+          return {
+            contents: generateErrorPage(
+              'stx Rendering Error',
+              error.message || String(error),
+              filePath,
+            ),
+            loader: 'html',
+          }
+        }
+      }
+
+      // Render the `.stx` entrypoints before the bundler starts loading files.
+      //
+      // Rendering a page can itself need a build: a client script that
+      // imports a module is bundled with `Bun.build`. Bun never settles a
+      // build started from a plugin's `onLoad` or `onResolve` callback, so
+      // rendering inside the loader below deadlocked the whole build the
+      // first time a page needed a bundle that was not cached yet: the outer
+      // build waited on its loader, the loader on the inner build, and the
+      // process sat idle with nothing printed. A build started from
+      // `onStart` (or `setup`) does settle, so the entrypoints, which are
+      // known up front, are rendered here and the loader hands the result
+      // over.
+      //
+      // One at a time: cold client bundles are queued behind each other
+      // anyway (`queueClientBundleBuild`), and a page's render reads state the
+      // previous page's render may still be writing (the bundle cache).
+      const prerendered = new Map<string, { contents: string, loader: 'html' }>()
+      const entryKey = (file: string): string => {
+        const absolute = path.resolve(file)
+        try {
+          return fs.realpathSync(absolute)
+        }
+        catch {
+          return absolute
+        }
+      }
+      build.onStart(async () => {
+        prerendered.clear()
+        for (const entry of build.config.entrypoints ?? []) {
+          if (typeof entry !== 'string' || !entry.endsWith('.stx')) continue
+          const file = path.resolve(entry)
+          if (!fs.existsSync(file)) continue
+          prerendered.set(entryKey(file), await renderStxFile(file))
+        }
+      })
+
+      build.onLoad({ filter: /\.stx$/ }, async ({ path: filePath }) => {
+        const key = entryKey(filePath)
+        const ready = prerendered.get(key)
+        if (ready) {
+          // Each entrypoint is loaded once; the rendered page is not kept for the life of the build.
+          prerendered.delete(key)
+          return ready
+        }
+        // A `.stx` file that is not an entrypoint (one imported by another
+        // module) is only known here, inside the loader. It renders fine
+        // unless it needs a client bundle that is not cached, and then the
+        // bundler refuses instead of starting a build that would never end.
+        return withinBundlerCallback(() => renderStxFile(filePath))
+      })
+    },
+  }
+}
