@@ -38,10 +38,9 @@ interface SpeechGrammar {
 export interface SpeechGrammarList {
   readonly length: number
   readonly [index: number]: SpeechGrammar
-  item: (index: number) => SpeechGrammar | null
+  item: (index: number) => SpeechGrammar
   addFromString: (grammar: string, weight?: number) => void
-  addFromURI?: (src: string, weight?: number) => void
-  addFromUri?: (src: string, weight?: number) => void
+  addFromURI: (src: string, weight?: number) => void
 }
 
 interface BrowserRecognitionResult extends ArrayLike<{ transcript: string, confidence: number }> {

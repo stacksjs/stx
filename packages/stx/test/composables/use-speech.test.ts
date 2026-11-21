@@ -5,7 +5,8 @@ import { useSpeechRecognition } from '../../src/composables/use-speech'
 test.each(['SpeechRecognition', 'webkitSpeechRecognition'])('runs recognition through %s', (property) => {
   const keys = ['SpeechRecognition', 'webkitSpeechRecognition']
   const descriptors = keys.map(key => Object.getOwnPropertyDescriptor(window, key))
-  const grammars: SpeechGrammarList = { length: 0, item: () => null, addFromString() {} }
+  const grammar = { src: 'grammar.xml', weight: 1 }
+  const grammars: SpeechGrammarList = { 0: grammar, length: 1, item: () => grammar, addFromString() {}, addFromURI() {} }
   let instance: Recognition | undefined
 
   class Recognition {
