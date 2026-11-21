@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.923...v0.2.924)
+
+## 🐛 Bug Fixes
+
+- honor the stx server listen hostname ([69796b4](https://github.com/stacksjs/stx/commit/69796b4)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#2206](https://github.com/stacksjs/stx/issues/2206))
+
+## 🔧 Chores
+
+- release v0.2.924 ([0d652fe](https://github.com/stacksjs/stx/commit/0d652fe)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.922...v0.2.923)
 
 ## 🐛 Bug Fixes
