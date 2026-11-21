@@ -1,4 +1,6 @@
 /** Assemble the useFetch runtime around the shared hydration helpers. */
+import { linkRequestAbort } from '../request-abort'
+
 export function signalsFetchRuntime(readHydratedDataSource: string, clearServerDataSource: string): string {
   return `  // ==========================================================================
   // Declarative Data Fetching (Feature #6 - useFetch)
@@ -6,6 +8,7 @@ export function signalsFetchRuntime(readHydratedDataSource: string, clearServerD
 
   var readHydratedData = ${readHydratedDataSource};
   var clearServerData = ${clearServerDataSource};
+  var linkRequestAbort = ${linkRequestAbort.toString()};
 
   function useFetch(urlOrFn, options = {}) {
     const hydrated = readHydratedData(options.key, options.hydrate !== false, options.transform);
@@ -43,11 +46,16 @@ export function signalsFetchRuntime(readHydratedDataSource: string, clearServerD
       const previous = current;
       const run = { controller: typeof AbortController !== 'undefined' ? new AbortController() : null };
       current = latest = run;
-      if (previous && previous.controller) previous.controller.abort();
+      if (previous) {
+        if (previous.unlink) previous.unlink();
+        if (previous.controller) previous.controller.abort();
+      }
       const ownsState = () => current === run;
       if (!ownsState()) return;
+      let unlink;
       const finish = (publish) => {
         if (!ownsState()) return;
+        if (unlink) unlink();
         batch(() => {
           if (publish) publish();
           if (!ownsState()) return;
@@ -56,6 +64,9 @@ export function signalsFetchRuntime(readHydratedDataSource: string, clearServerD
           if (!current) isFetching.set(false);
         });
       };
+      const callerSignal = options.signal;
+      unlink = run.unlink = linkRequestAbort(run.controller, callerSignal, finish);
+      if (!ownsState()) return;
 
       batch(() => {
         if (!background) {
@@ -78,7 +89,7 @@ export function signalsFetchRuntime(readHydratedDataSource: string, clearServerD
             'Content-Type': 'application/json',
             ...headers
           },
-          signal: run.controller ? run.controller.signal : undefined
+          signal: run.controller ? run.controller.signal : callerSignal
         };
         // Request cache policy is part of the transport contract. In
         // particular, no-store must reach an offline worker unchanged.
@@ -123,6 +134,7 @@ export function signalsFetchRuntime(readHydratedDataSource: string, clearServerD
         if (latest === run && options.onError) options.onError(e);
       }
       finally {
+        unlink();
         finish();
       }
     };
@@ -149,6 +161,7 @@ export function signalsFetchRuntime(readHydratedDataSource: string, clearServerD
     const abort = function() {
       const run = current;
       current = latest = null;
+      if (run && run.unlink) run.unlink();
       if (__stxPoll !== null) clearInterval(__stxPoll);
       __stxPoll = null;
       if (__stxFocus) document.removeEventListener('visibilitychange', __stxFocus);

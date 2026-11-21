@@ -286,6 +286,43 @@ describe('dedupe does not break #1871 abort semantics', () => {
 })
 
 describe('query refresh supersession', () => {
+  it('refreshes each normalized header variant once when invalidating a logical key', async () => {
+    const stx = g.window.stx
+    const url = key()
+    const options = { immediate: false, cacheTime: 0, cacheKey: key() }
+    const a = stx.useQuery(url, { ...options, headers: { 'Accept-Language': 'en' } })
+    const b = stx.useQuery(url, { ...options, headers: { 'accept-language': ' en ' } })
+    const c = stx.useQuery(url, { ...options, headers: { 'Accept-Language': 'fr' } })
+    const first = [a.refetch(), b.refetch(), c.refetch()]
+    await tick()
+    expect(pending).toHaveLength(2)
+    pending[0].resolve(json('old English'))
+    pending[1].resolve(json('old French'))
+    await Promise.all(first)
+    const invalidated = b.invalidate()
+    await tick()
+    expect(pending.slice(2).map(request => new Headers(request.opts.headers).get('Accept-Language'))).toEqual(['en', 'fr'])
+    pending[2].resolve(json('new English'))
+    pending[3].resolve(json('new French'))
+    await invalidated
+    expect([a.data(), b.data(), c.data()]).toEqual(['new English', 'new English', 'new French'])
+  })
+
+  it('drops a queued worker refresh when its only reader unmounts', async () => {
+    const stx = g.window.stx
+    const url = key()
+    const reader = stx.useQuery(url, { immediate: false, cacheTime: 0 })
+    const initial = reader.refetch()
+    await tick()
+    pending[0].resolve(json('initial'))
+    await initial
+    g.window.dispatchEvent(new g.window.CustomEvent('stx:updated', { detail: { kind: 'api', url } }))
+    for (const cleanup of stx._destroyCallbacks.splice(0)) cleanup()
+    await tick()
+    expect(pending).toHaveLength(1)
+    expect(reader.data()).toBe('initial')
+  })
+
   it('invalidates all active readers and joins one fresh request', async () => {
     const stx = g.window.stx
     const url = key()

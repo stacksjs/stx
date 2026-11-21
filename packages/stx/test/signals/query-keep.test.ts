@@ -55,6 +55,37 @@ const settle = () => new Promise(resolve => setTimeout(resolve, 20))
 let seq = 0
 
 describe('useQuery({ keep })', () => {
+  it('coalesces an outbox acknowledgment and a worker update in the same turn', async () => {
+    const url = `/api/keep/${++seq}`
+    const stx = g.window.stx
+    let version = 1
+    answer = () => version
+    const options = { immediate: false, cacheTime: 0 }
+    const a = stx.useQuery(url, options)
+    const b = stx.useQuery(url, options)
+    await Promise.all([a.refetch(), b.refetch()])
+    version = 2
+    g.window.dispatchEvent(new g.window.CustomEvent('stx:outbox', { detail: { sent: { id: 'ack', affects: [url] } } }))
+    g.window.dispatchEvent(new g.window.CustomEvent('stx:updated', { detail: { kind: 'api', url } }))
+    await settle()
+    expect(calls).toEqual([url, url])
+    expect([a.data(), b.data()]).toEqual([2, 2])
+  })
+
+  it('discards a kept answer when a no-store response fails JSON parsing', async () => {
+    const url = `/api/keep/${++seq}`
+    const stx = g.window.stx
+    const options = { immediate: false, keep: true, cacheTime: 0, scope: 'malformed' }
+    answer = () => 'visible answer'
+    const reader = stx.useQuery(url, options)
+    await reader.refetch()
+    g.fetch = async () => new Response('{broken', { headers: { 'Cache-Control': 'no-store' } })
+    await reader.refetch()
+    expect(reader.data()).toBe('visible answer')
+    expect(reader.error()).toBeTruthy()
+    expect(stx.useQuery(url, options).data()).toBeNull()
+  })
+
   it('coalesces a worker update across readers of the same request', async () => {
     const url = `/api/keep/${++seq}`
     let version = 1

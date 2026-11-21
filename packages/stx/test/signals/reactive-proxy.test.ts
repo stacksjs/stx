@@ -208,6 +208,57 @@ for (const runtime of ['browser', 'module'] as const) {
       }
     }
 
+    it('updates readers when a descriptor locks an already observed object value', async () => {
+      const { reactive, effect } = await getRuntime()
+      const child = { value: 1 }
+      const parent = reactive({ child })
+      const seen: typeof child[] = []
+      const stop = effect(() => { seen.push(parent.child) })
+      expect(seen[0]).not.toBe(child)
+      Object.defineProperty(parent, 'child', { configurable: false, writable: false })
+      expect(parent.child).toBe(child)
+      expect(seen).toHaveLength(2)
+      expect(seen[1]).toBe(child)
+      stop()
+    })
+
+    it('leaves presence and key observers idle when shrinking an array of holes', async () => {
+      const { reactive, effect } = await getRuntime()
+      const values = reactive(Array<string>(4))
+      values[0] = 'first'
+      const observedPresent: boolean[] = []
+      const observedKeys: string[][] = []
+      const lengths: number[] = []
+      const stops = [
+        effect(() => { observedPresent.push(3 in values) }),
+        effect(() => { observedKeys.push(Object.keys(values)) }),
+        effect(() => { lengths.push(values.length) }),
+      ]
+      values.length = 1
+      expect([observedPresent, observedKeys, lengths]).toEqual([[false], [['0']], [4, 1]])
+      stops.forEach(stop => stop())
+    })
+
+    it('notifies readers of a descriptor change made by a setter that throws', async () => {
+      const { reactive, effect } = await getRuntime()
+      const raw = { value: 0 }
+      Object.defineProperty(raw, 'value', {
+        configurable: true,
+        get: () => 0,
+        set(this: typeof raw, value: number) {
+          Object.defineProperty(this, 'value', { value, writable: true, configurable: true })
+          throw new Error('setter failed after writing')
+        },
+      })
+      const object = reactive(raw)
+      const seen: number[] = []
+      const stop = effect(() => { seen.push(object.value) })
+      expect(() => { object.value = 1 }).toThrow('setter failed after writing')
+      expect(object.value).toBe(1)
+      expect(seen).toEqual([0, 1])
+      stop()
+    })
+
     it('reports native array mutations atomically and preserves method receivers', async () => {
       const { reactive, effect } = await getRuntime()
       const list = reactive([1, 2, 3])

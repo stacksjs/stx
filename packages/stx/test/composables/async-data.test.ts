@@ -196,5 +196,106 @@ for (const target of ['module', 'browser'] as const) {
       await next.refetch()
       expect([resource.data(), next.data(), calls]).toEqual([2, 20, 1])
     })
+
+    it('distinguishes negative and positive zero when caching source values', async () => {
+      const asyncData = useData()
+      const signals = target === 'module' ? { state } : window.stx!
+      const selected = signals.state(-0)
+      const seen: number[] = []
+      const resource = asyncData(selected, (value) => {
+        seen.push(value)
+        return 1 / value
+      }, { immediate: false, cacheTime: 60_000 })
+      try {
+        await resource.refetch()
+        expect(resource.data()).toBe(-Infinity)
+        selected.set(0)
+        await Bun.sleep(0)
+        expect(resource.data()).toBe(Infinity)
+        selected.set(-0)
+        expect(resource.data()).toBe(-Infinity)
+        expect(seen.map(value => Object.is(value, -0))).toEqual([true, false])
+      }
+      finally {
+        resource.abort()
+      }
+    })
+
+    it('settles an empty stream without replacing the initial value', async () => {
+      const asyncData = useData()
+      const resource = asyncData(async function* () { if (false) yield 0 }, { initialData: 7, immediate: false })
+      await resource.refetch()
+      expect([resource.data(), resource.loading(), resource.isFetching(), resource.error()]).toEqual([7, false, false, null])
+    })
+
+    it('keeps a yielded value on stream failure and starts a new request for the next reader', async () => {
+      const asyncData = useData()
+      let starts = 0
+      const loader = async function* () {
+        const value = ++starts
+        yield value
+        if (value === 1) throw new Error('stream interrupted')
+      }
+      const options = { immediate: false, cacheTime: 60_000 }
+      const first = asyncData(loader, options)
+      await first.refetch()
+      expect(first.data()).toBe(1)
+      expect(first.error()?.message).toBe('stream interrupted')
+      expect(first.isFetching()).toBe(false)
+      const next = asyncData(loader, options)
+      await next.refetch()
+      expect([starts, next.data(), next.error()]).toEqual([2, 2, null])
+    })
+
+    it('closes a late iterator without reading it after the only consumer aborts', async () => {
+      const asyncData = useData()
+      const later = Promise.withResolvers<AsyncIterable<number>>()
+      let reads = 0
+      let closes = 0
+      const resource = asyncData(() => later.promise, { immediate: false })
+      const pending = resource.refetch()
+      resource.abort()
+      await pending
+      later.resolve({
+        [Symbol.asyncIterator]: () => ({
+          next: async () => { reads++; return { done: true, value: undefined } },
+          return: async () => { closes++; return { done: true, value: undefined } },
+        }),
+      })
+      await Bun.sleep(0)
+      expect([reads, closes, resource.data(), resource.isFetching()]).toEqual([0, 1, null, false])
+    })
+
+    it('replays an available stream value to a late reader without a loading transition', async () => {
+      const asyncData = useData()
+      const track = target === 'module' ? effect : window.stx!.effect
+      const firstYield = Promise.withResolvers<number>()
+      const endStream = Promise.withResolvers<void>()
+      const loader = async function* () {
+        yield await firstYield.promise
+        await endStream.promise
+      }
+      const a = asyncData(loader, { immediate: false })
+      const b = asyncData(loader, { immediate: false })
+      const seen: unknown[][] = []
+      const stop = track(() => { seen.push([b.data(), b.loading(), b.isFetching()]) })
+      try {
+        const first = a.refetch()
+        firstYield.resolve(10)
+        await Bun.sleep(0)
+        expect(a.data()).toBe(10)
+        const second = b.refetch()
+        expect(seen).toEqual([[null, false, false], [10, false, true]])
+        endStream.resolve()
+        await Promise.all([first, second])
+        expect(seen.at(-1)).toEqual([10, false, false])
+      }
+      finally {
+        endStream.resolve()
+        a.abort()
+        b.abort()
+        stop()
+      }
+    })
   })
 }

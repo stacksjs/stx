@@ -197,6 +197,42 @@ for (const name of ['composable', 'runtime'] as const) {
       cleanup()
     })
 
+    it('skips the transport when the caller supplied an already aborted signal', async () => {
+      const caller = new AbortController()
+      caller.abort()
+      let sent = 0
+      globalThis.fetch = (async () => { sent++; return Response.json('unexpected') }) as typeof fetch
+      const resource = useFetch('/caller-aborted', { immediate: false, signal: caller.signal })
+      await resource.refetch()
+      expect(sent).toBe(0)
+      expect([resource.data(), resource.loading(), resource.isFetching(), resource.error()]).toEqual([null, false, false, null])
+    })
+
+    it('abandons an in-flight response when the caller aborts during body parsing', async () => {
+      const caller = new AbortController()
+      let body!: ReadableStreamDefaultController<Uint8Array>
+      let requestSignal: AbortSignal | null = null
+      const response = new Response(new ReadableStream<Uint8Array>({
+        start(controller) { body = controller },
+      }))
+      globalThis.fetch = (async (_url: string, init: RequestInit) => {
+        requestSignal = init.signal ?? null
+        return response
+      }) as typeof fetch
+      const resource = useFetch('/caller-aborts-body', { immediate: false, signal: caller.signal })
+      const pending = resource.refetch()
+      await flush()
+      expect(resource.status()).toBe(200)
+      caller.abort()
+      const fetchingAfterAbort = resource.isFetching()
+      body.enqueue(new TextEncoder().encode('"late"'))
+      body.close()
+      await pending
+      expect(requestSignal?.aborted).toBe(true)
+      expect(fetchingAfterAbort).toBe(false)
+      expect([resource.data(), resource.error()]).toEqual([null, null])
+    })
+
     for (const status of [200, 500]) {
       it(`ignores an older HTTP ${status} body finishing after a new request`, async () => {
         let body!: ReadableStreamDefaultController<Uint8Array>
@@ -284,6 +320,29 @@ it('usePost sends each execution body, including overlapping requests', async ()
     expect(post.state.data()).toBe('second')
   }
   finally {
+    globalThis.fetch = original
+  }
+})
+
+it('does not repopulate a cleared module fetch cache from an already running read', async () => {
+  const original = globalThis.fetch
+  const later = Promise.withResolvers<Response>()
+  let calls = 0
+  globalThis.fetch = (() => ++calls === 1 ? later.promise : Promise.resolve(Response.json('fresh'))) as typeof fetch
+  const key = 'fetch-cache-clear-during-read'
+  try {
+    const options = { key, immediate: false, cacheTime: 60_000 }
+    const resource = composableModule.useFetch('/clear-cache', options)
+    const first = resource.refetch()
+    composableModule.clearFetchCache(key)
+    later.resolve(Response.json('stale'))
+    await first
+    const other = composableModule.useFetch('/clear-cache', options)
+    await other.refetch()
+    expect([resource.data(), other.data(), calls]).toEqual(['stale', 'fresh', 2])
+  }
+  finally {
+    composableModule.clearFetchCache(key)
     globalThis.fetch = original
   }
 })

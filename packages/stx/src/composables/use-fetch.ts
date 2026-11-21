@@ -36,6 +36,7 @@
  */
 import type { Signal } from '../signals-api'
 import { canReuseDataResponse } from '../http-cache-policy'
+import { linkRequestAbort } from '../request-abort'
 import { batch, effect, peek, state } from '../signals-api'
 
 /** @internal Closure-free: also embedded in the generated browser runtime. */
@@ -242,9 +243,11 @@ function createFetch<T>(url: string | (() => string), options: FetchOptions<T>) 
     previous?.abort()
     const ownsState = () => abortController === controller
     if (!ownsState()) return
+    let unlink: (() => void) | undefined
 
     function finish(publish?: () => void) {
       if (!ownsState()) return
+      unlink?.()
       batch(() => {
         publish?.()
         if (!ownsState()) return
@@ -257,6 +260,8 @@ function createFetch<T>(url: string | (() => string), options: FetchOptions<T>) 
     let cacheKey: string | undefined
     let writer: { group: string } | undefined
     try {
+      unlink = linkRequestAbort(controller, options.signal, finish)
+      if (!ownsState()) return
       const requestURL = selectedURL ?? getURL()
       if (ownsState()) lastURL = requestURL
       if (!requestURL || !ownsState()) return
@@ -402,6 +407,7 @@ function createFetch<T>(url: string | (() => string), options: FetchOptions<T>) 
       finish(() => error.set(err instanceof Error ? err : new Error(String(err))))
     }
     finally {
+      unlink?.()
       if (cacheKey !== undefined && cacheWriters.get(cacheKey) === writer) cacheWriters.delete(cacheKey)
       finish()
     }
@@ -521,6 +527,7 @@ type AsyncDataSources = Map<unknown, AsyncDataEntry>
 interface AsyncDataCache {
   keyed: Map<string, AsyncDataSources>
   loaders: WeakMap<object, AsyncDataSources>
+  negativeZero?: symbol
 }
 
 interface AsyncDataRun {
@@ -693,7 +700,9 @@ export function createAsyncData<T, S>(
       }
     }
 
-    const found = entries.get(input)
+    // A source change uses Object.is, while Map treats -0 and +0 as equal.
+    const variant = Object.is(input, -0) ? (cache.negativeZero ??= Symbol()) : input
+    const found = entries.get(variant)
     if (cacheTime > 0 && found?.timestamp !== undefined && Date.now() - found.timestamp < cacheTime) {
       receive({ kind: 'done', result: found.result })
       return done
@@ -705,13 +714,13 @@ export function createAsyncData<T, S>(
     const entry: AsyncDataEntry = joined
       ? found
       : { controller: new AbortController(), listeners: new Set(), cacheTime, settled: false }
-    if (!joined) entries.set(input, entry)
+    if (!joined) entries.set(variant, entry)
     else entry.cacheTime = Math.max(entry.cacheTime, cacheTime)
 
-    const stored = () => entries.get(input) === entry
+    const stored = () => entries.get(variant) === entry
     const remove = () => {
       if (!stored()) return
-      entries.delete(input)
+      entries.delete(variant)
       if (entries.size) return
       if (key && cache.keyed.get(key) === entries) cache.keyed.delete(key)
       if (!key && cache.loaders.get(fetcher) === entries) cache.loaders.delete(fetcher)
@@ -726,11 +735,11 @@ export function createAsyncData<T, S>(
       loading.set(!hasValue)
       isFetching.set(true)
       if (!hasValue) error.set(null)
+      if (joined && current === run && entry.result) receive({ kind: 'value', value: entry.result.value })
     })
     // Reactive observers may transfer their interest to a second consumer
     // before this creator finishes publishing its loading state.
     if (!joined && !entry.settled) void pump(entry, input, remove, stored)
-    else if (joined && current === run && entry.result) receive({ kind: 'value', value: entry.result.value })
     return done
   }
 

@@ -9,7 +9,7 @@ import type { KeptBackend } from '../../src/offline/kept-store'
 import { createKeptStore } from '../../src/offline/kept-store'
 import { createQueryCache, queryTargetMatches } from '../../src/offline/query-cache'
 import { useOutbox } from '../../src/composables/use-outbox'
-import { state } from '../../src/signals-api'
+import { batch, effect, state } from '../../src/signals-api'
 import { sharedRequest } from '../../src/shared-request'
 
 class MemoryStorage {
@@ -38,7 +38,7 @@ interface Server { calls: Array<{ url: string, init: RequestInit }>, answer: (ur
 
 function setUp(storage = new MemoryStorage(), backend = memoryBackend()) {
   const kept = createKeptStore({ storage, backend, defer: fn => fn() })
-  const cache = createQueryCache({ state: state as any, kept, matches: queryTargetMatches, sharedRequest })
+  const cache = createQueryCache({ state: state as any, batch, kept, matches: queryTargetMatches, sharedRequest })
   const server: Server = { calls: [], answer: () => ({}), delay: 0, fail: false }
   const fetch = async (url: string, init: RequestInit): Promise<Response> => {
     server.calls.push({ url, init })
@@ -53,6 +53,73 @@ const stops: Array<() => void> = []
 afterEach(() => { while (stops.length) stops.pop()!() })
 
 describe('cachedQuery', () => {
+  it('publishes the new account view and clears old loading flags together', async () => {
+    const { cache } = setUp()
+    cache.setScope('first')
+    cache.persist('account-view', 'second saved', 'second')
+    const response = Promise.withResolvers<Response>()
+    const query = cache.cachedQuery('account-view', { url: '/account', fetch: () => response.promise })
+    const load = query.load()
+    const seen: unknown[][] = []
+    const stop = effect(() => { seen.push([query.data(), query.loading(), query.isFetching()]) })
+    try {
+      cache.setScope('second')
+      expect(seen).toEqual([[null, true, true], ['second saved', false, false]])
+    }
+    finally {
+      stop()
+      response.resolve(Response.json('first late'))
+      await load
+    }
+    expect(query.data()).toBe('second saved')
+  })
+
+  it('starts a separate load when the default account changes mid-request', async () => {
+    const { cache } = setUp()
+    const first = Promise.withResolvers<Response>()
+    const second = Promise.withResolvers<Response>()
+    let calls = 0
+    cache.setScope('first')
+    const query = cache.cachedQuery('handoff', {
+      url: '/handoff',
+      fetch: () => (++calls === 1 ? first.promise : second.promise),
+    })
+    const older = query.load()
+    cache.setScope('second')
+    const newer = query.load()
+    second.resolve(Response.json('second account'))
+    first.resolve(Response.json('first account'))
+    await Promise.all([older, newer])
+    expect(calls).toBe(2)
+    expect(query.data()).toBe('second account')
+    expect(cache.seed('handoff', 'second')?.data).toBe('second account')
+  })
+
+  it('ignores a response for a departed explicit account even before the next load', async () => {
+    const { cache } = setUp()
+    const result = Promise.withResolvers<Response>()
+    let scope = 'first'
+    const query = cache.cachedQuery('idle-handoff', { url: '/handoff', scope: () => scope, fetch: () => result.promise })
+    const older = query.load()
+    scope = 'second'
+    result.resolve(Response.json('first account'))
+    await older
+    expect(query.data()).toBeNull()
+    expect(query.isFetching()).toBe(false)
+    expect(cache.seed('idle-handoff', 'second')).toBeUndefined()
+  })
+
+  it('revalidates immediately when the URL changes inside the freshness window', async () => {
+    const { cache, server, fetch } = setUp()
+    let url = '/first'
+    server.answer = input => input
+    const query = cache.cachedQuery('url-freshness', { url: () => url, fetch, staleTime: 60_000 })
+    expect(await query.load()).toBe('/first')
+    url = '/second'
+    expect(await query.load()).toBe('/second')
+    expect(server.calls.map(call => call.url)).toEqual(['/first', '/second'])
+  })
+
   it('keeps no reusable copy when the response says no-store', async () => {
     const first = setUp()
     let calls = 0

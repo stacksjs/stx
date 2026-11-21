@@ -64,32 +64,46 @@ export function createReactiveProxy(
       return index >= length && index < oldLength && Number.isInteger(index) && String(index) === key
     }
 
-    function mutate(key: PropertyKey, update: () => boolean, observeSetter = false): boolean {
+    function mutate(key: PropertyKey, update: () => boolean, observeSetter = false, requestedLength?: unknown): boolean {
       const before = Reflect.getOwnPropertyDescriptor(raw, key)
       const had = Reflect.has(raw, key)
       const oldLength = array?.length
+      // Length writes can delete own slots without going through a proxy trap.
+      // A native push's final length write cannot shrink the array.
+      const slots = key === 'length' && oldLength !== undefined
+        && (typeof requestedLength !== 'number' || requestedLength < oldLength)
+        ? (requestedLength === oldLength - 1
+            ? [String(requestedLength)]
+            : values.has(keys) ? Reflect.ownKeys(raw) : [...new Set([...values.keys(), ...presence.keys()])])
+            .filter(index => removedIndex(index, 0, oldLength) && Object.hasOwn(raw, index))
+        : []
       let applied = false
       batch(() => {
-        applied = update()
-        const after = Reflect.getOwnPropertyDescriptor(raw, key)
-        const length = array?.length
-        if (!!before !== !!after
-          || !Object.is(before?.value, after?.value)
-          || before?.get !== after?.get
-          || (applied && observeSetter && !!after?.set)) {
-          values.get(key)?.notify()
-        }
-        if (had !== Reflect.has(raw, key)) presence.get(key)?.notify()
-        const shrank = length !== undefined && oldLength !== undefined && length < oldLength
-        if (!!before !== !!after || before?.enumerable !== after?.enumerable || shrank)
-          values.get(keys)?.notify()
-        if (length !== oldLength && key !== 'length') values.get('length')?.notify()
-        if (shrank) {
-          // Setting length can remove tracked slots without invoking deleteProperty.
-          for (const [index, dependency] of values)
-            if (removedIndex(index, length, oldLength)) dependency.notify()
-          for (const [index, dependency] of presence)
-            if (removedIndex(index, length, oldLength) && !Reflect.has(raw, index)) dependency.notify()
+        try { applied = update() }
+        finally {
+          const after = Reflect.getOwnPropertyDescriptor(raw, key)
+          const length = array?.length
+          const wasLocked = before?.configurable === false && before.writable === false
+          const locked = after?.configurable === false && after.writable === false
+          if (!!before !== !!after
+            || !Object.is(before?.value, after?.value)
+            || before?.get !== after?.get
+            || (wasLocked !== locked && canWrap(after?.value))
+            || (applied && observeSetter && !!after?.set)) {
+            values.get(key)?.notify()
+          }
+          if (had !== Reflect.has(raw, key)) presence.get(key)?.notify()
+          if (length !== oldLength && key !== 'length') values.get('length')?.notify()
+          let shapeChanged = !!before !== !!after || before?.enumerable !== after?.enumerable
+          if (length !== undefined && oldLength !== undefined && length < oldLength) {
+            for (const index of slots) {
+              if (!removedIndex(index, length, oldLength)) continue
+              shapeChanged = true
+              values.get(index)?.notify()
+              if (!Reflect.has(raw, index)) presence.get(index)?.notify()
+            }
+          }
+          if (shapeChanged) values.get(keys)?.notify()
         }
       })
       return applied
@@ -118,12 +132,12 @@ export function createReactiveProxy(
           setting = key
           try { return Reflect.set(obj, key, value, receiver) }
           finally { setting = previous }
-        }, true)
+        }, true, value)
       },
       defineProperty(obj, key, descriptor) {
         // A native set through the proxy receiver can reach this same trap.
         if (setting === key) return Reflect.defineProperty(obj, key, descriptor)
-        return mutate(key, () => Reflect.defineProperty(obj, key, descriptor))
+        return mutate(key, () => Reflect.defineProperty(obj, key, descriptor), false, descriptor.value)
       },
       deleteProperty(obj, key) {
         return mutate(key, () => Reflect.deleteProperty(obj, key))

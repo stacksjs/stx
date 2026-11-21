@@ -93,6 +93,7 @@ export interface CachedQuery<T> {
 
 export interface QueryCacheEnv {
   state: <T>(value: T) => QuerySignal<T>
+  batch?: (run: () => void) => void
   kept: KeptStore
   /** `sharedRequest` (shared-request.ts): how one request answers every caller. */
   sharedRequest: <K, T>(options?: SharedRequestOptions<K>) => SharedRequest<K, T>
@@ -130,6 +131,11 @@ export interface QueryCache {
   watch: (watcher: QueryWatcher) => () => void
 }
 
+interface LiveCachedQuery<T> extends CachedQuery<T> {
+  __options: (options: CachedQueryOptions<T>) => void
+  __followScope: () => void
+}
+
 /**
  * Whether an outbox entry's `affects` item, or a URL the worker refreshed,
  * names this query: its key, or its URL (an item without a query string
@@ -159,10 +165,11 @@ export function queryTargetMatches(item: string, target: QueryTarget): boolean {
 
 /** The query layer, for one page. Closure-free. */
 export function createQueryCache(env: QueryCacheEnv, mayReuse = canReuseDataResponse): QueryCache {
+  const commit = env.batch || ((run: () => void) => run())
   const prefix = env.prefix || 'stx:kept:'
   const matches = env.matches || ((item: string, target: QueryTarget) => item === target.key || item === target.url)
   const watchers = new Set<QueryWatcher>()
-  const queries = new Map<string, CachedQuery<any>>()
+  const queries = new Map<string, LiveCachedQuery<any>>()
   let defaultScope: KeptScope
 
   const resolveScope = (scope: KeptScope): KeptScope => scope === undefined ? defaultScope : scope
@@ -186,7 +193,11 @@ export function createQueryCache(env: QueryCacheEnv, mayReuse = canReuseDataResp
 
   const cache: QueryCache = {
     setScope(scope) {
+      if (Object.is(defaultScope, scope)) return
       defaultScope = scope
+      commit(() => {
+        for (const query of queries.values()) query.__followScope()
+      })
     },
     scope: () => defaultScope,
     keyFor,
@@ -227,15 +238,14 @@ export function createQueryCache(env: QueryCacheEnv, mayReuse = canReuseDataResp
     },
 
     cachedQuery<T>(key: string, options?: CachedQueryOptions<T>): CachedQuery<T> {
-      const existing = queries.get(key) as (CachedQuery<T> & { __options?: (o: CachedQueryOptions<T>) => void }) | undefined
+      const existing = queries.get(key) as LiveCachedQuery<T> | undefined
       if (existing) {
-        if (options && existing.__options)
-          existing.__options(options)
+        if (options) existing.__options(options)
         return existing
       }
       let opts: CachedQueryOptions<T> = options || {}
       const initial = (opts.initial === undefined ? null : opts.initial) as T
-      const scopeNow = (): KeptScope => typeof opts.scope === 'function' ? (opts.scope as () => KeptScope)() : opts.scope as KeptScope
+      const scopeNow = (): KeptScope => resolveScope(typeof opts.scope === 'function' ? opts.scope() : opts.scope)
       const urlNow = (): string | null => {
         const u = typeof opts.url === 'function' ? opts.url() : opts.url
         return u || null
@@ -245,6 +255,7 @@ export function createQueryCache(env: QueryCacheEnv, mayReuse = canReuseDataResp
       let scope = scopeNow()
       let base: T = initial
       let fetchedAt = 0
+      let fetchedURL: string | null = null
       let reusable = true
       // Keyed by the scope generation and the URL: a request for another URL,
       // or one sent before signing in as someone else, is never joined.
@@ -267,7 +278,7 @@ export function createQueryCache(env: QueryCacheEnv, mayReuse = canReuseDataResp
         // A large copy is kept where only an asynchronous read reaches.
         const asked = generation
         void cache.restore(key, from).then((found) => {
-          if (!found || asked !== generation || fetchedAt)
+          if (!found || asked !== generation || !Object.is(from, scopeNow()) || fetchedAt)
             return
           base = found.data as T
           updatedAt.set(found.at)
@@ -280,20 +291,23 @@ export function createQueryCache(env: QueryCacheEnv, mayReuse = canReuseDataResp
       // Signed in as someone else since: their data, not the last person's.
       const followScope = (): void => {
         const now = scopeNow()
-        if (now === scope)
+        if (Object.is(now, scope))
           return
-        scope = now
-        generation++
-        out = 0
-        isFetching.set(false)
-        loading.set(false)
-        fetchedAt = 0
-        const found = cache.seed(key, scope)
-        base = found ? found.data as T : initial
-        updatedAt.set(found ? found.at : 0)
-        show()
-        if (!found)
-          restoreFrom(scope)
+        commit(() => {
+          scope = now
+          generation++
+          out = 0
+          fetchedAt = 0
+          const found = cache.seed(key, scope)
+          base = found ? found.data as T : initial
+          updatedAt.set(found ? found.at : 0)
+          show()
+          error.set(null)
+          isFetching.set(false)
+          loading.set(false)
+          if (!found)
+            restoreFrom(scope)
+        })
       }
 
       const request = (force: boolean, url: string | null): Promise<{ value: T, reusable: boolean }> => {
@@ -353,11 +367,12 @@ export function createQueryCache(env: QueryCacheEnv, mayReuse = canReuseDataResp
        * copy from before, and a load for a changed url() was answered with the
        * old URL's data.
        */
-      const run = (force: boolean): Promise<T> => {
+      const run = (force: boolean, url = urlNow()): Promise<T> => {
+        followScope()
         const asked = generation
-        const url = urlNow()
         const start = (): Promise<T> => {
-          if (asked !== generation)
+          followScope()
+          if (asked !== generation || url !== urlNow())
             return Promise.resolve(data())
           out++
           isFetching.set(true)
@@ -373,6 +388,7 @@ export function createQueryCache(env: QueryCacheEnv, mayReuse = canReuseDataResp
             }
           }
           return request(force, url).then((answer) => {
+            followScope()
             // Another account's data by now, or an answer for a URL the query
             // no longer reads: not what to show.
             if (asked !== generation || url !== urlNow()) {
@@ -382,6 +398,7 @@ export function createQueryCache(env: QueryCacheEnv, mayReuse = canReuseDataResp
             base = answer.value
             reusable = answer.reusable
             fetchedAt = Date.now()
+            fetchedURL = url
             updatedAt.set(fetchedAt)
             error.set(null)
             if (reusable) cache.persist(key, base, scope)
@@ -390,6 +407,7 @@ export function createQueryCache(env: QueryCacheEnv, mayReuse = canReuseDataResp
             done()
             return data()
           }, (cause) => {
+            followScope()
             if (asked === generation && url === urlNow())
               error.set(cause && cause.message ? cause.message : 'Could not load.')
             done()
@@ -400,7 +418,7 @@ export function createQueryCache(env: QueryCacheEnv, mayReuse = canReuseDataResp
         return force ? requests.fresh(at, start) : requests.run(at, start)
       }
 
-      const query: CachedQuery<T> & { __options: (o: CachedQueryOptions<T>) => void } = {
+      const query: LiveCachedQuery<T> = {
         data,
         loading,
         isFetching,
@@ -409,14 +427,16 @@ export function createQueryCache(env: QueryCacheEnv, mayReuse = canReuseDataResp
         get key() { return key },
         load(force) {
           followScope()
-          if (!force && reusable && fetchedAt && Date.now() - fetchedAt < (opts.staleTime || 0))
+          const url = urlNow()
+          if (!force && reusable && fetchedAt && url === fetchedURL && Date.now() - fetchedAt < (opts.staleTime || 0))
             return Promise.resolve(data())
-          return run(!!force)
+          return run(!!force, url)
         },
         refresh() {
           return query.load(true)
         },
         set(value) {
+          followScope()
           base = typeof value === 'function' ? (value as (current: T) => T)(base) : value
           cache.persist(key, base, scope)
           show()
@@ -426,7 +446,9 @@ export function createQueryCache(env: QueryCacheEnv, mayReuse = canReuseDataResp
         },
         __options(next) {
           opts = { ...opts, ...next }
+          followScope()
         },
+        __followScope: followScope,
       }
 
       watchers.add({
@@ -437,6 +459,7 @@ export function createQueryCache(env: QueryCacheEnv, mayReuse = canReuseDataResp
             void run(false)
         },
         outbox: (sent) => {
+          followScope()
           if (sent) {
             // Reached the server: keep showing it until the next answer
             // includes it, rather than flash back to the copy from before.
