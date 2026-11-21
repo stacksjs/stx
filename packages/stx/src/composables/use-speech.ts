@@ -1,4 +1,3 @@
-/// <reference types="dom-speech-recognition" preserve="true" />
 /**
  * useSpeech - Web Speech API wrappers
  *
@@ -29,6 +28,42 @@
 // ============================================================================
 // Speech Recognition
 // ============================================================================
+
+interface SpeechGrammar {
+  src: string
+  weight: number
+}
+
+/** The browser's legacy speech grammar collection. */
+export interface SpeechGrammarList {
+  readonly length: number
+  readonly [index: number]: SpeechGrammar
+  item: (index: number) => SpeechGrammar | null
+  addFromString: (grammar: string, weight?: number) => void
+  addFromURI?: (src: string, weight?: number) => void
+  addFromUri?: (src: string, weight?: number) => void
+}
+
+interface BrowserRecognitionResult extends ArrayLike<{ transcript: string, confidence: number }> {
+  readonly isFinal: boolean
+}
+
+interface BrowserSpeechRecognition {
+  continuous: boolean
+  interimResults: boolean
+  lang: string
+  maxAlternatives: number
+  grammars?: SpeechGrammarList
+  onstart: () => void
+  onend: () => void
+  onresult: (event: { readonly results: ArrayLike<BrowserRecognitionResult> }) => void
+  onerror: (event: { readonly error: string }) => void
+  start: () => void
+  stop: () => void
+  abort: () => void
+}
+
+type SpeechRecognitionConstructor = new () => BrowserSpeechRecognition
 
 export interface SpeechRecognitionOptions {
   /** Whether to continue listening after first result */
@@ -86,9 +121,13 @@ export interface SpeechRecognitionRef {
 }
 
 // Get the SpeechRecognition constructor
-function getSpeechRecognition(): typeof SpeechRecognition | null {
+function getSpeechRecognition(): SpeechRecognitionConstructor | null {
   if (typeof window === 'undefined') return null
-  return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null
+  const browser = window as Window & {
+    SpeechRecognition?: SpeechRecognitionConstructor
+    webkitSpeechRecognition?: SpeechRecognitionConstructor
+  }
+  return browser.SpeechRecognition ?? browser.webkitSpeechRecognition ?? null
 }
 
 /**
@@ -115,7 +154,7 @@ export function useSpeechRecognition(options: SpeechRecognitionOptions = {}): Sp
     error: null,
   }
 
-  let recognition: SpeechRecognition | null = null
+  let recognition: BrowserSpeechRecognition | null = null
   let listeners: Array<(state: SpeechRecognitionState) => void> = []
   const eventListeners: Record<string, Array<(data?: any) => void>> = {
     result: [],
@@ -150,7 +189,7 @@ export function useSpeechRecognition(options: SpeechRecognitionOptions = {}): Sp
       emitEvent('start')
     }
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+    recognition.onresult = (event) => {
       let finalTranscript = ''
       let interimTranscript = ''
       let confidence = 0
@@ -186,7 +225,7 @@ else {
       })
     }
 
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+    recognition.onerror = (event) => {
       const errorMessage = getErrorMessage(event.error)
       state = { ...state, error: errorMessage, isListening: false }
       notify()

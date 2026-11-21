@@ -274,6 +274,7 @@ export {
   speak,
   stopSpeaking,
   getVoices,
+  type SpeechGrammarList,
   type SpeechRecognitionOptions,
   type SpeechRecognitionState,
   type SpeechRecognitionResult,
