@@ -1,5 +1,15 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.924...v0.2.925)
+
+## ✨ Features
+
+- fingerprint public assets in production ([f90f200](https://github.com/stacksjs/stx/commit/f90f200)) _(by Chris Breuer)_
+
+## Contributors
+
+- _Chris Breuer_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.923...v0.2.924)
 
 ## 🐛 Bug Fixes
