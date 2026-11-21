@@ -46,12 +46,13 @@ Bun.serve({
 serve({
   patterns: ['views'],
   port: ${PORT},
+  hostname: '127.0.0.1',
   async onRequest(req, server) {
     if (new URL(req.url).pathname.startsWith('/api/'))
       return fetch('http://127.0.0.1:${API_PORT}' + new URL(req.url).pathname, { method: req.method, headers: req.headers })
     if (new URL(req.url).pathname !== '/__peer')
       return null
-    return Response.json({ peer: server.requestIP(req)?.address ?? null })
+    return Response.json({ peer: server.requestIP(req)?.address ?? null, hostname: server.hostname })
   },
 })
 `)
@@ -81,9 +82,10 @@ afterAll(async () => {
 describe('serve onRequest', () => {
   it('is handed the server, which names the socket peer whatever the headers claim', async () => {
     const res = await fetch(`${BASE}/__peer`, { headers: { 'x-forwarded-for': '198.51.100.1' } })
-    const body = await res.json() as { peer: string | null }
+    const body = await res.json() as { peer: string | null, hostname: string }
 
     expect(body.peer).toMatch(/^(?:127\.0\.0\.1|::1|::ffff:127\.0\.0\.1)$/)
+    expect(body.hostname).toBe('127.0.0.1')
   })
 
   it('still falls through to page rendering when the hook returns nothing', async () => {

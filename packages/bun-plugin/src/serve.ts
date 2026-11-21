@@ -937,6 +937,8 @@ export interface ServeOptions extends RenderAdmissionOptions {
    */
   exclude?: string[]
   port?: number
+  /** Bind address for the main HTTP listener. Defaults to Bun's listener address. */
+  hostname?: string
   /** Maximum incoming body size in bytes, including multipart overhead. Keeps Bun's default when omitted. */
   maxRequestBodySize?: number
   /**
@@ -5734,7 +5736,7 @@ function __stxOverlay(errs){
   let lastServeError: unknown
   for (let attempt = 0; attempt < maxPortAttempts; attempt++) {
     try {
-      _server = listen(actualPort, options.reusePort ?? false)
+      _server = listen(actualPort, options.reusePort ?? false, options.hostname)
       break
     }
     catch (err) {
