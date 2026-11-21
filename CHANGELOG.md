@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.922...v0.2.923)
+
+## 🐛 Bug Fixes
+
+- **native**: keep SwipeRow keyboard dismissal on the web ([ec13d61](https://github.com/stacksjs/stx/commit/ec13d61)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.923 ([a17da27](https://github.com/stacksjs/stx/commit/a17da27)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.921...v0.2.922)
 
 ## ✨ Features
