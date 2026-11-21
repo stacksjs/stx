@@ -899,6 +899,8 @@ export interface StxConfig {
   componentPackages?: string[]
   /** Path to public/static assets directory, defaults to 'public' */
   publicDir?: string
+  /** Fingerprint local asset URLs in production HTML. Defaults to true. */
+  fingerprintAssets?: boolean
   /**
    * Build image placeholders and responsive variants during server startup.
    * Defaults to 'auto', which runs only when templates consume the image

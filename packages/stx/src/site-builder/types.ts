@@ -58,6 +58,8 @@ export interface SiteConfig {
   excludeDirs?: string[]
   /** Public assets directory copied verbatim into outDir (default: "public") */
   publicDir?: string
+  /** Fingerprint local asset URLs in rendered pages. Defaults to true. */
+  fingerprintAssets?: boolean
   /** Output directory (default: "dist") */
   outDir?: string
   /** Don't generate sitemap.xml when false (default: true) */

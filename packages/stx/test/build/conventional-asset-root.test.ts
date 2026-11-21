@@ -32,7 +32,7 @@ const originalCwd = process.cwd()
 
 beforeEach(async () => {
   dir = createTempDir('stx-asset-root-')
-  await Bun.write(path.join(dir, 'pages', 'index.stx'), '<main><h1>Home</h1></main>\n')
+  await Bun.write(path.join(dir, 'pages', 'index.stx'), '<main><h1>Home</h1></main><script src="/assets/scripts/site-mode.js"></script>\n')
   await Bun.write(path.join(dir, 'public', 'img', 'logo.txt'), 'x\n')
   await Bun.write(path.join(dir, CONVENTIONAL_ASSET_ROOT, 'scripts', 'site-mode.js'), 'console.log(1)\n')
 })
@@ -69,9 +69,24 @@ describe('the static build', () => {
   it('emits the file the reported page asked for', async () => {
     process.chdir(dir)
     const { generateStaticSite } = await import('../../src/ssg')
-    await generateStaticSite({ pagesDir: 'pages', outputDir: 'dist', publicDir: 'public' })
+    const options = { pagesDir: 'pages', outputDir: 'dist', publicDir: 'public' }
+    await generateStaticSite(options)
 
     expect(existsSync(path.join(dir, 'dist', 'assets', 'scripts', 'site-mode.js'))).toBe(true)
+    const readUrl = async () => {
+      const html = await Bun.file('dist/index.html').text()
+      const url = /src="(\/assets\/scripts\/site-mode\.stx-[a-f0-9]{16}\.js)"/.exec(html)?.[1]
+      expect(url).toBeDefined()
+      return url!
+    }
+    const initial = await readUrl()
+    expect(await Bun.file(`dist${initial}`).text()).toBe('console.log(1)\n')
+
+    await Bun.write('resources/assets/scripts/site-mode.js', 'console.log(2)\n')
+    await generateStaticSite(options)
+    const next = await readUrl()
+    expect(next).not.toBe(initial)
+    expect(await Bun.file(`dist${next}`).text()).toBe('console.log(2)\n')
   })
 
   it('still copies publicDir', async () => {
@@ -100,5 +115,17 @@ describe('the production build', () => {
 
     expect(existsSync(path.join(dir, '.output', 'public', 'assets', 'scripts', 'site-mode.js'))).toBe(true)
     expect(existsSync(path.join(dir, '.output', 'public', 'img', 'logo.txt'))).toBe(true)
+    const { startProductionServer } = await import('../../src/production-server')
+    const server = await startProductionServer({ outputDir: path.join(dir, '.output'), port: 0 })
+    try {
+      const origin = `http://localhost:${server.port}`
+      const html = await (await fetch(origin)).text()
+      const alias = /src="(\/assets\/scripts\/site-mode\.stx-[a-f0-9]{16}\.js)"/.exec(html)?.[1]
+      expect(alias).toBeDefined()
+      const response = await fetch(origin + alias)
+      expect(response.headers.get('Cache-Control')).toContain('immutable')
+      expect(await response.text()).toBe('console.log(1)\n')
+    }
+    finally { server.stop() }
   })
 })

@@ -20,6 +20,7 @@ export { generateOfflineWorker, OFFLINE_REGISTER_SCRIPT, OFFLINE_WORKER_PATH, ty
 // once per *request*, which is the same waste in a worse form.
 export { deferScripts } from './build-defer-scripts'
 export { prepareServePageAssets } from './serve-page-assets'
+export { createPublicAssetFingerprinter } from './public-asset-fingerprints'
 export { EXTERNALIZED_ASSET_DIR, externalizeHtml, externalizeSharedAssets, type ExternalizedAsset, type ExternalizeHtmlResult, type ExternalizeResult } from './build-externalize'
 export { externalizeRepeatedAssets } from './build-externalize-repeated'
 export { type ComponentInstance } from './reactivity'

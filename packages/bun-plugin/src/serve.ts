@@ -22,7 +22,7 @@ import nodeFs from 'node:fs/promises'
 import nodePath from 'node:path'
 import process from 'node:process'
 import { loadConfig } from 'bunfig'
-import { bodyCloseIndex, BUILD_ID_HEADER, decodeTitleEntities, externalScriptsOutsideContainer, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, insertBeforeHeadClose, mergeCssConfig, pageCssFragment, pageHeadFragment, readResponseHeaders, readResponseStatus, renderFontCSS, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
+import { bodyCloseIndex, BUILD_ID_HEADER, createPublicAssetFingerprinter, decodeTitleEntities, externalScriptsOutsideContainer, extractPageResponseStatus, findContainerRegion, FRAGMENT_CACHE_CONTROL, getBuildId, insertBeforeHeadClose, mergeCssConfig, pageCssFragment, pageHeadFragment, readResponseHeaders, readResponseStatus, renderFontCSS, SPA_NAV_HEADER, spaNavVaryHeaders, stateDir, stateDirName } from '@stacksjs/stx'
 import { buildCodeFrame, locateFailureLine } from '@stacksjs/stx/build-message'
 import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-script-bundler'
 import { extractLayoutMetadata, layoutChanges, type LayoutMetadata, layoutTheRouterHas } from 'stx-router/layout-metadata'
@@ -1768,6 +1768,13 @@ export async function serve(options: ServeOptions): Promise<void> {
   const additionalComponentsDirs = options.additionalComponentsDirs ?? stxConfig.additionalComponentsDirs
   const partialsDir = options.partialsDir ?? stxConfig.partialsDir ?? defaultStxConfig.partialsDir
   const publicDir = options.publicDir ?? stxConfig.publicDir ?? 'public'
+  const publicAssets = production && stxConfig.fingerprintAssets !== false
+    ? createPublicAssetFingerprinter([
+    { directory: 'assets', prefix: '/assets/' },
+    { directory: 'resources/assets', prefix: '/assets/' },
+    { directory: publicDir },
+  ])
+    : undefined
   // Compiled once: a request only walks the list.
   const domainRoutes = compileDomainRoutes(options.domains ?? (stxConfig as any).server?.domains, message => console.warn(message))
   if (domainRoutes.length)
@@ -4931,6 +4938,13 @@ function __stxOverlay(errs){
                 catch { /* outer try — errors handled by inner catch */ }
               }
 
+              // Fingerprinted public URLs are virtual files. Resolve them
+              // before a dynamic page can claim their paths.
+              if (req.method === 'GET' || req.method === 'HEAD') {
+                const fingerprinted = publicAssets?.respond(path, req.method === 'HEAD')
+                if (fingerprinted) return fingerprinted
+              }
+
               // Normalize path
               if (path === '/index')
                 path = '/'
@@ -5618,7 +5632,7 @@ function __stxOverlay(errs){
               status: _finalResp.status, statusText: _finalResp.statusText, headers,
             })
           }
-          return _finalResp
+          return req.method === 'HEAD' ? _finalResp : publicAssets?.rewrite(_finalResp) ?? _finalResp
         })())
       },
     })

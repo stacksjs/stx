@@ -54,6 +54,7 @@ import { CONVENTIONAL_ASSET_OUTPUT, CONVENTIONAL_ASSET_ROOT, resolveConventional
 import { externalizeSharedAssets } from './build-externalize'
 import { clientBundleDependencies } from './client-script-bundler'
 import { externalizeRepeatedAssets } from './build-externalize-repeated'
+import { fingerprintBuiltPages } from './public-asset-fingerprints'
 import { createRouter, type Route } from './router'
 import { processDirectives, injectRouterScript } from './process'
 import { extractIslandChunks, injectIslandChunkPrefetch } from './island-chunking'
@@ -187,6 +188,8 @@ export interface SSGConfig {
   generate404?: boolean
   /** Additional files to copy to output */
   publicDir?: string
+  /** Fingerprint local asset URLs in rendered pages. Defaults to true. */
+  fingerprintAssets?: boolean
   /** Trailing slash behavior */
   trailingSlash?: boolean
   /** Clean output directory before build */
@@ -1154,7 +1157,8 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     // of them dead — the fallback now says what the documented default says.
     minify: options.minify ?? buildConfig.minify ?? true,
     generate404: options.generate404 ?? buildConfig.generate404 ?? true,
-    publicDir: options.publicDir || buildConfig.publicDir || 'public',
+    publicDir: options.publicDir ?? buildConfig.publicDir ?? stxConfig.publicDir ?? 'public',
+    fingerprintAssets: options.fingerprintAssets ?? stxConfig.fingerprintAssets ?? true,
     trailingSlash: options.trailingSlash ?? buildConfig.trailingSlash ?? false,
     cleanOutput: options.cleanOutput ?? buildConfig.cleanOutput ?? true,
     // Empty means "derive it" — the Css digest is computed below, once
@@ -1719,6 +1723,9 @@ else {
       await copyDirectory(conventionalAssets, path.join(cfg.outputDir, CONVENTIONAL_ASSET_OUTPUT))
       console.log(`Copied assets from ${CONVENTIONAL_ASSET_ROOT}`)
     }
+
+    if (cfg.fingerprintAssets)
+      await fingerprintBuiltPages(cfg.outputDir, result.pages.map(page => page.outputPath))
 
   }
 catch (error) {

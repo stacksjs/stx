@@ -58,6 +58,7 @@ export interface BuildManifest {
   outputDir: string
   routeRules?: RouteRules
   routerContainer?: string
+  fingerprintAssets?: boolean
   apiRoutes?: ServerApiRoute[]
 }
 

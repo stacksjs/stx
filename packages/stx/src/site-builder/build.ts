@@ -16,6 +16,7 @@ import process from 'node:process'
 import { CONVENTIONAL_ASSET_OUTPUT, resolveConventionalAssetRoot } from '../asset-roots'
 import { externalizeSharedAssets } from '../build-externalize'
 import { externalizeRepeatedAssets } from '../build-externalize-repeated'
+import { fingerprintBuiltPages } from '../public-asset-fingerprints'
 import { stxPlugin } from '../bun-plugin'
 import { injectCss } from '../dev-server/ts-css'
 import { injectSeo } from './seo'
@@ -127,6 +128,7 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
   // Walk the actual emitted .html files (not the build result, which lists
   // chunks too) so we can rewrite them with SEO + Css CSS.
   const htmlFiles = listFiles(outDir).filter(f => f.endsWith('.html'))
+  const renderedFiles: string[] = []
   const i18n = resolveI18n(options, process.cwd())
   // Used for locale-aware <a href> rewrites — any internal href that
   // matches one of these paths gets the current locale's prefix in
@@ -183,6 +185,7 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
       const targetPath = join(outDir, targetFile)
       mkdirSync(dirnameOf(targetPath), { recursive: true })
       writeFileSync(targetPath, html)
+      renderedFiles.push(targetPath)
 
       // Default-locale: keep the original file name. Non-default: the
       // original file might still be present from the bun build pass —
@@ -234,7 +237,11 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
     const fallback = readFileSync(join(outDir, 'index.html'), 'utf8')
       .replace(/<title>[^<]*<\/title>/i, `<title>404 — ${escapeText(options.name)}</title>`)
     writeFileSync(fourOhFourSrc, fallback)
+    renderedFiles.push(fourOhFourSrc)
   }
+
+  if (options.fingerprintAssets !== false)
+    await fingerprintBuiltPages(outDir, renderedFiles)
 
   // sitemap.xml — for multi-locale builds, emit one entry per
   // (page, locale) combination so search engines can crawl every

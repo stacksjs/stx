@@ -19,6 +19,7 @@ import { extractContainerContent, extractLayoutMetadata, hasContainerRegion, lay
 import { pageShipsSignalsRuntime } from './runtime-injection'
 import { isFileRequestPath, patternToRegex } from 'stx-router'
 import { compressResponse } from './compression'
+import { createPublicAssetFingerprinter } from './public-asset-fingerprints'
 import { actionRedirectResponse, isActionableMethod } from './page-action'
 import { FRAGMENT_CACHE_CONTROL, isSpaNavRequest, spaNavVaryHeaders } from './spa-nav'
 import { createRouteRuleResolver } from './route-rules'
@@ -117,6 +118,9 @@ export async function startProductionServer(options: ProductionServerOptions = {
 
   // Load build manifest
   const manifest = loadManifest(outputDir)
+  const publicAssets = manifest?.fingerprintAssets !== false
+    ? createPublicAssetFingerprinter([{ directory: path.join(outputDir, 'public') }])
+    : undefined
   if (!manifest) {
     console.error('[stx] No build manifest found. Run `stx build` first.')
     process.exit(1)
@@ -186,7 +190,7 @@ export async function startProductionServer(options: ProductionServerOptions = {
       // Every response leaves through here, so compression is applied once at
       // the boundary rather than at each of the two dozen places a Response is
       // constructed below. See src/compression.ts.
-      return compressResponse(request, await withRuntimeConfig(runtimeConfig ?? resolveRuntimeConfig(), async () => {
+      const response = await withRuntimeConfig(runtimeConfig ?? resolveRuntimeConfig(), async () => {
         const url = new URL(request.url)
         const pathname = url.pathname
   
@@ -211,6 +215,8 @@ export async function startProductionServer(options: ProductionServerOptions = {
         // and fingerprinted-asset cache hints. Matches the dev server handler
         // in bun-plugin/src/serve.ts.
         if ((request.method === 'GET' || request.method === 'HEAD') && pathname !== '/') {
+          const fingerprinted = publicAssets?.respond(pathname, request.method === 'HEAD')
+          if (fingerprinted) return fingerprinted
           const publicRoot = path.resolve(outputDir, 'public')
   
           // Decode URI components and reject embedded NULs
@@ -488,7 +494,8 @@ export async function startProductionServer(options: ProductionServerOptions = {
           })
         }
         })
-      }))
+      })
+      return compressResponse(request, request.method === 'HEAD' ? response : publicAssets?.rewrite(response) ?? response)
     },
   })
 

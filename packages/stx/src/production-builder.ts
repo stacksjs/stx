@@ -395,6 +395,7 @@ export async function buildForProduction(options: ProductionBuildOptions = {}): 
   const manifest = generateManifest(manifestRoutes, assets, outputDir)
   manifest.routeRules = routeRules
   manifest.routerContainer = routerContainer
+  manifest.fingerprintAssets = projectConfig.fingerprintAssets
   if (serverApi)
     manifest.apiRoutes = await buildServerApi(root, outputDir, apiOptions)
   if (projectConfig.runtimeConfig) {

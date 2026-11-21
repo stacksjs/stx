@@ -205,6 +205,7 @@ export default defineConfig({
 | `srcDir` | `string` | `src` | Source directory |
 | `outDir` | `string` | `dist` | Build output directory |
 | `publicDir` | `string` | `public` | Public assets directory. Files are mounted at the URL root — `public/images/hero.jpg` is reachable at `/images/hero.jpg`. Matches the Nuxt/Vite/Next/Astro convention. |
+| `fingerprintAssets` | `boolean` | `true` | Fingerprint public assets referenced directly in production HTML using their file contents. |
 | `base` | `string` | `/` | Public base path |
 
 ### Server Options
@@ -260,6 +261,20 @@ In your templates, reference them with absolute paths:
 <img src="/images/hero.jpg" alt="Hero">
 <link rel="icon" href="/favicon.ico">
 ```
+
+In production, stx changes direct root-relative asset references to URLs such
+as `/images/hero.stx-<hash>.jpg`. Changing the file changes its URL, even when
+the page template comes from the build cache. This covers images, responsive
+image sources and preloads, stylesheets, and scripts in rendered HTML.
+The original public URLs remain available. External URLs, manually versioned
+URLs, and URLs inside stylesheet or script files retain their own cache policy.
+
+Static builds write the fingerprinted files alongside the originals. Deploy
+them together with the HTML and configure your static host to cache the
+fingerprinted files as immutable. The stx production server sets that header
+automatically for fingerprinted files. Set `fingerprintAssets: false` to disable
+the feature in your configuration, or add `data-stx-no-fingerprint` to an
+individual HTML element that needs its original URL.
 
 **Notes:**
 
