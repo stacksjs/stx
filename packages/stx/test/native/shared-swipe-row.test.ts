@@ -38,7 +38,8 @@ async function fixture() {
 
 it('reveals native actions, closes the previous keyed row, and only runs a chosen action', async () => {
   const { root, file } = await fixture()
-  const { code } = await compileSharedScreenBundle(file, { root })
+  const { code, diagnostics } = await compileSharedScreenBundle(file, { root })
+  expect(diagnostics.filter(diagnostic => diagnostic.message.includes('unread-event'))).toEqual([])
   for (const platform of ['ios', 'android'] as const) {
     const phone = mountNativeScreen(code, 'Screen', { platform })
     await phone.settle()

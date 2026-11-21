@@ -51,7 +51,11 @@ onMount(() => close)
 <div class="relative overflow-hidden {{ className }}" :testID="testId()"
      :swipeEnabled="nativeHost && !disabled() && actions().length > 0"
      :swipeDirection="opened() ? 'right' : 'left'"
-     @swipe="swipe($event.direction)" @keydown.escape="opened() && close()">
+     @swipe="swipe($event.direction)"
+     @if(!nativeHost)
+     @keydown.escape="opened() && close()"
+     @endif
+     >
   <div class="flex flex-row items-center"
        :style="nativeHost ? { transform: [{ translateX: -offset() }] } : { transform: 'translateX(' + -offset() + 'px)' }">
     <div class="flex flex-1 flex-col min-w-0"><slot /></div>
