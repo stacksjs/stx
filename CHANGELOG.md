@@ -1,5 +1,41 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.921...v0.2.922)
+
+## ✨ Features
+
+- **native**: add shared swipe actions for list rows ([f143bc0](https://github.com/stacksjs/stx/commit/f143bc0)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: coordinate mutations and reactive lifecycles ([22ba15b](https://github.com/stacksjs/stx/commit/22ba15b)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **stx**: build static sites without installing the Bun plugin ([bf7ed0c](https://github.com/stacksjs/stx/commit/bf7ed0c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: preserve legacy speech grammar declaration shape ([6fd929f](https://github.com/stacksjs/stx/commit/6fd929f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: ship speech recognition types without a dependency ([33a1d8c](https://github.com/stacksjs/stx/commit/33a1d8c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: support scoped default slots and aliased refs ([8279a3b](https://github.com/stacksjs/stx/commit/8279a3b)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: cover request and reactivity edge cases ([4ffe465](https://github.com/stacksjs/stx/commit/4ffe465)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: coordinate fetches, queries, and async resources ([7745947](https://github.com/stacksjs/stx/commit/7745947)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: declare reactive proxy return types ([77547fe](https://github.com/stacksjs/stx/commit/77547fe)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: isolate reactive requests and hydrate queries ([7544378](https://github.com/stacksjs/stx/commit/7544378)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **stx**: verify fetch mount and remount behavior ([e51e592](https://github.com/stacksjs/stx/commit/e51e592)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: cover conditional attributes on accessible controls ([aa1fa76](https://github.com/stacksjs/stx/commit/aa1fa76)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.922 ([ffee44a](https://github.com/stacksjs/stx/commit/ffee44a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- wip ([d70ecb0](https://github.com/stacksjs/stx/commit/d70ecb0)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🎉 Miscellaneous
+
+- Improve async reactivity and query refresh in stx ([b494cef](https://github.com/stacksjs/stx/commit/b494cef)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.920...v0.2.921)
 
 ## 🐛 Bug Fixes
