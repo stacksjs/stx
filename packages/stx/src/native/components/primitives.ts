@@ -88,6 +88,12 @@ export interface ViewProps extends BaseProps {
   onClick?: () => void
   /** Long press handler */
   onLongPress?: () => void
+  /** Completed horizontal swipe on iOS and Android. */
+  onSwipe?: (event: { direction: 'left' | 'right' }) => void
+  /** Whether this view can receive its swipe handler. Defaults to true. */
+  swipeEnabled?: boolean
+  /** Which direction to recognize. Defaults to both. */
+  swipeDirection?: 'left' | 'right' | 'both'
   /** Layout change handler */
   onLayout?: (event: LayoutEvent) => void
 }

@@ -15,3 +15,6 @@ export interface ListProps {
   /** Content padding shared by browsers and native hosts. */
   contentContainerStyle?: Record<string, number>
 }
+
+export { default as SwipeRow } from './SwipeRow.stx'
+export type { SwipeRowAction, SwipeRowProps } from './swipe-row'

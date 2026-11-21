@@ -56,6 +56,7 @@ yarn add @stacksjs/components
 - **Tabs** - Tabbed content with horizontal/vertical layouts and multiple variants
 - **Tooltip** - Contextual tooltips with positioning options
 - **Video** - Video player with aspect ratio support
+- **SwipeRow** - Reveal row actions with a native swipe or the accessible More actions button
 - **VirtualList** - Windowed list for rendering large datasets efficiently
 - **VirtualTable** - Windowed table with columns for large datasets
 - **Dropdown** - Menu dropdown component with keyboard navigation
