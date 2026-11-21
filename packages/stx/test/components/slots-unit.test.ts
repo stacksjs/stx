@@ -249,6 +249,14 @@ describe('processSlots', () => {
     expect(result).toContain('Default Footer')
   })
 
+  it('projects explicit default slots through unnamed outlets with bound props', async () => {
+    const slots = parseSlots('<template #default="{ value }"><b>{{ value }}</b></template>')
+    expect(await processSlots('<slot :value="total">Fallback</slot>', slots, { total: 5 })).toBe('<b>5</b>')
+    const reactive = await processSlots('<slot :value="count" />', slots, {}, 'counter')
+    expect(reactive).toContain('data-stx-slot-binding=')
+    expect(reactive).toContain('<b>{{ value }}</b>')
+  })
+
   it('should preserve default fallback when slot not provided', async () => {
     const template = '<div><slot name="sidebar">Default sidebar content</slot></div>'
     const slots: ParsedSlots = {

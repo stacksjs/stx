@@ -50,6 +50,7 @@ import { escapeScriptBody } from './script-emit'
 import { literalValue, parsePropsDeclaration } from './props-declaration'
 import { scriptAttributes, scriptContainsCode } from './script-attributes'
 import { normalizeVueSetupScripts } from './vue-template'
+import { stripCommentsAndLiterals } from './strip-literals'
 
 /** Resolve external resource attributes after every server block has run. */
 function renderExternalComponentScript(script: string, context: Record<string, unknown>, filePath: string): string | null {
@@ -1086,16 +1087,28 @@ const snapshotPropWarnings = new Set<string>()
  */
 const SIGNAL_COMPOSABLES = 'useMediaQuery|useDark|usePreferredDark|usePreferredLight|usePreferredReducedMotion|usePreferredContrast|useDocumentVisibility|useScrollLock'
 export const SIGNAL_COMPOSABLE_CALL: RegExp = new RegExp(`\\b(?:${SIGNAL_COMPOSABLES})\\s*(?:<[^>]*>)?\\s*\\(`)
+const signalFactories = new Set(`state|derived|computed|ref|reactive|signal|useModel|useReactiveProp|useLocalStorage|useSessionStorage|keptState|useCookie|useDebouncedValue|${SIGNAL_COMPOSABLES}`.split('|'))
 
 export function componentClientSignalNames(scripts: string[]): string[] {
   const names = new Set<string>()
-  const declaration = new RegExp(`\\b(?:const|let|var)\\s+([a-zA-Z_$][\\w$]*)\\s*=\\s*(?:state|derived|computed|ref|reactive|signal|useModel|useReactiveProp|useLocalStorage|useSessionStorage|keptState|useCookie|useDebouncedValue|${SIGNAL_COMPOSABLES})\\s*(?:<[^>]*>)?\\s*\\(`, 'g')
+  const declaration = /\b(?:const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=\s*([a-zA-Z_$][\w$]*)\s*(?:<[^>]*>)?\s*\(/g
 
   for (const script of scripts) {
-    let match: RegExpExecArray | null
-    while ((match = declaration.exec(script)) !== null)
-      names.add(match[1])
-    declaration.lastIndex = 0
+    const aliases = new Set<string>()
+    const imports = [...script.matchAll(/\bimport\s*\{([^}]*)\}\s*from\s*(['"])(?:stx|@stacksjs\/stx|@stacksjs\/browser)\2/g)]
+    if (imports.length > 0) {
+      const code = stripCommentsAndLiterals(script)
+      for (const entry of imports) {
+        if (!code.startsWith('import', entry.index)) continue
+        for (const specifier of entry[1].split(',')) {
+          const alias = /^\s*([a-zA-Z_$][\w$]*)\s+as\s+([a-zA-Z_$][\w$]*)\s*$/.exec(specifier)
+          if (alias && signalFactories.has(alias[1])) aliases.add(alias[2])
+        }
+      }
+    }
+    for (const [, name, factory] of script.matchAll(declaration)) {
+      if (signalFactories.has(factory) || aliases.has(factory)) names.add(name)
+    }
   }
 
   return [...names]
@@ -2333,7 +2346,8 @@ export async function renderComponentWithSlot(
     // where the handler is undefined. Its own handlers still need that scope.
     const callerEvents = parentContext.__stx_signals_gate === true
       && /\s(?:@[\w:.-]+|x-on:[\w:.-]+)\s*=/.test(componentSlotContent)
-    const hasSignalScripts = (clientScripts.length > 0 && hasReactiveDirectives(templateContent)) || (options._nativeHostAttrs === true && clientScripts.length > 0) || (callerEvents && clientScripts.length > 0) || clientScripts.some(s =>
+    const clientSignalNames = componentClientSignalNames(clientScripts)
+    const hasSignalScripts = clientSignalNames.length > 0 || (clientScripts.length > 0 && hasReactiveDirectives(templateContent)) || (options._nativeHostAttrs === true && clientScripts.length > 0) || (callerEvents && clientScripts.length > 0) || clientScripts.some(s =>
       /\b(?:state|derived|effect|ref|useRef|reactive|computed|watch|watchEffect|useModel|useReactiveProp|onMount|onDestroy|defineProps|withDefaults|defineEmits|defineExpose|defineSlots)\s*(?:<[^<>()]*>)?\s*\(/.test(s),
     )
     const projectRefs = (content: string) => hasSignalScripts ? markProjectedRefs(content, componentUid) : content
@@ -2361,7 +2375,6 @@ export async function renderComponentWithSlot(
 
     // Check if component has signal scripts - if so, skip event directive processing
     // because the runtime will handle @click, @keydown etc. via processElement()
-    const clientSignalNames = componentClientSignalNames(clientScripts)
     // Client names from the scopes around this one travel down so that slot
     // content keeps `{{ signal() }}` for the browser. They are not this
     // component's names, though: one its own server script declares is its

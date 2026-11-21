@@ -182,8 +182,8 @@ describe('Vue Template Integration', () => {
   it('runs Vue setup imports and conditionals inside a .stx component', async () => {
     const file = await createTestFile('vue-counter.stx', `
       <script setup lang="ts">
-      import { ref } from 'vue'
-      const count = ref<number>(2)
+      import { ref as vueRef } from 'vue'
+      const count = vueRef<number>(2)
       </script>
       <template>
         <div>
@@ -196,7 +196,7 @@ describe('Vue Template Integration', () => {
     const html = await renderComponentWithSlot('vue-counter', { showHint: false }, '', dirname(file), {}, file, {}, undefined, new Set())
     expect(html).toContain('<p @if="count > 2" x-cloak>Threshold reached</p>')
     expect(html).toContain('<p @else>Keep going</p>')
-    expect(html).toContain('const { ref } = window.stx;')
+    expect(html).toMatch(/\bvueRef\s*=\s*ref\b/)
     expect(html).not.toMatch(/import .* from ['"]vue['"]/)
     expect(html).not.toContain('Hints enabled')
   })

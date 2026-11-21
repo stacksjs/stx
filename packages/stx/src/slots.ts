@@ -679,11 +679,7 @@ export async function processSlots(
 ): Promise<string> {
   let result = template
 
-  // Process named slots with props: <slot name="row" :item="item" :index="index">default</slot>
-  const namedSlotRegex = /<slot\s+name\s*=\s*["']([^"']+)["']([^>]*?)(?:\/>|>([\s\S]*?)<\/slot>)/gi
-
-  // eslint-disable-next-line pickier/no-unused-vars
-  result = await replaceAsync(result, namedSlotRegex, async (match, name, attrs, defaultContent) => {
+  async function renderOutlet(name: string, attrs: string, defaultContent?: string): Promise<string> {
     const slotDef = parsedSlots.named.get(name)
     const defaultFallback = defaultContent?.trim() || ''
 
@@ -722,7 +718,12 @@ export async function processSlots(
     }
 
     return await renderSlot(slotDef, props, defaultFallback, context)
-  })
+  }
+
+  // Process named slots with props: <slot name="row" :item="item">fallback</slot>
+  const namedSlotRegex = /<slot\s+name\s*=\s*["']([^"']+)["']([^>]*?)(?:\/>|>([\s\S]*?)<\/slot>)/gi
+  result = await replaceAsync(result, namedSlotRegex, (_match, name, attrs, defaultContent) =>
+    renderOutlet(name, attrs, defaultContent))
 
   /*
    * The default slot: <slot />, <slot></slot>, <slot>fallback</slot>, and the
@@ -739,14 +740,14 @@ export async function processSlots(
    *
    * Quoted attribute values are consumed as a unit so a > inside one cannot
    * end the tag early, the same way the component tag matcher does it (#1771).
-   *
-   * The bound values are not exposed to the slotted content, because
-   * `parsedSlots.default` is already-rendered markup with no binding to expose
-   * them through - only a named slot taken as <template #name="{ x }"> has
-   * one. The components that bind them do not read them; rendering the
-   * children is the whole of what they need.
    */
   const defaultSlotRegex = /<slot\b((?:"[^"]*"|'[^']*'|[^>"'])*?)\s*(?:\/>|>([\s\S]*?)<\/slot>)/gi
+
+  // An explicit #default slot receives the same props as a named slot. Plain
+  // child markup has no binding, so it can still use synchronous replacement.
+  if (parsedSlots.named.has('default'))
+    return replaceAsync(result, defaultSlotRegex, async (match, attrs, defaultContent) =>
+      /\bname\s*=/.test(attrs) ? match : renderOutlet('default', attrs, defaultContent))
 
   result = result.replace(defaultSlotRegex, (match, attrs: string, defaultContent) => {
     // Named slots are handled above. Tested on the ATTRIBUTES rather than on
