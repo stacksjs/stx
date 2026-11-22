@@ -35,6 +35,8 @@ import { loadStxConfig } from '../../config'
 import { classifyAttribute, extractBindingManifest, type BindingManifest } from '../../binding-manifest'
 import { processDirectives } from '../../process'
 import { buildClassTable } from './class-table'
+import { activeLeafEntries, type LeafEntry } from './headwind-to-style'
+import { boundClassNames, buildsClassNames } from './ts-css-leaf'
 import { processScriptSetup } from '../../signal-processing'
 import { appThemeCSS } from './app-theme'
 import { excludeNativeSubtrees, translateHtmlToDocument } from './html-to-ir'
@@ -153,8 +155,14 @@ export async function compileScreenSource(
 
   enterTemplatedBindings(document.root, manifest)
   // Compiled now, so the device does not compile the same lists as it mounts.
-  const classTable = buildClassTable(document.root)
+  // Under a native build the table also records what each utility resolved
+  // to through ts-css, including those a `:class` can produce (#38).
+  const resolving = activeLeafEntries() !== undefined
+  const classLeaf: Record<string, LeafEntry> = {}
+  const classTable = buildClassTable(document.root, resolving ? { boundClasses: boundClassNames, record: classLeaf } : {})
   if (classTable) document.root._classTable = classTable
+  if (Object.keys(classLeaf).length) document.root._classLeaf = classLeaf
+  if (resolving) diagnostics.push(...computedClassDiagnostics(document.root))
 
   // The page's title, as the web's <title> has it: the navigation title.
   const head = (context as { __stx_runtime_head?: { title?: unknown } }).__stx_runtime_head
@@ -256,4 +264,17 @@ export async function compileScreenFile(
   options: CompileScreenOptions = {},
 ): Promise<CompiledScreen> {
   return compileScreenSource(await Bun.file(filePath).text(), filePath, options)
+}
+
+/** A diagnostic for each `:class` that builds a name out of pieces, naming the expression. */
+function computedClassDiagnostics(root: STXNode): TranslationDiagnostic[] {
+  const found: TranslationDiagnostic[] = []
+  const visit = (node: STXNode | string): void => {
+    if (typeof node === 'string') return
+    const expression = node.bindings?.class
+    if (expression && buildsClassNames(expression)) found.push({ kind: 'computed-class', tag: String(node.type), name: expression })
+    for (const child of node.children) visit(child)
+  }
+  visit(root)
+  return found
 }

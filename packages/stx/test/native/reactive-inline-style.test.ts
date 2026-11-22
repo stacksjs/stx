@@ -148,7 +148,7 @@ window.probe = { styles, visible }
     phone.context.probe.styles.set('padding-left:6px;display:flex')
     phone.appearance('dark')
     await phone.settle()
-    expect(style()).toMatchObject({ display: 'none', paddingLeft: 6, backgroundColor: '#020617' })
+    expect(style()).toMatchObject({ display: 'none', paddingLeft: 6, backgroundColor: '#020618' })
     expect(warnings).toEqual([])
     phone.context.probe.styles.set({ paddingLeft: 'var(--space)', width: Infinity, cursor: 'pointer', fontSize: '1.2.3px' })
     await phone.settle()

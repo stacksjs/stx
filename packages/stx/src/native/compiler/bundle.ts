@@ -24,6 +24,8 @@ import { existsSync, mkdirSync, realpathSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import { compileScreenFile } from './render-screen'
 import { nativeStyleConfigFrom, withNativeStyleConfig, type NativeStyleConfig } from './style-config'
+import { withLeafEntries } from './headwind-to-style'
+import { projectLeafEntries } from './ts-css-leaf'
 import type { NativeLayoutChrome, STXDocument } from './ir'
 import { NATIVE_APP_ROUTE } from '../runtime/shared-screen'
 import { generateSignalsRuntime } from '../../signals'
@@ -424,7 +426,10 @@ export async function compileNativeBundle(options: CompileNativeBundleOptions): 
   }
   // A screen's script, its components' and its composables' are bundled as
   // the screen compiles: each message module goes in as its stand-in there.
-  await withNativeStyleConfig(styleConfig, () => stubs ? withModuleSubstitutes(stubs, compileScreens) : compileScreens())
+  // Utilities resolve through ts-css from the project's own CSS config, as
+  // its web pages do, and each screen ships what it resolved (#38).
+  const leafEntries = await projectLeafEntries(root)
+  await withNativeStyleConfig(styleConfig, () => withLeafEntries(leafEntries, () => stubs ? withModuleSubstitutes(stubs, compileScreens) : compileScreens()))
 
   const runtimeGlobals = nativeRuntimeModule('jsc-globals')
   const sharedScreen = nativeRuntimeModule('shared-screen')

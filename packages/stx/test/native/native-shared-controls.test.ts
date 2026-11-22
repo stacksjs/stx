@@ -47,12 +47,12 @@ describe.each(['ios', 'android'] as const)('shared controls on %s', (platform) =
     // Heights are floors: a button grows with the reader's text size rather
     // than cut its label off top and bottom.
     expect(save.style.height).toBeUndefined()
-    expect(save.style).toMatchObject({ minHeight: 44, paddingVertical: 10, borderRadius: 10, backgroundColor: '#3b82f6' })
+    expect(save.style).toMatchObject({ minHeight: 44, paddingVertical: 10, borderRadius: 10, backgroundColor: '#2b7fff' })
     const label = (node: typeof save) => node.children.find((child): child is typeof save => typeof child !== 'string' && child.type === 'Text' && child.style.display !== 'none')!
     expect(label(save).style).toMatchObject({ color: '#ffffff', fontSize: 17, fontWeight: '600' })
     expect(phone.byTestID('cancel')!.style.backgroundColor).toBe('#7676801f')
-    expect(label(phone.byTestID('cancel')!).style.color).toBe('#2563eb')
-    expect(phone.byTestID('delete')!.style).toMatchObject({ minHeight: 50, borderRadius: 12, backgroundColor: '#ef4444', width: '100%' })
+    expect(label(phone.byTestID('cancel')!).style.color).toBe('#155dfc')
+    expect(phone.byTestID('delete')!.style).toMatchObject({ minHeight: 50, borderRadius: 12, backgroundColor: '#fb2c36', width: '100%' })
     expect(phone.byTestID('more')!.style.backgroundColor).toBeUndefined()
     expect(phone.byTestID('more')!.style.minHeight).toBe(34)
 
@@ -102,7 +102,7 @@ describe.each(['ios', 'android'] as const)('shared controls on %s', (platform) =
 
     const box = phone.byTestID('agree')!
     expect(box.type).toBe('Checkbox')
-    expect(box.style.color).toBe('#2563eb')
+    expect(box.style.color).toBe('#155dfc')
     phone.press(box, 'onValueChange', { value: true })
     await phone.settle()
     expect(phone.context.probe.agreed()).toBe(true)
