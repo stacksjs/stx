@@ -190,7 +190,7 @@ function hasAnimationDirectives(template: string): boolean {
   const animationDirectives = [
     /@animate\b/, // @animate directive
     /@transition\b/, // @transition directive
-    /@scroll(?:Animate)?\b/, // @scroll or @scrollAnimate directives
+    /@scroll(?:Animate)?\s*\(/, // A scroll animation takes arguments. An event binding uses "=".
     /@staggered\b/, // @staggered directive
     /@sequence\b/, // @sequence directive
     /@motion\b/, // @motion directive

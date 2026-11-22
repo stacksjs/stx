@@ -176,6 +176,22 @@ describe('processAnimationDirectives', () => {
     expect(result).toBe(template)
   })
 
+  it('does not load animation styles for scroll event bindings', () => {
+    const template = '<html><head></head><body><div @scroll="scrolled()" @scroll.passive="track()" @scroll = "update()"></div></body></html>'
+
+    const result = processAnimationDirectives(template, {}, '/carousel.stx', defaultOptions)
+
+    expect(result).toBe(template)
+  })
+
+  it('loads animation styles for scroll animation directives', () => {
+    const template = '<html><head></head><body>@scrollAnimate (fade)<div>Test</div>@endscrollAnimate</body></html>'
+
+    const result = processAnimationDirectives(template, {}, '/other.stx', defaultOptions)
+
+    expect(result).toContain('<style id="stx-animation-base">')
+  })
+
   it('should add base animation styles', () => {
     const template = '<html><head></head><body>@transition(fade)<p>Test</p>@endtransition</body></html>'
 
