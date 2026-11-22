@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.926...v0.2.927)
+
+## 🐛 Bug Fixes
+
+- **native**: a text size's line-height stays with that size, off controls ([0cf18b8](https://github.com/stacksjs/stx/commit/0cf18b8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.927 ([051d7a1](https://github.com/stacksjs/stx/commit/051d7a1)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.925...v0.2.926)
 
 ## ✨ Features
