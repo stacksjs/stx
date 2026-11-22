@@ -9,6 +9,7 @@ import type { NativeBindingNode } from './binding-tree'
 import { installCraftBridge, type CraftBridgeOptions } from './craft-bridge'
 import { createNativeHost, type NativeHost } from './native-host'
 import { createNativeViewOperations, nativeViewError } from './view-operations'
+import { wideColorMap, withWideColors } from './wide-colors'
 import { nativeLinkFollower, nativeLinkState } from './web-navigation'
 import { startNativeSessionRun } from './web-storage'
 
@@ -38,6 +39,10 @@ export function prepareSharedNativeScreen(
   let rendered = false
   const protocol = new STXBridge()
   protocol.initialize(bridge)
+  // Display P3 where the host draws it: the screen holds sRGB, which every
+  // host draws, and swaps in the P3 values its leaf recorded on the way out.
+  const wide = bridge.capabilities?.includes('displayP3Colors') ? wideColorMap(document.root._classLeaf) : undefined
+  const toHost = <T>(payload: T): T => wide ? withWideColors(payload, wide) : payload
   const craft = installCraftBridge(protocol, bridge, globalThis as Record<string, any>, {
     ...options,
     ...(document.title ? { title: document.title } : {}),
@@ -66,7 +71,7 @@ export function prepareSharedNativeScreen(
         batchId: `mutation_${generation}_${revision}`,
         baseRevision,
         revision,
-        operations,
+        operations: toHost(operations),
       })
     },
   })
@@ -123,7 +128,7 @@ export function prepareSharedNativeScreen(
     console.error(`[stx native] the screen refused ${batch || 'a mutation batch'} (${payload.code ?? 'error'}: ${payload.message ?? ''}); redrawing it`)
     generation++
     revision = 0
-    protocol.render(host.snapshot(tree.root))
+    protocol.render(toHost(host.snapshot(tree.root)))
   })
 
   protocol.on<any>('EVENT', (message) => {
@@ -148,7 +153,7 @@ export function prepareSharedNativeScreen(
       // example `modalRequested()`) instead of the handler id registered by
       // the shared runtime. Keep the initial render as the first bridge
       // message, then flush the hydrated values and handler ids immediately.
-      protocol.render(document.root)
+      protocol.render(toHost(document.root))
       rendered = true
       host.flush()
     },

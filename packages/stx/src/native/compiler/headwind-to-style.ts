@@ -1181,6 +1181,13 @@ type ClassStyleOptions = { focus?: boolean, focusWithin?: boolean, rules?: Nativ
 export interface LeafEntry {
   style: STXStyle
   em?: { lineHeight?: number, letterSpacing?: number }
+  /**
+   * The Display P3 value of each colour in `style` that sRGB clamps, keyed by
+   * the hex it ships as. The style itself stays sRGB, which every host draws;
+   * a host that reports `displayP3Colors` swaps these in as the screen is sent
+   * (runtime/wide-colors.ts), so nothing a host cannot draw is ever emitted.
+   */
+  p3?: Record<string, string>
 }
 
 /** Resolve one variant-free utility, or undefined to leave it to the parsers below. */
@@ -1571,8 +1578,9 @@ function compileLayer(classes: string, variables?: NativeStyleVariables, options
  * `color(display-p3 ...)` or `var(...)` draws a near-black blue, and Android
  * throws inside a handler that swallows it and leaves the host's default. So a
  * colour in any other form never leaves this compiler: the class that produced
- * it is reported unknown instead. A `displayP3Colors` capability would widen
- * this; until a host advertises one, sRGB is the contract.
+ * it is reported unknown instead. sRGB is the contract even for a host that
+ * draws Display P3: the P3 value travels beside the hex (`LeafEntry.p3`) and
+ * is swapped in only on the way to a host that reports `displayP3Colors`.
  */
 // `rgb()` must be numbers, comma- or space-separated with an optional alpha:
 // an arbitrary value's underscores are not spaces here, and `rgb(1_2_3)` is
@@ -1580,7 +1588,7 @@ function compileLayer(classes: string, variables?: NativeStyleVariables, options
 const CHANNEL = String.raw`-?(?:\d+\.?\d*|\.\d+)%?`
 const NATIVE_COLOR = new RegExp(String.raw`^(?:#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})|rgba?\(\s*${CHANNEL}(?:\s*,\s*|\s+)${CHANNEL}(?:\s*,\s*|\s+)${CHANNEL}(?:\s*[,/]\s*${CHANNEL})?\s*\)|transparent)$`, 'i')
 
-const COLOR_KEYS = ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor', 'textDecorationColor', 'shadowColor', 'tintColor', 'fill', 'stroke', 'gradientFrom', 'gradientVia', 'gradientTo'] as const
+export const COLOR_KEYS = ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor', 'textDecorationColor', 'shadowColor', 'tintColor', 'fill', 'stroke', 'gradientFrom', 'gradientVia', 'gradientTo'] as const
 
 /** Whether a native host draws `value` as written. */
 export function isNativeColor(value: unknown): boolean {

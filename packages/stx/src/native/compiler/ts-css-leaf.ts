@@ -22,7 +22,7 @@
 import type { CSSGenerator } from '@stacksjs/ts-css/engine'
 import type { LeafEntry, NativeLeaf } from './headwind-to-style'
 import type { STXStyle } from './ir'
-import { colorToHex, CSSGenerator as Generator, defaultConfig, extractClasses, resolveColor, resolveLength, resolveUtility } from '@stacksjs/ts-css/engine'
+import { colorToCSS, colorToHex, CSSGenerator as Generator, defaultConfig, extractClasses, isInSrgbGamut, resolveColor, resolveLength, resolveUtility } from '@stacksjs/ts-css/engine'
 import { applyLeafEntry, leafFromEntries } from './headwind-to-style'
 
 type Mutable = Record<string, unknown>
@@ -71,14 +71,20 @@ const KEYWORD_PROPERTIES: Record<string, { key: keyof STXStyle, values: Readonly
   'text-decoration-line': { key: 'textDecorationLine', values: new Set(['none', 'underline', 'line-through']) },
 }
 
-/** `#rrggbb`, `#rrggbbaa` or `transparent`, as the native renderer reads colours. */
-function nativeColor(value: string): string | undefined {
+/**
+ * `#rrggbb`, `#rrggbbaa` or `transparent`, as every native host reads colours,
+ * and the Display P3 value too when sRGB clamps the colour: 82 of the 242
+ * default palette colours. A host that draws P3 gets that instead.
+ */
+function nativeColor(value: string): { hex: string, p3?: string } | undefined {
   if (value.trim().toLowerCase() === 'transparent')
-    return 'transparent'
-  // The renderer has no wide-gamut colour type yet, so an oklch colour goes
-  // to sRGB; 95 of the 242 default palette colours clamp until it does.
+    return { hex: 'transparent' }
   const color = resolveColor(value, { space: 'srgb' })
-  return color === undefined ? undefined : colorToHex(color)
+  if (color === undefined)
+    return undefined
+  const hex = colorToHex(color)
+  const wide = resolveColor(value, { space: 'display-p3' })
+  return wide !== undefined && !isInSrgbGamut(wide) ? { hex, p3: colorToCSS(wide) } : { hex }
 }
 
 /** `font-weight: 700` is `bold` natively; every other weight stays numeric. */
@@ -121,6 +127,7 @@ const EM = /^(-?(?:\d+\.?\d*|\.\d+))em$/
 export function leafEntryFromDeclarations(properties: Record<string, string>): LeafEntry | undefined {
   const style: Mutable = {}
   const em: NonNullable<LeafEntry['em']> = {}
+  const p3: Record<string, string> = {}
   const declaredSize = properties['font-size']
   // A font-size in em is relative to the PARENT's size, which is unknown here.
   if (declaredSize !== undefined && EM.test(declaredSize.trim()))
@@ -133,7 +140,8 @@ export function leafEntryFromDeclarations(properties: Record<string, string>): L
       const color = nativeColor(trimmed)
       if (color === undefined)
         return undefined
-      style[COLOR_PROPERTIES[property]] = color
+      style[COLOR_PROPERTIES[property]] = color.hex
+      if (color.p3 !== undefined) p3[color.hex] = color.p3
       continue
     }
     if (LENGTH_PROPERTIES[property]) {
@@ -197,7 +205,10 @@ export function leafEntryFromDeclarations(properties: Record<string, string>): L
 
   foldSides(style, 'padding')
   foldSides(style, 'margin')
-  return Object.keys(em).length > 0 ? { style: style as STXStyle, em } : { style: style as STXStyle }
+  const entry: LeafEntry = { style: style as STXStyle }
+  if (Object.keys(em).length > 0) entry.em = em
+  if (Object.keys(p3).length > 0) entry.p3 = p3
+  return entry
 }
 
 /** The style one utility's declarations give at a font size, or undefined. */
