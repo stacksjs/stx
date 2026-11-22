@@ -79,13 +79,15 @@ describe('native colours', () => {
   })
 
   /**
-   * At build time an oklch arbitrary value is not lost: ts-css reads it and the
-   * leaf converts it to sRGB hex. What neither can resolve is still reported.
+   * At build time an oklch or rgb() arbitrary value is not lost: ts-css reads
+   * it (an underscore is a space there, so `rgb(1_2_3)` is `rgb(1 2 3)`) and
+   * the leaf converts it to sRGB hex. What neither can resolve is still reported.
    */
-  it('should convert an oklch arbitrary colour at build time, and report the rest', async () => {
+  it('should convert an oklch or rgb() arbitrary colour at build time, and report the rest', async () => {
     await withNativeLeaf(leaf, async () => {
       expect(compileHeadwindToStyle('bg-[oklch(60%_0.1_200)]')).toEqual({ backgroundColor: '#0d9298' })
-      reportsEach(UNDRAWABLE.filter(name => !name.startsWith('bg-[oklch')))
+      expect(compileHeadwindToStyle('bg-[rgb(1_2_3)]')).toEqual({ backgroundColor: '#010203' })
+      reportsEach(UNDRAWABLE.filter(name => !name.startsWith('bg-[oklch') && !name.startsWith('bg-[rgb')))
     })
   })
 
