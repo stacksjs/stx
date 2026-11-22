@@ -1169,13 +1169,105 @@ type ClassStyleOptions = { focus?: boolean, focusWithin?: boolean, rules?: Nativ
 // none of their own), then per class list and flags.
 // Per style config first: a project's colours, shortcuts and breakpoints change
 // what a class means, and one process can compile for more than one project.
-const classStyleCache = new WeakMap<object, WeakMap<object, WeakMap<object, Map<string, ClassStyles>>>>()
+/**
+ * One utility's native style, as the build resolved it through ts-css
+ * (stacksjs/ts-css#38).
+ *
+ * `em` holds what is relative to the font size -- a unitless line-height, an
+ * em letter-spacing -- as multiples of it, because the size is only known once
+ * the whole class list is: `leading-tight` is 17.5 beside `text-sm` and 20
+ * beside `text-base`. Applying it is a multiply, so the device needs no engine.
+ */
+export interface LeafEntry {
+  style: STXStyle
+  em?: { lineHeight?: number, letterSpacing?: number }
+}
+
+/** Resolve one variant-free utility, or undefined to leave it to the parsers below. */
+export type NativeLeaf = (utility: string, fontSize: number) => STXStyle | undefined
+
+/** An entry's style at a font size. Shared by the build and the device, so they cannot drift. */
+export function applyLeafEntry(entry: LeafEntry, fontSize: number): STXStyle {
+  if (!entry.em)
+    return entry.style
+  const style: STXStyle = { ...entry.style }
+  if (entry.em.lineHeight !== undefined) style.lineHeight = entry.em.lineHeight * fontSize
+  if (entry.em.letterSpacing !== undefined) style.letterSpacing = entry.em.letterSpacing * fontSize
+  return style
+}
+
+/** A leaf that looks entries up: the build's resolver, or the table a screen ships with. */
+export function leafFromEntries(entryOf: (utility: string) => LeafEntry | undefined): NativeLeaf {
+  return (utility, fontSize) => {
+    const entry = entryOf(utility)
+    return entry === undefined ? undefined : applyLeafEntry(entry, fontSize)
+  }
+}
+
+/**
+ * The leaf in force. The build sets one backed by ts-css; a device sets one
+ * backed by the table its screens ship. Unset, every utility goes to the
+ * parsers below, as before.
+ */
+let currentLeaf: NativeLeaf | undefined
+
+/** Use `leaf` for every native class resolution from now on. */
+export function setNativeLeaf(leaf: NativeLeaf | undefined): void {
+  currentLeaf = leaf
+}
+
+/** The leaf in force, so a caller can wrap it and put it back. */
+export function activeNativeLeaf(): NativeLeaf | undefined {
+  return currentLeaf
+}
+
+/** Run `work` with `leaf` in force, then put back what was there. */
+export async function withNativeLeaf<T>(leaf: NativeLeaf | undefined, work: () => Promise<T>): Promise<T> {
+  const before = currentLeaf
+  currentLeaf = leaf
+  try {
+    return await work()
+  }
+  finally {
+    currentLeaf = before
+  }
+}
+
+/**
+ * Where the build's leaf gets its entries, so a screen's class table can record
+ * the ones it used and ship them: the device resolves the same utilities from
+ * that record, with no engine. Unset outside a native build.
+ */
+let currentEntries: ((utility: string) => LeafEntry | undefined) | undefined
+
+/** The entry source in force during a native build, if any. */
+export function activeLeafEntries(): ((utility: string) => LeafEntry | undefined) | undefined {
+  return currentEntries
+}
+
+/** Run `work` resolving utilities from `entryOf`, as the native build does. */
+export async function withLeafEntries<T>(entryOf: ((utility: string) => LeafEntry | undefined) | undefined, work: () => Promise<T>): Promise<T> {
+  const before = currentEntries
+  currentEntries = entryOf
+  try {
+    return await withNativeLeaf(entryOf ? leafFromEntries(entryOf) : currentLeaf, work)
+  }
+  finally {
+    currentEntries = before
+  }
+}
+
+const classStyleCache = new WeakMap<object, WeakMap<object, WeakMap<object, WeakMap<object, Map<string, ClassStyles>>>>>()
 const NONE = {}
 
 function classStylesFor(variables: NativeStyleVariables | undefined, rules: NativeStylesheetRules | undefined): Map<string, ClassStyles> {
+  // A list compiled under one leaf is not valid under another: the leaf
+  // decides what a utility resolves to.
   const config = activeNativeStyleConfig()
-  let byVariables = classStyleCache.get(config)
-  if (!byVariables) classStyleCache.set(config, byVariables = new WeakMap())
+  let byLeaf = classStyleCache.get(config)
+  if (!byLeaf) classStyleCache.set(config, byLeaf = new WeakMap())
+  let byVariables = byLeaf.get(currentLeaf ?? NONE)
+  if (!byVariables) byLeaf.set(currentLeaf ?? NONE, byVariables = new WeakMap())
   let byRules = byVariables.get(variables ?? NONE)
   if (!byRules) byVariables.set(variables ?? NONE, byRules = new WeakMap())
   let byClasses = byRules.get(rules ?? NONE)
@@ -1470,6 +1562,63 @@ function compileLayer(classes: string, variables?: NativeStyleVariables, options
   return result
 }
 
+/**
+ * The colours a native host can draw.
+ *
+ * Both hosts parse `#rgb[a]`, `#rrggbb[aa]`, `rgb()`/`rgba()` and
+ * `transparent`, and nothing else. Anything else is not rejected: iOS hands it
+ * to a hex parser that reads from the first character, so `oklch(...)`,
+ * `color(display-p3 ...)` or `var(...)` draws a near-black blue, and Android
+ * throws inside a handler that swallows it and leaves the host's default. So a
+ * colour in any other form never leaves this compiler: the class that produced
+ * it is reported unknown instead. A `displayP3Colors` capability would widen
+ * this; until a host advertises one, sRGB is the contract.
+ */
+// `rgb()` must be numbers, comma- or space-separated with an optional alpha:
+// an arbitrary value's underscores are not spaces here, and `rgb(1_2_3)` is
+// not a colour any parser reads.
+const CHANNEL = String.raw`-?(?:\d+\.?\d*|\.\d+)%?`
+const NATIVE_COLOR = new RegExp(String.raw`^(?:#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})|rgba?\(\s*${CHANNEL}(?:\s*,\s*|\s+)${CHANNEL}(?:\s*,\s*|\s+)${CHANNEL}(?:\s*[,/]\s*${CHANNEL})?\s*\)|transparent)$`, 'i')
+
+const COLOR_KEYS = ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor', 'textDecorationColor', 'shadowColor', 'tintColor', 'fill', 'stroke', 'gradientFrom', 'gradientVia', 'gradientTo'] as const
+
+/** Whether a native host draws `value` as written. */
+export function isNativeColor(value: unknown): boolean {
+  return typeof value === 'string' && NATIVE_COLOR.test(value.trim())
+}
+
+/**
+ * SVG paint also takes `none` and `currentColor`: the native SVG renderer reads
+ * them itself (an icon's `fill="none" stroke="currentColor"` is the common
+ * case), so they never reach the colour parser. Nowhere else are they colours.
+ */
+const PAINT_KEYWORD = /^(?:none|currentcolor)$/i
+const PAINT_KEYS: ReadonlySet<string> = new Set(['fill', 'stroke'])
+
+function isNativePaint(key: string, value: unknown): boolean {
+  return isNativeColor(value) || (PAINT_KEYS.has(key) && typeof value === 'string' && PAINT_KEYWORD.test(value.trim()))
+}
+
+function colorsOf(style: STXStyle): unknown[] {
+  return COLOR_KEYS.map(key => (style as Record<string, unknown>)[key])
+}
+
+/**
+ * Undo any colour the last class set that no host can draw, returning whether
+ * it set none: the class is reported, and the property keeps what it had.
+ */
+function keepNativeColors(style: STXStyle, before: unknown[]): boolean {
+  let kept = true
+  COLOR_KEYS.forEach((key, index) => {
+    const value = (style as Record<string, unknown>)[key]
+    if (value === before[index] || value === undefined || isNativePaint(key, value)) return
+    kept = false
+    if (before[index] === undefined) delete (style as Record<string, unknown>)[key]
+    else (style as Record<string, unknown>)[key] = before[index]
+  })
+  return kept
+}
+
 export function compileHeadwindToStyle(classes: string | string[], unknown?: string[]): STXStyle {
   const style: STXStyle = {}
   const classNames = Array.isArray(classes) ? classes : classes.split(/\s+/).filter(Boolean)
@@ -1477,62 +1626,82 @@ export function compileHeadwindToStyle(classes: string | string[], unknown?: str
   // size utility later in the list. Absolute leading retains its own units.
   const typography: STXStyle = {}
   for (const className of classNames) {
-    if (className.startsWith('text-')) parseTextColor(className, typography)
+    if (!className.startsWith('text-')) continue
+    // The leaf reads the app's own theme, so its size wins where it has one.
+    const sized = currentLeaf?.(className, 16)?.fontSize
+    if (typeof sized === 'number') typography.fontSize = sized
+    else parseTextColor(className, typography)
   }
   const fontSize = typeof typography.fontSize === 'number' ? typography.fontSize : 16
 
+  // One class at a time, so a colour no native host can draw is traced back
+  // to the class that produced it and reported, never passed through.
+  const applyClass = (className: string): void => {
+      // An Iconify class names the glyph of an <Icon>, not a style.
+      if (/^i-[a-z0-9]+-/.test(className)) return
+
+      // ts-css, where the leaf can map every declaration (stacksjs/ts-css#38).
+      const resolved = currentLeaf?.(className, fontSize)
+      if (resolved !== undefined) {
+        Object.assign(style, resolved)
+        return
+      }
+
+      // Try exact match parsers first
+      const exactParser = classParsers[className]
+      if (exactParser) {
+        exactParser('', style)
+        return
+      }
+
+      // Try pattern-based parsers
+      if (parseShadow(className, style)) return
+      if (parseGradient(className, style)) return
+      if (parseBackgroundColor(className, style)) return
+      if (parseVectorPaint(className, style)) return
+      if (parseTextColor(className, style)) return
+      if (parsePadding(className, style)) return
+      if (parseMargin(className, style)) return
+      if (parseWidth(className, style)) return
+      if (parseHeight(className, style)) return
+      if (parseBorderRadius(className, style)) return
+      if (parseBorderWidth(className, style)) return
+      if (parseBorderColor(className, style)) return
+      if (parseOpacity(className, style)) return
+      if (parseGap(className, style)) return
+      if (parseTypography(className, style, fontSize)) return
+      if (parseSize(className, style)) return
+      if (parseMinMax(className, style)) return
+      if (parseGridColumns(className, style)) return
+      // `aspect-[16/9]`, `aspect-[4/3]`: the ratio, as `aspect-square` is one.
+      const ratio = /^aspect-\[(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)\]$/.exec(className)
+      if (ratio && Number(ratio[2]) > 0) { style.aspectRatio = Number(ratio[1]) / Number(ratio[2]); return }
+      const layer = /^z-\[(-?\d+)\]$/.exec(className) ?? /^z-(\d+)$/.exec(className)
+      if (layer) { style.zIndex = Number(layer[1]); return }
+      if (className === 'z-auto') return
+      if (parseOffset(className, style)) return
+      const order = /^order-\[(-?\d+)\]$/.exec(className) ?? /^order-(-?\d+)$/.exec(className)
+      if (order) {
+        style.order = Number(order[1])
+        return
+      }
+      if (parsePosition(className, style)) return
+      if (parseTranslation(className, style)) return
+      if (parseSpace(className, style)) return
+
+      unknown?.push(className)
+      // Unknown class - log warning in development. `process` is absent in the
+      // JavaScriptCore bundle, which runs this same function for `:class`.
+      if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
+        console.warn(`[STX Native] Unknown Headwind class: ${className}`)
+      }
+  }
+
   for (const className of classNames) {
-    // An Iconify class names the glyph of an <Icon>, not a style.
-    if (/^i-[a-z0-9]+-/.test(className)) continue
-
-    // Try exact match parsers first
-    const exactParser = classParsers[className]
-    if (exactParser) {
-      exactParser('', style)
-      continue
-    }
-
-    // Try pattern-based parsers
-    if (parseShadow(className, style)) continue
-    if (parseGradient(className, style)) continue
-    if (parseBackgroundColor(className, style)) continue
-    if (parseVectorPaint(className, style)) continue
-    if (parseTextColor(className, style)) continue
-    if (parsePadding(className, style)) continue
-    if (parseMargin(className, style)) continue
-    if (parseWidth(className, style)) continue
-    if (parseHeight(className, style)) continue
-    if (parseBorderRadius(className, style)) continue
-    if (parseBorderWidth(className, style)) continue
-    if (parseBorderColor(className, style)) continue
-    if (parseOpacity(className, style)) continue
-    if (parseGap(className, style)) continue
-    if (parseTypography(className, style, fontSize)) continue
-    if (parseSize(className, style)) continue
-    if (parseMinMax(className, style)) continue
-    if (parseGridColumns(className, style)) continue
-    // `aspect-[16/9]`, `aspect-[4/3]`: the ratio, as `aspect-square` is one.
-    const ratio = /^aspect-\[(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)\]$/.exec(className)
-    if (ratio && Number(ratio[2]) > 0) { style.aspectRatio = Number(ratio[1]) / Number(ratio[2]); continue }
-    const layer = /^z-\[(-?\d+)\]$/.exec(className) ?? /^z-(\d+)$/.exec(className)
-    if (layer) { style.zIndex = Number(layer[1]); continue }
-    if (className === 'z-auto') continue
-    if (parseOffset(className, style)) continue
-    const order = /^order-\[(-?\d+)\]$/.exec(className) ?? /^order-(-?\d+)$/.exec(className)
-    if (order) {
-      style.order = Number(order[1])
-      continue
-    }
-    if (parsePosition(className, style)) continue
-    if (parseTranslation(className, style)) continue
-    if (parseSpace(className, style)) continue
-
-    unknown?.push(className)
-    // Unknown class - log warning in development. `process` is absent in the
-    // JavaScriptCore bundle, which runs this same function for `:class`.
-    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
-      console.warn(`[STX Native] Unknown Headwind class: ${className}`)
-    }
+    const before = colorsOf(style)
+    applyClass(className)
+    if (!keepNativeColors(style, before) && !unknown?.includes(className))
+      unknown?.push(className)
   }
 
   return style
