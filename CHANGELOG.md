@@ -1,5 +1,37 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.925...v0.2.926)
+
+## ✨ Features
+
+- **native**: name the classes a touch host ignores, once per screen ([7ec880a](https://github.com/stacksjs/stx/commit/7ec880a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([stacksjs/ts-css#38](https://github.com/stacksjs/ts-css/issues/38))
+- **native**: draw Display P3 on hosts that report displayP3Colors ([9d243c8](https://github.com/stacksjs/stx/commit/9d243c8)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([stacksjs/ts-css#38](https://github.com/stacksjs/ts-css/issues/38))
+- **native**: resolve utilities through ts-css at build time ([7aa14ff](https://github.com/stacksjs/stx/commit/7aa14ff)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([stacksjs/ts-css#38](https://github.com/stacksjs/ts-css/issues/38))
+- **native**: ship what a screen's utilities resolved to, and apply it on the device ([80efe8c](https://github.com/stacksjs/stx/commit/80efe8c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([stacksjs/ts-css#38](https://github.com/stacksjs/ts-css/issues/38))
+- **native**: resolve a leaf utility through ts-css, and emit only drawable colours ([9d87722](https://github.com/stacksjs/stx/commit/9d87722)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([stacksjs/ts-css#38](https://github.com/stacksjs/ts-css/issues/38))
+
+## 🐛 Bug Fixes
+
+- **native**: send the host no update that says what it already has ([9145721](https://github.com/stacksjs/stx/commit/9145721)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **types**: defaulted props are required, and useSeoMeta takes the runtime's SeoMeta ([06ea389](https://github.com/stacksjs/stx/commit/06ea389)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2208](https://github.com/stacksjs/stx/issues/2208), [#2209](https://github.com/stacksjs/stx/issues/2209))
+- **typecheck**: read a client payload to its closing brace ([e641c89](https://github.com/stacksjs/stx/commit/e641c89)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2207](https://github.com/stacksjs/stx/issues/2207))
+- skip animation styles for scroll event bindings ([d30440a](https://github.com/stacksjs/stx/commit/d30440a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ✅ Tests
+
+- **native**: prove Display P3 reaches the view on a P3 host ([8ae0617](https://github.com/stacksjs/stx/commit/8ae0617)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([stacksjs/ts-css#38](https://github.com/stacksjs/ts-css/issues/38))
+- **native**: read the ts-css styles back off the simulator ([cbeeb3b](https://github.com/stacksjs/stx/commit/cbeeb3b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([stacksjs/ts-css#38](https://github.com/stacksjs/ts-css/issues/38))
+
+## 🔧 Chores
+
+- release v0.2.926 ([7b3ca97](https://github.com/stacksjs/stx/commit/7b3ca97)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **deps**: update @stacksjs/ts-css to 0.3.29 ([8bf79be](https://github.com/stacksjs/stx/commit/8bf79be)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.924...v0.2.925)
 
 ## ✨ Features
