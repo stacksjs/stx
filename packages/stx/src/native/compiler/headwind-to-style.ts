@@ -1044,6 +1044,14 @@ export interface ClassStyles {
   focusWithin?: { style: STXStyle, dark?: STXStyle }
   /** Classes nothing understood, for a compile warning. */
   unknown: string[]
+  /**
+   * Each line-height in these layers that no `leading-*` asked for, with the
+   * font size whose `text-*` utility brought it: `[fontSize, lineHeight]`.
+   * That line box belongs to that size. The host drops it where the size was
+   * replaced by another layer, and on a control that draws one centred line
+   * (`impliedLeadingApplies`).
+   */
+  impliedLeading?: Array<[number, number]>
   /** `truncate` is one line, `line-clamp-3` three: a Text prop, not a style. */
   numberOfLines?: number
   /** The Iconify class in the list (`i-lucide-sun`), for an `<Icon>`. */
@@ -1445,6 +1453,7 @@ function compileClassList(classes: string, variables: NativeStyleVariables | und
     if (layer === base) continue
     const compiled = compileLayer(layer.classes.join(' '), variables, { appearance: options.appearance })
     result.unknown = [...new Set([...result.unknown, ...authoredNames(layer, compiled.unknown)])]
+    if (compiled.impliedLeading) (result.impliedLeading ??= []).push(...compiled.impliedLeading)
     const entry = { style: compiled.style, ...(compiled.dark ? { dark: compiled.dark } : {}) }
     if (layer.pointerState) (result.pointer ??= {})[layer.pointerState] = entry
     else if (layer.disabled) result.disabled = entry
@@ -1557,8 +1566,12 @@ function compileLayer(classes: string, variables?: NativeStyleVariables, options
   // utility. Keep the two apart when resolving the runtime cascade.
   const style = compileHeadwindToStyle(plain, unknown)
   const result: ClassStyles = { style, unknown }
+  if (impliedLeading && style.lineHeight === impliedLeading[1]) result.impliedLeading = [impliedLeading]
   const darkClasses = [...(options.appearance === undefined ? semanticDark : []), ...dark]
-  if (darkClasses.length) result.dark = compileHeadwindToStyle(darkClasses, unknown)
+  if (darkClasses.length) {
+    result.dark = compileHeadwindToStyle(darkClasses, unknown)
+    if (impliedLeading && result.dark.lineHeight === impliedLeading[1]) (result.impliedLeading ??= []).push(impliedLeading)
+  }
   // A dark x translation replaces x, not the entire light transform array.
   if (style.transform && result.dark?.transform) {
     const overridden = new Set(result.dark.transform.flatMap(step => Object.keys(step)))
@@ -1653,8 +1666,30 @@ function keepNativeColors(style: STXStyle, before: unknown[]): boolean {
   return kept
 }
 
+/** The line-height the last compiled list took from a `text-*` size, and that size. */
+let impliedLeading: [number, number] | undefined
+
+/**
+ * Whether a line-height a `text-*` size brought still belongs on a node.
+ *
+ * On the web `text-sm` sets a 20px line box and a later `text-[17px]` leaves
+ * it there, which a page absorbs. A native label is laid out to that box: a
+ * 17pt line in the 20pt box of the size it replaced is cramped, and a field or
+ * a button draws one line centred in its own height, where a fixed line box
+ * shifts the text and stops the control growing with the reader's text size.
+ * So the implied line-height holds only for the size that brought it, and
+ * never for a single-line control. A `leading-*` the author wrote always holds.
+ */
+export function impliedLeadingApplies(implied: ReadonlyArray<readonly [number, number]> | undefined, style: { fontSize?: unknown, lineHeight?: unknown }, singleLineControl: boolean): boolean {
+  if (!implied || typeof style.lineHeight !== 'number') return true
+  const pairs = implied.filter(pair => pair[1] === style.lineHeight)
+  if (!pairs.length) return true
+  return !singleLineControl && pairs.some(pair => pair[0] === style.fontSize)
+}
+
 export function compileHeadwindToStyle(classes: string | string[], unknown?: string[]): STXStyle {
   const style: STXStyle = {}
+  impliedLeading = undefined
   const classNames = Array.isArray(classes) ? classes : classes.split(/\s+/).filter(Boolean)
   // Unitless leading and em tracking use the final font size, including a
   // size utility later in the list. Absolute leading retains its own units.
@@ -1677,6 +1712,13 @@ export function compileHeadwindToStyle(classes: string | string[], unknown?: str
       // ts-css, where the leaf can map every declaration (stacksjs/ts-css#38).
       const resolved = currentLeaf?.(className, fontSize)
       if (resolved !== undefined) {
+        // A size that brings no line box of its own ends the one an earlier
+        // size brought; a size that brings one, or a `leading-*`, sets it.
+        if (typeof resolved.fontSize === 'number') {
+          if (resolved.lineHeight === undefined && impliedLeading) delete style.lineHeight
+          impliedLeading = typeof resolved.lineHeight === 'number' ? [resolved.fontSize, resolved.lineHeight] : undefined
+        }
+        else if (resolved.lineHeight !== undefined) impliedLeading = undefined
         Object.assign(style, resolved)
         return
       }
@@ -1703,7 +1745,11 @@ export function compileHeadwindToStyle(classes: string | string[], unknown?: str
       if (parseBorderColor(className, style)) return
       if (parseOpacity(className, style)) return
       if (parseGap(className, style)) return
-      if (parseTypography(className, style, fontSize)) return
+      const leadingBefore = style.lineHeight
+      if (parseTypography(className, style, fontSize)) {
+        if (style.lineHeight !== leadingBefore) impliedLeading = undefined
+        return
+      }
       if (parseSize(className, style)) return
       if (parseMinMax(className, style)) return
       if (parseGridColumns(className, style)) return

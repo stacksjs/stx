@@ -34,7 +34,7 @@ import type { NativeMutationOperation } from '../bridge/protocol'
 import type { STXNode, STXStyle } from '../compiler/ir'
 import { ACCESSIBILITY_FIELDS, accessibilityChanges, authoredAccessibilityProps, isAccessibilityAttribute, projectAccessibility } from '../accessibility'
 import { type NativeClassTable, seedClassTable } from '../compiler/class-table'
-import { activeNativeLeaf, compileClassStyles, type LeafEntry, leafFromEntries, NATIVE_STATE_VARIANTS, setNativeLeaf } from '../compiler/headwind-to-style'
+import { activeNativeLeaf, compileClassStyles, impliedLeadingApplies, type LeafEntry, leafFromEntries, NATIVE_STATE_VARIANTS, setNativeLeaf } from '../compiler/headwind-to-style'
 import { resolveIconName } from '../compiler/icons'
 import { applyNativeLayoutDefaults, parseNativeStyleLayers } from '../compiler/inline-style'
 import { createStyleVariables, type NativeStyleVariables } from '../compiler/style-variables'
@@ -49,6 +49,9 @@ import { NATIVE_FORM_ENTRIES } from './jsc-globals'
 import { createNativeOverlayPresenter, type NativeOverlayEntry } from './overlay-presenter'
 import { prepareInitialMedia } from './initial-media-mutations'
 import { nativeViewError, type NativeFocusOptions, type NativeViewBounds, type NativeViewOperations } from './view-operations'
+
+/** Controls that draw one line centred in their own height: a text size's implied line box is not theirs. */
+const SINGLE_LINE_CONTROLS = new Set(['TextInput', 'Button', 'Pressable'])
 
 /** A handle on a node in the native tree. Not an element; just an identity. */
 export interface NativeNode {
@@ -878,7 +881,10 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     let kept: Map<string, Record<string, unknown>> | undefined
     // The appearance decides which of the compiled layers apply (`dark`), and a
     // class table can give both appearances the same compiled object.
-    const keptAs = `${colorScheme}${record.visible ? 1 : 0}`
+    // A field or a button draws one centred line: a line box a text size
+    // implied does not belong on it (impliedLeadingApplies).
+    const singleLine = classes.impliedLeading !== undefined && SINGLE_LINE_CONTROLS.has(record.type)
+    const keptAs = `${colorScheme}${record.visible ? 1 : 0}${singleLine ? 1 : 0}`
     if (plain) {
       let byFirst = resolvedStyles.get(classes)
       if (!byFirst) resolvedStyles.set(classes, byFirst = new WeakMap())
@@ -926,6 +932,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       }
       Object.assign(classStyle, focused)
     }
+    if (classes.impliedLeading && !impliedLeadingApplies(classes.impliedLeading, classStyle, singleLine)) delete classStyle.lineHeight
     // One new object, written in place: a spread per layer was a large share
     // of a node's creation in an interpreted engine.
     const style = applyNativeLayoutDefaults({ ...record.layoutDefaults, ...classStyle, ...record.dividerStyle, ...resolved.styles[0], ...record.baseStyle, ...resolved.styles[1], ...resolved.styles[2] } as STXStyle) as Record<string, unknown>
