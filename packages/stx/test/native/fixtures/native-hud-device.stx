@@ -15,4 +15,18 @@ window.hudProbe = { model: hud }
   <button testID="toggle-hud" @click="mounts.set(mounts().length ? [] : [1])">Toggle HUD</button>
   <button testID="external-increment" @click="hud.increment(1)">External update</button>
 </section>
+{{-- What the native styles are, read back off the screen (stacksjs/ts-css#38).
+     Each pair is one the old native table got wrong: it resolved leading against
+     a fixed 16pt, so these two texts were the same height; it carried the v3
+     palette; and nothing here checked that a clip or a disabled state draws. --}}
+<section class="p-4 gap-3">
+  <span testID="type-normal" class="text-sm">Ag</span>
+  <span testID="type-tight" class="text-sm leading-tight">Ag</span>
+  <div class="flex-row gap-3">
+    <div testID="swatch-red" class="h-10 w-10 bg-red-500"></div>
+    <div testID="swatch-blue" class="h-10 w-10 bg-blue-500"></div>
+    <div testID="clip" class="h-10 w-10 rounded-full overflow-hidden"><div class="h-10 w-10 bg-red-500"></div></div>
+    <button testID="swatch-disabled" disabled class="h-10 w-10 bg-blue-500 disabled:opacity-40"></button>
+  </div>
+</section>
 </div>
