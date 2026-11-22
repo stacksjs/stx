@@ -1379,6 +1379,19 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
    * nor a drawing attribute (setAttribute's special cases).
    */
   const plainProps = new Map<string, boolean>()
+  /**
+   * Views that only draw what they are told. A control (a field, a switch, a
+   * scroller, a sheet) changes on the host by itself, so the same value sent
+   * again can be a correction; these never do, so it is only work.
+   */
+  const PASSIVE_TYPES = new Set(['View', 'Text', 'Image', 'Icon', 'Pressable', 'Button'])
+  /** The value the host already has: the same primitive, or the same data. */
+  function sameProp(held: unknown, value: unknown): boolean {
+    if (held === value) return typeof value !== 'object' || value === null
+    if (typeof held !== 'object' || typeof value !== 'object' || held === null || value === null) return false
+    try { return JSON.stringify(held) === JSON.stringify(value) }
+    catch { return false }
+  }
   function plainProp(prop: string, type: string): boolean {
     const key = `${type}\u0001${prop}`
     let plain = plainProps.get(key)
@@ -1557,6 +1570,9 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     setText(node, value) {
       const text = value == null ? '' : String(value)
       const record = recordOf(node)
+      // A binding that ran again and said the same words: the host already
+      // draws them, and measuring a label again is a layout pass for nothing.
+      if (record.materialized && record.text === text) return
       record.text = text
       if (record.materialized)
         emit({ op: 'updateNode', id: node.__stxId, patch: { children: [text] } })
@@ -1610,8 +1626,12 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       else if (callerBindingOnWrapper(node, name)) return
       if (name === 'class' || name === 'className') {
         const record = recordOf(node)
-        record.classes = String(value ?? '')
-        applyClasses(node.__stxId, record)
+        const classes = String(value ?? '')
+        // The same classes again (a `:class` whose source changed and whose
+        // answer did not): sent only if they now resolve to another style.
+        const same = record.classes === classes
+        record.classes = classes
+        applyClasses(node.__stxId, record, same)
         return
       }
       const record = recordOf(node)
@@ -1619,7 +1639,9 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       // Most props carry no meaning to the host beyond their value: nothing
       // to project, no state class, no control behaviour. Written directly.
       if (plainProp(prop, record.type)) {
+        const unchanged = record.materialized && PASSIVE_TYPES.has(record.type) && sameProp(record.props[prop], value)
         record.props[prop] = value
+        if (unchanged) return
         if (record.focused && disabled(record)) {
           record.focused = false
           refreshFocusChain(node)
