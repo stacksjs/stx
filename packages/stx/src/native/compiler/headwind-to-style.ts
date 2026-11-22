@@ -1109,6 +1109,36 @@ const POINTER_ONLY_VARIANTS = new Set(['hover', 'group-hover', 'peer-hover', 'ac
  */
 const WEB_ONLY_UTILITY = /^(?:transition(?:-[a-z]+)?|animate-\S+|scroll-[mp][trblxyse]?-\S+|snap-\S+|overscroll-\S+|duration-\S+|ease-\S+|delay-\S+|will-change-\S+|cursor-\S+|select-(?:none|text|all|auto)|outline-none|outline-0|appearance-none|scroll-smooth|scroll-auto|antialiased|subpixel-antialiased|touch-\S+|resize(?:-\S+)?|backdrop-blur(?:-\S+)?|isolate|contain-\S+)$/
 
+/** A focus ring is the browser's keyboard cue; native controls draw the platform's own focus. */
+function isFocusRing(parts: string[], utility: string): boolean {
+  return parts.some(variant => /^(?:group-|peer-)?focus(?:-visible|-within)?$/.test(variant)) && /^(?:ring|outline)(?:-|$)/.test(utility)
+}
+
+/** The browser's own behaviour, or a variant a touch screen never enters. A focus variant beside it keeps it diagnostic. */
+function isWebOnly(parts: string[], utility: string): boolean {
+  const focusing = parts.some(variant => variant.startsWith('focus'))
+  return WEB_ONLY_UTILITY.test(utility) || (!focusing && parts.some(variant => POINTER_ONLY_VARIANTS.has(variant)))
+}
+
+/**
+ * The authored classes a touch host drops on purpose -- `hover:`, `transition`,
+ * `cursor-*`, a focus ring -- as the compiler drops them (stacksjs/ts-css#38).
+ * They are not unknown: the web keeps them and native has nothing to do with
+ * them. The build names them once per screen, so nothing vanishes silently.
+ */
+export function ignoredOnTouch(classes: string, rules?: NativeStylesheetRules): string[] {
+  const ignored = new Set<string>()
+  for (const authored of classes.split(/\s+/).filter(Boolean)) {
+    if (rules && Object.hasOwn(rules, authored)) continue
+    for (const token of expandShortcuts(authored)) {
+      const parts = splitVariants(token)
+      const utility = parts.pop()!
+      if (isFocusRing(parts, utility) || isWebOnly(parts, utility)) ignored.add(authored === token ? token : `${authored} (${token})`)
+    }
+  }
+  return [...ignored]
+}
+
 /** `a:b:[c:d]:e` → ['a', 'b', '[c:d]', 'e']: colons inside brackets are the value's. */
 function splitVariants(token: string): string[] {
   const parts: string[] = []
@@ -1338,11 +1368,7 @@ function compileClassList(classes: string, variables: NativeStyleVariables | und
     for (const token of expandShortcuts(authored)) {
       const parts = splitVariants(token)
       const utility = parts.pop()!
-      // With a focus variant beside it the class stays diagnostic, as before.
-      const focusing = parts.some(variant => variant.startsWith('focus'))
-      // A focus ring is the browser's keyboard cue; native controls draw the
-      // platform's own focus, so the ring has nothing to do there.
-      if (parts.some(variant => /^(?:group-|peer-)?focus(?:-visible|-within)?$/.test(variant)) && /^(?:ring|outline)(?:-|$)/.test(utility)) continue
+      if (isFocusRing(parts, utility)) continue
       // A pointer host keeps `hover:`/`active:` (alone) as layers of their own, and animates over `transition`/`duration-*`.
       if (options.pointer && parts.length === 0 && transitionMilliseconds(utility) !== undefined) {
         if (utility.startsWith('duration-')) duration = transitionMilliseconds(utility)
@@ -1359,7 +1385,7 @@ function compileClassList(classes: string, variables: NativeStyleVariables | und
         if (!layer.authored.has(kept)) layer.authored.set(kept, authored === token ? token : `${authored} (${token})`)
         continue
       }
-      if (WEB_ONLY_UTILITY.test(utility) || (!focusing && parts.some(variant => POINTER_ONLY_VARIANTS.has(variant)))) continue
+      if (isWebOnly(parts, utility)) continue
       let min: number | undefined
       let max: number | undefined
       let disabled = false

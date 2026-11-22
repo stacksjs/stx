@@ -62,6 +62,12 @@ export type TranslationDiagnosticKind =
    * parsing. The web has the same limit: write each class out whole.
    */
   | 'computed-class'
+  /**
+   * Classes a touch host ignores on purpose -- `hover:`, `transition`,
+   * `cursor-*`, a focus ring -- named once per screen. Not unknown: the web
+   * keeps them, and native has nothing to draw for them.
+   */
+  | 'web-only-class'
   /** An Iconify name has no native symbol mapping. */
   | 'unknown-icon'
   /** A value the IR's field cannot hold, so emitting it would brick the screen. */

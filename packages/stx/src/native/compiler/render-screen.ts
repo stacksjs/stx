@@ -35,7 +35,7 @@ import { loadStxConfig } from '../../config'
 import { classifyAttribute, extractBindingManifest, type BindingManifest } from '../../binding-manifest'
 import { processDirectives } from '../../process'
 import { buildClassTable } from './class-table'
-import { activeLeafEntries, type LeafEntry } from './headwind-to-style'
+import { activeLeafEntries, ignoredOnTouch, type LeafEntry } from './headwind-to-style'
 import { boundClassNames, buildsClassNames } from './ts-css-leaf'
 import { processScriptSetup } from '../../signal-processing'
 import { appThemeCSS } from './app-theme'
@@ -163,6 +163,7 @@ export async function compileScreenSource(
   if (classTable) document.root._classTable = classTable
   if (Object.keys(classLeaf).length) document.root._classLeaf = classLeaf
   if (resolving) diagnostics.push(...computedClassDiagnostics(document.root))
+  diagnostics.push(...webOnlyClassDiagnostics(document.root, source))
 
   // The page's title, as the web's <title> has it: the navigation title.
   const head = (context as { __stx_runtime_head?: { title?: unknown } }).__stx_runtime_head
@@ -264,6 +265,37 @@ export async function compileScreenFile(
   options: CompileScreenOptions = {},
 ): Promise<CompiledScreen> {
   return compileScreenSource(await Bun.file(filePath).text(), filePath, options)
+}
+
+/**
+ * One diagnostic naming the classes the screen writes that a touch host
+ * ignores on purpose, static or ones a `:class` can produce (stacksjs/ts-css#38).
+ *
+ * Once per screen, not per node, and only the classes in the screen's own
+ * source: those the author can act on. A shared component's `cursor-pointer`
+ * or focus ring is there for the web, and naming it on every screen that uses
+ * the component would be a line nobody could find in their code.
+ */
+function webOnlyClassDiagnostics(root: STXNode, source: string): TranslationDiagnostic[] {
+  const names = new Set<string>()
+  const rules = root._stylesheetRules
+  const visit = (node: STXNode | string): void => {
+    if (typeof node === 'string') return
+    if (node._classes) for (const name of ignoredOnTouch(node._classes, rules)) names.add(name)
+    const expression = node.bindings?.class
+    if (expression) for (const name of ignoredOnTouch(boundClassNames(expression).join(' '), rules)) names.add(name)
+    for (const child of node.children) visit(child)
+  }
+  visit(root)
+  // A shortcut is named with what it expanded to (`btn (cursor-pointer)`); the author wrote `btn`.
+  const own = [...names].filter(name => writesClass(source, name.split(' (')[0]!)).sort()
+  return own.length ? [{ kind: 'web-only-class', tag: 'class', name: own.join(' ') }] : []
+}
+
+/** Whether `source` writes `name` as a whole class token. */
+function writesClass(source: string, name: string): boolean {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`(?:^|[\\s"'\`])${escaped}(?=$|[\\s"'\`])`).test(source)
 }
 
 /** A diagnostic for each `:class` that builds a name out of pieces, naming the expression. */
