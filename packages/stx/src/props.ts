@@ -389,10 +389,18 @@ export function definePropsWithValidation<T extends PropsShape>(
  * })
  * ```
  */
-export function withDefaults<T extends PropsShape>(
+/**
+ * What `withDefaults` returns: the props, with every key that was given a
+ * default required and never undefined, the way Vue's does. Returning `T`
+ * unchanged left a defaulted prop "possibly undefined" under strictNullChecks
+ * although the runtime always fills it (#2208).
+ */
+export type WithDefaults<T, D> = T & { [K in keyof D & keyof T]-?: Exclude<T[K], undefined> }
+
+export function withDefaults<T extends PropsShape, D extends { [K in keyof T]?: T[K] | (() => T[K]) } = {}>(
   props: T,
-  defaults: Partial<{ [K in keyof T]: T[K] | (() => T[K]) }>,
-): T {
+  defaults: D & { [K in Exclude<keyof D, keyof T>]: never },
+): WithDefaults<T, D> {
   // See defineProps: an interface has no index signature to spread FROM.
   const result = { ...props } as Record<string, unknown>
 
@@ -404,7 +412,7 @@ export function withDefaults<T extends PropsShape>(
     }
   }
 
-  return result as T
+  return result as WithDefaults<T, D>
 }
 
 // =============================================================================

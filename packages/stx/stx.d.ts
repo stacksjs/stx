@@ -716,23 +716,12 @@ interface StxHeadConfig {
   bodyAttrs?: Record<string, string>
 }
 
-interface StxSeoMetaConfig {
-  title?: string
-  description?: string
-  keywords?: string
-  author?: string
-  ogTitle?: string
-  ogDescription?: string
-  ogImage?: string
-  ogUrl?: string
-  ogType?: string
-  twitterCard?: 'summary' | 'summary_large_image' | 'app' | 'player'
-  twitterTitle?: string
-  twitterDescription?: string
-  twitterImage?: string
-  robots?: string
-  canonical?: string
-}
+/**
+ * The runtime's own `SeoMeta`, not a copy of it. A hand-kept list of 16 fields
+ * fell behind the 35 `useSeoMeta` emits, and a page setting `ogSiteName` failed
+ * `stx typecheck` for a tag the runtime writes (#2209).
+ */
+type StxSeoMetaConfig = import('@stacksjs/stx').SeoMeta
 
 declare function useHead(_config: StxHeadConfig): void
 declare function useSeoMeta(_config: StxSeoMetaConfig): void
@@ -789,7 +778,16 @@ declare function watchMultiple(
 // ============================================================================
 
 declare function defineProps<T extends Record<string, any> = Record<string, any>>(_definitions?: any): T
-declare function withDefaults<T extends Record<string, any>>(_props: T, _defaults: Partial<T>): T
+/** A key given a default is never undefined afterwards: it comes back required (#2208). */
+type StxWithDefaults<T, D> = T & { [K in keyof D & keyof T]-?: Exclude<T[K], undefined> }
+/**
+ * A default may be the value or a factory for it. A key the props do not
+ * declare is an error, as it is for a plain object literal.
+ */
+declare function withDefaults<T extends Record<string, any>, D extends { [K in keyof T]?: T[K] | (() => T[K]) } = {}>(
+  _props: T,
+  _defaults: D & { [K in Exclude<keyof D, keyof T>]: never },
+): StxWithDefaults<T, D>
 /**
  * Two forms, matching the runtime.
  *
