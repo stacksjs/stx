@@ -28,5 +28,8 @@ window.hudProbe = { model: hud }
     <div testID="clip" class="h-10 w-10 rounded-full overflow-hidden"><div class="h-10 w-10 bg-red-500"></div></div>
     <button testID="swatch-disabled" disabled class="h-10 w-10 bg-blue-500 disabled:opacity-40"></button>
   </div>
+  {{-- yellow-400 is the palette colour sRGB clamps most: drawn in P3 where the
+       host reports displayP3Colors, and as its sRGB hex everywhere else. --}}
+  <div testID="swatch-wide" class="h-10 w-10 bg-yellow-400"></div>
 </section>
 </div>

@@ -26,7 +26,7 @@ const { values } = parseArgs({ options: {
 // `contentSize` is the text size a suite is about, unless the caller names one.
 // `media` suites play a clip and a stream the gate makes and serves for the run.
 const suites: Record<string, { source: string, tests: string, count: number, unitTests?: string, unitCount?: number, support?: string[], contentSize?: string, media?: boolean }> = {
-  hud: { source: 'native-hud-device.stx', tests: 'NativeHudUITests', count: 2 },
+  hud: { source: 'native-hud-device.stx', tests: 'NativeHudUITests', count: 2, unitTests: 'NativeHudNativeTests', unitCount: 1 },
   controls: { source: 'shared-controls-device.stx', tests: 'SharedControlsUITests', count: 3 },
   overlays: { source: 'shared-overlays-device.stx', tests: 'SharedPortabilityUITests', count: 5, unitTests: 'SharedOverlaysNativeTests', unitCount: 2, support: ['SpokenStops.swift'] },
   images: { source: 'shared-image-device.stx', tests: 'SharedImageUITests', count: 1, unitTests: 'SharedImageNativeTests', unitCount: 6 },

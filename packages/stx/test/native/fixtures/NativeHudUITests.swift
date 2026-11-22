@@ -121,5 +121,13 @@ final class NativeHudUITests: XCTestCase {
         let on = pixel(blue, x: 0.5, y: 0.5), off = pixel(disabled, x: 0.5, y: 0.5)
         let moved = max(abs(on.r - off.r), abs(on.g - off.g), abs(on.b - off.b))
         XCTAssertGreaterThan(moved, 60, "disabled:opacity-40 drew like the enabled swatch: \(off) vs \(on)")
+
+        // Drawn, not dropped: a P3 host is sent yellow-400 as color(display-p3 …)
+        // (stacksjs/ts-css#38), which an older one would draw near-black. The
+        // simulator and its screenshots are sRGB, so this reads the clamp,
+        // #fdc700; NativeHudNativeTests reads the view's colour to prove P3.
+        let wide = app.otherElements["swatch-wide"]
+        app.reach(wide)
+        assertColor(pixel(wide, x: 0.5, y: 0.5), (253, 199, 0), "bg-yellow-400")
     }
 }
