@@ -1065,7 +1065,11 @@ export function declaredGlobalNames(declarations: string): Set<string> {
  * empty payload and therefore publishes nothing.
  */
 export function extractClientPayloadNames(serverCode: string): string[] | null {
-  const call = /\bdefineClientPayload\s*\(\s*\{([\s\S]*?)\}\s*\)/g
+  // Only the opening is matched here: the body runs to the brace that closes
+  // it, found by counting. A lazy match to the first `})` stopped inside
+  // `{ url: pageUrl({ page: 1 }), later }` and lost every name after the call
+  // (#2207).
+  const call = /\bdefineClientPayload\s*\(\s*\{/g
   let match: RegExpExecArray | null
   let found = false
   const names = new Set<string>()
@@ -1078,7 +1082,10 @@ export function extractClientPayloadNames(serverCode: string): string[] | null {
   // eslint-disable-next-line no-cond-assign
   while ((match = call.exec(searchable)) !== null) {
     found = true
-    for (const entry of splitPayloadEntries(match[1])) {
+    const start = match.index + match[0].length
+    const end = closingBrace(searchable, start)
+    call.lastIndex = end
+    for (const entry of splitPayloadEntries(searchable.slice(start, end))) {
       // `{ liveNow }` and `{ liveNow: computeIt() }` both publish `liveNow`.
       const name = entry.split(':')[0].trim()
       if (/^[A-Za-z_$][\w$]*$/.test(name))
@@ -1087,6 +1094,26 @@ export function extractClientPayloadNames(serverCode: string): string[] | null {
   }
 
   return found ? [...names] : null
+}
+
+/**
+ * Where the object literal whose body starts at `from` ends: the index of its
+ * closing brace, or the end of the code when it never closes. `code` has had
+ * its comments and string literals blanked, so every bracket in it is code.
+ */
+function closingBrace(code: string, from: number): number {
+  let depth = 0
+  for (let i = from; i < code.length; i++) {
+    const char = code[i]
+    if (char === '(' || char === '[' || char === '{')
+      depth++
+    else if (char === ')' || char === ']' || char === '}') {
+      if (depth === 0)
+        return i
+      depth--
+    }
+  }
+  return code.length
 }
 
 /**

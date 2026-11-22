@@ -76,6 +76,15 @@ describe('reading the declared payload', () => {
       .toEqual(['a', 'b'])
   })
 
+  it('reads past a call whose argument is an object (#2207)', () => {
+    // A lazy match to the first `})` ended inside `pageUrl({ page: 1 })` and
+    // lost every name after it, so the client block was told they did not exist.
+    expect(extractClientPayloadNames(`defineClientPayload({\n  switchUrl: pageUrl({ page: 1 }),\n  needsOnboarding,\n})`))
+      .toEqual(['switchUrl', 'needsOnboarding'])
+    expect(extractClientPayloadNames(`defineClientPayload({ a: f({ b: [{ c }] }), d })\ndefineClientPayload({ e })`))
+      .toEqual(['a', 'd', 'e'])
+  })
+
   it('merges several calls, the way the runtime does', () => {
     // A layout and the page it wraps each declare their own crossings.
     expect(extractClientPayloadNames(`defineClientPayload({ a })\ndefineClientPayload({ b })`))
@@ -117,6 +126,23 @@ const from: string = range.from
 
     expect(diagnostics).toHaveLength(1)
     expect(diagnostics[0].message).toContain('not assignable')
+  })
+
+  it('declares a name listed after a call with an object argument (#2207)', async () => {
+    const diagnostics = await check(`<script server>
+function pageUrl(o: { page: number }): string { return '/?page=' + o.page }
+let needsOnboarding = false
+defineClientPayload({
+  switchUrl: pageUrl({ page: 1 }),
+  needsOnboarding,
+})
+</script>
+<script client>
+const a: boolean = needsOnboarding
+const b: string = switchUrl
+</script>`)
+
+    expect(diagnostics).toEqual([])
   })
 
   it('rejects a server name the payload does not publish', async () => {
