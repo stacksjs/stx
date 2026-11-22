@@ -56,6 +56,12 @@ export type TranslationDiagnosticKind =
   | 'unknown-style'
   /** A static utility class has no native style translation. */
   | 'unknown-class'
+  /**
+   * A `:class` builds a class name out of pieces (`'bg-' + tone`), so no build
+   * can resolve it ahead of the device and it falls back to native's own
+   * parsing. The web has the same limit: write each class out whole.
+   */
+  | 'computed-class'
   /** An Iconify name has no native symbol mapping. */
   | 'unknown-icon'
   /** A value the IR's field cannot hold, so emitting it would brick the screen. */

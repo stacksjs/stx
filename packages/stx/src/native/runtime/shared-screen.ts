@@ -55,6 +55,7 @@ export function prepareSharedNativeScreen(
     stylesheetTheme: document.root._stylesheetTheme,
     stylesheetRules: document.root._stylesheetRules,
     classTable: document.root._classTable,
+    classLeaf: document.root._classLeaf,
     pointer: bridge.platform === 'macos',
     ...(followLink ? { followLink, linkState: (href: string, match: string | null) => nativeLinkState(href, String((globalThis as Record<string, any>).location?.href ?? ''), match) } : {}),
     send(operations) {

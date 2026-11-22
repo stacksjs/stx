@@ -1,5 +1,6 @@
 /* eslint-disable style/max-statements-per-line */
 import type { NativeClassTable } from './class-table'
+import type { LeafEntry } from './headwind-to-style'
 import type { NativeStylesheetTheme } from './stylesheet-theme'
 import type { NativeStylesheetRules } from './stylesheet-rules'
 /**
@@ -146,6 +147,13 @@ export interface STXNode {
 
   /** The screen's class lists compiled by the build (class-table.ts), on the root. */
   _classTable?: NativeClassTable
+  /**
+   * What each utility on this screen resolved to through ts-css, for the
+   * device to apply with no engine (stacksjs/ts-css#38). Beside the class table
+   * rather than in it: the table is a cache of compiled lists, and this is
+   * what they are compiled FROM, so stripping the cache must leave it.
+   */
+  _classLeaf?: Record<string, LeafEntry>
 
   /** Original Headwind classes, retained for native class and appearance updates. */
   _classes?: string

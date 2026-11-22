@@ -1,5 +1,5 @@
-import type { ClassStyles } from './headwind-to-style'
-import { classStyleKey, compileClassStyles, seedClassStyles } from './headwind-to-style'
+import type { ClassStyles, LeafEntry } from './headwind-to-style'
+import { activeLeafEntries, activeNativeLeaf, classStyleKey, compileClassStyles, leafFromEntries, seedClassStyles, setNativeLeaf } from './headwind-to-style'
 import type { STXNode } from './ir'
 import type { NativeStyleVariables } from './style-variables'
 import { createStyleVariables } from './style-variables'
@@ -26,16 +26,59 @@ export interface NativeClassTable {
   dark: Record<string, number>
 }
 
-export function buildClassTable(root: STXNode): NativeClassTable | undefined {
+export interface ClassTableOptions {
+  /**
+   * The class names a bound `:class` expression can produce. Passed in by the
+   * build, which has the engine's code-string extractor -- the same one the
+   * web uses -- so this file, which the device imports too, never does.
+   */
+  boundClasses?: (expression: string) => string[]
+  /**
+   * Filled with each utility the build's leaf resolved while the lists
+   * compiled, for the screen to ship as `_classLeaf` (stacksjs/ts-css#38).
+   */
+  record?: Record<string, LeafEntry>
+}
+
+export function buildClassTable(root: STXNode, options: ClassTableOptions = {}): NativeClassTable | undefined {
   // Each list, and whether a text input wears it (its focus styles count).
   const lists = new Map<string, boolean>()
+  // What a `:class` can produce, compiled only so its utilities are recorded.
+  const bound = new Map<string, boolean>()
   const visit = (node: STXNode | string): void => {
     if (typeof node === 'string') return
     if (node._classes) lists.set(node._classes, lists.get(node._classes) === true || node.type === 'TextInput')
+    const expression = node.bindings?.class
+    if (expression && options.boundClasses) {
+      const names = options.boundClasses(expression).join(' ')
+      if (names) bound.set(names, bound.get(names) === true || node.type === 'TextInput')
+    }
     for (const child of node.children) visit(child)
   }
   visit(root)
-  if (!lists.size) return undefined
+  if (!lists.size && !bound.size) return undefined
+
+  // Record each entry the build's leaf hands out while these lists compile.
+  // A fresh leaf, so no list is served from a cache that skipped it.
+  const source = activeLeafEntries()
+  const used: Record<string, LeafEntry> = options.record ?? {}
+  const before = activeNativeLeaf()
+  if (source) {
+    setNativeLeaf(leafFromEntries((utility) => {
+      const entry = source(utility)
+      if (entry !== undefined) used[utility] = entry
+      return entry
+    }))
+  }
+  try {
+    return compileTable(root, lists, bound)
+  }
+  finally {
+    if (source) setNativeLeaf(before)
+  }
+}
+
+function compileTable(root: STXNode, lists: Map<string, boolean>, bound: Map<string, boolean>): NativeClassTable | undefined {
 
   const entries: ClassStyles[] = []
   const indexOf = new Map<string, number>()
@@ -63,8 +106,15 @@ export function buildClassTable(root: STXNode): NativeClassTable | undefined {
         { focus, focusWithin: true },
       ]) table[scheme][classStyleKey(classes, options)] = store(compileClassStyles(classes, variables, { ...options, rules }))
     }
+    // As the device will meet them: in each appearance, with and without a pointer.
+    for (const [names, focus] of bound) {
+      for (const options of [
+        { focus, focusWithin: true, appearance: scheme, pointer: false },
+        { focus, focusWithin: true, appearance: scheme, pointer: true },
+      ]) compileClassStyles(`${names} `, variables, { ...options, rules })
+    }
   }
-  return table
+  return entries.length ? table : undefined
 }
 
 /** Seed the class cache from a shipped table: the plain lists, and `scheme`'s against `variables`. */

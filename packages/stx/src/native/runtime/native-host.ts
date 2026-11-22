@@ -34,7 +34,7 @@ import type { NativeMutationOperation } from '../bridge/protocol'
 import type { STXNode, STXStyle } from '../compiler/ir'
 import { ACCESSIBILITY_FIELDS, accessibilityChanges, authoredAccessibilityProps, isAccessibilityAttribute, projectAccessibility } from '../accessibility'
 import { type NativeClassTable, seedClassTable } from '../compiler/class-table'
-import { compileClassStyles, NATIVE_STATE_VARIANTS } from '../compiler/headwind-to-style'
+import { activeNativeLeaf, compileClassStyles, type LeafEntry, leafFromEntries, NATIVE_STATE_VARIANTS, setNativeLeaf } from '../compiler/headwind-to-style'
 import { resolveIconName } from '../compiler/icons'
 import { applyNativeLayoutDefaults, parseNativeStyleLayers } from '../compiler/inline-style'
 import { createStyleVariables, type NativeStyleVariables } from '../compiler/style-variables'
@@ -169,6 +169,8 @@ export interface NativeHostOptions {
   stylesheetRules?: NativeStylesheetRules
   /** The screen's class lists as the build compiled them, seeded into the class cache (class-table.ts). */
   classTable?: NativeClassTable
+  /** What each utility resolved to through ts-css at build time (stacksjs/ts-css#38). */
+  classLeaf?: Record<string, LeafEntry>
   /**
    * The host has a pointer (a Mac): `hover:` and `active:` classes travel with
    * the node as `hoverStyle` and `pressStyle` for the host to apply as the
@@ -360,8 +362,28 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     for (const max of widthBounds.max) if ((from <= max) !== (to <= max)) return true
     return false
   }
+  // The utilities this screen's build resolved through ts-css, applied here
+  // with no engine, so a list compiled on the device -- a `:class` value,
+  // forwarded classes -- resolves them exactly as the static lists did
+  // (stacksjs/ts-css#38). Per host rather than global: several screens, and
+  // a test process, must not see one another's tables.
+  const shippedLeaf = options.classLeaf
+  const hostLeaf = shippedLeaf ? leafFromEntries(utility => Object.hasOwn(shippedLeaf, utility) ? shippedLeaf[utility] : undefined) : undefined
+  function withHostLeaf<T>(work: () => T): T {
+    if (!hostLeaf) return work()
+    const before = activeNativeLeaf()
+    setNativeLeaf(hostLeaf)
+    try {
+      return work()
+    }
+    finally {
+      setNativeLeaf(before)
+    }
+  }
   let stylesheetVariables = createStyleVariables(options.stylesheetTheme?.[colorScheme] ?? []).computed()
-  if (options.classTable) seedClassTable(options.classTable, colorScheme, stylesheetVariables, options.stylesheetRules)
+  // Seeded under the host's leaf, which is what the cache is keyed by, so the
+  // shipped lists are found again when this host compiles.
+  if (options.classTable) withHostLeaf(() => seedClassTable(options.classTable!, colorScheme, stylesheetVariables, options.stylesheetRules))
   let disposed = false
 
   const schedule = options.schedule ?? ((flush: () => void) => queueMicrotask(flush))
@@ -832,8 +854,8 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       record.classMemo = memo
     }
     if (forStyle)
-      return memo.style ??= compileClassStyles(classes, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules, appearance: colorScheme, pointer: options.pointer === true })
-    return memo.props ??= compileClassStyles(classes, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules })
+      return memo.style ??= withHostLeaf(() => compileClassStyles(classes, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules, appearance: colorScheme, pointer: options.pointer === true }))
+    return memo.props ??= withHostLeaf(() => compileClassStyles(classes, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules }))
   }
 
   function resolveStyle(record: NodeRecord, id: string): Record<string, unknown> {
@@ -1255,7 +1277,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     if (digits < id.length)
       counter = Math.max(counter, Number(id.slice(digits)))
     const classes = descriptor?._classes ?? ''
-    const compiledClasses = compileClassStyles(classes)
+    const compiledClasses = withHostLeaf(() => compileClassStyles(classes))
     const classStyle = compiledClasses.style as Record<string, unknown>
     const baseStyle = descriptor?._styleSource !== undefined ? {} : descriptor?._inlineStyle ? { ...descriptor._inlineStyle } : Object.fromEntries(Object.entries(descriptor?.style ?? {}).filter(([key, value]) => classStyle[key] !== value))
     const record: NodeRecord = {
@@ -1477,7 +1499,7 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
       if (scheme === colorScheme) return
       colorScheme = scheme
       stylesheetVariables = createStyleVariables(options.stylesheetTheme?.[scheme] ?? []).computed()
-      if (options.classTable) seedClassTable(options.classTable, scheme, stylesheetVariables, options.stylesheetRules, false)
+      if (options.classTable) withHostLeaf(() => seedClassTable(options.classTable!, scheme, stylesheetVariables, options.stylesheetRules, false))
       // Traverse parent-first: cloned/reinserted nodes need not occur in map
       // insertion order. Each descendant inherits the new computed parent map.
       const children = new Set([...records.values()].flatMap(record => record.children.map(child => child.__stxId)))
