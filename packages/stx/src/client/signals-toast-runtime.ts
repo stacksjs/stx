@@ -31,7 +31,10 @@ export const SIGNALS_TOAST_RUNTIME = `  // =====================================
 
   function removeToast(id) {
     var el = document.getElementById('stx-toast-' + id);
-    if (!el) return;
+    if (!el || el.__stxToastRemoving) return;
+    el.__stxToastRemoving = true;
+    el.setAttribute('data-stx-toast-exiting', '');
+    if (el.__stxToastDispose) el.__stxToastDispose();
     var container = _getToastContainer();
     var anims = _getToastAnimClass(container);
     el.style.animation = anims.outAnim + ' 0.3s ease forwards';
@@ -97,16 +100,18 @@ export const SIGNALS_TOAST_RUNTIME = `  // =====================================
       // 300ms first. This is a REPLACEMENT, not a dismissal: animating the old
       // one out while the new one animates in shows both at once, in the same
       // slot, which is exactly the flicker a keyed toast exists to avoid.
-      if (prior && prior.parentNode)
+      if (prior && prior.parentNode) {
+        if (prior.__stxToastDispose) prior.__stxToastDispose();
         prior.parentNode.removeChild(prior);
+      }
     }
 
     // Enforce max toasts — remove oldest
-    var existing = container.querySelectorAll('[data-stx-toast]');
+    var existing = container.querySelectorAll('[data-stx-toast]:not([data-stx-toast-exiting])');
     while (existing.length >= maxToasts && existing.length > 0) {
       var oldId = existing[0].getAttribute('data-stx-toast');
       removeToast(oldId);
-      existing = container.querySelectorAll('[data-stx-toast]');
+      existing = container.querySelectorAll('[data-stx-toast]:not([data-stx-toast-exiting])');
     }
 
     var anims = _getToastAnimClass(container);
@@ -170,7 +175,45 @@ export const SIGNALS_TOAST_RUNTIME = `  // =====================================
     container.appendChild(el);
 
     if (duration > 0) {
-      setTimeout(function() { removeToast(id); }, duration);
+      var remaining = duration;
+      var startedAt = 0;
+      var expiry = null;
+      var hovered = false;
+      var focused = false;
+      var disposed = false;
+      function pauseExpiry() {
+        if (expiry === null) return;
+        clearTimeout(expiry);
+        expiry = null;
+        remaining = Math.max(0, remaining - (performance.now() - startedAt));
+      }
+      function resumeExpiry() {
+        if (disposed || hovered || focused || expiry !== null) return;
+        startedAt = performance.now();
+        expiry = setTimeout(function() { expiry = null; removeToast(id); }, remaining);
+      }
+      function enterToast() { hovered = true; pauseExpiry(); }
+      function leaveToast() { hovered = false; resumeExpiry(); }
+      function focusToast() { focused = true; pauseExpiry(); }
+      function blurToast(event) {
+        focused = !!(event.relatedTarget && el.contains(event.relatedTarget));
+        if (!focused) resumeExpiry();
+      }
+      el.addEventListener('mouseenter', enterToast);
+      el.addEventListener('mouseleave', leaveToast);
+      el.addEventListener('focusin', focusToast);
+      el.addEventListener('focusout', blurToast);
+      el.__stxToastDispose = function() {
+        disposed = true;
+        if (expiry !== null) clearTimeout(expiry);
+        expiry = null;
+        el.removeEventListener('mouseenter', enterToast);
+        el.removeEventListener('mouseleave', leaveToast);
+        el.removeEventListener('focusin', focusToast);
+        el.removeEventListener('focusout', blurToast);
+        el.__stxToastDispose = null;
+      };
+      resumeExpiry();
     }
 
     return id;
