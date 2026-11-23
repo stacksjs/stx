@@ -516,7 +516,7 @@ window.__stx_reactive = (function() {
     // Parse initial state (may contain methods including async init())
     var state;
     try {
-      state = new Function('return (' + initialState + ')')();
+      state = window.__STX_CSP__ ? window.__STX_CSP__.run('return (' + initialState + ')', {}, [], window) : new Function('return (' + initialState + ')')();
     } catch (e) {
       console.error('[stx-reactive] Invalid x-data:', initialState, e);
       return;
@@ -686,8 +686,9 @@ window.__stx_reactive = (function() {
       }
       if (initExpr) {
         try {
-          var fn = new Function('with(this){' + initExpr + ';}');
-          var result = fn.call(ctxProxy);
+          var result;
+          if (window.__STX_CSP__) result = window.__STX_CSP__.run('reactive:' + initExpr, ctxProxy, [], ctxProxy);
+          else { var fn = new Function('with(this){' + initExpr + ';}'); result = fn.call(ctxProxy); }
           if (result && typeof result.then === 'function') maybePromise = result;
         } catch (e) {
           console.warn('[stx-reactive] init expression error:', e);
@@ -729,8 +730,15 @@ window.__stx_reactive = (function() {
         // through it (so foo = bar triggers signal.set()) instead of treating
         // each state key as a local function parameter — bare assignments
         // would otherwise just rebind the local and never reach the signal.
-        var fn = new Function('$event', '$el', 'with(this){' + stmt + ';}');
-        fn.call(ctxProxy, $event, $el);
+        if (window.__STX_CSP__) {
+          var scope = new Proxy(ctxProxy, {
+            has: function(target, key) { return key === '$event' || key === '$el' || key in target; },
+            get: function(target, key) { return key === '$event' ? $event : key === '$el' ? $el : target[key]; },
+            set: function(target, key, value) { target[key] = value; return true; }
+          });
+          window.__STX_CSP__.run('reactive:' + stmt, scope, [$event, $el], ctxProxy);
+        }
+        else { var fn = new Function('$event', '$el', 'with(this){' + stmt + ';}'); fn.call(ctxProxy, $event, $el); }
       } catch (e) {
         console.warn('[stx-reactive] execute error:', e);
       }

@@ -720,6 +720,8 @@ export async function processDirectives(
   dependencies: Set<string>,
 ): Promise<string> {
   await yieldDuringRendering()
+  if (options.csp?.enabled && options.csp.useHashes && options.csp.useNonce)
+    throw new StxValidationError('CSP useHashes and useNonce are mutually exclusive', filePath)
   // When SSR is explicitly disabled AND we're serving (not building),
   // skip directive processing and return the raw template as an SPA shell.
   // NOTE: ssr: false in stx.config.ts means SSG mode (build at build time),
@@ -1071,7 +1073,23 @@ export async function processDirectives(
           result = result.slice(0, at) + dataTag + result.slice(at)
         }
       }
-      return isTopLevel ? orderPageModules(result) : result
+      if (isTopLevel) {
+        result = orderPageModules(result)
+        if (options.csp?.enabled && options.csp.precompile) {
+          try {
+            const { precompileCspBindings } = await import('./csp-precompile')
+            result = precompileCspBindings(result)
+          }
+          catch (error) { throw new StxValidationError('CSP precompilation failed: ' + String(error)) }
+        }
+        if (options.csp?.enabled && options.csp.useNonce && typeof context.cspNonce === 'string')
+          result = addNonceToInlineContent(result, context.cspNonce)
+        if (options.csp?.enabled && options.csp.useHashes) {
+          const { finalizeCspHashes } = await import('./csp-hashes')
+          result = finalizeCspHashes(result, options.csp)
+        }
+      }
+      return result
     })
   }
   catch (error: unknown) {

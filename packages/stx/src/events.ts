@@ -575,7 +575,8 @@ export function generateRuntimeScript(events: ParsedEvent[]): string {
       .replace(/&amp;/g, '&');
     try {
       // eslint-disable-next-line no-new-func
-      (new Function('$event', '$el', code)).call($el, $event, $el);
+      if (window.__STX_CSP__) window.__STX_CSP__.run('event:' + code, { $event: $event, $el: $el }, [$event, $el], $el);
+      else (new Function('$event', '$el', code)).call($el, $event, $el);
     }
     catch (e) {
       if (typeof console !== 'undefined') console.error('[stx] event handler error:', e);
