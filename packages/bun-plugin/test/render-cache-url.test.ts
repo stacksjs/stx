@@ -65,6 +65,7 @@ serve({
   stxModule: stx,
   renderCache: true,
   renderCacheVary: 'url',
+  renderCacheSkip: request => /(?:^|;\\s*)session=/.test(request.headers.get('cookie') || ''),
 })
 `)
   server = Bun.spawn(['bun', 'driver.ts'], { cwd: fixtureDir, stdout: 'pipe', stderr: 'pipe' })
@@ -120,6 +121,15 @@ describe('render cache keyed by address', () => {
     await response.arrayBuffer()
     expect((await fetch(`${BASE}/post/missing`)).status).toBe(404)
     expect(await get('/post/first')).toContain('title:The first post')
+  })
+
+  test('a request the application calls a visitor\'s own is rendered for it and never kept', async () => {
+    const anonymous = marker(await get('/'))
+    const signedIn = marker(await get('/', { cookie: 'session=abc' }))
+    expect(signedIn).not.toBe(anonymous)
+    expect(marker(await get('/', { cookie: 'session=abc' }))).not.toBe(signedIn)
+    expect(marker(await get('/'))).toBe(anonymous)
+    expect(marker(await get('/post/first', { cookie: 'session=abc' }))).not.toBe(marker(await get('/post/first')))
   })
 
   test('a page that opts out renders for each request', async () => {

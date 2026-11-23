@@ -1003,6 +1003,19 @@ export interface ServeOptions extends RenderAdmissionOptions {
   renderCacheVary?: 'request' | 'source' | 'url'
 
   /**
+   * Requests the render cache must leave alone: neither answered from it nor
+   * stored in it. Return `true` for a request whose page may be about its
+   * visitor - one carrying a session, a sign-in, a refused form's messages.
+   *
+   * With `'source'` and `'url'` the key holds nothing of the visitor's, so
+   * this is how an application says which visitors are not anonymous. A page
+   * can still opt out on its own with `definePageMeta({ cache: false })`; this
+   * is the same decision made once, for every page, from the request. A
+   * resolver that throws counts as `true`.
+   */
+  renderCacheSkip?: (request: Request) => boolean
+
+  /**
    * Keep the render cache on disk, so a restart does not render every page
    * again (stacksjs/stx#2133). Only with `renderCache` and
    * `renderCacheVary: 'source'`.
@@ -2900,6 +2913,15 @@ function __stxOverlay(errs){
     const noStore = /(?:^|,)\s*no-store(?:\s*(?:=|,|$))/i
     if (noStore.test(reqCtx?.request?.headers.get('cache-control') ?? ''))
       return false
+    if (options.renderCacheSkip && reqCtx?.request) {
+      try {
+        if (options.renderCacheSkip(reqCtx.request))
+          return false
+      }
+      catch {
+        return false
+      }
+    }
     return !Object.entries(reqCtx?.responseHeaders ?? {}).some(([name, value]) =>
     name.toLowerCase() === 'cache-control' && noStore.test(value))
   }
