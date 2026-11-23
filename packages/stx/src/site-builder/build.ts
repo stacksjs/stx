@@ -15,6 +15,8 @@ import { dirname, join, relative, resolve } from 'node:path'
 import process from 'node:process'
 import { CONVENTIONAL_ASSET_OUTPUT, resolveConventionalAssetRoot } from '../asset-roots'
 import { externalizeSharedAssets } from '../build-externalize'
+import { finalizeStaticCsp } from '../csp-build'
+import { loadStxConfig } from '../config'
 import { externalizeRepeatedAssets } from '../build-externalize-repeated'
 import { fingerprintBuiltPages } from '../public-asset-fingerprints'
 import { stxPlugin } from '../bun-plugin'
@@ -269,6 +271,7 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
     writeFileSync(join(outDir, 'robots.txt'), robots)
 
   const builtPages = htmlFiles.map(pathFromFile)
+  finalizeStaticCsp(outDir, (await loadStxConfig(process.cwd())).csp)
   return { outDir, pages: builtPages, durationMs: Date.now() - start }
 }
 

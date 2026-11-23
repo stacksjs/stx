@@ -52,6 +52,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { CONVENTIONAL_ASSET_OUTPUT, CONVENTIONAL_ASSET_ROOT, resolveConventionalAssetRoot } from './asset-roots'
 import { externalizeSharedAssets } from './build-externalize'
+import { finalizeStaticCsp } from './csp-build'
 import { clientBundleDependencies } from './client-script-bundler'
 import { externalizeRepeatedAssets } from './build-externalize-repeated'
 import { fingerprintBuiltPages } from './public-asset-fingerprints'
@@ -1726,6 +1727,8 @@ else {
 
     if (cfg.fingerprintAssets)
       await fingerprintBuiltPages(cfg.outputDir, result.pages.map(page => page.outputPath))
+
+    finalizeStaticCsp(cfg.outputDir, stxConfig.csp)
 
   }
 catch (error) {

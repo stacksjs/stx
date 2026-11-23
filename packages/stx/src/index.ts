@@ -19,6 +19,8 @@ export { generateOfflineWorker, OFFLINE_REGISTER_SCRIPT, OFFLINE_WORKER_PATH, ty
 // Exported for servers as well as the static build: SSR inlines the runtime
 // once per *request*, which is the same waste in a worse form.
 export { deferScripts } from './build-defer-scripts'
+export { collectCspHashes, hashedCspHeader, hashedCspDirectives, finalizeCspDocument } from './csp-hashes'
+export { finalizeStaticCsp } from './csp-build'
 export { LAZY_ISLAND_RUNTIME_LOADER, lazyIslandRuntime } from './lazy-island-runtime'
 export type { LazyIslandRuntimeResult } from './lazy-island-runtime'
 export { prepareLazyIslandRuntime, prepareServePageAssets } from './serve-page-assets'
