@@ -5,6 +5,12 @@ import { scanHtmlTags } from './html-masking'
  * Components are rendered in place, often after a large log or table. Leaving
  * their styles there lets the browser paint the shell before those bytes arrive.
  * Keep template/shadow, SVG and noscript styles in their own rendering context.
+ *
+ * Each distinct stylesheet is hoisted once. A component's `<style>` is the same
+ * for every instance, and only one carrying `data-stx-scoped` was deduplicated:
+ * a settings window of six panes shipped its rows' plain stylesheets 92 times,
+ * 727 KB for 72 KB of CSS (#2219). Once they all sit in the head, a later
+ * identical copy changes nothing but the size of the page.
  */
 export function hoistDocumentStyles(html: string): string {
   const tags = scanHtmlTags(html)
@@ -39,7 +45,11 @@ export function hoistDocumentStyles(html: string): string {
   if (!ranges.length)
     return html
 
-  const styles = ranges.map(range => html.slice(range.start, range.end)).join('\n')
+  const seen = new Set<string>()
+  const styles = ranges
+    .map(range => html.slice(range.start, range.end))
+    .filter(style => !seen.has(style) && Boolean(seen.add(style)))
+    .join('\n')
   const chunks = [html.slice(0, headClose.start), styles, '\n']
   let cursor = headClose.start
   for (const range of ranges) {

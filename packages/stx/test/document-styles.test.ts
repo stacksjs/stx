@@ -33,6 +33,28 @@ describe('styles before first paint', () => {
     expect(hoistDocumentStyles('<html><head></head><body><plaintext><style>literal')).toBe('<html><head></head><body><plaintext><style>literal')
   })
 
+  it('hoists a stylesheet repeated by each instance of a component once (#2219)', () => {
+    // A component's <style> is the same in every instance, and only one
+    // carrying data-stx-scoped used to be deduplicated.
+    const row = '<style data-native-exclude>.row {}</style><div class="row">x</div>'
+    const html = hoistDocumentStyles(`<html><head></head><body>${row.repeat(3)}<style>.other {}</style>${row}</body></html>`)
+    const head = html.slice(0, html.indexOf('</head>'))
+    expect(head.split('.row {}').length - 1).toBe(1)
+    // Cascade order is the first appearance of each.
+    expect(head.indexOf('.row {}')).toBeLessThan(head.indexOf('.other {}'))
+    expect(html.slice(html.indexOf('<body'))).not.toContain('<style')
+    expect(html.split('<div class="row">x</div>').length - 1).toBe(4)
+  })
+
+  it('keeps a copy that differs, and one inside a template or script', () => {
+    const local = '<template><style>.row {}</style></template><script>const css = "<style>.row {}</style>"</script>'
+    const html = hoistDocumentStyles(`<html><head></head><body><style>.row {}</style>${local}<style>.row { color: red }</style></body></html>`)
+    expect(html).toContain(`<body>${local}</body>`)
+    const head = html.slice(0, html.indexOf('</head>'))
+    expect(head).toContain('<style>.row {}</style>')
+    expect(head).toContain('<style>.row { color: red }</style>')
+  })
+
   it('leaves fragments without a head and incomplete style elements untouched', () => {
     const fragment = '<article>Hello</article><style>.page {}</style>'
     expect(hoistDocumentStyles(fragment)).toBe(fragment)
