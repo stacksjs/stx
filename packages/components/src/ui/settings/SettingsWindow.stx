@@ -51,6 +51,7 @@ export const wash = SETTINGS_NATIVE.rowWash
  */
 import { SettingsWindowTree } from './native'
 import { SettingsWindowView } from './view'
+import { settingsStorageName } from './core'
 import { registerComponentApi } from '../../utils/component-api'
 
 const emit = defineEmits(['pane', 'search', 'navigate'])
@@ -76,10 +77,19 @@ const searchFocus = state(false)
 let stopCommands = null
 let unregister = null
 
-/** The app's own storage on a native host, which stx serves as localStorage. */
-const nativeStorage = {
-  get: name => (typeof localStorage === 'undefined' ? null : localStorage.getItem(name)),
-  set: (name, value) => { if (typeof localStorage !== 'undefined') localStorage.setItem(name, value) },
+/*
+ * The last open pane, kept under `stx:settings:<key>`: local storage in a
+ * browser, the app's own storage on a native host. One signal for both, and
+ * no storage at all without a key. Made on mount, where the window has always
+ * read it, and stored as the bare pane id it has always been (no JSON quotes),
+ * so a pane remembered by an earlier version still opens.
+ */
+const storageKey = {{ storageKey }}
+const paneAsIs = { read: value => value, write: value => value }
+let rememberedPane = null
+const paneStorage = {
+  get: () => (rememberedPane ? rememberedPane() || null : null),
+  set: (_name, value) => { if (rememberedPane) rememberedPane.set(value) },
 }
 
 function onSearchInput(event) {
@@ -106,7 +116,7 @@ function focusSearch() {
   if (!settings) return
   if (!native) { settings.focusSearch(); return }
   searchFocus.set(false)
-  setTimeout(() => searchFocus.set(true), 0)
+  nextTick(() => searchFocus.set(true))
 }
 
 const callbacks = {
@@ -121,13 +131,14 @@ const callbacks = {
 onMount(() => {
   const root = rootRef()
   if (!root) return
+  if (storageKey) rememberedPane = useLocalStorage(settingsStorageName(storageKey), '', { serializer: paneAsIs })
 
   if (native) {
     const craftHost = typeof craft === 'undefined' ? null : craft
     settings = new SettingsWindowTree(window.stx._host, root, {
       pane: asText(openPane()),
-      storageKey: {{ storageKey }},
-      storage: nativeStorage,
+      storageKey,
+      storage: paneStorage,
       wash: () => (craftHost && craftHost.appearance && craftHost.appearance.colorScheme() === 'dark' ? wash.dark : wash.light),
     }, {
       ...callbacks,
@@ -155,7 +166,8 @@ onMount(() => {
   else {
     settings = new SettingsWindowView(root, {
       pane: asText(openPane()),
-      storageKey: {{ storageKey }},
+      storageKey,
+      storage: paneStorage,
       globalKeys: {{ globalKeys }},
     }, callbacks)
   }

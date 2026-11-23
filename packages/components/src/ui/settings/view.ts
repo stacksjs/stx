@@ -8,13 +8,20 @@
  * back: which pane is shown, which item is selected, what a search lists.
  */
 import type { SettingsHistory, SettingsItemInfo, SettingsPaneInfo, SettingsRowInfo, SettingsSearchHit, SettingsTypeAhead } from './core'
+import type { SettingsTreeStorage } from './native'
 import { emptySettingsHistory, findSettingsPane, resolveSettingsPane, searchSettings, SETTINGS_HIGHLIGHT_MS, settingsCanGoBack, settingsCanGoForward, settingsHistoryBack, settingsHistoryCurrent, settingsHistoryForward, settingsHistoryVisit, settingsParentPane, settingsResultsAnnouncement, settingsRovingIndex, settingsSidebarPane, settingsStorageName, settingsTypeAheadAdd, settingsTypeAheadMatch } from './core'
 
 export interface SettingsWindowOptions {
   /** The pane to open on. A stored pane wins over it; the first pane is the fallback. */
   pane?: string
-  /** Remembers the open pane in local storage under `stx:settings:<key>`. */
+  /** Remembers the open pane under `stx:settings:<key>`. */
   storageKey?: string
+  /**
+   * Where the open pane is remembered. `<SettingsWindow>` passes its
+   * `useLocalStorage` signal; constructed directly, the view uses
+   * `localStorage`.
+   */
+  storage?: SettingsTreeStorage
   /**
    * Whether the shortcuts (find, back, forward) are heard anywhere in the
    * document, as in a window that is all Settings, or only inside the shell.
@@ -73,6 +80,7 @@ export class SettingsWindowView {
   private current = ''
   private query = ''
   private storageKey: string
+  private readonly storage: SettingsTreeStorage | null
   private typed: SettingsTypeAhead | null = null
   private hits: Array<{ hit: SettingsSearchHit, row: HTMLElement }> = []
   private highlighted: HTMLElement | null = null
@@ -93,6 +101,7 @@ export class SettingsWindowView {
 
   constructor(private readonly root: HTMLElement, options: SettingsWindowOptions = {}, private readonly callbacks: SettingsWindowCallbacks = {}) {
     this.storageKey = options.storageKey || ''
+    this.storage = options.storage ?? null
     if (!root.id)
       root.id = `settings-${Math.random().toString(36).slice(2, 8)}`
 
@@ -256,7 +265,8 @@ export class SettingsWindowView {
     if (!this.storageKey)
       return ''
     try {
-      return localStorage.getItem(settingsStorageName(this.storageKey)) || ''
+      const name = settingsStorageName(this.storageKey)
+      return (this.storage ? this.storage.get(name) : localStorage.getItem(name)) || ''
     }
     catch {
       // Storage can be switched off, and a window that forgets still opens.
@@ -268,7 +278,11 @@ export class SettingsWindowView {
     if (!this.storageKey || !this.current)
       return
     try {
-      localStorage.setItem(settingsStorageName(this.storageKey), this.current)
+      const name = settingsStorageName(this.storageKey)
+      if (this.storage)
+        this.storage.set(name, this.current)
+      else
+        localStorage.setItem(name, this.current)
     }
     catch {}
   }
