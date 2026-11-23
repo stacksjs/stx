@@ -83,3 +83,8 @@ window.probe = { icon, name, shown }
   }
   finally { phone.unmount() }
 })
+
+test('maps the lucide money and document icons to symbols that exist on iOS 15', () => {
+  for (const [name, symbol] of [['receipt', 'doc.plaintext'], ['receipt-text', 'doc.plaintext'], ['scroll-text', 'scroll'], ['banknote', 'banknote'], ['wallet', 'wallet.pass']])
+    expect(resolveIconName(`i-lucide-${name}`)).toMatchObject({ symbol, known: true })
+})
