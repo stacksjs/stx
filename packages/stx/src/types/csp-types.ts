@@ -32,8 +32,12 @@ export interface CspDirectives {
   'default-src'?: CspSourceValue[]
   /** Valid sources for JavaScript */
   'script-src'?: CspSourceValue[]
+  'script-src-elem'?: CspSourceValue[]
+  'script-src-attr'?: CspSourceValue[]
   /** Valid sources for stylesheets */
   'style-src'?: CspSourceValue[]
+  'style-src-elem'?: CspSourceValue[]
+  'style-src-attr'?: CspSourceValue[]
   /** Valid sources for images */
   'img-src'?: CspSourceValue[]
   /** Valid sources for fonts */
@@ -102,6 +106,10 @@ export interface CspConfig {
   directives: CspDirectives
   /** Generate nonce for inline scripts/styles */
   useNonce?: boolean
+  /** Precompile template bindings and hydration setup; never fall back to eval. */
+  precompile?: boolean
+  /** Authorize inline scripts/styles by SHA-256 hashes, for static deployments. */
+  useHashes?: boolean
   /** Add CSP as meta tag in HTML head */
   addMetaTag?: boolean
   /** Custom nonce generator function */

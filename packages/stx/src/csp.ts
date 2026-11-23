@@ -66,6 +66,8 @@
  * ```
  */
 import type { CspConfig, CspDirectives, CspPreset, CustomDirective, StxOptions } from './types'
+import { scanHtmlTags } from './html-masking'
+import { parseAttributes } from './component-processing'
 
 // =============================================================================
 // Constants
@@ -403,7 +405,7 @@ export function injectCspMetaTag(
   config: CspConfig,
   context?: object,
 ): string {
-  if (!config.enabled || !config.addMetaTag) {
+  if (!config.enabled || !config.addMetaTag || config.useHashes) {
     return html
   }
 
@@ -432,27 +434,20 @@ export function injectCspMetaTag(
  * @returns HTML with nonce attributes added
  */
 export function addNonceToInlineContent(html: string, nonce: string): string {
-  let result = html
-
-  // Add nonce to script tags without src (inline scripts)
-  result = result.replace(/<script(?![^>]*\ssrc=)([^>]*)>/gi, (match, attrs) => {
-    // Don't add if nonce already exists
-    if (attrs.includes('nonce=')) {
-      return match
-    }
-    return `<script nonce="${nonce}"${attrs}>`
-  })
-
-  // Add nonce to style tags
-  result = result.replace(/<style([^>]*)>/gi, (match, attrs) => {
-    // Don't add if nonce already exists
-    if (attrs.includes('nonce=')) {
-      return match
-    }
-    return `<style nonce="${nonce}"${attrs}>`
-  })
-
-  return result
+  const parts: string[] = []
+  let cursor = 0
+  for (const tag of scanHtmlTags(html)) {
+    const name = tag.name.toLowerCase()
+    if (tag.closing || (name !== 'script' && name !== 'style')) continue
+    const attrs = parseAttributes(tag.attributes)
+    if (attrs.some(attr => attr.name.toLowerCase() === 'nonce' || (name === 'script' && attr.name.toLowerCase() === 'src'))) continue
+    const at = tag.start + tag.name.length + 1
+    parts.push(html.slice(cursor, at), ` nonce="${nonce}"`)
+    cursor = at
+  }
+  if (!parts.length) return html
+  parts.push(html.slice(cursor))
+  return parts.join('')
 }
 
 // =============================================================================
@@ -488,6 +483,7 @@ export function processCspDirectives(
       return '<!-- CSP not configured -->'
     }
 
+    if (cspConfig.useHashes) return '<!--stx:csp-hashes-->'
     const nonce = cspConfig.useNonce ? getNonce(context, cspConfig as CspConfig) : undefined
     return generateCspMetaTag(cspConfig.directives, nonce)
   })
@@ -526,6 +522,7 @@ export const cspDirective: CustomDirective = {
       return '<!-- CSP not configured -->'
     }
 
+    if (cspConfig.useHashes) return '<!--stx:csp-hashes-->'
     const nonce = cspConfig.useNonce ? getNonce(context, cspConfig as CspConfig) : undefined
     return generateCspMetaTag(cspConfig.directives, nonce)
   },
