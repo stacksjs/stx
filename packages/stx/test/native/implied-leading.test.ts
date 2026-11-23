@@ -1,7 +1,7 @@
 import type { NativeMutationOperation } from '../../src/native/bridge/protocol'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { CSSGenerator, defaultConfig } from '@stacksjs/ts-css/engine'
-import { compileClassStyles, impliedLeadingApplies, setNativeLeaf } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles, impliedLeadingApplies, setNativeLeaf } from '../../src/native/compiler/utilities-to-style'
 import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import { tsCssLeaf } from '../../src/native/compiler/ts-css-leaf'
 import { createNativeHost } from '../../src/native/runtime/native-host'

@@ -37,7 +37,7 @@ import { applyNativeLayoutDefaults, type NativeStyleContext, parseNativeStyle } 
 import { createStyleVariables, type NativeStyleVariables } from './style-variables'
 import { extractStylesheetTheme } from './stylesheet-theme'
 import { applySvgAnimation, parseViewBox, SVG_DROPPED, SVG_NODE_TYPES, SVG_TYPES, svgGeometry } from './svg'
-import { compileClassStyles } from './headwind-to-style'
+import { compileClassStyles } from './utilities-to-style'
 import { createDocument, createNode } from './ir'
 
 /** Events a browser raises from a keyboard, mouse, pointer or the page itself: nothing native produces them. */

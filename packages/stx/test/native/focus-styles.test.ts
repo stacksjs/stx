@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { join } from 'node:path'
-import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles } from '../../src/native/compiler/utilities-to-style'
 import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import { compileNativeScreen, mountNativeScreen } from '../../src/native/testing'
 

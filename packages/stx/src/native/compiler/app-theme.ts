@@ -24,7 +24,7 @@
 import type { RoleColor } from '../../theme-tokens'
 import path from 'node:path'
 import { DENSITY_TOKENS, densityVariable, SEMANTIC_TOKENS, SHAPE_TOKENS, shapeVariable, tokenVariable } from '../../theme-tokens'
-import { nativePaletteColor } from './headwind-to-style'
+import { nativePaletteColor } from './utilities-to-style'
 
 const byRoot = new Map<string, Promise<string>>()
 

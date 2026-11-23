@@ -22,7 +22,7 @@
 
 // Compiler exports
 export * from './compiler/ir'
-export * from './compiler/headwind-to-style'
+export * from './compiler/utilities-to-style'
 export * from './compiler/html-to-ir'
 export * from './compiler/client-script'
 export * from './compiler/render-screen'

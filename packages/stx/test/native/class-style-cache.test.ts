@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles } from '../../src/native/compiler/utilities-to-style'
 import { createStyleVariables } from '../../src/native/compiler/style-variables'
 
 // A screen compiles each node's class list more than once, and many nodes share

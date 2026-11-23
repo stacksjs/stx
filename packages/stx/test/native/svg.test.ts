@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'bun:test'
 import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import { parseSvgMarkup } from '../../src/native/compiler/svg'
-import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles } from '../../src/native/compiler/utilities-to-style'
 import { CLOSE, CUBIC, LINE, MOVE, pathGeometry, svgAnimation, svgGeometry } from '../../src/native/compiler/svg'
 import type { STXNode } from '../../src/native/compiler/ir'
 import { createNativeHost, type NativeNode } from '../../src/native/runtime/native-host'

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles } from '../../src/native/compiler/utilities-to-style'
 import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import { type NativeStyleDiagnostic, parseNativeStyle } from '../../src/native/compiler/inline-style'
 

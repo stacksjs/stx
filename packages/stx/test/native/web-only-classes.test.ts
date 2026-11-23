@@ -9,7 +9,7 @@
  */
 import { describe, expect, it } from 'bun:test'
 import path from 'node:path'
-import { compileClassStyles, ignoredOnTouch } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles, ignoredOnTouch } from '../../src/native/compiler/utilities-to-style'
 import type { TranslationDiagnostic } from '../../src/native/compiler/html-to-ir'
 import { compileScreenSource } from '../../src/native/compiler/render-screen'
 

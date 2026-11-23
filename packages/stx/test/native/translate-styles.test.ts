@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles } from '../../src/native/compiler/utilities-to-style'
 import { compileNativeScreen, mountNativeScreen } from '../../src/native/testing'
 
 describe('native translation utilities (#2090)', () => {

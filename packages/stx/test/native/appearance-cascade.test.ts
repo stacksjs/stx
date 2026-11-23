@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles } from '../../src/native/compiler/utilities-to-style'
 import { compileNativeScreen, mountNativeScreen } from '../../src/native/testing'
 
 it('maps block visibility to the native layout display, including an appearance override', () => {

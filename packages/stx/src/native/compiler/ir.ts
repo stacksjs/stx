@@ -1,6 +1,6 @@
 /* eslint-disable style/max-statements-per-line */
 import type { NativeClassTable } from './class-table'
-import type { LeafEntry } from './headwind-to-style'
+import type { LeafEntry } from './utilities-to-style'
 import type { NativeStylesheetTheme } from './stylesheet-theme'
 import type { NativeStylesheetRules } from './stylesheet-rules'
 /**

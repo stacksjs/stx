@@ -17,7 +17,7 @@ import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { mapToNativeComponent } from '../../src/native/compiler/component-mapping'
-import { compileClassStyles, compileHeadwindToStyle } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles, compileHeadwindToStyle } from '../../src/native/compiler/utilities-to-style'
 import { translateHtmlToDocument } from '../../src/native/compiler/html-to-ir'
 import { LUCIDE_TO_SF, resolveIconName } from '../../src/native/compiler/icons'
 

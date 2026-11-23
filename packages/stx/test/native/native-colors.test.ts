@@ -15,7 +15,7 @@
 import { describe, expect, it } from 'bun:test'
 import { CSSGenerator, defaultConfig } from '@stacksjs/ts-css/engine'
 import type { STXStyle } from '../../src/native/compiler/ir'
-import { compileClassStyles, compileHeadwindToStyle, isNativeColor, withNativeLeaf } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles, compileHeadwindToStyle, isNativeColor, withNativeLeaf } from '../../src/native/compiler/utilities-to-style'
 import { tsCssLeaf, tsCssLeafEntries } from '../../src/native/compiler/ts-css-leaf'
 
 const COLOR_KEYS = ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor', 'textDecorationColor', 'shadowColor', 'tintColor', 'fill', 'stroke', 'gradientFrom', 'gradientVia', 'gradientTo']

@@ -9,7 +9,7 @@
  */
 import { describe, expect, it } from 'bun:test'
 import { CSSGenerator, defaultConfig } from '@stacksjs/ts-css/engine'
-import { applyLeafEntry, compileClassStyles, compileHeadwindToStyle, leafFromEntries, withNativeLeaf } from '../../src/native/compiler/headwind-to-style'
+import { applyLeafEntry, compileClassStyles, compileHeadwindToStyle, leafFromEntries, withNativeLeaf } from '../../src/native/compiler/utilities-to-style'
 import { leafEntryFromDeclarations, nativeStyleFromDeclarations, tsCssLeaf } from '../../src/native/compiler/ts-css-leaf'
 
 const leaf = tsCssLeaf(new CSSGenerator(defaultConfig as never))

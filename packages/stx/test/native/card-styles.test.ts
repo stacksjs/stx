@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { compileClassStyles, compileHeadwindToStyle } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles, compileHeadwindToStyle } from '../../src/native/compiler/utilities-to-style'
 
 describe('native floating card utilities', () => {
   test('preserves negative margins on the correct edges', () => {

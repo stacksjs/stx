@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import { Window } from 'very-happy-dom'
 import { BrowserScreenRenderer } from '../../src/native/runtime/browser-renderer'
 import type { STXNode } from '../../src/native/compiler/ir'
-import { compileHeadwindToStyle } from '../../src/native/compiler/headwind-to-style'
+import { compileHeadwindToStyle } from '../../src/native/compiler/utilities-to-style'
 
 function fixture() {
   const window = new Window()

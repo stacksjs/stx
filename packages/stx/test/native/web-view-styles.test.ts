@@ -13,7 +13,7 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import { join } from 'node:path'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
-import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles } from '../../src/native/compiler/utilities-to-style'
 import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 import { setNativeStyleConfig } from '../../src/native/compiler/style-config'
 import { mountNativeScreen } from '../../src/native/testing'

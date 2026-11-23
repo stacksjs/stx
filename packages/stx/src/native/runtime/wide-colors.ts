@@ -12,8 +12,8 @@
  * the way out to a host that reports P3 are those swapped in. A path that
  * misses the swap shows the sRGB colour, never a broken one.
  */
-import type { LeafEntry } from '../compiler/headwind-to-style'
-import { COLOR_KEYS } from '../compiler/headwind-to-style'
+import type { LeafEntry } from '../compiler/utilities-to-style'
+import { COLOR_KEYS } from '../compiler/utilities-to-style'
 
 const KEYS: ReadonlySet<string> = new Set(COLOR_KEYS)
 

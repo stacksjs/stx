@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { compileHeadwindToStyle } from '../../src/native/compiler/headwind-to-style'
+import { compileHeadwindToStyle } from '../../src/native/compiler/utilities-to-style'
 
 describe('native typography class order', () => {
   it.each([

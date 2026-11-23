@@ -20,10 +20,10 @@
  * by CSS properties, not by guessing at class-name prefixes.
  */
 import type { CSSGenerator } from '@stacksjs/ts-css/engine'
-import type { LeafEntry, NativeLeaf } from './headwind-to-style'
+import type { LeafEntry, NativeLeaf } from './utilities-to-style'
 import type { STXStyle } from './ir'
 import { colorToCSS, colorToHex, CSSGenerator as Generator, defaultConfig, extractClasses, isInSrgbGamut, resolveColor, resolveLength, resolveUtility } from '@stacksjs/ts-css/engine'
-import { applyLeafEntry, leafFromEntries } from './headwind-to-style'
+import { applyLeafEntry, leafFromEntries } from './utilities-to-style'
 
 type Mutable = Record<string, unknown>
 

@@ -4,7 +4,7 @@
  * knew only `min-w-0`, so every other bound was dropped as an unknown class.
  */
 import { describe, expect, it } from 'bun:test'
-import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles } from '../../src/native/compiler/utilities-to-style'
 
 describe('min and max size classes', () => {
   it('compile arbitrary and scale values on both axes', () => {

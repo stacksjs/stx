@@ -1,7 +1,7 @@
 import { afterEach, expect, it } from 'bun:test'
 import { compileNativeScreen, mountNativeScreen, unmountAllNativeScreens } from '../../src/native/testing'
 import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
-import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles } from '../../src/native/compiler/utilities-to-style'
 import { nativeStyleConfigFrom, setNativeStyleConfig } from '../../src/native/compiler/style-config'
 
 afterEach(() => { setNativeStyleConfig(null); unmountAllNativeScreens() })

@@ -6,7 +6,7 @@
  * as the leading border of every child shown after the first.
  */
 import { afterEach, describe, expect, it } from 'bun:test'
-import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles } from '../../src/native/compiler/utilities-to-style'
 import { compileNativeScreen, mountNativeScreen, unmountAllNativeScreens } from '../../src/native/testing'
 
 afterEach(unmountAllNativeScreens)

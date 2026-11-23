@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { compileClassStyles, compileHeadwindToStyle } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles, compileHeadwindToStyle } from '../../src/native/compiler/utilities-to-style'
 
 describe('shared design-token defaults on native (#2090)', () => {
   it('preserves the default shape, padding and typography of a shared control', () => {

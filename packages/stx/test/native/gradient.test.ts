@@ -4,7 +4,7 @@
  * painted with one came out with no background at all.
  */
 import { describe, expect, it } from 'bun:test'
-import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles } from '../../src/native/compiler/utilities-to-style'
 import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 
 describe('gradient classes', () => {

@@ -1,5 +1,5 @@
-import type { ClassStyles, LeafEntry } from './headwind-to-style'
-import { activeLeafEntries, activeNativeLeaf, classStyleKey, compileClassStyles, leafFromEntries, seedClassStyles, setNativeLeaf } from './headwind-to-style'
+import type { ClassStyles, LeafEntry } from './utilities-to-style'
+import { activeLeafEntries, activeNativeLeaf, classStyleKey, compileClassStyles, leafFromEntries, seedClassStyles, setNativeLeaf } from './utilities-to-style'
 import type { STXNode } from './ir'
 import type { NativeStyleVariables } from './style-variables'
 import { createStyleVariables } from './style-variables'

@@ -2,7 +2,7 @@ import { WebView } from 'bun'
 import { expect, it } from 'bun:test'
 import { resolve } from 'node:path'
 import { generateCss } from '../../stx/src/dev-server/ts-css'
-import { compileClassStyles } from '../../stx/src/native/compiler/headwind-to-style'
+import { compileClassStyles } from '../../stx/src/native/compiler/utilities-to-style'
 import { sidebarThemes } from '../src/ui/sidebar/themes'
 import { parse, renderSidebar } from './utils/render-sidebar'
 

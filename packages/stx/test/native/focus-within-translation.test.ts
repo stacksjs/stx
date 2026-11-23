@@ -1,5 +1,5 @@
 import { expect, it } from 'bun:test'
-import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles } from '../../src/native/compiler/utilities-to-style'
 import { translateHtmlToIR } from '../../src/native/compiler/html-to-ir'
 
 it('keeps ancestor-focus layers inactive initially and preserves unsupported authored names', async () => {

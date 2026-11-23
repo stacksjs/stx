@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { join } from 'node:path'
 import { compileSharedScreenBundle } from '../../src/native/compiler/bundle'
-import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles } from '../../src/native/compiler/utilities-to-style'
 import { mountNativeScreen } from '../../src/native/testing'
 import { createTempDir } from '../../src/temp-dir'
 

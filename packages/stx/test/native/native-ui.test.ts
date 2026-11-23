@@ -3,7 +3,7 @@
  * nothing dropped, and follows an app's role answers.
  */
 import { describe, expect, it } from 'bun:test'
-import { compileClassStyles } from '../../src/native/compiler/headwind-to-style'
+import { compileClassStyles } from '../../src/native/compiler/utilities-to-style'
 import { createStyleVariables } from '../../src/native/compiler/style-variables'
 import { nativeTextStyle, nativeUi } from '../../src/native/ui'
 
