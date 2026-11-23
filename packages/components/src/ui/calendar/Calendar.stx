@@ -44,7 +44,7 @@ export const disabledIsoList = disabledDates.map(d => new Date(d).toISOString())
 
 <script client>
 const emit = defineEmits()
-const locale = {{ locale }}
+const locale = useReactiveProp('locale', {{ locale }})
 const firstDayOfWeek = {{ firstDayOfWeek }}
 const highlightToday = {{ highlightToday }}
 /*
@@ -65,9 +65,19 @@ const minIso = {{ minIsoValue }}
 const maxIso = {{ maxIsoValue }}
 const minDate = minIso ? new Date(minIso) : null
 const maxDate = maxIso ? new Date(maxIso) : null
+const liveMin = useReactiveProp('minDate', minDate, { parse: value => value })
+const liveMax = useReactiveProp('maxDate', maxDate, { parse: value => value })
+function dateOrNull(value) {
+  if (value == null || value === '' || value === false) return null
+  const date = new Date(value)
+  return Number.isFinite(date.getTime()) ? date : null
+}
+const minimumDate = derived(() => dateOrNull(liveMin()))
+const maximumDate = derived(() => dateOrNull(liveMax()))
 const disabledDates = ({{ disabledIsoList }}).map(s => new Date(s))
 const initialValueIso = {{ initialValueIso }}
 const initialValue = initialValueIso ? new Date(initialValueIso) : null
+const liveValue = useReactiveProp('value', initialValueIso, { parse: value => value })
 
 const mode = {{ mode }}
 const startIso = {{ initialStartIso }}
@@ -80,6 +90,12 @@ const currentMonth = state(new Date(initialStart || initialValue || today))
 const selectedDate = state(initialValue)
 const rangeStart = state(initialStart)
 const rangeEnd = state(initialEnd)
+effect(() => {
+  const value = dateOrNull(liveValue())
+  if (mode !== 'single') return
+  selectedDate.set(value)
+  if (value) currentMonth.set(new Date(value))
+})
 /*
  * The day under the cursor while a range is half-made, so the span previews
  * before the second click. Without it a range picker gives no feedback between
@@ -95,8 +111,10 @@ function isSameDay(d1, d2) {
 function isToday(d) { return isSameDay(d, today) }
 
 function isDisabled(d) {
-  if (minDate && d < minDate) return true
-  if (maxDate && d > maxDate) return true
+  const min = minimumDate()
+  const max = maximumDate()
+  if (min && d < min) return true
+  if (max && d > max) return true
   return disabledDates.some(x => isSameDay(x, d))
 }
 
@@ -105,19 +123,19 @@ function getFirstDayOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 
 
 const monthYearLabel = derived(() => {
   const m = currentMonth()
-  return `${m.toLocaleDateString(locale, { month: 'long' })} ${m.getFullYear()}`
+  return `${m.toLocaleDateString(locale(), { month: 'long' })} ${m.getFullYear()}`
 })
 
-const dayNames = (() => {
+const dayNames = derived(() => {
   const days = []
   const baseDate = new Date(2024, 0, firstDayOfWeek)
   for (let i = 0; i < 7; i++) {
     const day = new Date(baseDate)
     day.setDate(baseDate.getDate() + i)
-    days.push(day.toLocaleDateString(locale, { weekday: 'short' }))
+    days.push(day.toLocaleDateString(locale(), { weekday: 'short' }))
   }
   return days
-})()
+})
 
 const calendarDays = derived(() => {
   const month = currentMonth()
@@ -299,8 +317,8 @@ defineExpose({ selectedDate, currentMonth, selectDate, rangeStart, rangeEnd })
       :class="dayClasses(day)"
       @click="selectDate(day.date)"
       @mouseenter="onDayHover(day.date)"
-      :aria-label="day.date.toLocaleDateString(locale)"
-      :aria-selected="isRangeEnd(day.date)"
+      :aria-label="day.date.toLocaleDateString(locale())"
+      :aria-selected="mode === 'range' ? isRangeEnd(day.date) : isSameDay(day.date, selectedDate())"
       :disabled="isDisabled(day.date)"
       x-text="day.date.getDate()"
     ></button>
