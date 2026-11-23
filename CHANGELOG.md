@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.927...v0.2.928)
+
+## ✨ Features
+
+- **serve**: load the runtime on the first island trigger ([9f69c0f](https://github.com/stacksjs/stx/commit/9f69c0f)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.928 ([6e758c3](https://github.com/stacksjs/stx/commit/6e758c3)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.926...v0.2.927)
 
 ## 🐛 Bug Fixes
