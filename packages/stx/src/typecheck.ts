@@ -60,6 +60,7 @@ import type { NativeComponentContext } from './native-component-context'
 import { stxImportDiagnostics } from './stx-module-imports'
 import { stxReactivityDiagnostics } from './reactivity-diagnostics'
 import { findStxPluginEntry } from './stx-plugin-config'
+import { stripCommentsAndLiterals } from './strip-literals'
 
 export type { ScriptBlock, ScriptKind } from './stx-virtual-ts'
 export {
@@ -922,6 +923,18 @@ export async function typecheckStxFiles(
 
   diagnostics.push(...authoringDiagnostics)
 
+  // A template name that is declared, just not where the template can see it
+  // (#2211): say where, instead of only that it does not exist.
+  for (const d of diagnostics) {
+    if (d.code !== 2304 || d.blockKind !== 'template')
+      continue
+    const name = /^Cannot find name '([A-Za-z_$][\w$]*)'/.exec(d.message)?.[1]
+    const source = name ? sources.get(d.file) : undefined
+    const line = source ? nestedClientDeclarationLine(source, name!) : null
+    if (line !== null)
+      d.message += ` '${name}' is declared inside a function or block of the client script (line ${line}), and a template sees only that script's top-level declarations: move it to the top level.`
+  }
+
   // Deduplicate: an expression that appears twice in a file produces the same
   // diagnostic at the same place once per occurrence only if they really are
   // distinct positions, so the key includes them.
@@ -979,4 +992,39 @@ export function formatTypecheckDiagnostics(diagnostics: TypecheckDiagnostic[]): 
       return `${d.file}:${d.line}:${d.column}  ${d.category} ${d.diagnosticId ?? `TS${d.code}`}  ${d.message}  ${where}`
     })
     .join('\n')
+}
+
+/**
+ * The line of the first declaration of `name` inside a function or block of
+ * the file's client script, or `null` when there is none (#2211).
+ *
+ * The template binds to the setup function's top-level names only, so a signal
+ * declared inside an IIFE or a helper resolved to nothing and the checker could
+ * only say it did not exist. Bracket depth over the code with its comments and
+ * strings blanked is enough to tell "nested" from "top level"; a declaration
+ * this misses (a destructured one) only leaves the message as it was.
+ */
+export function nestedClientDeclarationLine(source: string, name: string): number | null {
+  const declaration = new RegExp(`\\b(?:const|let|var|function\\*?|class)\\s+${name.replace(/\$/g, '\\$')}(?![\\w$])`, 'g')
+  for (const block of extractScriptBlocks(source)) {
+    if (block.kind === 'server')
+      continue
+    const code = stripCommentsAndLiterals(block.code)
+    let match: RegExpExecArray | null
+    declaration.lastIndex = 0
+    // eslint-disable-next-line no-cond-assign
+    while ((match = declaration.exec(code)) !== null) {
+      let depth = 0
+      for (let i = 0; i < match.index; i++) {
+        const char = code[i]
+        if (char === '{' || char === '(' || char === '[')
+          depth++
+        else if (char === '}' || char === ')' || char === ']')
+          depth--
+      }
+      if (depth > 0)
+        return block.startLine + (code.slice(0, match.index).match(/\n/g)?.length ?? 0)
+    }
+  }
+  return null
 }

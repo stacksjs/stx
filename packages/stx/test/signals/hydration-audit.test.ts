@@ -289,6 +289,18 @@ describe('hydration audit — expressions that never evaluated', () => {
     expect(expr[0]).toContain('drop the parentheses')
   })
 
+  it('says where an undefined name usually is: inside a function of the script (#2211)', () => {
+    // A signal declared inside an IIFE never reaches the setup's returned
+    // scope, so the template's reference is simply "not defined".
+    const out = auditErrors(hydrate('<div data-stx-scope="s1"><p :text="hidden()"></p></div>'))
+    const expr = out.filter(e => e.includes('never evaluated'))
+    expect(expr).toHaveLength(1)
+    expect(expr[0]).toContain('hidden is not defined')
+    expect(expr[0]).toContain('sees only its top-level declarations')
+    // Not the signal-call hint, which is about a different mistake.
+    expect(expr[0]).not.toContain('drop the parentheses')
+  })
+
   it('stays silent for an expression that eventually succeeds', () => {
     // A first-pass miss that later resolves must not train people to ignore
     // the console.

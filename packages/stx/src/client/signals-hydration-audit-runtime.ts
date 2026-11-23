@@ -200,6 +200,14 @@ export const SIGNALS_HYDRATION_AUDIT_RUNTIME = `  // ===========================
           + 'the unwrapped value is a TypeError, which directives suppress — the '
           + 'element just stays hidden.'
         : '';
+      // A name the setup never returned: most often declared inside a
+      // function, block or IIFE of the script, which the template cannot see
+      // (#2211). stx typecheck names the line it was declared on.
+      if (brokenExprs.some(function(m) { return m.indexOf(' is not defined') !== -1; })) {
+        hint += ' A name that is not defined may be declared inside a function, block or IIFE of '
+          + 'the client script: the template sees only its top-level declarations. stx typecheck '
+          + 'names the line.';
+      }
       console.error(
         '[stx] hydration invariant failed after ' + phase + ': '
         + brokenExprs.length + ' expression(s) never evaluated — '
