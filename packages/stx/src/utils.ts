@@ -27,7 +27,7 @@ import {
   replayComponentClientFactories,
   snapshotComponentClientFactoryCounts,
 } from './component-client-factories'
-import { evaluateExpression, interpolateScriptExpressions, processExpressions, usesSignalsInScript } from './expressions'
+import { evaluateExpression, interpolateScriptExpressions, LIFTED_SCRIPT_VALUES, processExpressions, scriptValueLiteral, usesSignalsInScript } from './expressions'
 import { COMPONENT_SCOPE_LOCAL_GLOBALS, buildRuntimeGlobalsDestructure } from './runtime-globals'
 import type { DepSnapshot } from './render-memo'
 import { contentKey, depsUnchanged, renderMemo, snapshotDeps } from './render-memo'
@@ -2061,6 +2061,14 @@ export async function renderComponentWithSlot(
         validateClientScript(content, componentFilePath, options.strict)
     }
     const clientScripts: string[] = []
+    /*
+     * The same scripts with their `{{ }}` values lifted out (#2219), by index
+     * into `clientScripts`. The factory path builds from these, so every
+     * instance of a component shares one factory body and passes its own
+     * values; everything else keeps reading the scripts above, values written
+     * in, as before.
+     */
+    const liftedClientScripts: Array<{ content: string, values: unknown[] }> = []
     /** Set when this component's own `<script server>` failed to extract. */
     let serverScriptFailure: string | null = null
     /*
@@ -2241,8 +2249,13 @@ export async function renderComponentWithSlot(
         // `const e = {!! JSON.stringify(x) !!};` — another syntax error.
         const hasMustache = cleanContent.includes('{{') && cleanContent.includes('}}')
         const hasRawMarker = cleanContent.includes('{!!') && cleanContent.includes('!!}')
-        if (hasMustache || hasRawMarker)
+        const liftedValues: unknown[] = []
+        let liftedContent = cleanContent
+        if (hasMustache || hasRawMarker) {
+          liftedContent = interpolateScriptExpressions(cleanContent, componentContext, componentFilePath, liftedValues)
           cleanContent = interpolateScriptExpressions(cleanContent, componentContext, componentFilePath)
+        }
+        liftedClientScripts[clientScripts.length] = { content: liftedContent, values: liftedValues }
         // Remove ts/lang attributes from output since it's now JavaScript
         const cleanAttrs = attrs.replace(/\s*\bts\b/g, '').replace(/\s*\blang\s*=\s*["']?(ts|typescript)["']?/gi, '')
         clientScripts.push(`<script${cleanAttrs}>${cleanContent}</script>`)
@@ -2567,12 +2580,17 @@ export async function renderComponentWithSlot(
       output = scopeOnRootElement(result, scopeAttrs) ?? `<${wrapperTag}${scopeAttrs} data-stx-component-wrapper${wrapperStyle}>${result}</${wrapperTag}>`
 
       // Modify client scripts to register variables in this scope
-      const scopedScripts = await Promise.all(clientScripts.map(async (script) => {
+      const scopedScripts = await Promise.all(clientScripts.map(async (script, scriptIndex) => {
         // Extract script content
         const scriptMatch = script.match(/<script([^>]*)>([\s\S]*)<\/script>/i)
         if (!scriptMatch) return script
 
-        const [, attrs, rawContent] = scriptMatch
+        const [, attrs, bakedContent] = scriptMatch
+        // The factory is built from the script with its values lifted out, so
+        // it is the same for every instance; they are passed per call.
+        const lifted = liftedClientScripts[scriptIndex]
+        const rawContent = lifted ? lifted.content : bakedContent
+        const values = lifted ? [...lifted.values] : []
         // An external module is a browser resource, not an empty component
         // setup island. Its server-resolved attributes must survive unchanged.
         const external = renderExternalComponentScript(script, componentContext, componentFilePath)
@@ -2585,17 +2603,27 @@ export async function renderComponentWithSlot(
         // The compiled island is shared by script source, never by server
         // values. Bridge after that memo lookup, inside EACH invocation, so
         // different instances/requests keep their own values and JSON objects.
-        const bridge = generateServerDataBridge(island.clientCode, extractBridgeData(componentContext))
+        // The bridge's values are lifted the same way: a declaration per name,
+        // reading this call's values, so the body stays the same.
+        const bridge = liftBridgeValues(generateServerDataBridge(island.clientCode, extractBridgeData(componentContext)), values)
         const { vendorStyleTags } = island
-        const factoryBody = bridge
-          ? `function(__scopeId) {\n${bridge}\nreturn (${island.factoryBody})(__scopeId);\n}`
+        // Still `function(__scopeId) {`, the shape the native compiler shares
+        // across screens (shared-scripts.ts): the values arrive as the second
+        // argument rather than a second parameter.
+        const prelude = values.length > 0 ? `var ${LIFTED_SCRIPT_VALUES} = arguments[1];\n` : ''
+        const factoryBody = bridge || prelude
+          ? `function(__scopeId) {\n${prelude}${bridge}\nreturn (${island.factoryBody})(__scopeId);\n}`
           : island.factoryBody
         const factoryId = hydrateTrigger
           ? null
           : registerComponentClientFactory(parentContext, factoryBody)
+        // The marker names the values for the passes that read these calls
+        // (component-client-factories.ts, native shared-scripts.ts).
+        const valuesLiteral = values.length > 0 ? scriptValueLiteral(values) : undefined
+        const callArgs = `${JSON.stringify(scopeId)}${valuesLiteral ? `, /*stx-values*/${valuesLiteral}` : ''}`
         const wrappedContent = factoryId
-          ? `window.__stxComponentFactories[${JSON.stringify(factoryId)}](${JSON.stringify(scopeId)});`
-          : `(${factoryBody})(${JSON.stringify(scopeId)});`
+          ? `window.__stxComponentFactories[${JSON.stringify(factoryId)}](${callArgs});`
+          : `(${factoryBody})(${callArgs});`
         // Islands (#1746): when this component is deferred via client="<trigger>",
         // emit the setup script as an INERT type="stx/island" so the browser does
         // NOT run it at parse — the runtime executes it (registering the scope +
@@ -3478,4 +3506,26 @@ finally {
   if (!bundleFellBack && cssExtraction.unresolved.length === 0)
     componentIslands.set(key, island)
   return island
+}
+
+/**
+ * A server data bridge (`  var name = <json>;` per line) with its values moved
+ * into `values`, each line reading its own (#2219). The bridge is otherwise
+ * written into the factory, which then differs for every instance whose
+ * server values do.
+ */
+export function liftBridgeValues(bridge: string, values: unknown[]): string {
+  if (!bridge)
+    return bridge
+  return bridge.replace(/^ {2}var ([A-Za-z_$][\w$]*) = (.*);$/gm, (line, name: string, json: string) => {
+    let value: unknown
+    try {
+      value = JSON.parse(json)
+    }
+    catch {
+      return line
+    }
+    values.push(value)
+    return `  var ${name} = ${LIFTED_SCRIPT_VALUES}[${values.length - 1}];`
+  })
 }

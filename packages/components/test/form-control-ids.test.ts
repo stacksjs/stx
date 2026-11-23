@@ -28,6 +28,7 @@
  * class of bug hides. The same sweep is what surfaced stacksjs/stx#2033.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
+import { bridgedValue } from '../../stx/test-utils/lifted-values'
 import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { readFileSync } from 'node:fs'
@@ -218,7 +219,8 @@ describe('a whole form\'s field ids are its own', () => {
   it('mounts Stripe into the element it actually rendered', async () => {
     const html = await render('<SubscriptionCheckout />')
     const mountTarget = html.match(/<div id="([^"]*payment-element)"/)?.[1]
-    const prefix = html.match(/const fieldPrefix = "([^"]+)"/)?.[1]
+    // The prefix reaches the script as one of its call's values (#2219).
+    const prefix = bridgedValue(html, 'fieldPrefix') as string | undefined
     const mount = html.match(/\.mount\(([^)]*)\)/)?.[1]
 
     expect(mountTarget, 'the div is rendered').toBeTruthy()

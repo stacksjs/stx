@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { describe, expect, it } from 'bun:test'
+import { bridgedValue } from '../../test-utils/lifted-values'
 import { processDirectives } from '../../src/process'
 
 /**
@@ -37,7 +38,7 @@ describe('sidebar appearance ownership', () => {
     const result = await render(`<body><Sidebar placement="static" :sections="${SECTIONS}" /></body>`)
     const script = controller(result)
 
-    expect(script).toContain('followSystemAppearanceProp = true')
+    expect(bridgedValue(result, 'followSystemAppearanceProp')).toBe(true)
     // The class write is still there — a sidebar with no theme controller
     // around it has to keep working.
     expect(script).toMatch(/classList\.toggle\(["']dark["']/)
@@ -49,7 +50,7 @@ describe('sidebar appearance ownership', () => {
     )
     const script = controller(result)
 
-    expect(script).toContain('followSystemAppearanceProp = false')
+    expect(bridgedValue(result, 'followSystemAppearanceProp')).toBe(false)
     // Guarded before the listener is installed, so it neither writes on mount
     // nor reacts to a later OS change.
     expect(script).toMatch(/if\s*\(!followSystemAppearanceProp\)\s*\n?\s*return/)

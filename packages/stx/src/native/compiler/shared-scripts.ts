@@ -28,7 +28,12 @@ const bodyHash = (body: string): string => Bun.hash(body).toString(36)
 
 const FACTORIES_SCRIPT = '(function() {\n  const factories = window.__stxComponentFactories = window.__stxComponentFactories || {};\n'
 const FACTORY_START = /^ {2}try \{ factories\[("[0-9a-f]+")\] = factories\[\1\] \|\| /gm
-const COMPONENT_BODY = /^\(function\(__scopeId\) \{([\s\S]*)\}\)\("([^"\\]+)"\);\s*$/
+/**
+ * A component drawn once: its body called with its scope id and, when its
+ * script read server values, those values (`, /*stx-values*\/[…]`, #2219),
+ * which stay with the call while the body is shared.
+ */
+const COMPONENT_BODY = /^\(function\(__scopeId\) \{([\s\S]*)\}\)\("([^"\\]+)"(, \/\*stx-values\*\/[\s\S]*)?\);\s*$/
 
 /**
  * The definitions in a factories script, or null when it is not in the form
@@ -82,9 +87,9 @@ export function shareComponentScripts(screens: Array<{ name: string, scripts: Na
   }
   const keyOf = (body: string): string => factoryIds.get(body) ?? bodyHash(body)
   const used = new Map<string, Set<string>>()
-  const componentOf = (script: NativeClientScript): { body: string, scope: string } | null => {
+  const componentOf = (script: NativeClientScript): { body: string, scope: string, values: string } | null => {
     const match = script.owner ? COMPONENT_BODY.exec(script.code) : null
-    return match ? { body: `function(__scopeId) {${match[1]}}`, scope: match[2]! } : null
+    return match ? { body: `function(__scopeId) {${match[1]}}`, scope: match[2]!, values: match[3] ?? '' } : null
   }
   const count = (screen: string, body: string): void => {
     const key = keyOf(body)
@@ -136,7 +141,7 @@ export function shareComponentScripts(screens: Array<{ name: string, scripts: Na
       const component = componentOf(script)
       if (component && common(component.body)) {
         bodies.set(keyOf(component.body), component.body)
-        return { ...script, code: `runtime.components[${JSON.stringify(keyOf(component.body))}](${JSON.stringify(component.scope)});` }
+        return { ...script, code: `runtime.components[${JSON.stringify(keyOf(component.body))}](${JSON.stringify(component.scope)}${component.values});` }
       }
       return script
     }))

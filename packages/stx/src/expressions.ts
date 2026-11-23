@@ -1083,10 +1083,44 @@ function unresolvedServerValue(expression: string, filePath: string | undefined)
   return 'undefined'
 }
 
+/**
+ * A value as a JavaScript literal that is safe inside a `<script>` element.
+ *
+ * `<` is escaped so a value holding markup cannot close the surrounding script
+ * or contain a tag a downstream scanner would take for a boundary
+ * (generateServerDataBridge does the same, #1792). JSON holds `@` only inside
+ * strings, and escaping it and template-open braces keeps later directive
+ * passes off the value. `undefined` when the value has no JSON form.
+ */
+export function scriptValueLiteral(value: unknown): string | undefined {
+  const json = JSON.stringify(value)
+  if (json === undefined)
+    return undefined
+  return json
+    .replace(/</g, '\\u003c')
+    .replace(/@/g, '\\u0040')
+    .replace(/\{{2,}/g, braces => '\\u007b'.repeat(braces.length))
+    .replace(/\{(?=!)/g, '\\u007b')
+}
+
+/** The array a component's script reads its lifted `{{ }}` values from. */
+export const LIFTED_SCRIPT_VALUES = '__stxValues'
+
+/**
+ * Interpolate `{{ }}` and `{!! !!}` in a script body against server context.
+ *
+ * With `lifted`, a `{{ expr }}` that has a value is not written into the
+ * code: the value goes into `lifted` and the code reads `__stxValues[i]`.
+ * A component's script is then the same text for every instance, so its
+ * instances share one factory however their props differ, and each call
+ * passes its own values (#2219). `{!! !!}` is code, not a value, and stays
+ * written in.
+ */
 export function interpolateScriptExpressions(
   scriptBody: string,
   context: Record<string, any>,
   filePath?: string,
+  lifted?: unknown[],
 ): string {
   let output = scriptBody
 
@@ -1114,18 +1148,16 @@ export function interpolateScriptExpressions(
       const value = evaluateExpression(expr, context)
       if (value === undefined)
         return looksLikeServerValue(trimmed) ? unresolvedServerValue(trimmed, filePath) : match
-      // Escape `<` so a value containing markup can't close the surrounding
-      // <script> and inject into the document, and so the emitted text never
-      // contains a literal script tag that a downstream scanner would treat as
-      // a real boundary. generateServerDataBridge already does exactly this
-      // (client-script.ts); this sibling path was missed (#1792).
-      return JSON.stringify(value)
-        .replace(/</g, '\\u003c')
-        // JSON contains @ only inside strings. Escaping it and template-open
-        // braces preserves the JavaScript value across later directive passes.
-        .replace(/@/g, '\\u0040')
-        .replace(/\{{2,}/g, braces => '\\u007b'.repeat(braces.length))
-        .replace(/\{(?=!)/g, '\\u007b')
+      // Escaped for a <script> (scriptValueLiteral). A value with no JSON
+      // form keeps its mustache, as it always has.
+      const literal = scriptValueLiteral(value)
+      if (literal === undefined)
+        return match
+      if (lifted) {
+        lifted.push(value)
+        return `${LIFTED_SCRIPT_VALUES}[${lifted.length - 1}]`
+      }
+      return literal
     }
     catch {
       return match

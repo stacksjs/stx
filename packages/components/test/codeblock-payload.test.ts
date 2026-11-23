@@ -16,6 +16,7 @@
  */
 import path from 'node:path'
 import { describe, expect, it } from 'bun:test'
+import { bridgedValue } from '../../stx/test-utils/lifted-values'
 import { processDirectives } from '../../stx/src/process'
 
 /*
@@ -101,8 +102,10 @@ describe('#2014 — CodeBlock does not ship code it cannot copy', () => {
       // fails on correct output.
       // `let` since the block can follow a bound `code` in the browser, and
       // the copy button has to copy what is now shown.
+      // The value reaches the script as one of its call's values (#2219).
       expect(js, attrs).not.toContain('let code = undefined')
-      expect(js, attrs).toMatch(/let code = "/)
+      expect(js, attrs).toMatch(/let code = __stxValues\[\d+\]/)
+      expect(typeof bridgedValue(`<script>${js}</script>`, 'code'), attrs).toBe('string')
     }
   })
 

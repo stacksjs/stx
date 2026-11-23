@@ -173,10 +173,16 @@ describe('a component given markup as a prop', () => {
     const html = await render('<Preview html="{{ value }}" /><Preview html="{{ value }}" />')
     const bodies = scriptBodies(html).filter(script => script.includes('alert(1)'))
 
+    // The value travels with each call now (#2219), not inside the shared
+    // body, so a script holding it is a call: still a whole program, not one
+    // the parser cut short at the value.
     expect(bodies.length).toBeGreaterThan(0)
-    for (const body of bodies) {
-      expect(body.includes('afterTheValue')).toBe(true)
+    for (const body of bodies)
       expect(() => new Function(body)).not.toThrow()
-    }
+    // And the shared body, which carries the rest of the script, is whole too.
+    const shared = scriptBodies(html).filter(script => script.includes('afterTheValue'))
+    expect(shared.length).toBeGreaterThan(0)
+    for (const body of shared)
+      expect(() => new Function(body)).not.toThrow()
   })
 })

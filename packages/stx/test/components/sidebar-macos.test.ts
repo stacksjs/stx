@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test'
+import { bridgedValue } from '../../test-utils/lifted-values'
 import path from 'node:path'
 import { processDirectives } from '../../src/process'
 
@@ -182,9 +183,10 @@ describe('macOS sidebar component', () => {
       :sections="[{ id: 's', items: [{ id: 'a', label: 'A' }] }]"
     /></body>`)
 
-    expect(result).toContain('var shellSelectorProp = "#app-shell"')
-    expect(result).toContain('var widthVarProp = "--dashboard-sidebar-width"')
-    expect(result).toContain('var persistKeyProp = "stacks-dashboard-sidebar"')
-    expect(result).not.toContain('var persistKeyProp = \'"\\"stacks-dashboard-sidebar\\""\'')
+    // The values the script receives, quote characters and all: a string
+    // prop arrives as that string, not as its JSON spelling.
+    expect(bridgedValue(result, 'shellSelectorProp')).toBe('#app-shell')
+    expect(bridgedValue(result, 'widthVarProp')).toBe('--dashboard-sidebar-width')
+    expect(bridgedValue(result, 'persistKeyProp')).toBe('stacks-dashboard-sidebar')
   })
 })

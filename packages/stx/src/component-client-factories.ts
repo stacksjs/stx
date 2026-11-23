@@ -70,8 +70,11 @@ export function injectComponentClientFactories(
     const alternation = [...inlinable.keys()]
       .map(id => JSON.stringify(id).replace(/[$()*+.?[\\\]^{|}]/g, '\\$&'))
       .join('|')
+    // A call may carry the instance's lifted values after its scope id
+    // (`, /*stx-values*/[…]`, #2219). They are JSON with `<` escaped, so they
+    // end at the `);` that closes the script, and are kept as they are.
     const invocation = new RegExp(
-      `window\\.__stxComponentFactories\\[(${alternation})\\]\\(("[^"]+")\\);`,
+      `window\\.__stxComponentFactories\\[(${alternation})\\]\\(("[^"]+")(?:(, \\/\\*stx-values\\*\\/[\\s\\S]*?)\\);(?=\\s*<\\/script>)|\\);)`,
       'g',
     )
     // A replacement is never rescanned, so an inlined body that happens to
@@ -89,7 +92,7 @@ export function injectComponentClientFactories(
           // The body is inlined after the script it lands in was escaped, so a
           // value in it holding a closing script tag (markup handed to a prop)
           // would end that script here.
-          replacement: escapeScriptBody(`(${body})(${match[2]});`),
+          replacement: escapeScriptBody(`(${body})(${match[2]}${match[3] ?? ''});`),
         })
       }
       match = invocation.exec(html)
