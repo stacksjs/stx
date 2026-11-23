@@ -48,6 +48,12 @@ export const SIGNALS_CLASS_RUNTIME = `  function bindClass(el, expr, passedScope
           value = '';
         }
       }
+      // The static list and the bound value, each class once: a bound class
+      // that is also static was written twice (class="flex hidden hidden").
+      const joinClasses = (bound) => {
+        const seen = Object.create(null);
+        return (originalClasses + ' ' + bound).split(/\\s+/).filter(cls => cls && !seen[cls] && (seen[cls] = true)).join(' ');
+      };
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
         // Object form { "cls-a cls-b": cond } — keys may contain multiple
         // whitespace-separated classes; classList.add/remove can't accept
@@ -59,11 +65,11 @@ export const SIGNALS_CLASS_RUNTIME = `  function bindClass(el, expr, passedScope
         });
       }
 else if (Array.isArray(value)) {
-        var _clsArr = [originalClasses, value.filter(Boolean).join(' ')].filter(Boolean).join(' ');
+        var _clsArr = joinClasses(value.filter(Boolean).join(' '));
         if (typeof el.className === 'string') el.className = _clsArr; else el.setAttribute('class', _clsArr);
       }
 else {
-        var _clsStr = [originalClasses, value || ''].filter(Boolean).join(' ');
+        var _clsStr = joinClasses(value || '');
         if (typeof el.className === 'string') el.className = _clsStr; else el.setAttribute('class', _clsStr);
       }
     });

@@ -265,15 +265,40 @@ You can combine `x-class` with static `class`:
 </button>
 ```
 
+**What happens to a static class the binding also names** depends on the form,
+because only one of them can say "off":
+
+| Form | A static class it names |
+|------|-------------------------|
+| String (`x-class="open() ? 'block' : ''"`) | Stays. The string adds classes and takes back only the ones it added last time, so the static list is always there. |
+| Object (`x-class="{ hidden: !pending() }"`) | Follows the value. `false` removes it even when `class` wrote it, and `true` puts it back. |
+
+So to hide something until the page says otherwise, write the class statically
+and turn it off with the object form; the static class is what shows before
+the page hydrates:
+
+```html
+<p class="hidden text-sm" x-class="{ hidden: !loading() }">Loading…</p>
+```
+
+A string form can't do that: `class="hidden" x-class="loading() ? '' : 'hidden'"`
+keeps `hidden` in every state.
+
 ### `x-style` -- Dynamic Inline Styles
 
-Sets inline styles from an object.
+Sets inline styles from an object, or from a declaration string.
 
 ```html
 <div x-style="{ color: textColor(), fontSize: size() + 'px' }">
   Styled text
 </div>
+
+<!-- A string, custom properties included -->
+<a x-style="item.gradient">…</a>  <!-- item.gradient: '--from: #f00; --to: #00f' -->
 ```
+
+Either way the binding owns only the properties it set: a property it drops
+goes back to what the static `style` attribute said.
 
 ### `x-model` -- Two-Way Binding
 
