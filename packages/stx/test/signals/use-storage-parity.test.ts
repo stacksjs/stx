@@ -38,7 +38,7 @@ interface StorageSignal<T> {
   set: (v: T) => void
 }
 
-type UseStorageFn = <T>(key: string, defaultValue: T) => StorageSignal<T>
+type UseStorageFn = <T>(key: string, defaultValue: T, options?: Record<string, unknown>) => StorageSignal<T>
 
 class MemoryStorage {
   private data = new Map<string, string>()
@@ -181,6 +181,39 @@ for (const [name, impl] of IMPLS) {
     it('ignores an event for a different key', () => {
       const s = impl.localFn('k', 'a')
       fireStorage('other', JSON.stringify('nope'), local)
+      expect(s()).toBe('a')
+    })
+
+    // The options: the runtime ignored all three, so a format the caller
+    // chose was rewritten as JSON in a client script only (#2219).
+    const raw = { read: (value: string) => value, write: (value: string) => value }
+
+    it('stores and reads in the serializer\'s format', () => {
+      local.setItem('k', 'sound')
+      const s = impl.localFn('k', '', { serializer: raw })
+      expect(s()).toBe('sound')
+      s.set('wifi')
+      expect(local.getItem('k')).toBe('wifi')
+      fireStorage('k', 'general', local)
+      expect(s()).toBe('general')
+    })
+
+    it('falls back to the default when its serializer cannot read the value', () => {
+      local.setItem('k', 'x')
+      const failing = { read: () => { throw new Error('bad') }, write: (value: string) => value }
+      expect(impl.localFn('k', 'fallback', { serializer: failing })()).toBe('fallback')
+    })
+
+    it('spreads a stored object over an object default with mergeDefaults', () => {
+      local.setItem('k', JSON.stringify({ b: 2 }))
+      local.setItem('plain', JSON.stringify({ b: 2 }))
+      expect(impl.localFn<any>('k', { a: 1, b: 0 }, { mergeDefaults: true })()).toEqual({ a: 1, b: 2 })
+      expect(impl.localFn<any>('plain', { a: 1, b: 0 })()).toEqual({ b: 2 })
+    })
+
+    it('does not follow other tabs when listenToStorageChanges is false', () => {
+      const s = impl.localFn('k', 'a', { listenToStorageChanges: false })
+      fireStorage('k', JSON.stringify('from-other-tab'), local)
       expect(s()).toBe('a')
     })
   })

@@ -520,8 +520,17 @@ declare function useAsync<T>(_fn: () => Promise<T>): {
 // Storage
 // ============================================================================
 
-declare function useLocalStorage<T>(_key: string, _defaultValue: T): StxSignal<T>
-declare function useSessionStorage<T>(_key: string, _defaultValue: T): StxSignal<T>
+/** The module composable's options: a format of its own, merged object defaults, and other tabs' writes. */
+interface StxStorageOptions<T> {
+  /** How the value is stored. Default: JSON. */
+  serializer?: { read: (_value: string) => T, write: (_value: T) => string }
+  /** Spread a stored object over an object default. */
+  mergeDefaults?: boolean
+  /** Follow writes from other tabs. Default true. */
+  listenToStorageChanges?: boolean
+}
+declare function useLocalStorage<T>(_key: string, _defaultValue: T, _options?: StxStorageOptions<T>): StxSignal<T>
+declare function useSessionStorage<T>(_key: string, _defaultValue: T, _options?: StxStorageOptions<T>): StxSignal<T>
 /** A value kept between visits (a phone app between launches) in a scope such as the signed-in account; a scope of false keeps nothing. */
 declare function keptState<T>(_name: string, _initialValue: T, _options?: { scope?: string | number | false | null }): StxSignal<T>
 /** Remove a scope's kept values, or every kept value. */

@@ -14,34 +14,58 @@ export const SIGNALS_STORAGE_RUNTIME = `  // Storage access is guarded end to en
   // composable no longer needs the key to be renamed. This also matches
   // composables/use-storage.ts, whose default serializer already returns the
   // raw string on parse failure — the two implementations have to agree.
-  function stxParseStored(raw, fallback, key, label) {
-    if (raw === null || raw === undefined) return fallback;
-    try { return JSON.parse(raw); }
-    catch (e) {
-      console.warn('[stx] ' + label + ': "' + key + '" holds a value that is not JSON (' + String(raw).slice(0, 64) + '); using it as a raw string. Write it with the same composable to store it as JSON.');
-      return raw;
-    }
+  //
+  // The options are the module composable's (composables/use-storage.ts):
+  // a serializer of its own ({ read, write }), mergeDefaults for an object
+  // default, and listenToStorageChanges. Ignored here they were, so a stored
+  // format the caller chose was rewritten as JSON (#2219).
+  function stxStorageSerializer(options) {
+    var serializer = options && options.serializer;
+    return serializer && typeof serializer.read === 'function' && typeof serializer.write === 'function' ? serializer : null;
   }
-  function stxStorageRead(store, key, fallback, label) {
+  function stxParseStored(raw, fallback, key, label, options) {
+    if (raw === null || raw === undefined) return fallback;
+    var serializer = stxStorageSerializer(options);
+    var value;
+    if (serializer) {
+      try { value = serializer.read(raw); }
+      catch (e) {
+        console.warn('[stx] ' + label + ': "' + key + '" could not be read by its serializer (' + (e && e.message ? e.message : e) + '); using the default.');
+        return fallback;
+      }
+    }
+    else {
+      try { value = JSON.parse(raw); }
+      catch (e) {
+        console.warn('[stx] ' + label + ': "' + key + '" holds a value that is not JSON (' + String(raw).slice(0, 64) + '); using it as a raw string. Write it with the same composable to store it as JSON.');
+        return raw;
+      }
+    }
+    if (options && options.mergeDefaults && fallback && typeof fallback === 'object' && value && typeof value === 'object')
+      return Object.assign({}, fallback, value);
+    return value;
+  }
+  function stxStorageRead(store, key, fallback, label, options) {
     var raw;
     try { raw = store.getItem(key); }
     catch (e) {
       console.warn('[stx] ' + label + ': cannot read "' + key + '" (' + (e && e.message ? e.message : e) + '); using the default.');
       return fallback;
     }
-    return stxParseStored(raw, fallback, key, label);
+    return stxParseStored(raw, fallback, key, label, options);
   }
-  function stxStorageWrite(store, key, value, label) {
-    try { store.setItem(key, JSON.stringify(value)); }
+  function stxStorageWrite(store, key, value, label, options) {
+    var serializer = stxStorageSerializer(options);
+    try { store.setItem(key, serializer ? serializer.write(value) : JSON.stringify(value)); }
     catch (e) {
       console.warn('[stx] ' + label + ': cannot persist "' + key + '" (' + (e && e.message ? e.message : e) + '); the value stays in memory only.');
     }
   }
 
-  function useLocalStorage(key, defaultValue) {
-    var s = state(stxStorageRead(localStorage, key, defaultValue, 'useLocalStorage'));
+  function useLocalStorage(key, defaultValue, options) {
+    var s = state(stxStorageRead(localStorage, key, defaultValue, 'useLocalStorage', options));
     effect(function() {
-      stxStorageWrite(localStorage, key, s(), 'useLocalStorage');
+      stxStorageWrite(localStorage, key, s(), 'useLocalStorage', options);
     });
     var handler = function(e) {
       // Fires from ANOTHER tab at an arbitrary later time, so an unguarded
@@ -52,10 +76,12 @@ export const SIGNALS_STORAGE_RUNTIME = `  // Storage access is guarded end to en
       // this side didn't. Synthetic events (tests) leave storageArea null and
       // are still accepted; real browsers always populate it.
       if (e.key === key && (!e.storageArea || e.storageArea === localStorage))
-        s.set(stxParseStored(e.newValue, defaultValue, key, 'useLocalStorage'));
+        s.set(stxParseStored(e.newValue, defaultValue, key, 'useLocalStorage', options));
     };
-    window.addEventListener('storage', handler);
-    onDestroy(function() { window.removeEventListener('storage', handler); });
+    if (!options || options.listenToStorageChanges !== false) {
+      window.addEventListener('storage', handler);
+      onDestroy(function() { window.removeEventListener('storage', handler); });
+    }
     return s;
   }
 
@@ -65,16 +91,18 @@ export const SIGNALS_STORAGE_RUNTIME = `  // Storage access is guarded end to en
   // that hint. Same JSON serialization, cross-tab sync via the 'storage'
   // event (filtered to sessionStorage's storageArea — localStorage events
   // share the same listener but fire from a different area).
-  function useSessionStorage(key, defaultValue) {
-    var s = state(stxStorageRead(sessionStorage, key, defaultValue, 'useSessionStorage'));
+  function useSessionStorage(key, defaultValue, options) {
+    var s = state(stxStorageRead(sessionStorage, key, defaultValue, 'useSessionStorage', options));
     effect(function() {
-      stxStorageWrite(sessionStorage, key, s(), 'useSessionStorage');
+      stxStorageWrite(sessionStorage, key, s(), 'useSessionStorage', options);
     });
     var handler = function(e) {
       if (e.key === key && (!e.storageArea || e.storageArea === sessionStorage))
-        s.set(stxParseStored(e.newValue, defaultValue, key, 'useSessionStorage'));
+        s.set(stxParseStored(e.newValue, defaultValue, key, 'useSessionStorage', options));
     };
-    window.addEventListener('storage', handler);
-    onDestroy(function() { window.removeEventListener('storage', handler); });
+    if (!options || options.listenToStorageChanges !== false) {
+      window.addEventListener('storage', handler);
+      onDestroy(function() { window.removeEventListener('storage', handler); });
+    }
     return s;
   }`

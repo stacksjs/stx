@@ -12,9 +12,9 @@ describe('signals storage runtime boundary', () => {
   })
 
   it('keeps guarded reads, writes, and cross-tab listeners together', () => {
-    expect(SIGNALS_STORAGE_RUNTIME).toContain('function stxStorageRead(store, key, fallback, label)')
-    expect(SIGNALS_STORAGE_RUNTIME).toContain('function stxStorageWrite(store, key, value, label)')
-    expect(SIGNALS_STORAGE_RUNTIME).toContain('function useLocalStorage(key, defaultValue)')
-    expect(SIGNALS_STORAGE_RUNTIME).toContain('function useSessionStorage(key, defaultValue)')
+    expect(SIGNALS_STORAGE_RUNTIME).toContain('function stxStorageRead(store, key, fallback, label, options)')
+    expect(SIGNALS_STORAGE_RUNTIME).toContain('function stxStorageWrite(store, key, value, label, options)')
+    expect(SIGNALS_STORAGE_RUNTIME).toContain('function useLocalStorage(key, defaultValue, options)')
+    expect(SIGNALS_STORAGE_RUNTIME).toContain('function useSessionStorage(key, defaultValue, options)')
   })
 })

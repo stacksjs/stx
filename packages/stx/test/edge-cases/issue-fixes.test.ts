@@ -523,7 +523,7 @@ describe('useSessionStorage — close the gap strict-mode lint already pointed a
   it('uses sessionStorage (not localStorage) for backing reads/writes', () => {
     // Scope the assertion to the useSessionStorage body so we don't
     // collide with useLocalStorage's getItem/setItem lines.
-    const body = runtime.match(/function useSessionStorage\(key, defaultValue\)\s*\{[\s\S]*?\n  \}/)
+    const body = runtime.match(/function useSessionStorage\(key, defaultValue, options\)\s*\{[\s\S]*?\n  \}/)
     expect(body).not.toBeNull()
     // Reads and writes go through the guarded storage helpers (#1793) rather
     // than calling getItem/setItem inline, so assert on the store handed to
@@ -537,7 +537,7 @@ describe('useSessionStorage — close the gap strict-mode lint already pointed a
   it('filters cross-tab storage events to the sessionStorage area', () => {
     // Without the storageArea filter, a localStorage change in another
     // tab would also fire this handler and reset the signal.
-    const body = runtime.match(/function useSessionStorage\(key, defaultValue\)\s*\{[\s\S]*?\n  \}/)
+    const body = runtime.match(/function useSessionStorage\(key, defaultValue, options\)\s*\{[\s\S]*?\n  \}/)
     expect(body![0]).toContain('e.storageArea === sessionStorage')
   })
 
