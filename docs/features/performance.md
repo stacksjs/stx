@@ -559,6 +559,57 @@ Mark a render-critical stylesheet `<style stx-inline>` to keep it in HTML throug
 both shared and repeated asset extraction. This avoids a first-paint stylesheet
 request without changing the treatment of other stylesheets.
 
+## Loading the runtime on the first island
+
+An island (`client="interaction"`, `"visible"`, `"idle"` or `"media:…"` on a
+component tag) defers its own setup, but the page still loads the signals
+runtime from its head, because the runtime is what hydrates islands. On a page
+whose only reactive content is islands, set `lazyIslandRuntime: true` in
+`stx.config.ts` and the served document loads no runtime until one of them is
+triggered:
+
+```ts
+export default {
+  lazyIslandRuntime: true,
+}
+```
+
+```html
+<!-- Server HTML, native popovers and links: no runtime needed. -->
+<nav>
+  <button popovertarget="menu">Menu</button>
+  <div id="menu" popover>…</div>
+  <!-- The one reactive control wakes the runtime when it is reached for. -->
+  <ThemeSwitch client="interaction" />
+</nav>
+```
+
+The runtime and the page's bundles are served as inert `type="stx/lazy"` tags
+with a small loader. The loader arms each island's own trigger; the first to
+fire loads the scripts in their written order, starts the runtime and hands the
+island over to it. Each island's setup is a cached file fetched at the same
+moment. A click that reaches an island before it has hydrated is held and
+pressed again afterwards, so the first tap is not lost and a submit button does
+not post its form unhandled.
+
+A document qualifies only when everything that needs the runtime is inside an
+island: no eager component script, no page script that uses the runtime, and
+no reactive attribute (`:if`, `@click`, `x-cloak`, …) outside an island. Any
+other document is served exactly as before. `lazyIslandRuntime(html).reason`
+names the first thing that kept a document eager.
+
+Write an island so that its server HTML is right before it hydrates:
+
+- Give reactive text and attributes a static value beside the binding
+  (`<span :text="label">{{ serverLabel }}</span>`,
+  `aria-label="{{ name }}" :aria-label="liveName"`). `:if` and `:show` content
+  stays hidden until the island hydrates.
+- A field typed into before hydration keeps its text: the model adopts it.
+- A component nested in an island hydrates with the island.
+- Navigation from such a page to one that needs the runtime is a full page
+  load until an island has loaded it; links in a native popover can opt out of
+  the router with `data-stx-no-router` so the page load closes the menu.
+
 ## Related Resources
 
 - [Performance Guide](/guide/performance) - Comprehensive performance guide

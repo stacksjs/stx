@@ -697,6 +697,18 @@ export interface StxConfig {
   ssr?: boolean
   /** Defer ordered SSR setup scripts and serve island code as cached assets. */
   deferScripts?: boolean
+  /**
+   * Load the signals runtime on the first island trigger instead of from the
+   * head, on documents whose only reactive content is islands
+   * (`client="interaction|visible|idle|media:…"` components). Such a page
+   * paints without fetching or running the runtime at all; the first island
+   * to be touched, scrolled to or left idle loads it, and a click that
+   * arrives before hydration is replayed afterwards. Any document with eager
+   * reactive content keeps the runtime in its head as before.
+   *
+   * @default false
+   */
+  lazyIslandRuntime?: boolean
 
   /**
    * Enable or disable caching

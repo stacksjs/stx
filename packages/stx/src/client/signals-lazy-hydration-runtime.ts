@@ -2,6 +2,17 @@
 export const SIGNALS_LAZY_HYDRATION_RUNTIME = `  // Lazy hydration: defer processElement for subtrees marked with stx-hydrate.
   // Triggers: "visible" (IntersectionObserver), "idle" (requestIdleCallback),
   // "interaction" (mouseenter/click/focus), "media:<query>" (matchMedia).
+  // Is this element inside an island whose trigger has not fired yet? The
+  // island itself is not "inside" one: only what it contains.
+  function insideDeferredIsland(el) {
+    var cursor = el && el.parentElement;
+    while (cursor && cursor.nodeType === Node.ELEMENT_NODE) {
+      if (cursor.hasAttribute('stx-hydrate') && !cursor.__stx_hydrated) return true;
+      cursor = cursor.parentElement;
+    }
+    return false;
+  }
+
   function deferHydration(el, trigger, scope) {
     if (el.__stx_hydration_scheduled) return;
     el.__stx_hydration_scheduled = true;
@@ -36,7 +47,32 @@ export const SIGNALS_LAZY_HYDRATION_RUNTIME = `  // Lazy hydration: defer proces
           sv.__mounted = true;
           runMountCallbacks(sv.__mountCallbacks, scopeDestroySink(sv));
         }
+        // Components nested in the island were left to it by the page walk
+        // (insideDeferredIsland). The walk above bound them; record their
+        // element and fire their onMount now, as that walk would have.
+        if (window.stx._scopes && el.querySelectorAll) {
+          el.querySelectorAll('[data-stx-scope]').forEach(function(nested) {
+            var nv = window.stx._scopes[nested.getAttribute('data-stx-scope')];
+            if (!nv || insideDeferredIsland(nested)) return;
+            nv.__el = nested;
+            if (nv.__mountCallbacks && !nv.__mounted && nested.isConnected !== false) {
+              nv.__mounted = true;
+              runMountCallbacks(nv.__mountCallbacks, scopeDestroySink(nv));
+            }
+          });
+        }
+        // Bound now: a click held while the island woke (interaction trigger)
+        // is pressed again, on the control it was meant for.
+        el.__stx_island_ready = true;
+        var heldClick = el.__stx_replay_click;
+        el.__stx_replay_click = null;
         window.dispatchEvent(new CustomEvent('stx:hydrated', { detail: { el: el, trigger: trigger } }));
+        // On the next task: a browser ignores click() on an element whose
+        // click is still being dispatched, which the held one is when a
+        // script pressed it.
+        if (heldClick) setTimeout(function() {
+          if (heldClick.isConnected !== false && typeof heldClick.click === 'function') heldClick.click();
+        }, 0);
       };
 
       // Island (#1746): the component's setup script was emitted inert
@@ -106,13 +142,31 @@ export const SIGNALS_LAZY_HYDRATION_RUNTIME = `  // Lazy hydration: defer proces
       }
     }
     else if (trigger === 'interaction') {
-      var events = ['mouseenter', 'click', 'focusin', 'touchstart'];
+      var events = ['mouseenter', 'focusin', 'touchstart'];
       var handler = function() {
         events.forEach(function(ev) { el.removeEventListener(ev, handler); });
         run();
       };
+      // A click can be the first thing an island hears: a tap with no hover
+      // before it, a keyboard activation, a script. Nothing is bound yet, so
+      // it used to wake the island and be lost, or fall through to the
+      // browser's default (a submit button posted its form). It is held here
+      // and pressed again once the island has hydrated (finishHydrate). The
+      // listener outlives the trigger on purpose: a chunked island is still
+      // loading its setup between the two.
+      var clickHandler = function(event) {
+        if (el.__stx_island_ready) return;
+        event.preventDefault();
+        event.stopPropagation();
+        el.__stx_replay_click = event.target;
+        if (!el.__stx_hydrated) handler();
+      };
       events.forEach(function(ev) { el.addEventListener(ev, handler, { once: true, passive: true }); });
-      el.__stx_hydration_cancel = function() { events.forEach(function(ev) { el.removeEventListener(ev, handler); }); };
+      el.addEventListener('click', clickHandler, true);
+      el.__stx_hydration_cancel = function() {
+        events.forEach(function(ev) { el.removeEventListener(ev, handler); });
+        el.removeEventListener('click', clickHandler, true);
+      };
     }
     else if (trigger && trigger.indexOf('media:') === 0) {
       var query = trigger.slice(6);

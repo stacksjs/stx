@@ -200,6 +200,14 @@ export const SIGNALS_DOM_READY_RUNTIME = `  // =================================
 
       if (!scopeVars) return;
 
+      // A component nested in an island that has not hydrated yet belongs to
+      // that island: its caller's scope does not exist until the island's
+      // setup runs, so binding it here evaluated the caller's expressions
+      // against nothing (a tooltip around an island's button read the
+      // island's label as undefined, and the button's handler never bound).
+      // deferHydration binds it, and fires its onMount, with the island.
+      if (insideDeferredIsland(el)) return;
+
       // Forwarded props and events belong to the caller. Capture its scope
       // before this component's locals are merged, so identical child names
       // cannot shadow expressions such as :total-items="totalItems".

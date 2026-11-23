@@ -117,6 +117,8 @@ catch (e) { console.warn('[stx] destroy callback error:', e); }
         return;
       }
       if (!scopeVars) return;
+      // Nested in an island that has not hydrated: the island binds it.
+      if (insideDeferredIsland(el)) return;
       el.__stx_parent_scope = el.__stx_parent_scope
         || resolveComponentCallerScope(el, spaPageScopeSnapshot);
       bindParentComponentProps(el, el.__stx_parent_scope);

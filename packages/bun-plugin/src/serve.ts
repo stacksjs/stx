@@ -5623,6 +5623,19 @@ function __stxOverlay(errs){
           // Last: factories, page setup, CSRF and caller response hooks can all
           // add scripts. Deferring earlier leaves late inline setup ahead of
           // its now-deferred runtime.
+          // Before deferring: the pass decides from the tags as rendered, and
+          // a router fragment keeps its tags, since the page it is swapped
+          // into either has the runtime already or falls back to a full load.
+          if (stxConfig.lazyIslandRuntime && req.method !== 'HEAD' && req.headers.get(SPA_NAV_HEADER) !== 'true'
+            && _finalResp.headers.get('X-STX-Fragment') !== 'true' && _finalResp.body && !_finalResp.bodyUsed
+            && _finalResp.headers.get('content-type')?.includes('text/html') && !_finalResp.headers.has('content-encoding')) {
+            const stx = await stxModule
+            const headers = new Headers(_finalResp.headers)
+            headers.delete('content-length')
+            _finalResp = new Response(stx.prepareLazyIslandRuntime(await _finalResp.text()), {
+              status: _finalResp.status, statusText: _finalResp.statusText, headers,
+            })
+          }
           if (stxConfig.deferScripts && req.method !== 'HEAD' && _finalResp.body && !_finalResp.bodyUsed
             && _finalResp.headers.get('content-type')?.includes('text/html') && !_finalResp.headers.has('content-encoding')) {
             const stx = await stxModule

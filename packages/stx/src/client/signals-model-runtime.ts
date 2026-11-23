@@ -133,6 +133,17 @@ else {
       // the case the guard cannot cover: a value that legitimately changed
       // from elsewhere while the field is focused — a formatter rewriting
       // input, a remote sync.
+      // A field can be typed into before its bindings exist: an island binds
+      // on its trigger, after the page was already usable, and a browser
+      // restores what was typed on reload or Back. If the control no longer
+      // holds what the server wrote (defaultValue) while the model still
+      // does, the model takes the visitor's text. Binding used to write the
+      // model's initial value over it: the address someone had just typed
+      // into a form vanished as the form woke up.
+      if (typeof el.defaultValue === 'string' && el.value !== el.defaultValue) {
+        var initialModel = getValue() ?? '';
+        if (String(initialModel) === el.defaultValue) setValue(coerceValue(el.value));
+      }
       effect(() => {
         var next = getValue() ?? '';
         if (el.value === next) return;
