@@ -201,7 +201,9 @@ export function registerOfflineWorker(path: string, registerOn?: string[]): void
   if (w.stxOffline)
     return
   let registration: ServiceWorkerRegistration | null = null
+  let observedWorker: ServiceWorker | null = null
   let registering = false
+  let retriedFirstInstall = false
   let reloadOnTakeOver = false
   const waitingCallbacks: Array<() => void> = []
   const api = {
@@ -272,6 +274,32 @@ export function registerOfflineWorker(path: string, registerOn?: string[]): void
       registration.waiting.postMessage({ type: 'stx:activate-update', reason: 'hidden' })
   })
 
+  const observeInstalling = (): void => {
+    const reg = registration
+    const installing = reg?.installing
+    if (!reg || !installing || installing === observedWorker)
+      return
+    observedWorker = installing
+    const changed = (): void => {
+      if (installing.state === 'installed')
+        ready(reg)
+      if (installing.state !== 'redundant')
+        return
+      installing.removeEventListener('statechange', changed)
+      if (registration !== reg || retriedFirstInstall || sw.controller || reg.active || reg.waiting)
+        return
+      // A browser can end a slow first install after register() resolved.
+      // The next install reuses the already cached screens from this build.
+      retriedFirstInstall = true
+      registering = false
+      if (registerOn)
+        window.addEventListener('stx:load', afterPaint)
+      afterPaint()
+    }
+    installing.addEventListener('statechange', changed)
+    changed()
+  }
+
   const register = (): void => {
     if (registering)
       return
@@ -283,7 +311,11 @@ export function registerOfflineWorker(path: string, registerOn?: string[]): void
     registering = true
     window.removeEventListener('stx:load', afterPaint)
     sw.register(path, { scope: '/' }).then((reg) => {
-      registration = reg
+      if (registration !== reg) {
+        registration?.removeEventListener('updatefound', observeInstalling)
+        registration = reg
+        reg.addEventListener('updatefound', observeInstalling)
+      }
       try { sw.controller?.postMessage({ type: 'stx:reachability?' }) }
       catch {}
       if (reg.waiting) {
@@ -292,15 +324,7 @@ export function registerOfflineWorker(path: string, registerOn?: string[]): void
         // nothing else is on screen, before this page has anything to lose.
         reg.waiting.postMessage({ type: 'stx:activate-update', reason: 'load' })
       }
-      reg.addEventListener('updatefound', () => {
-        const installing = reg.installing
-        if (!installing)
-          return
-        installing.addEventListener('statechange', () => {
-          if (installing.state === 'installed')
-            ready(reg)
-        })
-      })
+      observeInstalling()
     }).catch(() => {
       registering = false
       if (registerOn)
