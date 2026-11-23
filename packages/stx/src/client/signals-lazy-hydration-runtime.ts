@@ -108,7 +108,14 @@ export const SIGNALS_LAZY_HYDRATION_RUNTIME = `  // Lazy hydration: defer proces
         }
         // Inline island (dev / SSR / chunking off): execute synchronously.
         // eslint-disable-next-line no-new-func
-        try { (new Function(islandScript.textContent))(); }
+        try {
+          if (window.__STX_CSP__) {
+            var compiledSetup = window.__STX_CSP__.setups[islandScript.textContent];
+            if (!compiledSetup) throw new Error('[stx:csp] Missing precompiled island setup');
+            compiledSetup();
+          }
+          else (new Function(islandScript.textContent))();
+        }
         catch (e) { console.error('[stx] island setup error:', sid, e); }
       }
       finishHydrate();

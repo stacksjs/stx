@@ -94,7 +94,11 @@ export const SIGNALS_COMPONENT_HYDRATION_RUNTIME = `  /*
       var setup = __forComponentSetupFactories.get(text);
       if (!setup) {
         try {
-          setup = new Function(text);
+          if (window.__STX_CSP__) {
+            setup = window.__STX_CSP__.setups[text];
+            if (!setup) throw new Error('[stx:csp] Missing precompiled component setup');
+          }
+          else setup = new Function(text);
           __forComponentSetupFactories.set(text, setup);
         }
         catch (e) {

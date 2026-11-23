@@ -15,6 +15,10 @@ export const SIGNALS_HYDRATION_RUNTIME = `  // Hydrate a subtree inserted AFTER 
       if (old.__stx_ran) continue;
       var fresh = document.createElement('script');
       for (var a = 0; a < old.attributes.length; a++) fresh.setAttribute(old.attributes[a].name, old.attributes[a].value);
+      if (window.__STX_CSP__) {
+        var nonceScript = document.querySelector('script[nonce]');
+        if (nonceScript) fresh.nonce = nonceScript.nonce;
+      }
       fresh.textContent = old.textContent;
       fresh.__stx_ran = true;
       if (old.parentNode) old.parentNode.replaceChild(fresh, old);
