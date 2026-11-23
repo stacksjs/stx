@@ -713,7 +713,9 @@ else {
         // "openModal()" handle their own signal.set() internally — the writeback
         // would RESET signals to their pre-handler values.
         var isDirectAssignment = hasSignals && /^[a-zA-Z_$]\\w*\\s*=/.test(value.trim()) && !value.trim().startsWith('==');
-        if (isDirectAssignment) {
+        if (window.__STX_CSP__ && hasSignals) {
+          __stxCompiledHandler(value, eventCapturedScope, handlerEvent, handlerNames, isDirectAssignment);
+        } else if (isDirectAssignment) {
           var getVars = handlerNames.map(function(k) {
             return 'var ' + k + ' = __s["' + k + '"] && typeof __s["' + k + '"] === "function" && (__s["' + k + '"]._isSignal || __s["' + k + '"]._isDerived) ? __s["' + k + '"]() : __s["' + k + '"]';
           }).join(';');

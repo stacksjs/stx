@@ -51,6 +51,15 @@ else {
           // Routing through it also drops the old requirement that every scope
           // key be a valid identifier, since nothing is destructured now.
           var writeScope = createModelWriteProxy(capturedScope);
+          if (window.__STX_CSP__) {
+            var values = new Proxy(writeScope, {
+              has: function(target, name) { return name === '__v__' || name in target; },
+              get: function(target, name) { return name === '__v__' ? val : target[name]; },
+              set: function(target, name, value) { target[name] = value; return true; }
+            });
+            __stxRunCompiled(window.__STX_CSP__.expressions['model:' + expr], values, [writeScope, val], window);
+            return;
+          }
           var writeFn = __stxCompile(['__scope__', '__v__'], 'with(__scope__) { ' + expr + ' = __v__ }');
           writeFn(writeScope, val);
         }
