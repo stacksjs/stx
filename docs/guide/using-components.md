@@ -221,6 +221,7 @@ Generated from component source. `Props` lists each prop with its default; `Emit
 | Tag | Props (default) | Emits | Slots |
 |---|---|---|---|
 | `<Calendar>` | `value` (`null`), `minDate` (`null`), `maxDate` (`null`), `disabledDates` (`[]`), `locale` (`'en-US'`), `firstDayOfWeek` (`0`), `showToday` (`true`), `className` (`''`), +1 more | `@change` | — |
+| `<DateTimePicker>` | `value` (`null`), `timeZone` (`'UTC'`), `locale` (`'en-US'`), `minDate`, `maxDate`, `suggestedTime`, `minuteStep` (`1`), `disabled` (`false`), `clearable` (`true`), `label` (`'Schedule'`), `placeholder`, `className` | `@change`, `@open`, `@close` | — |
 | `<Checkbox>` | `checked` (`false`), `disabled` (`false`), `indeterminate` (`false`), `size` (`'md'`), `label` (`''`), `description` (`''`), `error` (`false`), `required` (`false`), +3 more | `@change` | — |
 | `<Combobox>` | `value`, `className` (`''`), `as` (`'div'`) | `@change`, `@query` | default |
 | `<ComboboxButton>` | `className` (`''`), `as` (`'button'`) | — | — |
@@ -247,6 +248,53 @@ Generated from component source. `Props` lists each prop with its default; `Emit
 | `<TextInput>` | `value` (`''`), `placeholder` (`''`), `disabled` (`false`), `readonly` (`false`), `size` (`'md'`), `error` (`false`), `label` (`''`), `helperText` (`''`), +17 more | `@input`, `@clear` | — |
 | `<Textarea>` | `value` (`''`), `placeholder` (`''`), `disabled` (`false`), `readonly` (`false`), `rows` (`4`), `autoResize` (`false`), `maxRows` (`10`), `error` (`false`), +7 more | `@input` | — |
 | `<CodeEditor>` | `value` (`''`), `language` (`'typescript'`), `readonly` (`false`), `disabled` (`false`), `lineNumbers` (`true`), `highlight` (`true`), `tabSize` (`2`), `insertSpaces` (`true`), +19 more | `@input`, `@change`, `@selection`, `@run`, `@run-selection`, `@complete`, `@completion-accept`, `@hover`, `@signature`, `@ghost`, `@focus`, `@blur` | — |
+
+### Scheduling in a workspace timezone
+
+`DateTimePicker` combines `Calendar`, a time field and scheduling shortcuts.
+Pass the workspace IANA timezone explicitly. It defaults to UTC, so scheduling
+never silently inherits the server or browser timezone. `value`, bounds and
+`suggestedTime` accept a `Date` or an ISO instant with `Z`/an explicit offset;
+local strings without an offset are rejected.
+
+```html
+<script client>
+const scheduledAt = state(null)
+const workspaceZone = state('America/New_York')
+const bestTime = state('2026-12-03T17:00:00Z') // Supplied by your scheduling service.
+function schedule(selection) { scheduledAt.set(selection.value) }
+</script>
+<DateTimePicker :value="scheduledAt" :timeZone="workspaceZone"
+  :suggestedTime="bestTime" @change="schedule" />
+```
+
+`@change` emits `{ value: string | null, timeZone, preset }` only on Apply,
+Clear or a quick choice. `value` is a UTC ISO instant; `preset` is `hour`,
+`tomorrow`, `suggested`, or `null`. Cancel and Escape leave the value unchanged.
+Parent-driven value, timezone, bounds and disabled updates remain reactive.
+
+“In an hour” adds an elapsed hour. “Tomorrow morning” means 09:00 on the next
+workspace calendar day, including DST changes. “Next best time” appears only
+when the caller supplies `suggestedTime`; recommendation logic stays in the app.
+Bounds apply to manual input and shortcuts. `minuteStep` is a positive divisor
+of 60 and defaults to 1.
+
+Native popup presentation requires the host's `viewMeasure` and
+`viewNonModalPresentation` capabilities. Programmatic focus is used when
+`viewFocus` is available. Unsupported hosts get an actionable warning and no
+partially opened popup. No host implementation is supplied by the component.
+
+Nonexistent clock times (DST gaps) show a validation message instead of being
+shifted. A newly selected repeated clock minute uses its earlier occurrence;
+reopening an existing later occurrence preserves that instant until its fields
+are changed. The browser-safe `dateTimeToIso` helper also accepts `later` as its
+fourth argument when an app needs to choose the other occurrence explicitly.
+
+```ts
+import { dateTimeToIso, dateTimeFields } from '@stacksjs/components/date-time-picker'
+const instant = dateTimeToIso('2026-11-01', '01:30', 'America/New_York', 'later')
+const fields = dateTimeFields(instant, 'America/New_York')
+```
 
 ### Buttons & actions
 

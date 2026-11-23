@@ -1,0 +1,233 @@
+<script server>
+export const value = $props.value || null
+export const timeZone = $props.timeZone || 'UTC'
+export const locale = $props.locale || 'en-US'
+export const minDate = $props.minDate || null
+export const maxDate = $props.maxDate || null
+export const suggestedTime = $props.suggestedTime || null
+export const disabled = $bool($props.disabled)
+export const clearable = $bool($props.clearable, true)
+const step = $num($props.minuteStep, 1)
+export const minuteStep = Number.isInteger(step) && step > 0 && 60 % step === 0 ? step : 1
+export const placeholder = $props.placeholder || 'Choose date and time'
+export const label = $props.label || 'Schedule'
+export const instanceId = $uid
+export const rootClasses = `relative inline-block ${$props.className || ''}`.trim()
+export const triggerClasses = 'inline-flex items-center gap-2 rounded-control bg-field px-3 py-2 text-sm text-fg ring-1 ring-inset ring-line-strong hover:bg-field-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50'
+export const panelClasses = 'absolute left-0 z-30 w-96 max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-panel bg-panel p-4 shadow-lg ring-1 ring-line'
+</script>
+
+<script client>
+import { measureTooltipPosition, trackBrowserPopup, trackNativePopup } from '../../utils/tooltip-position'
+import { dateTimeFields, dateTimeInstant, dateTimePreset, dateTimeToIso, formatDateTime, validTimeZone } from './date-time'
+const emit = defineEmits()
+const instanceId = {{ instanceId }}
+const label = useReactiveProp('label', {{ label }})
+const rootRef = useRef('dateTimeRoot')
+const triggerRef = useRef('dateTimeTrigger')
+const value = useReactiveProp('value', {{ value }}, { parse: value => value })
+const timeZone = useReactiveProp('timeZone', {{ timeZone }})
+const locale = useReactiveProp('locale', {{ locale }})
+const minimum = useReactiveProp('minDate', {{ minDate }}, { parse: value => value })
+const maximum = useReactiveProp('maxDate', {{ maxDate }}, { parse: value => value })
+const suggested = useReactiveProp('suggestedTime', {{ suggestedTime }}, { parse: value => value })
+const disabled = useReactiveProp('disabled', {{ disabled }})
+const clearable = useReactiveProp('clearable', {{ clearable }})
+const placeholder = useReactiveProp('placeholder', {{ placeholder }})
+const minuteStep = useReactiveProp('minuteStep', {{ minuteStep }}, { parse: value => {
+  const n = Number(value)
+  return Number.isInteger(n) && n > 0 && 60 % n === 0 ? n : 1
+} })
+const isOpen = state(false)
+const mounted = state(false)
+const tree = window.stx._host
+const nativePicker = !!tree.isNative
+let stopPositioning = null
+const draftDate = state('')
+const draftTime = state('09:00')
+const original = state(null)
+const committed = state(null)
+
+function loadDraft(instant, zone) {
+  const iso = dateTimeInstant(instant)
+  const fields = dateTimeFields(iso || new Date(), zone)
+  original.set(iso)
+  draftDate.set(fields ? fields.date : '')
+  draftTime.set(iso && fields ? fields.time : '09:00')
+}
+effect(() => { committed.set(dateTimeInstant(value())) })
+effect(() => { loadDraft(committed(), timeZone()) })
+effect(() => { if (disabled()) close(false) })
+
+const suggestion = derived(() => dateTimeInstant(suggested()))
+const displayValue = derived(() => formatDateTime(committed(), timeZone(), locale()) || committed() || placeholder())
+const panelId = 'date-time-panel-' + instanceId
+const timeId = 'date-time-clock-' + instanceId
+const zoneId = 'date-time-zone-' + instanceId
+const errorId = 'date-time-error-' + instanceId
+const titleId = 'date-time-title-' + instanceId
+
+// Calendar's Date represents a civil day in the browser; its midnight is not
+// the scheduled instant. Only the timezone converter creates that instant.
+function calendarDate(instant) {
+  const fields = dateTimeFields(instant, timeZone())
+  if (!fields) return null
+  const parts = fields.date.split('-').map(Number)
+  return new Date(parts[0], parts[1] - 1, parts[2])
+}
+const calendarValue = derived(() => {
+  const parts = draftDate().split('-').map(Number)
+  return parts.length === 3 && parts.every(Number.isFinite) ? new Date(parts[0], parts[1] - 1, parts[2]) : null
+})
+const calendarMin = derived(() => calendarDate(minimum()))
+const calendarMax = derived(() => calendarDate(maximum()))
+const candidate = derived(() => {
+  const date = draftDate()
+  const time = draftTime()
+  const zone = timeZone()
+  // Reopening an existing folded minute must keep the original occurrence,
+  // including seconds, until the user actually changes the civil fields.
+  const fields = dateTimeFields(original(), zone)
+  if (fields && fields.date === date && fields.time === time) return original()
+  return dateTimeToIso(date, time, zone)
+})
+function boundsError(iso) {
+  if (!iso) return 'Choose a valid date and time. This clock time may not exist in the selected timezone.'
+  const minValue = minimum()
+  const maxValue = maximum()
+  const min = dateTimeInstant(minValue)
+  const max = dateTimeInstant(maxValue)
+  if (minValue && !min) return 'The earliest allowed time is invalid.'
+  if (maxValue && !max) return 'The latest allowed time is invalid.' 
+  if (min && Date.parse(iso) < Date.parse(min)) return 'Choose a time at or after the earliest allowed time.'
+  if (max && Date.parse(iso) > Date.parse(max)) return 'Choose a time at or before the latest allowed time.'
+  return ''
+}
+const error = derived(() => {
+  if (!validTimeZone(timeZone())) return 'Choose a valid workspace timezone.'
+  if (Number(draftTime().slice(3, 5)) % minuteStep() !== 0) return 'Choose a time matching the minute increment.'
+  return boundsError(candidate())
+})
+
+function focusElement(element) {
+  if (!element || element.isConnected === false || !element.focus || (nativePicker && !window.craft?.capabilities?.viewFocus)) return
+  try {
+    const result = element.focus()
+    if (result && result.catch) result.catch(error => console.warn('[stx:date-time-picker] ' + String(error)))
+  }
+  catch (error) { console.warn('[stx:date-time-picker] ' + String(error)) }
+}
+
+function close(restoreFocus = true) {
+  if (!isOpen()) return
+  isOpen.set(false)
+  emit('close')
+  if (restoreFocus) focusElement(triggerRef.value)
+}
+function open() {
+  if (disabled() || isOpen()) return
+  loadDraft(committed(), timeZone())
+  isOpen.set(true)
+  emit('open')
+  nextTick(() => {
+    const root = rootRef.value
+    const input = root && root.querySelector('[data-date-time-clock]')
+    if (isOpen()) focusElement(input)
+  })
+}
+function toggle() { isOpen() ? close() : open() }
+function commit(iso, preset) {
+  if (disabled() || !validTimeZone(timeZone()) || boundsError(iso)) return
+  committed.set(iso)
+  original.set(iso)
+  const fields = dateTimeFields(iso, timeZone())
+  draftDate.set(fields.date)
+  draftTime.set(fields.time)
+  emit('change', { value: iso, timeZone: timeZone(), preset })
+  close()
+}
+function apply() { if (!error()) commit(candidate(), null) }
+function presetDisabled(preset) { return disabled() || !validTimeZone(timeZone()) || !!boundsError(dateTimePreset(preset, timeZone(), new Date(), suggested())) }
+function choosePreset(preset) { commit(dateTimePreset(preset, timeZone(), new Date(), suggested()), preset) }
+function clear() {
+  if (disabled()) return
+  committed.set(null)
+  original.set(null)
+  emit('change', { value: null, timeZone: timeZone(), preset: null })
+  close()
+}
+function onCalendarChange(event) {
+  const date = event && event.detail ? event.detail : event
+  if (!date || !Number.isFinite(date.getTime())) return
+  draftDate.set(date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0'))
+}
+
+onMount(() => {
+  mounted.set(true)
+  useEventListener('click', event => {
+    const root = rootRef.value
+    if (isOpen() && root && !root.contains(event.target) && window.stx.overlays.isTop(instanceId)) close(false)
+  }, { target: document, capture: true })
+})
+effect(() => {
+  if (!mounted()) return
+  if (stopPositioning) { stopPositioning(); stopPositioning = null }
+  if (!isOpen()) { window.stx.overlays.close(instanceId); return }
+  const root = rootRef.value
+  const panel = root && root.querySelector('[data-date-time-panel]')
+  const trigger = triggerRef.value
+  try {
+    if (nativePicker && (!window.craft?.capabilities?.viewMeasure || !window.craft?.capabilities?.viewNonModalPresentation))
+      throw new Error('Native DateTimePicker requires viewMeasure and viewNonModalPresentation')
+    window.stx.overlays.open(instanceId, { modal: false, root: nativePicker ? panel : null, panel: () => root, onEscape: () => close(), onBackdrop: () => close(false) })
+    if (nativePicker) stopPositioning = trackNativePopup(trigger, panel, 'bottom', style => tree.setStyle(panel, style))
+    else {
+      const place = () => {
+        measureTooltipPosition(trigger, panel, 'bottom').then(point => {
+          if (!point || !isOpen() || !panel.isConnected) return
+          panel.style.left = point.left + 'px'
+          panel.style.top = point.top + 'px'
+        }).catch(error => console.warn('[stx:date-time-picker] ' + String(error)))
+      }
+      place()
+      stopPositioning = trackBrowserPopup(trigger, panel, place)
+    }
+  }
+  catch (error) {
+    window.stx.overlays.close(instanceId)
+    console.warn('[stx:date-time-picker] ' + String(error))
+    close(false)
+  }
+})
+onDestroy(() => {
+  mounted.set(false)
+  isOpen.set(false)
+  if (stopPositioning) stopPositioning()
+  window.stx.overlays.close(instanceId)
+})
+defineExpose({ open, close })
+</script>
+
+<div class="{{ rootClasses }}" x-ref="dateTimeRoot" data-date-time-picker>
+  <button type="button" class="{{ triggerClasses }}" x-ref="dateTimeTrigger" data-date-time-trigger :disabled="disabled" aria-haspopup="dialog" :aria-expanded="isOpen() ? 'true' : 'false'" :aria-controls="panelId" :aria-label="label" @click="toggle()">
+    <span x-text="displayValue"></span>
+  </button>
+  <div :if="isOpen" class="{{ panelClasses }}" role="dialog" data-native="Modal" visible="false" :id="panelId" :aria-labelledby="titleId" :aria-describedby="zoneId" data-date-time-panel>
+    <h3 class="mb-2 text-sm font-semibold text-fg" :id="titleId" x-text="label">{{ label }}</h3>
+    <p class="mb-3 text-xs text-fg-muted" :id="zoneId">Timezone: <span x-text="timeZone"></span></p>
+    <div class="mb-3 flex flex-wrap gap-2">
+      <button type="button" class="rounded-control bg-surface px-2 py-1 text-xs text-fg hover:bg-surface-hover" data-date-time-preset="hour" :disabled="presetDisabled('hour')" @click="choosePreset('hour')">In an hour</button>
+      <button type="button" class="rounded-control bg-surface px-2 py-1 text-xs text-fg hover:bg-surface-hover" data-date-time-preset="tomorrow" :disabled="presetDisabled('tomorrow')" @click="choosePreset('tomorrow')">Tomorrow morning</button>
+      <button :if="suggestion" type="button" class="rounded-control bg-surface px-2 py-1 text-xs text-fg hover:bg-surface-hover" data-date-time-preset="suggested" :disabled="presetDisabled('suggested')" @click="choosePreset('suggested')">Next best time</button>
+    </div>
+    <Calendar :value="calendarValue()" :minDate="calendarMin()" :maxDate="calendarMax()" :locale="locale" @change.stop="onCalendarChange" className="max-w-none p-0 shadow-none" />
+    <label class="mt-3 block text-xs font-medium text-fg" :for="timeId">Time</label>
+    <input type="time" class="mt-1 w-full rounded-control bg-field px-3 py-2 text-sm text-fg ring-1 ring-line-strong focus:ring-2 focus:ring-accent" :id="timeId" data-date-time-clock x-model="draftTime" :step="minuteStep() * 60" :aria-invalid="error() ? 'true' : null" :aria-describedby="error() ? errorId : zoneId" @keydown.enter.prevent="apply()" />
+    <p class="mt-2 text-xs text-danger-fg" :id="errorId" role="status" aria-live="polite" x-text="error"></p>
+    <div class="mt-3 flex justify-end gap-2">
+      <button :if="clearable" type="button" class="mr-auto rounded-control px-3 py-2 text-sm text-fg-muted hover:bg-surface-hover" data-date-time-clear @click="clear()">Clear</button>
+      <button type="button" class="rounded-control px-3 py-2 text-sm text-fg hover:bg-surface-hover" data-date-time-cancel @click="close()">Cancel</button>
+      <button type="button" class="rounded-control bg-accent-solid px-3 py-2 text-sm text-accent-ink disabled:opacity-50" :disabled="!!error()" data-date-time-apply @click="apply()">Apply</button>
+    </div>
+  </div>
+</div>
