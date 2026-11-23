@@ -1045,6 +1045,16 @@ export function installCraftBridge(
       // arrives as a `craftHealthHeartRate` event, like the strap's readings.
       startHeartRateUpdates: (options: AnyRecord = {}) => request('Health', 'startHeartRateUpdates', [{ since: typeof options.since === 'number' ? options.since : null }]),
       stopHeartRateUpdates: () => request('Health', 'stopHeartRateUpdates', [{}]),
+      // Why that stream stopped (Craft 0.0.531, #580): each
+      // `craftHealthHeartRateError` detail, `{ code, message }`, as the page's
+      // own subscriber hands it on. A host older than that never sends one,
+      // so the callback is simply never called there.
+      onHeartRateError: (callback: (error: Record<string, unknown>) => unknown) => {
+        if (typeof callback !== 'function') throw new TypeError('health.onHeartRateError needs a function')
+        const handler = (event: AnyRecord) => callback((event as AnyRecord).detail || {})
+        target.addEventListener?.('craftHealthHeartRateError', handler)
+        return () => target.removeEventListener?.('craftHealthHeartRateError', handler)
+      },
       startWorkout: (options: AnyRecord = {}) => request('Health', 'startWorkout', [{
         type: typeof options.type === 'string' ? options.type : '',
         ...(typeof options.location === 'string' ? { location: options.location } : {}),

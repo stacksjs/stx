@@ -271,6 +271,27 @@ describe('shared-runtime native capability protocol', () => {
     ])
   })
 
+  it('tells the page why the heart-rate stream stopped, until it unsubscribes (Craft 0.0.531)', async () => {
+    const without = await runtime('', { timers: false })
+    expect(without.scope.craft.health).toBeUndefined()
+
+    const { scope, sent, receive } = await runtime('', { capabilities: ['health'], timers: false })
+    expect(() => scope.craft.health.onHeartRateError('nope')).toThrow('health.onHeartRateError needs a function')
+    const errors: unknown[] = []
+    const stop = scope.craft.health.onHeartRateError((error: unknown) => errors.push(error))
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftHealthHeartRate', detail: { samples: [] } } })
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftHealthHeartRateError', detail: { code: 'DATABASE_INACCESSIBLE', message: 'Protected health data is inaccessible' } } })
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftHealthHeartRateError', detail: { code: 'AUTHORIZATION_DENIED', message: 'Not authorized' } } })
+    stop()
+    receive({ type: 'CRAFT_EVENT', payload: { event: 'craftHealthHeartRateError', detail: { code: 'HEALTH_ERROR', message: 'after' } } })
+    expect(errors).toEqual([
+      { code: 'DATABASE_INACCESSIBLE', message: 'Protected health data is inaccessible' },
+      { code: 'AUTHORIZATION_DENIED', message: 'Not authorized' },
+    ])
+    // Listening asks the host for nothing: the event arrives whether or not anyone listens.
+    expect(sent.filter(message => message.type === 'API_REQUEST')).toEqual([])
+  })
+
   it('exposes the host-owned Wallet pass API only when advertised', async () => {
     const { scope, sent } = await runtime('', { capabilities: ['wallet'], timers: false })
     expect(scope.craft.capabilities.wallet).toBe(true)

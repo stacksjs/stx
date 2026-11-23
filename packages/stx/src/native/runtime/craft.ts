@@ -619,6 +619,13 @@ export interface NativeCraft {
     /** Heart rate as Apple Health receives it, from `since` (epoch ms), as `craftHealthHeartRate` events (`{ samples }`); one stream at a time. */
     startHeartRateUpdates: (options?: { since?: number }) => Promise<boolean>
     stopHeartRateUpdates: () => Promise<boolean>
+    /**
+     * Why the heart-rate stream stopped, each time it does (Craft 0.0.531):
+     * `DATABASE_INACCESSIBLE` (the device locked; it runs again once
+     * unlocked), `AUTHORIZATION_DENIED`, `HEALTH_UNAVAILABLE` or `HEALTH_ERROR`.
+     * Returns the unsubscribe. An older host never calls back.
+     */
+    onHeartRateError: (callback: (error: { code: 'DATABASE_INACCESSIBLE' | 'AUTHORIZATION_DENIED' | 'HEALTH_UNAVAILABLE' | 'HEALTH_ERROR', message: string }) => unknown) => () => void
     /** Start an OS-owned live workout session. Lifecycle and metrics arrive as `craftHealthWorkout` events. */
     startWorkout: (options: { type: string, location?: 'indoor' | 'outdoor' | 'unknown' }) => Promise<{ id: string, type: string, startDate: number }>
     pauseWorkout: () => Promise<boolean>
