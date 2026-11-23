@@ -3432,6 +3432,7 @@ function __stxOverlay(errs){
       runtimeConfig: stxConfig.runtimeConfig,
       ...('strict' in stxConfig && { strict: stxConfig.strict }),
       ...('router' in stxConfig && { router: stxConfig.router }),
+      ...('csp' in stxConfig && { csp: stxConfig.csp }),
       // Forward debug so `debug: true` in stx.config.ts turns on the verbose
       // render/component/directive logs on the serve path (gated by
       // options.debug in the renderer, otherwise unreachable from a config).
@@ -3888,6 +3889,7 @@ function __stxOverlay(errs){
         runtimeConfig: stxConfig.runtimeConfig,
         ...('strict' in stxConfig && { strict: stxConfig.strict }),
         ...('router' in stxConfig && { router: stxConfig.router }),
+        ...('csp' in stxConfig && { csp: stxConfig.csp }),
         ...('debug' in stxConfig && { debug: stxConfig.debug }),
         ...('skipDefaultSeoTags' in stxConfig && { skipDefaultSeoTags: stxConfig.skipDefaultSeoTags }),
         ...('defaultTitle' in stxConfig && { defaultTitle: stxConfig.defaultTitle }),
@@ -5199,6 +5201,8 @@ function __stxOverlay(errs){
                   while ((setupMatch = bridgeInitRe.exec(content)) !== null) {
                     appendOutsideMainScript(setupMatch)
                   }
+                  const cspRegistryRe = /<script\b[^>]*\bdata-stx-csp(?=\s|=|>)[^>]*>[\s\S]*?<\/script>/gi
+                  while ((setupMatch = cspRegistryRe.exec(content)) !== null) appendOutsideMainScript(setupMatch)
 
                   // Strip the signals runtime IIFE — keep only page-specific scripts
                   fragment = fragment.replace(
@@ -5207,7 +5211,7 @@ function __stxOverlay(errs){
                   )
 
                   // Clear stale _latestSetup from previous page, then append new page scripts
-                  const clearStale = '<script data-stx-page>if(window.stx)window.stx._latestSetup=null;</script>'
+                  const clearStale = stxConfig.csp?.enabled && stxConfig.csp.precompile ? '' : '<script data-stx-page>if(window.stx)window.stx._latestSetup=null;</script>'
                   const inlinePageScripts = pageSetupScripts.filter(script => !externalPageScripts.includes(script))
                   const componentFactoryScripts = inlinePageScripts.filter(script => script.includes('data-stx-component-factories'))
                   const trailingPageScripts = inlinePageScripts.filter(script => !script.includes('data-stx-component-factories'))
@@ -5645,7 +5649,18 @@ function __stxOverlay(errs){
               status: _finalResp.status, statusText: _finalResp.statusText, headers,
             })
           }
-          return req.method === 'HEAD' ? _finalResp : publicAssets?.rewrite(_finalResp) ?? _finalResp
+          if (req.method === 'HEAD') return _finalResp
+          _finalResp = await (publicAssets?.rewrite(_finalResp) ?? _finalResp)
+          if (stxConfig.csp?.enabled && _finalResp.body && !_finalResp.bodyUsed
+            && _finalResp.headers.get('content-type')?.includes('text/html') && !_finalResp.headers.has('content-encoding')) {
+            const stx = await stxModule
+            const headers = new Headers(_finalResp.headers)
+            headers.delete('content-length')
+            _finalResp = new Response(stx.finalizeCspDocument(await _finalResp.text(), stxConfig.csp), {
+              status: _finalResp.status, statusText: _finalResp.statusText, headers,
+            })
+          }
+          return _finalResp
         })())
       },
     })

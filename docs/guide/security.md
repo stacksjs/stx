@@ -43,6 +43,64 @@ app.use(helmet.contentSecurityPolicy({
 }))
 ```
 
+### Reactive templates without `unsafe-eval`
+
+STX's default runtime compiles template expressions in the browser. Opt into
+ahead-of-time compilation to run with a policy that forbids `unsafe-eval`:
+
+```ts
+// stx.config.ts
+export default {
+  csp: {
+    enabled: true,
+    precompile: true,
+    useHashes: true,
+    addMetaTag: true,
+    directives: {
+      'default-src': ["'self'"],
+      'script-src': ["'self'"],
+      'style-src': ["'self'", "'unsafe-inline'"],
+      'object-src': ["'none'"],
+      'base-uri': ["'self'"],
+    },
+  },
+}
+```
+
+`precompile` parses the finished template's bindings and emits ordinary JavaScript
+functions for reads, handlers, model writes, scoped slots, cloned components and
+deferred islands. It also covers the `x-data` bridge. The compiler runs on the
+server/build machine; no parser ships to the browser. An invalid binding fails
+rendering with a diagnostic. A binding absent from the compiled table cannot fall
+back to runtime evaluation. Application code that explicitly uses `eval` or
+`Function`, including third-party libraries, still needs replacing.
+
+For **static sites**, `useHashes` hashes inline executable scripts and styles with
+SHA-256. Both static builders refresh the policy after asset extraction and
+fingerprinting, and write `_stx/csp-manifest.json`. Its `headerName` and `header`
+are ready to configure on the static host. Every page authorizes the site's
+finite union of script hashes, so the initial document's policy also permits SPA
+destinations. The router preserves compiled script bytes during navigation.
+Do not rewrite/minify inline code after this final pass without regenerating the
+manifest with `finalizeStaticCsp(outDir, cspConfig)`.
+
+The example deliberately permits runtime-generated styles. Adding style hashes
+would cause browsers to ignore `unsafe-inline`, so STX retains that explicit
+choice. With a stricter style policy it emits style hashes instead; dynamic
+styles must then be authorized separately by the application. It never adds
+`unsafe-inline` or `unsafe-eval` to the configured policy.
+
+For **per-request SSR**, use `precompile: true` with `useNonce: true` instead of
+`useHashes`; the two authorization modes are mutually exclusive. A page's hashes
+alone cannot authorize arbitrary future SSR responses on an SPA navigation.
+For a custom response pipeline, `collectCspHashes(html)` and
+`hashedCspHeader(html, cspConfig)` compute policy data from its final bytes.
+Report-only deployments must use the HTTP header; HTML meta cannot express a
+report-only policy.
+
+Only trusted application templates should enter compilation. HTML supplied at
+runtime through `x-html` is data and cannot introduce new template expressions.
+
 ## CSRF Protection
 
 ### Token-based Protection
