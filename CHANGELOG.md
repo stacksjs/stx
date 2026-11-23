@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.928...v0.2.929)
+
+## ✨ Features
+
+- **native**: health.onHeartRateError on a native screen ([0973a89](https://github.com/stacksjs/stx/commit/0973a89)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([craft-native/craft#580](https://github.com/craft-native/craft/issues/580))
+
+## 🐛 Bug Fixes
+
+- **offline**: resume an interrupted first worker install ([d358545](https://github.com/stacksjs/stx/commit/d358545)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.929 ([82de950](https://github.com/stacksjs/stx/commit/82de950)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.927...v0.2.928)
 
 ## ✨ Features
