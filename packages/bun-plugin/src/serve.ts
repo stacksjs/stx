@@ -987,8 +987,20 @@ export interface ServeOptions extends RenderAdmissionOptions {
    * `request` varies by the complete request context and is the safe default
    * for server-rendered pages. `source` uses one entry per route file and is
    * intended for source-derived shells whose live data loads on the client.
+   *
+   * `url` keeps one entry per address: the route file, the host, the path,
+   * the query string and the locale. It is for a public site whose pages are
+   * rendered on the server from data that changes only with the source - a
+   * marketing page, a post, a `[slug].stx` whose server script looks the slug
+   * up - and are the same for every visitor at that address. `request` never
+   * helps such a site, because each new visitor's cookies and address make a
+   * new key, and `source` would serve one slug's page for all of them. A page
+   * that renders something of the visitor's (a cookie, a header, a session)
+   * must opt out with `definePageMeta({ cache: false })`, as under `source`.
+   * Dynamic routes are cached under `url` too, each address its own entry, so
+   * `renderCacheLimit` is what bounds a crawl of distinct addresses.
    */
-  renderCacheVary?: 'request' | 'source'
+  renderCacheVary?: 'request' | 'source' | 'url'
 
   /**
    * Keep the render cache on disk, so a restart does not render every page
@@ -2817,10 +2829,33 @@ function __stxOverlay(errs){
     }
   }
 
+  /**
+   * One entry per address (`renderCacheVary: 'url'`): the route file, then
+   * what a visitor could have typed - host, path and query string - and the
+   * locale, which can come from somewhere other than the address. Nothing of
+   * the visitor's own: no cookie, no header, no client address.
+   */
+  function urlCacheKey(filePath: string, reqCtx?: ServeRequestContext): string {
+    const locale = i18nConfig ? (activeServeLocale ?? i18nConfig.defaultLocale) : ''
+    const raw = reqCtx?.request?.url
+    if (!raw)
+      return `${filePath}\0${locale}\0${activeServeHost || ''}\0${activeServeSearch || ''}`
+    try {
+      const url = new URL(raw)
+      return `${filePath}\0${locale}\0${url.host}\0${url.pathname}${url.search}`
+    }
+    catch {
+      return `${filePath}\0uncacheable:${crypto.randomUUID()}`
+    }
+  }
+
   /** Render cache must vary by locale/host/cookies — same `.stx` file can serve different `t()`/host/cookie-gated output. */
   function htmlCacheKey(filePath: string, reqCtx?: ServeRequestContext): string {
     if (RENDER_CACHE_VARY === 'source')
       return filePath
+
+    if (RENDER_CACHE_VARY === 'url')
+      return urlCacheKey(filePath, reqCtx)
 
     if (reqCtx) {
       // `onRequest` may merge arbitrary app-owned values into the request
@@ -3811,6 +3846,29 @@ function __stxOverlay(errs){
     }
     if (reqCtx)
       reqCtx.params = paramsObj
+
+    // With `renderCacheVary: 'url'` a dynamic route is cached like a static
+    // one, each address under its own key: `features/[slug].stx` renders a
+    // different page per slug, from data that only changes with the source,
+    // and every visitor to one slug gets the same page.
+    const urlKey = ENABLE_HTML_CACHE
+      && RENDER_CACHE_VARY === 'url'
+      && !isMutating
+      && !skipCacheHint
+      && allowsRenderCache(reqCtx)
+      ? htmlCacheKey(filePath, reqCtx)
+      : undefined
+    if (urlKey !== undefined) {
+      const cachedEntry = await readRenderCache(urlKey)
+      if (cachedEntry && await templateSignatureFresh(cachedEntry.signature)) {
+        if (reqCtx) {
+          reqCtx.responseStatus = cachedEntry.status
+          reqCtx.responseHeaders = cachedEntry.headers
+        }
+        return cachedEntry.html
+      }
+    }
+
     if (cacheShell) {
       const cachedEntry = await readRenderCache(filePath)
       if (cachedEntry && await templateSignatureFresh(cachedEntry.signature)) {
@@ -3945,8 +4003,25 @@ function __stxOverlay(errs){
       // Client scripts are already handled by processDirectives (transformed into data-stx-scoped)
       // Css CSS is already injected by processDirectives() — no duplicate injection needed.
 
-      if (!cacheShell)
+      if (!cacheShell) {
+        // Kept under the address's own key, on the conditions the static path
+        // stores under. A render that recorded a response (a redirect, a
+        // notFound()) is served and not kept, so an address that does not
+        // exist never takes a place in the cache.
+        if (
+          urlKey !== undefined
+            && !context.__stx_skip_cache
+            && readResponseStatus(context) === undefined
+            && !readResponseHeaders(context)
+            && allowsRenderCache(reqCtx)
+            && isRenderableCacheCandidate(output)
+            && placeholdersAreReady
+        ) {
+          const signature = await buildTemplateSignature(filePath, dependencies)
+          rememberRender(urlKey, { html: output, signature, status: reqCtx?.responseStatus ?? 200, headers: reqCtx?.responseHeaders }, ticket)
+        }
         return output
+      }
 
       // A render that used its params is this address's, whatever its own
       // server script said: served, not kept, and remembered so the next
