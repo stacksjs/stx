@@ -2121,7 +2121,7 @@ else {
             var ownerDecl=(attrs.match(/data-stx-owner\\s*=\\s*["']([^"']+)["']/i)||[])[1]||'';
             var registry=/(?:^|\\s)data-stx-modules(?:\\s|=|$)/i.test(attrs)||REGISTRY_TEXT.test(code);
             var composables=/(?:^|\\s)data-stx-(?:framework-)?composables(?:\\s|=|$)/i.test(attrs)||COMPOSABLES_TEXT.test(code);
-            fragScripts.push({text:code,slot:slot,setupName:generatedSetupName(code),scoped:scoped,run:runDecl?runDecl.toLowerCase():'',owner:ownerDecl,registry:registry,composables:composables,module:scriptType==='module',moduleJob:externalAttrs['data-stx-module-job']||''});
+            fragScripts.push({text:code,slot:slot,setupName:generatedSetupName(code),scoped:scoped,run:runDecl?runDecl.toLowerCase():'',owner:ownerDecl,registry:registry,composables:composables,csp:/(?:^|\\s)data-stx-csp-script(?:\\s|=|$)/i.test(attrs),module:scriptType==='module',moduleJob:externalAttrs['data-stx-module-job']||''});
             // Retain scoped setup code in its inert placeholder. A placeholder
             // inside template.content is unreachable through document, so the
             // repeated component runtime must execute it for each clone.
@@ -2217,6 +2217,7 @@ else {
         function fragOrder(entry){return entry.registry?0:entry.composables?1:entry.setupName?3:2}
         fragScripts.sort(function(a,b){return fragOrder(a)-fragOrder(b)});
         function runFragScripts(){
+        if(window.stx&&window.__STX_CSP__)window.stx._latestSetup=null;
         return runPageScriptEntries(fragScripts,function(entry){
           var code=entry.text;
           log('[router] exec script len:', code.length, 'has __stx_setup:', code.indexOf('__stx_setup')>-1);
@@ -2270,7 +2271,7 @@ else {
           var moduleDone;
           var modulePending=hasImport?new Promise(function(resolve,reject){moduleDone=resolve;ns.onerror=reject}):null;
           if(entry.moduleJob)ns.setAttribute('data-stx-module-job',entry.moduleJob);
-          ns.textContent=markRan((hasImport||isAlreadyScoped)?code:'{'+code+'}',moduleDone);
+          if(entry.csp){var currentNonce=document.querySelector('script[nonce]');if(currentNonce)ns.nonce=currentNonce.nonce;ns.textContent=code;if(moduleDone)ns.onload=moduleDone;}else ns.textContent=markRan((hasImport||isAlreadyScoped)?code:'{'+code+'}',moduleDone);
           ns.setAttribute('data-stx-page','');
           if(placeholder&&placeholder.parentNode){
             ns.setAttribute('data-stx-positioned','');
@@ -2517,7 +2518,7 @@ else {
           var slot='document-'+(++routedBodyScriptId);
           var setupName=generatedSetupName(text);
           if(setupName)incomingSetupName=setupName;
-          routedBodyScripts.push({text:text,runAlways:true,slot:slot,setupName:setupName,run:s.getAttribute('data-stx-run')||'',owner:s.getAttribute('data-stx-owner')||'',registry:isModuleRegistryScript(s),composables:isComposablesScript(s),module:type==='module',moduleJob:s.getAttribute('data-stx-module-job')||''});
+          routedBodyScripts.push({text:text,runAlways:true,slot:slot,setupName:setupName,run:s.getAttribute('data-stx-run')||'',owner:s.getAttribute('data-stx-owner')||'',registry:isModuleRegistryScript(s),composables:isComposablesScript(s),csp:s.hasAttribute('data-stx-csp-script'),module:type==='module',moduleJob:s.getAttribute('data-stx-module-job')||''});
           s.textContent='';
           s.setAttribute('type','application/stx-pending');
           s.setAttribute('data-stx-route-script',slot);
@@ -2593,8 +2594,8 @@ else {
       qsa('script[data-stx-page]').forEach(function(s){s.remove()});
 
       var scripts=routedBodyScripts.slice();
-      function addScript(text, runAlways, slot, owner, module, moduleJob, registry, composables){
-        scripts.push({text:text,runAlways:!!runAlways,slot:slot||'',owner:owner||'',registry:!!registry||REGISTRY_TEXT.test(text),composables:!!composables||COMPOSABLES_TEXT.test(text),module:!!module,moduleJob:moduleJob||''});
+      function addScript(text, runAlways, slot, owner, module, moduleJob, registry, composables, csp){
+        scripts.push({text:text,runAlways:!!runAlways,slot:slot||'',owner:owner||'',registry:!!registry||REGISTRY_TEXT.test(text),composables:!!composables||COMPOSABLES_TEXT.test(text),module:!!module,csp:!!csp,moduleJob:moduleJob||''});
       }
       if(isLayoutChange){
         // Also collect setup functions from <head>, and the page's module
@@ -2610,10 +2611,10 @@ else {
           if(s.hasAttribute('src')||s.hasAttribute('data-stx-before-runtime'))return;
           if(!text.trim())return;
           if(isSignalsRuntimeScript(s,text))return;
-          if(isModuleRegistryScript(s)||isComposablesScript(s))addScript(text,true,'','',s.type==='module',s.getAttribute('data-stx-module-job'),isModuleRegistryScript(s),isComposablesScript(s));
+          if(isModuleRegistryScript(s)||isComposablesScript(s))addScript(text,true,'','',s.type==='module',s.getAttribute('data-stx-module-job'),isModuleRegistryScript(s),isComposablesScript(s),s.hasAttribute('data-stx-csp-script'));
           // Server route params live in the head. A layout change clears the
           // previous params too, so carry this handoff before the page mounts.
-          else if(s.hasAttribute('data-stx-route-params')||text.indexOf('__stx_setup_')!==-1)addScript(text,true);
+          else if(s.hasAttribute('data-stx-route-params')||text.indexOf('__stx_setup_')!==-1)addScript(text,true,'','',false,'',false,false,s.hasAttribute('data-stx-csp-script'));
         });
       } else {
         // Collect page scripts from <head> AND <body> (outside container).
@@ -2648,7 +2649,7 @@ else {
           seenSetups[key]=1;
           // A layout component outside the container carries its owner, so
           // execScripts skips it when it stayed on the page (#1958).
-          addScript(text,true,'',s.getAttribute('data-stx-owner')||'',s.type==='module',s.getAttribute('data-stx-module-job'),isModuleRegistryScript(s),isComposablesScript(s));
+          addScript(text,true,'',s.getAttribute('data-stx-owner')||'',s.type==='module',s.getAttribute('data-stx-module-job'),isModuleRegistryScript(s),isComposablesScript(s),s.hasAttribute('data-stx-csp-script'));
         });
       }
       // Component setup scripts also assign window.stx._latestSetup. Run the
@@ -2761,7 +2762,7 @@ else {
           var moduleDone;
           var modulePending=hasImport?new Promise(function(resolve,reject){moduleDone=resolve;ns.onerror=reject}):null;
           if(entry.moduleJob)ns.setAttribute('data-stx-module-job',entry.moduleJob);
-          ns.textContent=markRan((hasImport||alreadyScoped)?text:'{'+text+republishTopLevel(text)+'}',moduleDone);
+          if(entry.csp){var currentNonce=document.querySelector('script[nonce]');if(currentNonce)ns.nonce=currentNonce.nonce;ns.textContent=text;if(moduleDone)ns.onload=moduleDone;}else ns.textContent=markRan((hasImport||alreadyScoped)?text:'{'+text+republishTopLevel(text)+'}',moduleDone);
           ns.setAttribute('data-stx-page','');
           var placeholder=entry.slot?qs('script[data-stx-route-script="'+entry.slot+'"]'):null;
           if(placeholder&&placeholder.parentNode){

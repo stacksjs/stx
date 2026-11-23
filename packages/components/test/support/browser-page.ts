@@ -7,6 +7,7 @@
  * a headless engine. WebKit where there is one, since a Craft window is a
  * WKWebView.
  */
+import type { StxOptions } from '../../../stx/src/types'
 import { resolve } from 'node:path'
 import { WebView } from 'bun'
 import { generateCss } from '../../../stx/src/dev-server/ts-css'
@@ -39,18 +40,23 @@ export interface BrowserPageOptions {
   height?: number
   /** An expression that is truthy once the page is ready to be tested. */
   ready: string
+  renderOptions?: Partial<StxOptions>
+  headers?: (html: string) => Record<string, string>
+  transformHtml?: (html: string) => string | Promise<string>
+  route?: (request: Request) => Response | undefined
 }
 
 export async function openBrowserPage(options: BrowserPageOptions): Promise<BrowserPage> {
   const source = `<!doctype html><html><head><meta charset="utf-8"><script>window.__errors=[];window.addEventListener('error',function(e){window.__errors.push(String(e.message))});window.addEventListener('unhandledrejection',function(e){window.__errors.push('rejection: '+String(e.reason))})</script></head><body style="margin:0">${options.body}</body></html>`
-  const html = await processDirectives(source, options.context ?? {}, resolve(ROOT, `${options.name}.stx`), { componentsDir: resolve(ROOT, 'src/ui'), root: ROOT, cache: false, debug: false } as any, new Set())
+  const html = await processDirectives(source, options.context ?? {}, resolve(ROOT, `${options.name}.stx`), { componentsDir: resolve(ROOT, 'src/ui'), root: ROOT, cache: false, debug: false, ...options.renderOptions } as any, new Set())
   const css = await generateCss(html, ROOT)
-  const page = html.replace('</head>', `<style>${css}</style></head>`)
+  const styled = html.replace('</head>', `<style>${css}</style></head>`)
+  const page = options.transformHtml ? await options.transformHtml(styled) : styled
 
   const server = Bun.serve({
     port: 0,
     hostname: '127.0.0.1',
-    fetch: () => new Response(page, { headers: { 'Content-Type': 'text/html; charset=utf-8' } }),
+    fetch: request => options.route?.(request) ?? new Response(page, { headers: { 'Content-Type': 'text/html; charset=utf-8', ...options.headers?.(page) } }),
   })
   const view = new WebView({ headless: true, width: options.width ?? 1000, height: options.height ?? 800, backend: APPLE ? { type: 'webkit' } : { type: 'chrome', url: false } } as any)
   await view.navigate(server.url.href)
