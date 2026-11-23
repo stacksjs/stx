@@ -47,6 +47,11 @@
       "bun": "./stx-plugin.ts",
       "import": "./stx-plugin.ts"
     },
+    "./date-time-picker": {
+      "types": "./dist/ui/date-time-picker/date-time.d.ts",
+      "bun": "./dist/date-time-picker/date-time.js",
+      "import": "./dist/date-time-picker/date-time.js"
+    },
     "./render-surface": {
       "types": "./dist/ui/render-surface/render-surface.d.ts",
       "bun": "./dist/render-surface/render-surface.js",

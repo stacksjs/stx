@@ -188,6 +188,18 @@ if (!renderSurfaceResult.success) {
   process.exit(1)
 }
 
+// Scheduling helpers are browser-safe and do not pull in the package root.
+const dateTimeResult = await Bun.build({
+  entrypoints: ['./src/ui/date-time-picker/date-time.ts'],
+  outdir: './dist/date-time-picker',
+  target: 'browser',
+  minify: false,
+})
+if (!dateTimeResult.success) {
+  for (const log of dateTimeResult.logs) console.error(log)
+  process.exit(1)
+}
+
 // A component's exposed methods, from the page that uses it. Browser code, and
 // an entry of its own for the same reason the overlay stack has one.
 const apiResult = await Bun.build({
