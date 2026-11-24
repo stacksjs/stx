@@ -42,10 +42,12 @@ export function signalsProcessElementRuntime(
   var X_HANDLED = ${handledXAttrsLiteral};
   var KEY_MAP = {enter:'Enter', tab:'Tab', escape:'Escape', space:' ', up:'ArrowUp', down:'ArrowDown', left:'ArrowLeft', right:'ArrowRight', 'delete':'Delete', backspace:'Backspace'};
 
-  // True for text a binding wrote, or markup :html injected: data, never
-  // template. Checked only for text that holds braces, so the climb is rare.
+  // Binding output and explicitly ignored DOM contain literal text.
+  // Checked only for text that holds braces, so the climb is rare.
   function isInertContent(node) {
-    for (var n = node; n; n = n.parentNode) if (n.__stx_inert_content) return true;
+    for (var n = node; n; n = n.parentNode) {
+      if (n.__stx_inert_content || (n.nodeType === Node.ELEMENT_NODE && n.hasAttribute('data-stx-ignore'))) return true;
+    }
     return false;
   }
   // skipChildren: this element's bindings only, because something else already

@@ -82,6 +82,14 @@ describe('bindings write inert text', () => {
     expect(document.querySelector('#e').textContent).toBe('ok')
     expect(document.querySelector('#f').textContent).toBe('{{ a }}')
   })
+
+  it('leaves literal text under data-stx-ignore intact during hydration', async () => {
+    await hydrate('<section data-stx-ignore><p id="literal">{{ expression }}</p></section><p id="binding">{{ expression }}</p>', {
+      expression: window.stx.state('rendered'),
+    })
+    expect(document.querySelector('#literal').textContent).toBe('{{ expression }}')
+    expect(document.querySelector('#binding').textContent).toBe('rendered')
+  })
 })
 
 describe('the server render does not re-read interpolated data as a template', () => {
