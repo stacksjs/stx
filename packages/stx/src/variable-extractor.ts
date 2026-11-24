@@ -1528,7 +1528,8 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
       const sideEffectMatch = statement.match(/^import\s*['"](.+?)['"]/)
       const line_ = statement
 
-      // Resolve relative paths against the template's directory
+      // Resolve relative paths against the template's directory. The result
+      // becomes a JavaScript string literal and may contain Windows separators.
       const resolveSource = (source: string) => {
         if (source.startsWith('.')) {
           return path.resolve(templateDir, source)
@@ -1563,7 +1564,7 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
          * unreachable, and a branch that cannot run is a claim about the
          * runtime that nothing checks.
          */
-        convertedLines.push(`const ${name} = (await import('${resolved}')).default`)
+        convertedLines.push(`const ${name} = (await import(${JSON.stringify(resolved)})).default`)
         convertedLines.push(`module.exports.${name} = ${name};`)
       }
       else if (namedImportMatch) {
@@ -1638,13 +1639,13 @@ export function convertToCommonJS(scriptContent: string, filePath?: string): str
         // `stx` does not resolve everywhere, and a rejected import takes the
         // whole script down.
         if (specifiers.length > 0)
-          convertedLines.push(`const { ${specifiers.join(', ')} } = await import('${resolved}')`)
+          convertedLines.push(`const { ${specifiers.join(', ')} } = await import(${JSON.stringify(resolved)})`)
         for (const local of exported)
           convertedLines.push(`module.exports.${local} = ${local};`)
       }
       else if (sideEffectMatch) {
         const resolved = resolveSource(sideEffectMatch[1])
-        convertedLines.push(`await import('${resolved}')`)
+        convertedLines.push(`await import(${JSON.stringify(resolved)})`)
       }
       else {
         convertedLines.push(line_)
@@ -1839,12 +1840,12 @@ function resolveDynamicImports(source: string, templateDir: string, projectRoot:
     if (ch === 'a' && source.startsWith('await', i)) {
       const match = matchDynamicImportAt(source, i)
       if (match) {
-        const { quote, path: importPath, end } = match
+        const { path: importPath, end } = match
         if (importPath.startsWith('.') || importPath.startsWith('~/') || importPath.startsWith('@/')) {
           const resolved = importPath.startsWith('.')
             ? path.resolve(templateDir, importPath)
             : path.resolve(projectRoot, importPath.slice(2))
-          out += `await import(${quote}${resolved}${quote})`
+          out += `await import(${JSON.stringify(resolved)})`
           i = end
           continue
         }
@@ -1863,7 +1864,7 @@ function resolveDynamicImports(source: string, templateDir: string, projectRoot:
  * `start`. Returns the parsed quote, path, and end index (the position
  * just past the closing paren) on success, or null on no match.
  */
-function matchDynamicImportAt(src: string, start: number): { quote: string, path: string, end: number } | null {
+function matchDynamicImportAt(src: string, start: number): { path: string, end: number } | null {
   let pos = start + 'await'.length
   if (pos >= src.length) return null
   // Require whitespace separator (so `awaiting` doesn't match `await`)
@@ -1888,7 +1889,7 @@ function matchDynamicImportAt(src: string, start: number): { quote: string, path
   pos++ // closing quote
   while (pos < src.length && /\s/.test(src[pos])) pos++
   if (src[pos] !== ')') return null
-  return { quote, path: importPath, end: pos + 1 }
+  return { path: importPath, end: pos + 1 }
 }
 
 /**

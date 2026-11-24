@@ -19,7 +19,7 @@ describe('convertToCommonJS — dynamic import path resolution', () => {
       `const { foo } = await import('../helpers/data')`,
       templateFile,
     )
-    expect(out).toContain(`await import('${resolve(templateDir, '../helpers/data')}')`)
+    expect(out).toContain(`await import(${JSON.stringify(resolve(templateDir, '../helpers/data'))})`)
     expect(out).not.toContain(`await import('../helpers/data')`)
   })
 
@@ -28,7 +28,7 @@ describe('convertToCommonJS — dynamic import path resolution', () => {
       `const data = await import('./local')`,
       templateFile,
     )
-    expect(out).toContain(`await import('${resolve(templateDir, './local')}')`)
+    expect(out).toContain(`await import(${JSON.stringify(resolve(templateDir, './local'))})`)
   })
 
   it('leaves bare-specifier dynamic imports untouched', () => {
@@ -44,7 +44,7 @@ describe('convertToCommonJS — dynamic import path resolution', () => {
       `const data = await import('~/resources/data')`,
       templateFile,
     )
-    expect(out).toContain(`await import('${resolve(process.cwd(), 'resources/data')}')`)
+    expect(out).toContain(`await import(${JSON.stringify(resolve(process.cwd(), 'resources/data'))})`)
   })
 
   it('leaves absolute-path dynamic imports untouched', () => {
@@ -64,9 +64,9 @@ describe('convertToCommonJS — dynamic import path resolution', () => {
       ].join('\n'),
       templateFile,
     )
-    expect(out).toContain(`await import('${resolve(templateDir, './a')}')`)
-    expect(out).toContain(`await import('${resolve(templateDir, '../b')}')`)
-    expect(out).toContain(`await import('${resolve(templateDir, './nested/c')}')`)
+    expect(out).toContain(`await import(${JSON.stringify(resolve(templateDir, './a'))})`)
+    expect(out).toContain(`await import(${JSON.stringify(resolve(templateDir, '../b'))})`)
+    expect(out).toContain(`await import(${JSON.stringify(resolve(templateDir, './nested/c'))})`)
   })
 
   it('handles double-quoted dynamic imports', () => {
@@ -74,7 +74,7 @@ describe('convertToCommonJS — dynamic import path resolution', () => {
       `const m = await import("./double")`,
       templateFile,
     )
-    expect(out).toContain(`await import("${resolve(templateDir, './double')}")`)
+    expect(out).toContain(`await import(${JSON.stringify(resolve(templateDir, './double'))})`)
   })
 
   it('rewrites a dynamic import inside a function body', () => {
@@ -82,7 +82,7 @@ describe('convertToCommonJS — dynamic import path resolution', () => {
       `function load() { return await import('./lazy') }`,
       templateFile,
     )
-    expect(out).toContain(`await import('${resolve(templateDir, './lazy')}')`)
+    expect(out).toContain(`await import(${JSON.stringify(resolve(templateDir, './lazy'))})`)
   })
 
   it('rewrites a dynamic import in a chained expression', () => {
@@ -90,7 +90,7 @@ describe('convertToCommonJS — dynamic import path resolution', () => {
       `const m = (await import('./mod')).default`,
       templateFile,
     )
-    expect(out).toContain(`await import('${resolve(templateDir, './mod')}')`)
+    expect(out).toContain(`await import(${JSON.stringify(resolve(templateDir, './mod'))})`)
   })
 
   it('does not touch literal "await import(" inside string content', () => {
@@ -104,6 +104,6 @@ describe('convertToCommonJS — dynamic import path resolution', () => {
 
   it('falls back to cwd when no filePath is provided', () => {
     const out = convertToCommonJS(`const m = await import('./local')`)
-    expect(out).toContain(`await import('${resolve(process.cwd(), './local')}')`)
+    expect(out).toContain(`await import(${JSON.stringify(resolve(process.cwd(), './local'))})`)
   })
 })
