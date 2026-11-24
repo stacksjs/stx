@@ -47,6 +47,7 @@ yarn add @stacksjs/components
 - **Portal** - Render content outside DOM hierarchy
 - **Teleport** - Move content to different DOM nodes
 - **Payment** - Stripe checkout and payment management (3 components)
+- **FileDrop** - Drop or choose a file, see it (a frame of a video, a picture), and follow its upload on one bar
 - **Progress** - Linear and circular progress indicators
 - **Select** - Native-style select dropdown
 - **Skeleton** - Loading placeholders with multiple variants

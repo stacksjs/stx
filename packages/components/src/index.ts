@@ -41,6 +41,8 @@ export * from './ui/dialog'
 export * from './ui/drawer'
 export * from './ui/dropdown'
 export * from './ui/form'
+// Pick a file by dropping or choosing it, see it, and watch it go.
+export * from './ui/file-drop'
 export * from './ui/graph-view'
 export * from './ui/grouped-list'
 export * from './ui/image'

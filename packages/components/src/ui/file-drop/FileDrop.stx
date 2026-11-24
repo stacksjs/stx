@@ -1,0 +1,120 @@
+<script client>
+/**
+ * Where a file is picked on a web page: drop one on it, or press it to choose.
+ *
+ * Once picked it shows the file: a frame of a video or the picture itself, its
+ * name and size, a Preview that plays a video before it is sent, and Remove.
+ * While the file is on its way it shows one bar and what is happening, in the
+ * words the page passes (`stage` and `stageLabel`): a video being made smaller
+ * on the device, then uploaded, then stored, say.
+ *
+ * It only picks and shows. The page owns the file and the upload:
+ * `@pick` hands it the file, `@clear` asks it to drop it, and it tells this the
+ * stage and how far through it is. Pair it with `prepareVideoUpload`
+ * (`@stacksjs/video/browser`) and `sendUpload` (`@stacksjs/browser`).
+ */
+const file = useReactiveProp('file', null)
+const accept = useReactiveProp('accept', 'video/mp4,video/quicktime,video/webm,.mp4,.mov,.m4v,.webm')
+const disabled = useReactiveProp('disabled', false)
+/** '' when nothing is on its way; any other value shows the bar. */
+const stage = useReactiveProp('stage', '')
+/** What `stage` is, in the page's words ("Uploading… 40%"). */
+const stageLabel = useReactiveProp('stageLabel', '')
+/** 0 to 100 across the whole trip. */
+const progress = useReactiveProp('progress', 0)
+const label = useReactiveProp('label', 'Drop a file here, or choose one')
+const activeLabel = useReactiveProp('activeLabel', 'Drop it to add it')
+const hint = useReactiveProp('hint', '')
+const chooseLabel = useReactiveProp('chooseLabel', 'Choose a file')
+const removeLabel = useReactiveProp('removeLabel', 'Remove')
+const previewLabel = useReactiveProp('previewLabel', 'Preview')
+const hidePreviewLabel = useReactiveProp('hidePreviewLabel', 'Hide preview')
+const progressLabel = useReactiveProp('progressLabel', 'Upload progress')
+const testId = useReactiveProp('testId', 'file-drop')
+const emit = defineEmits(['pick', 'clear'])
+
+const over = state(false)
+const previewing = state(false)
+const frame = state('')
+const frameFailed = state(false)
+
+const busy = derived(() => !!stage())
+const kind = derived(() => {
+  const type = String(file()?.type || '')
+  const name = String(file()?.name || '')
+  if (type.startsWith('image/') || /\.(?:png|jpe?g|gif|webp|avif|heic)$/i.test(name)) return 'image'
+  if (type.startsWith('video/') || /\.(?:mp4|m4v|mov|webm)$/i.test(name)) return 'video'
+  return 'file'
+})
+const size = derived(() => {
+  const bytes = Number(file()?.size) || 0
+  if (!bytes) return ''
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
+  const megabytes = bytes / 1024 / 1024
+  return `${megabytes.toFixed(megabytes < 10 ? 1 : 0)} MB`
+})
+const bar = derived(() => Math.max(0, Math.min(100, Number(progress()) || 0)))
+const canPreview = derived(() => kind() === 'video' && !!frame() && !frameFailed() && !busy())
+
+// The picked file as an address the page can draw from, released when it changes or the drop goes away.
+let url = ''
+watch(file, (next) => {
+  if (url) URL.revokeObjectURL(url)
+  url = next && typeof Blob !== 'undefined' && next instanceof Blob ? URL.createObjectURL(next) : ''
+  frameFailed.set(false)
+  previewing.set(false)
+  frame.set(url)
+}, { immediate: true })
+onDestroy(() => { if (url) URL.revokeObjectURL(url) })
+
+function take(picked) {
+  if (!picked || disabled() || busy()) return
+  emit('pick', picked)
+}
+function choose(event) {
+  const input = event.target
+  const picked = input.files && input.files[0] ? input.files[0] : null
+  // The same file can be chosen again after it was removed.
+  input.value = ''
+  take(picked)
+}
+function drop(event) {
+  over.set(false)
+  const files = event.dataTransfer ? event.dataTransfer.files : null
+  take(files && files[0] ? files[0] : null)
+}
+function enter() { if (!disabled() && !busy()) over.set(true) }
+</script>
+
+<div class="w-full min-w-0" :data-testid="testId()" data-file-drop>
+  <label :if="!file()" @dragover.prevent="enter()" @dragleave="over.set(false)" @drop.prevent="drop($event)"
+    class="flex flex-col gap-1 items-center justify-center px-4 py-6 min-h-28 text-center border-2 border-dashed rounded-xl transition-colors cursor-pointer"
+    :class="over() ? 'border-accent bg-accent-subtle' : 'border-line hover:border-line-strong'"
+    data-file-drop-zone>
+    <i aria-hidden="true" class="h-6 w-6 text-fg-muted i-lucide-upload"></i>
+    <span class="font-medium text-fg-strong text-sm">{{ over() ? activeLabel() : label() }}</span>
+    <span :if="hint()" class="text-fg-muted text-xs">{{ hint() }}</span>
+    <input type="file" :accept="accept()" :disabled="disabled()" @change="choose($event)" :aria-label="chooseLabel()" class="sr-only" data-file-drop-input />
+  </label>
+
+  <div :if="file()" class="flex gap-3 items-center p-2 bg-surface-sunken rounded-xl" data-file-drop-picked>
+    <span class="flex overflow-hidden items-center justify-center shrink-0 h-16 w-16 bg-panel rounded-lg">
+      <video :if="kind() === 'video' && frame() && !frameFailed()" :src="frame() + '#t=0.1'" muted playsinline preload="metadata" @error="frameFailed.set(true)" class="object-cover h-full w-full" aria-hidden="true"></video>
+      <img :if="kind() === 'image' && frame() && !frameFailed()" :src="frame()" alt="" @error="frameFailed.set(true)" class="object-cover h-full w-full" />
+      <i :if="kind() === 'file' || !frame() || frameFailed()" aria-hidden="true" class="h-6 w-6 text-fg-muted" :class="kind() === 'video' ? 'i-lucide-video' : kind() === 'image' ? 'i-lucide-image' : 'i-lucide-file'"></i>
+    </span>
+    <span class="flex flex-1 flex-col min-w-0">
+      <span class="font-medium text-fg-strong text-sm truncate" data-file-drop-name>{{ file()?.name }}</span>
+      <span :if="!busy()" class="text-fg-muted text-xs">{{ size() }}</span>
+      <span :if="busy()" class="text-fg text-xs" role="status" data-file-drop-stage>{{ stageLabel() }}</span>
+      <span :if="busy()" class="block overflow-hidden mt-1 h-1.5 bg-panel rounded-full" role="progressbar" :aria-label="progressLabel()" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="Math.round(bar())">
+        <span class="block h-full bg-accent-solid rounded-full transition-all" :style="{ width: bar() + '%' }"></span>
+      </span>
+    </span>
+    <button :if="canPreview()" type="button" @click="previewing.set(!previewing())" :aria-expanded="previewing()" class="shrink-0 px-2 min-h-11 font-medium text-fg text-xs hover:text-fg-strong rounded-lg" data-file-drop-preview-toggle>{{ previewing() ? hidePreviewLabel() : previewLabel() }}</button>
+    <button :if="!busy()" type="button" @click="emit('clear')" :disabled="disabled()" :aria-label="removeLabel()" class="flex items-center justify-center shrink-0 h-11 w-11 text-fg-muted hover:text-fg-strong rounded-lg" data-file-drop-remove>
+      <i aria-hidden="true" class="h-4 w-4 i-lucide-x"></i>
+    </button>
+  </div>
+  <video :if="canPreview() && previewing()" :src="frame()" controls playsinline autoplay muted class="block mt-2 max-h-80 w-full bg-black rounded-xl" data-file-drop-preview></video>
+</div>
