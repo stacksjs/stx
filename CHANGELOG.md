@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.931...v0.2.932)
+
+## ✨ Features
+
+- **native**: hear and carry through removals preventRemove refused ([9cf8eec](https://github.com/stacksjs/stx/commit/9cf8eec)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **loops**: a component in a losing branch no longer warns its loop is not iterable ([9ab9583](https://github.com/stacksjs/stx/commit/9ab9583)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.932 ([6e0cb8d](https://github.com/stacksjs/stx/commit/6e0cb8d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.930...v0.2.931)
 
 ## 🐛 Bug Fixes
