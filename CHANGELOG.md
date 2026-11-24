@@ -1,5 +1,24 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.930...v0.2.931)
+
+## 🐛 Bug Fixes
+
+- **islands**: the body's auto-bind stamp no longer keeps the runtime eager ([ad95165](https://github.com/stacksjs/stx/commit/ad95165)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 💚 Continuous Integration
+
+- name the Pantry publish token PANTRY_TOKEN ([5f76750](https://github.com/stacksjs/stx/commit/5f76750)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.931 ([7e7884b](https://github.com/stacksjs/stx/commit/7e7884b)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.929...v0.2.930)
 
 ## ✨ Features
