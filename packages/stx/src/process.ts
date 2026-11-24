@@ -803,6 +803,11 @@ export async function processDirectives(
       let result = await processDirectivesInternal(template, context, filePath, options, dependencies)
 
       if (isTopLevel) {
+        // Loop warnings deferred by nested renders that this pipeline did not
+        // pass through again, e.g. a partial resolved by a layout. Whatever
+        // survived to here is in the page, so it is reported.
+        result = reportDeferredLoopWarnings(result)
+
         // Final pass: transform any remaining ref= attributes to data-stx-ref=
         // Must run at top level after ALL processing (layouts, includes, components)
         // because partials injected via layout resolution may bypass processOtherDirectives
@@ -2233,7 +2238,15 @@ async function processOtherDirectives(
 
   // Process conditionals (@if, @unless, etc.) - AFTER loops to allow loop variables in scope
   output = processConditionals(output, context, filePath)
-  output = reportDeferredLoopWarnings(output)
+  // Only the page decides. A component is expanded before its parent's
+  // conditionals, so a component in an `@if` that loses was still rendered,
+  // against props that exist only in the branch that wins -- and reporting
+  // here printed a "not iterable" warning for markup the parent then threw
+  // away, on every request. A nested render leaves its markers in place; the
+  // parent's own pass, or the final pass at the top of `processDirectives`,
+  // reports whatever survives.
+  if (context.__stxProcessingDepth === 1)
+    output = reportDeferredLoopWarnings(output)
   await yieldDuringRendering()
 
   // A server branch can remove the first component instance. Hoist shared
