@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.932...v0.2.933)
+
+## ✨ Features
+
+- **components**: FileDrop picks a file and follows its upload ([da87db3](https://github.com/stacksjs/stx/commit/da87db3)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.933 ([429baf4](https://github.com/stacksjs/stx/commit/429baf4)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.931...v0.2.932)
 
 ## ✨ Features
