@@ -132,6 +132,12 @@ it('keeps its panel within a small viewport when the trigger is near the footer'
   try {
     await compact.run('document.querySelector("[data-date-time-trigger]").click()')
     expect(await compact.until('document.querySelector("[data-date-time-panel]")?.style.top')).toBe(true)
+    // The first placement can be measured before the calendar has given the
+    // panel its full height; the popup tracker places it again on the next
+    // frame. Chrome on a loaded runner answered between the two (bottom 413
+    // in a 413px viewport), so wait for the placement the visitor ends up
+    // with, then hold it to every edge.
+    await compact.until('(() => { const r = document.querySelector("[data-date-time-panel]").getBoundingClientRect(); return r.bottom <= innerHeight - 7 && r.top >= 7 })()', 80)
     const bounds = await compact.json('const r = document.querySelector("[data-date-time-panel]").getBoundingClientRect(); return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: innerWidth, height: innerHeight }')
     expect(bounds.left).toBeGreaterThanOrEqual(7)
     expect(bounds.top).toBeGreaterThanOrEqual(7)
