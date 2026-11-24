@@ -119,7 +119,15 @@ function scanIslands(html: string): { ranges: [number, number][], reactiveOutsid
       }
       continue
     }
-    if (!reactiveOutside && REACTIVE_ATTRIBUTE.test(names)) reactiveOutside = html.slice(tag.start, Math.min(tag.end, tag.start + 160))
+    // `<body data-stx-auto>` is the stamp signal processing leaves on any page
+    // whose template has signal syntax and no `<script setup>`, and the
+    // island's own markup is enough to earn it. It asks the runtime to bind
+    // the body's reactive markup, so it means something only where there is
+    // reactive markup outside the islands - which this scan finds in the
+    // elements themselves. Counted as reactive, it kept every server-rendered
+    // page with an island from qualifying.
+    const own = name === 'body' ? names.replace(/(?:^|\s)data-stx-auto(?=[\s=]|$)(?:\s*=\s*"")?/gi, ' ') : names
+    if (!reactiveOutside && REACTIVE_ATTRIBUTE.test(own)) reactiveOutside = html.slice(tag.start, Math.min(tag.end, tag.start + 160))
   }
   // An unclosed island owns the rest of the document.
   if (island) ranges.push([start, html.length])

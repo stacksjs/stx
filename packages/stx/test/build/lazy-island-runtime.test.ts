@@ -55,6 +55,29 @@ describe('the runtime waits for the first island', () => {
     expect(result.html).toBe(html)
   })
 
+  test('the body\'s auto-bind stamp alone does not keep the runtime in the head', () => {
+    // Signal processing stamps <body data-stx-auto> on any page whose template
+    // has signal syntax, the island's included. Nothing outside it is reactive.
+    const html = page(island).replace('<body>', '<body class="site" data-stx-auto>')
+    const result = lazyIslandRuntime(html)
+    expect(result.applied).toBe(true)
+    expect(result.html).not.toMatch(/<script data-stx-runtime/)
+    expect(result.html).toContain('<body class="site" data-stx-auto>')
+  })
+
+  test.each([
+    ['a reactive attribute', '<p :text="greeting">Hello</p>'],
+    ['an event handler', '<button @click="go()">Go</button>'],
+  ])('a stamped body with %s outside every island still keeps the runtime', (_name, extra) => {
+    const html = page(`${island}${extra}`).replace('<body>', '<body data-stx-auto>')
+    expect(lazyIslandRuntime(html).applied).toBe(false)
+  })
+
+  test('a body that binds something itself still keeps the runtime', () => {
+    const html = page(island).replace('<body>', '<body data-stx-auto :class="theme">')
+    expect(lazyIslandRuntime(html).applied).toBe(false)
+  })
+
   test('a document without islands, or without a runtime, is left alone', () => {
     const plain = `${head}<body><main><h1>Static</h1></main>${tail}`
     expect(lazyIslandRuntime(plain).html).toBe(plain)
