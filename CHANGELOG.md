@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.933...v0.2.934)
+
+## 🐛 Bug Fixes
+
+- **stx**: escape resolved server import paths ([7c25371](https://github.com/stacksjs/stx/commit/7c25371)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.934 ([020b88d](https://github.com/stacksjs/stx/commit/020b88d)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.932...v0.2.933)
 
 ## ✨ Features
