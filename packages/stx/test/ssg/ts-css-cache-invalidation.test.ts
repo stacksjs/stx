@@ -101,6 +101,12 @@ describe('the config fingerprint', () => {
     expect(after).not.toBe(before)
   })
 
+  it('changes when a preflight callback returns different captured CSS', () => {
+    const config = (color: string) => ({ preflights: [{ getCSS: () => `.demo { color: ${color}; }` }] })
+    expect(fingerprintConfig(config('red'))).toBe(fingerprintConfig(config('red')))
+    expect(fingerprintConfig(config('red'))).not.toBe(fingerprintConfig(config('blue')))
+  })
+
   it('changes when the safelist gains an entry', () => {
     const before = fingerprintConfig({ safelist: ['bg-red-500'] })
     const after = fingerprintConfig({ safelist: ['bg-red-500', 'bg-blue-500'] })

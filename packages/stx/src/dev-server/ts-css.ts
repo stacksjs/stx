@@ -514,16 +514,14 @@ export async function resolveUserCssConfig(resolveRoot: string): Promise<CssConf
  * assembled from several files, an inline `css` block in `stx.config.ts`, and a
  * preflight imported from somewhere else — all cases a path mtime would miss.
  *
- * Functions are hashed by source text. `JSON.stringify` drops them entirely,
- * which would make an edit to a function-valued plugin or preflight invisible —
- * the exact silent-staleness this digest exists to prevent. Cycles are replaced
- * rather than thrown on, because throwing here degrades to 'unhashable', and a
- * constant digest is a cache key that never changes.
+ * Functions are hashed by source text. A preflight callback also contributes
+ * its returned CSS because it can close over styles declared elsewhere.
+ * Cycles are replaced so one cycle does not discard the rest of the digest.
  */
 export function fingerprintConfig(config: unknown): string {
   try {
     const seen = new WeakSet<object>()
-    return shortHash(JSON.stringify(config ?? {}, (_key, value) => {
+    const serialized = JSON.stringify(config ?? {}, (_key, value) => {
       if (typeof value === 'function')
         return `[fn]${String(value)}`
       if (typeof value === 'object' && value !== null) {
@@ -532,7 +530,23 @@ export function fingerprintConfig(config: unknown): string {
         seen.add(value)
       }
       return value
-    }) ?? '')
+    }) ?? ''
+    const preflights = (config as CssConfig | null)?.preflights
+    const rendered = []
+    if (Array.isArray(preflights)) {
+      for (const entry of preflights) {
+        if (!entry || typeof entry !== 'object' || !('getCSS' in entry) || typeof entry.getCSS !== 'function') continue
+        try {
+          const css = entry.getCSS()
+          rendered.push(typeof css === 'string' ? css : null)
+        }
+        catch {
+          // The generator still owns errors from an invalid preflight.
+          rendered.push(null)
+        }
+      }
+    }
+    return shortHash(rendered.length ? `${serialized}\0${JSON.stringify(rendered)}` : serialized)
   }
   catch {
     return 'unhashable'
