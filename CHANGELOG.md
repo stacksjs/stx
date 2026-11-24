@@ -1,5 +1,55 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.929...v0.2.930)
+
+## ✨ Features
+
+- **serve**: renderCacheSkip, the requests a shared render cache leaves alone ([6051753](https://github.com/stacksjs/stx/commit/6051753)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **serve**: a render cache keyed by address, renderCacheVary: 'url' ([fd22beb](https://github.com/stacksjs/stx/commit/fd22beb)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **build**: finalize CSP manifests after static asset processing (#2221) ([4e1094f](https://github.com/stacksjs/stx/commit/4e1094f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2221](https://github.com/stacksjs/stx/issues/2221))
+- **csp**: compile rendered templates and legacy scopes (#2221) ([d63c22b](https://github.com/stacksjs/stx/commit/d63c22b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2221](https://github.com/stacksjs/stx/issues/2221))
+- **csp**: hydrate cloned components and islands without eval (#2221) ([7ec0c5a](https://github.com/stacksjs/stx/commit/7ec0c5a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2221](https://github.com/stacksjs/stx/issues/2221))
+- **csp**: evaluate compiled bindings and model writes (#2221) ([02f7053](https://github.com/stacksjs/stx/commit/02f7053)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2221](https://github.com/stacksjs/stx/issues/2221))
+- **csp**: generate hash policies from final document bytes (#2221) ([6aa5f9f](https://github.com/stacksjs/stx/commit/6aa5f9f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2221](https://github.com/stacksjs/stx/issues/2221))
+- **csp**: compile expression bodies ahead of time (#2221) ([4911124](https://github.com/stacksjs/stx/commit/4911124)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2221](https://github.com/stacksjs/stx/issues/2221))
+- **components**: add a shared workspace DateTimePicker (#2222) ([34b68d5](https://github.com/stacksjs/stx/commit/34b68d5)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2222](https://github.com/stacksjs/stx/issues/2222))
+- **components**: expose timezone-aware scheduling helpers (#2222) ([7a8009f](https://github.com/stacksjs/stx/commit/7a8009f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2222](https://github.com/stacksjs/stx/issues/2222))
+
+## 🐛 Bug Fixes
+
+- **native**: map lucide receipt, scroll-text, banknote and wallet icons ([090a5bb](https://github.com/stacksjs/stx/commit/090a5bb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **serve**: forward CSP and authorize fragment hydration (#2221) ([98526e1](https://github.com/stacksjs/stx/commit/98526e1)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2221](https://github.com/stacksjs/stx/issues/2221))
+- **router**: retain compiled script authorization on navigation (#2221) ([ee1ab84](https://github.com/stacksjs/stx/commit/ee1ab84)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2221](https://github.com/stacksjs/stx/issues/2221))
+- **calendar**: follow parent value, bounds and locale (#2222) ([7139a05](https://github.com/stacksjs/stx/commit/7139a05)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2222](https://github.com/stacksjs/stx/issues/2222))
+- **toast**: pause expiry while hovered or keyboard-focused (#2222) ([f9becd2](https://github.com/stacksjs/stx/commit/f9becd2)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2222](https://github.com/stacksjs/stx/issues/2222))
+- **settings**: SettingsWindow keeps its pane with useLocalStorage and refocuses with nextTick ([0bb5c95](https://github.com/stacksjs/stx/commit/0bb5c95)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2219](https://github.com/stacksjs/stx/issues/2219))
+- **runtime**: useLocalStorage and useSessionStorage take the module's options ([6b20734](https://github.com/stacksjs/stx/commit/6b20734)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- hoist each distinct stylesheet once ([da7e42c](https://github.com/stacksjs/stx/commit/da7e42c)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2219](https://github.com/stacksjs/stx/issues/2219))
+- **runtime**: a string :class names each class once, and the class/style rules are documented ([df9bb5d](https://github.com/stacksjs/stx/commit/df9bb5d)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2214](https://github.com/stacksjs/stx/issues/2214))
+- **typecheck**: say where a template name was declared when the template cannot see it ([78105e9](https://github.com/stacksjs/stx/commit/78105e9)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2211](https://github.com/stacksjs/stx/issues/2211))
+
+## ⚡ Performance Improvements
+
+- **components**: instances share one script factory, each passing its own values ([54c1725](https://github.com/stacksjs/stx/commit/54c1725)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2219](https://github.com/stacksjs/stx/issues/2219))
+
+## ♻️ Code Refactoring
+
+- **native**: rename headwind-to-style to utilities-to-style ([20c13ec](https://github.com/stacksjs/stx/commit/20c13ec)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## ✅ Tests
+
+- **components**: wait for the DateTimePicker's settled placement before measuring it ([8c5e9a1](https://github.com/stacksjs/stx/commit/8c5e9a1)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- pin three Postline reports that do not reproduce on main ([df45e8b](https://github.com/stacksjs/stx/commit/df45e8b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2212](https://github.com/stacksjs/stx/issues/2212), [#2223](https://github.com/stacksjs/stx/issues/2223), [#2215](https://github.com/stacksjs/stx/issues/2215))
+
+## 🔧 Chores
+
+- release v0.2.930 ([33deaef](https://github.com/stacksjs/stx/commit/33deaef)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.928...v0.2.929)
 
 ## ✨ Features
