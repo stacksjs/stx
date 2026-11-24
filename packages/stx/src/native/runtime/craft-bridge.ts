@@ -3,7 +3,7 @@ import { NativeCapabilityError, STXBridge } from '../bridge/protocol'
 import { createEventSourceClass, createStreamingBody, type StreamSink } from './event-stream'
 import { abortError, isNativeDocument, NativeFormData, nativeFormParts, updateNativeDocumentVisibility } from './jsc-globals'
 import type { NativeLayoutChrome } from '../compiler/ir'
-import type { NativeChromeButton, NativeNavigationButton, NativeNavigationChrome, NativePasskeyCreationOptions, NativePasskeyRequestOptions } from './craft'
+import type { NativeChromeButton, NativeNavigationButton, NativeNavigationChrome, NativePasskeyCreationOptions, NativePasskeyRequestOptions, NativeRemoval } from './craft'
 import { buttonPresses, buttonsKey, changedTabItems, chromePath, hostButton, mergeChromeButtons, type ButtonSide } from './navigation-chrome'
 import { installNativeNavigation, nativeRouteParams } from './web-navigation'
 import { installNativeWebStorage } from './web-storage'
@@ -174,6 +174,7 @@ export function installCraftBridge(
   }
   const appearHandlers = new Set<() => unknown>()
   const disappearHandlers = new Set<() => unknown>()
+  const removeBlockedHandlers = new Set<(removal: NativeRemoval) => unknown>()
   // A screen the host prepared out of sight - an adjacent tab, made ahead of
   // a swipe - starts unfocused, and the host says so before the script runs
   // (`__stxNativeFocused`). Defaulting to true let such a screen act as if it
@@ -1224,6 +1225,17 @@ export function installCraftBridge(
       return () => disappearHandlers.delete(callback)
     },
     isFocused: () => focused,
+    // `preventRemove` kept the screen: Craft says what it refused, and the
+    // screen may let it happen by the refusal's id.
+    onRemoveBlocked: (callback: (removal: NativeRemoval) => unknown) => {
+      if (typeof callback !== 'function') throw new TypeError('navigation.onRemoveBlocked needs a function')
+      removeBlockedHandlers.add(callback)
+      return () => removeBlockedHandlers.delete(callback)
+    },
+    proceed: (id: string) => {
+      if (typeof id !== 'string' || !id) throw new TypeError('navigation.proceed needs the id of a refused removal')
+      return protocol.send('NAVIGATE_PROCEED', { id })
+    },
   })
   if (layoutButtons.length) {
     const buttons = barButtons('rightButtons')
@@ -1256,6 +1268,12 @@ export function installCraftBridge(
     })
     if (title) sendOptions({ title })
   }
+
+  protocol.on<{ id?: unknown, action?: unknown }>('REMOVE_BLOCKED', ({ payload }) => {
+    if (typeof payload?.id !== 'string' || !payload.id) return
+    const removal = { id: payload.id, action: String(payload.action ?? 'back') } as NativeRemoval
+    removeBlockedHandlers.forEach(handler => handler(removal))
+  })
 
   protocol.on<{ focused?: boolean }>('SCREEN_FOCUS', ({ payload }) => {
     focused = payload?.focused !== false

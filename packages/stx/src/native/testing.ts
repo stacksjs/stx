@@ -176,6 +176,13 @@ export interface NativeScreenOptions {
   viewportWidth?: number
   /** The params the screen was opened with (`craft.route.params`). */
   params?: Record<string, unknown>
+  /**
+   * Mounted as the first screen of a cover (`navigation.open(path, {
+   * presentation: 'cover' })`): its own Back closes the cover, as on the
+   * host, shown in `moves` as 'close' and refused as 'closeCover' while
+   * `preventRemove` holds.
+   */
+  cover?: boolean
   /** The address the host opened the screen at (`/plans/12?week=2`): `craft.route.path` and `location`. */
   routeURL?: string
   /** The web-storage keys the host shares with the Keychain (Craft's `shareStorage`), as a host that names them does. */
@@ -272,8 +279,19 @@ export interface NativeScreen {
   opened: string[]
   /** Screens this one was replaced with. */
   replaced: string[]
-  /** Back one screen ('back') or to the first of the stack ('root'), as asked of the host. */
-  moves: Array<'back' | 'root'>
+  /**
+   * Back one screen ('back'), to the first of the stack ('root'), or the
+   * cover this screen is in closed by its own close button ('close').
+   */
+  moves: Array<'back' | 'root' | 'close'>
+  /** Removals `preventRemove` refused (REMOVE_BLOCKED), with the id `navigation.proceed` takes. */
+  refused: Array<{ id: string, action: string }>
+  /**
+   * The host taking the screen out of its stack by itself: the bar's Back
+   * ('back'), a cover's own close button ('closeCover'), the tab tapped again
+   * ('tabReselect'). Done at once, or refused while `preventRemove` holds.
+   */
+  hostRemoves: (action: 'back' | 'closeCover' | 'tabReselect') => void
   /** Craft's app storage, by key. */
   stored: Record<string, unknown>
   /** The keychain, by key. */
@@ -436,8 +454,18 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
   const opened: string[] = []
   /** Screens this one was replaced with. */
   const replaced: string[] = []
-  /** Back one screen ('back') or to the first of the stack ('root'), as asked of the host. */
-  const moves: Array<'back' | 'root'> = []
+  /**
+   * Back one screen ('back'), to the first of the stack ('root'), or the
+   * cover this screen is in closed by its own close button ('close').
+   */
+  const moves: Array<'back' | 'root' | 'close'> = []
+  /** Removals `preventRemove` refused, in order (Craft's REMOVE_BLOCKED). */
+  const refused: Array<{ id: string, action: string }> = []
+  /** Set by the screen's `navigation.setOptions({ preventRemove })`. */
+  let preventRemove = false
+  let refusals = 0
+  /** Only the latest refusal can be carried through, as on the host. */
+  let latestRefusal: { id: string, apply: () => void } | null = null
   /** Craft's app storage, by key. */
   const stored: Record<string, unknown> = copy(options.storage ?? {})
   /** Every capability request, as `Module.method`. */
@@ -641,7 +669,15 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
         },
       },
       navigation: {
-        setOptions: (value: any) => bars.push(copy(value)),
+        setOptions: (value: any) => {
+          bars.push(copy(value))
+          // Only a boolean changes it, as on iOS: an unset or null value is not sent.
+          if (value && typeof value === 'object' && typeof value.preventRemove === 'boolean') {
+            preventRemove = value.preventRemove
+            // A refusal from before the option was cleared does nothing.
+            if (!preventRemove) latestRefusal = null
+          }
+        },
         open: (where: string) => {
           opened.push(where)
           return ''
@@ -715,13 +751,29 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
         }
         // stx's bridge sends navigation as a message, as it does to Craft.
         if (message.type === 'NAVIGATE_OPEN') opened.push(String(message.payload.path))
+        // A screen kept by `preventRemove` is not taken out of its stack,
+        // even by its own Back: it hears the refusal instead, as from Craft.
         if (message.type === 'NAVIGATE_REPLACE') {
           const where = String(message.payload.screen)
-          replaced.push(where)
-          opened.push(where)
+          removal('replace', () => {
+            replaced.push(where)
+            opened.push(where)
+          })
         }
         if (message.type === 'ANIMATE_NEXT') animations.push({ ...message.payload })
-        if (message.type === 'NAVIGATE_BACK' || message.type === 'NAVIGATE_POP_TO_ROOT') moves.push(message.type === 'NAVIGATE_BACK' ? 'back' : 'root')
+        // A cover's first screen has nowhere to go back to: Back closes the cover.
+        if (message.type === 'NAVIGATE_BACK') {
+          if (options.cover) removal('closeCover', () => moves.push('close'))
+          else removal('back', () => moves.push('back'))
+        }
+        if (message.type === 'NAVIGATE_POP_TO_ROOT') removal('popToRoot', () => moves.push('root'))
+        if (message.type === 'NAVIGATE_PROCEED') {
+          const refusal = latestRefusal
+          if (refusal && preventRemove && refusal.id === String(message.payload.id)) {
+            latestRefusal = null
+            refusal.apply()
+          }
+        }
         if (message.type === 'API_REQUEST') {
           const request = message.payload as unknown as { module: string, method: string, args: unknown[] }
           natives.push(`${request.module}.${request.method}`)
@@ -757,6 +809,20 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
       onMessage: (callback: typeof receive) => { receive = (raw: string) => { if (!ended) callback(raw) } },
     },
   })
+  /**
+   * Something takes the screen out of its stack: done, unless `preventRemove`
+   * holds it, when the screen hears REMOVE_BLOCKED and may proceed by its id.
+   */
+  function removal(action: string, apply: () => void) {
+    if (!preventRemove) {
+      apply()
+      return
+    }
+    const id = `removal-${++refusals}`
+    latestRefusal = { id, apply }
+    refused.push({ id, action })
+    Promise.resolve().then(() => receive(JSON.stringify({ type: 'REMOVE_BLOCKED', payload: { id, action } })))
+  }
   vm.runInContext(code, context)
 
   /**
@@ -803,7 +869,11 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
   }
   const appState = (state: 'active' | 'background' | 'inactive') => send('APP_STATE', { state })
   return {
-    nodes, messages, mutationErrors, requests, headers, opened, replaced, moves, stored, secureStorage, bars, snapshots, natives, streams, animations, alerts, picks, removed,
+    nodes, messages, mutationErrors, requests, headers, opened, replaced, moves, refused, stored, secureStorage, bars, snapshots, natives, streams, animations, alerts, picks, removed,
+    hostRemoves: (action: 'back' | 'closeCover' | 'tabReselect') => {
+      if (ended) return
+      removal(action, () => moves.push(action === 'closeCover' ? 'close' : action === 'back' ? 'back' : 'root'))
+    },
     /** The vm the screen runs in, for a global the test reads or sets. */
     context,
     all,

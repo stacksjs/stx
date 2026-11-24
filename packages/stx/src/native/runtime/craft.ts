@@ -137,6 +137,22 @@ export interface NativeNavigationOptions {
   /** A destination beside the tab pill. Compact actions may carry up to two companion destinations; null removes the group. */
   tabAccessory?: NativeTabAccessory | null
   tabItem?: NativeTabItemOptions
+  /**
+   * Keep this screen in its stack (Craft 0.0.539 and later): nothing takes it
+   * out, not Back in any form, a tab tapped again, `popToRoot()`, a replace,
+   * an open that would pop to another screen, nor a cover's own close. The
+   * screen hears each refusal (`navigation.onRemoveBlocked`) and lets one
+   * happen with `navigation.proceed(id)`. Set it back to false when done.
+   */
+  preventRemove?: boolean
+}
+
+/** What a screen kept by `preventRemove` was spared, and how to let it happen. */
+export interface NativeRemoval {
+  /** For `navigation.proceed(id)`: only the latest refusal can be carried through. */
+  id: string
+  /** What would have removed the screen. `closeCover` is a cover's own close button. */
+  action: 'back' | 'popToRoot' | 'tabReselect' | 'replace' | 'open' | 'closeCover'
 }
 
 /** A button every screen of the app carries, unless the screen is where it goes. */
@@ -201,6 +217,14 @@ export interface NativeNavigation {
   onDisappear: (callback: () => unknown) => () => void
   /** Whether the screen is on screen now. */
   isFocused: () => boolean
+  /**
+   * A removal `preventRemove` refused: Back, a cover's close, a tab tapped
+   * again. The screen decides, and calls `proceed(id)` to let it happen.
+   * Returns an unsubscribe function.
+   */
+  onRemoveBlocked: (callback: (removal: NativeRemoval) => unknown) => () => void
+  /** Carry the latest refused removal through. A stale id does nothing. */
+  proceed: (id: string) => string
 }
 
 export interface NativeRoute {

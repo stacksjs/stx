@@ -40,6 +40,7 @@ export type BridgeMessageType =
   | 'NAVIGATE_POP_TO_ROOT' // Back to the first screen of the stack
   | 'NAVIGATE_REPLACE'    // Replace current screen
   | 'NAVIGATE_OPEN'       // Open a native or hybrid app path
+  | 'NAVIGATE_PROCEED'    // Carry through a removal preventRemove refused, by its id
   | 'NAVIGATION_SET_OPTIONS' // Update native navigation chrome
   | 'ANIMATE_NEXT'        // The screen's next change animates (craft.animation.next)
   | 'NAV_BUTTON'          // Native navigation button pressed
@@ -53,6 +54,7 @@ export type BridgeMessageType =
   | 'VIEWPORT'            // The screen's size changed (width/height in points)
   | 'SCREEN_FOCUS'        // Screen gained/lost focus (shown again, or covered)
   | 'ROUTE_PARAMS'        // The screen was opened again with other params
+  | 'REMOVE_BLOCKED'      // preventRemove kept the screen: what was refused, and its id
   | 'PUSH_TOKEN'          // A new push device token
   | 'SOUND_EVENT'         // A craft.audio sound ended or failed
   | 'NETWORK_STREAM'      // A piece, the end or the failure of a streaming fetch
