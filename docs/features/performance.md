@@ -54,6 +54,20 @@ await serve({
 
 A full queue or expired wait returns `503` with `Retry-After: 1` and `Cache-Control: no-store`. A disconnected queued request is removed before its script starts. A disconnected active request keeps its slot until its script finishes; otherwise repeated disconnects could create unlimited background work. All three options accept finite integers; concurrency and wait must be positive, and a zero queue limit refuses new renders immediately when busy. Each server owns its own capacity and executes queued scripts with their original request context.
 
+Prefetch and prerender requests render as background work: at most half the slots, a smaller share of the queue, and every waiting navigation served first. An application can put its own traffic in that class too, for requests it can name but should not refuse, such as signed-out visits to pages its `robots.txt` tells crawlers not to walk:
+
+```typescript
+await serve({
+  patterns: ['resources/views'],
+  renderPriority: request => isCrawlablePath(request) && !isSignedIn(request) ? 'background' : undefined,
+  renderBackgroundConcurrency: 1,
+  renderBackgroundQueueLimit: 8,
+  renderBackgroundRetryAfterSeconds: 30,
+})
+```
+
+`renderPriority` can only lower a request, never move one ahead of navigation, and a resolver that throws leaves the request where it was. The background limits are clamped to the renderer's own, and a refused background request is told to wait `renderBackgroundRetryAfterSeconds` (default 1) rather than coming straight back. Page scripts share one thread, so a background slot bounds how much of the renderer that traffic can hold; it does not make a CPU-heavy page free.
+
 ## Runtime Performance
 
 ### Fast Template Compilation

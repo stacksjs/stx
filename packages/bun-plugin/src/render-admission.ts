@@ -6,10 +6,32 @@ export interface RenderAdmissionOptions {
   renderQueueLimit?: number
   /** Maximum wait before an uncached 503. Default: 15000 ms. */
   renderQueueTimeoutMs?: number
+  /**
+   * Which page requests an application ranks below a person navigating.
+   * Return `'background'` to lower a request; anything else leaves it as the
+   * request itself asked (a prefetch is already background). It can only
+   * lower: no answer here moves a request ahead of navigation.
+   *
+   * For traffic an application can name but cannot refuse outright, such as
+   * signed-out visits to pages a crawler is told not to walk. A resolver that
+   * throws leaves the request where it was, so a bug here costs isolation and
+   * never a person's page.
+   */
+  renderPriority?: (request: Request) => RenderPriority | null | undefined
+  /** Background renders at once. Default: half of `renderConcurrency`, at least 1. Never above it. */
+  renderBackgroundConcurrency?: number
+  /** Background requests waiting. Default: `renderQueueLimit` minus `renderConcurrency`. Never above the queue. */
+  renderBackgroundQueueLimit?: number
+  /**
+   * `Retry-After`, in seconds, on a refused background request. Default: 1.
+   * A busy page for a person is worth retrying at once; a crawler told the
+   * same thing comes straight back.
+   */
+  renderBackgroundRetryAfterSeconds?: number
 }
 
 export class RenderAdmissionError extends Error {
-  constructor(readonly status: 408 | 503) {
+  constructor(readonly status: 408 | 503, readonly retryAfterSeconds = 1) {
     super(status === 408 ? 'Request aborted' : 'Page rendering is busy; please retry')
     this.name = 'RenderAdmissionError'
   }
@@ -20,7 +42,7 @@ interface WaitingRender {
   priority: RenderPriority
 }
 
-type RenderPriority = 'foreground' | 'background'
+export type RenderPriority = 'foreground' | 'background'
 
 /** A caller can lower its own priority, never take priority above navigation. */
 export function renderRequestPriority(request?: Request): RenderPriority {
@@ -44,8 +66,11 @@ export function createRenderAdmission(options: RenderAdmissionOptions = {}) {
   const timeoutMs = integer(options.renderQueueTimeoutMs, 15_000, 1)
   // Speculation may use spare capacity, but cannot occupy every render slot
   // or every waiting place before a person opens a page.
-  const backgroundConcurrency = Math.max(1, Math.floor(concurrency / 2))
-  const backgroundQueueLimit = Math.max(0, queueLimit - concurrency)
+  const backgroundConcurrency = Math.min(concurrency, integer(options.renderBackgroundConcurrency, Math.max(1, Math.floor(concurrency / 2)), 1))
+  const backgroundQueueLimit = Math.min(queueLimit, integer(options.renderBackgroundQueueLimit, Math.max(0, queueLimit - concurrency), 0))
+  const backgroundRetryAfter = integer(options.renderBackgroundRetryAfterSeconds, 1, 1)
+  const refuse = (status: 408 | 503, priority: RenderPriority) =>
+    new RenderAdmissionError(status, priority === 'background' ? backgroundRetryAfter : 1)
   const waiting: WaitingRender[] = []
   let active = 0
   let activeBackground = 0
@@ -64,14 +89,14 @@ export function createRenderAdmission(options: RenderAdmissionOptions = {}) {
 
   async function acquire(signal: AbortSignal | undefined, priority: RenderPriority): Promise<void> {
     if (signal?.aborted)
-      throw new RenderAdmissionError(408)
+      throw refuse(408, priority)
     if (active < concurrency && (priority === 'foreground' || activeBackground < backgroundConcurrency)) {
       active++
       if (priority === 'background') activeBackground++
       return
     }
     if (waiting.length >= queueLimit || priority === 'background' && waiting.filter(entry => entry.priority === 'background').length >= backgroundQueueLimit)
-      throw new RenderAdmissionError(503)
+      throw refuse(503, priority)
 
     await new Promise<void>((resolve, reject) => {
       let settled = false
@@ -87,7 +112,7 @@ export function createRenderAdmission(options: RenderAdmissionOptions = {}) {
         if (index !== -1)
           waiting.splice(index, 1)
         cleanup()
-        reject(new RenderAdmissionError(status))
+        reject(refuse(status, priority))
       }
       const abort = () => fail(408)
       const entry: WaitingRender = {
@@ -112,6 +137,18 @@ export function createRenderAdmission(options: RenderAdmissionOptions = {}) {
   }
 
   return {
+    /** The class a request renders in: its own ask, lowered by the application's. */
+    priorityOf(request?: Request): RenderPriority {
+      const own = renderRequestPriority(request)
+      if (own === 'background' || !request || !options.renderPriority)
+        return own
+      try {
+        return options.renderPriority(request) === 'background' ? 'background' : own
+      }
+      catch {
+        return own
+      }
+    },
     async run<T>(start: () => Promise<T>, signal?: AbortSignal, priority: RenderPriority = 'foreground'): Promise<T> {
       await acquire(signal, priority)
       try {

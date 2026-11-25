@@ -33,7 +33,7 @@ import type { DomainRoutesOption } from './domain-routes'
 import { IMAGE_BUILTIN_PATTERN, servedTemplatesUseImageBuiltins } from './image-warmup-scope'
 import type { ImageTemplateScope } from './image-warmup-scope'
 import { createRenderCacheStore } from './render-cache-store'
-import { createRenderAdmission, RenderAdmissionError, renderRequestPriority } from './render-admission'
+import { createRenderAdmission, RenderAdmissionError } from './render-admission'
 import type { RenderAdmissionOptions } from './render-admission'
 import type { RenderInputs, RenderTicket } from './render-cache-store'
 
@@ -3395,7 +3395,7 @@ function __stxOverlay(errs){
   }
 
   async function processTemplate(filePath: string, reqCtx?: ServeRequestContext): Promise<string> {
-    return renderAdmission.run(() => renderTemplate(filePath, reqCtx), reqCtx?.request?.signal, renderRequestPriority(reqCtx?.request))
+    return renderAdmission.run(() => renderTemplate(filePath, reqCtx), reqCtx?.request?.signal, renderAdmission.priorityOf(reqCtx?.request))
   }
 
   async function renderTemplate(filePath: string, reqCtx?: ServeRequestContext): Promise<string> {
@@ -3806,7 +3806,7 @@ function __stxOverlay(errs){
     return renderAdmission.run(
       () => renderTemplateDynamic(filePath, paramNames, paramValues, routePath, reqCtx),
       reqCtx?.request?.signal,
-      renderRequestPriority(reqCtx?.request),
+      renderAdmission.priorityOf(reqCtx?.request),
     )
   }
 
@@ -4427,7 +4427,7 @@ function __stxOverlay(errs){
             headers: {
               'Content-Type': 'text/plain; charset=utf-8',
               'Cache-Control': 'no-store',
-              ...(error.status === 503 && { 'Retry-After': '1' }),
+              ...(error.status === 503 && { 'Retry-After': String(error.retryAfterSeconds) }),
             },
           })
         }
@@ -4924,7 +4924,7 @@ function __stxOverlay(errs){
                     const html = await renderAdmission.run(
                       () => processDirectives(componentTemplate, {}, `${componentsDir}/${componentName}.stx`, componentOpts, new Set()),
                       req.signal,
-                      renderRequestPriority(req),
+                      renderAdmission.priorityOf(req),
                     )
                     return new Response(html, {
                       headers: { 'Content-Type': 'text/html; charset=utf-8', ...corsHeaders },
