@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.940...v0.2.941)
+
+## 💄 Styles
+
+- **serve**: write render admission's refusal as a function, so it passes format:check ([a4094cc](https://github.com/stacksjs/stx/commit/a4094cc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.941 ([2d2c595](https://github.com/stacksjs/stx/commit/2d2c595)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.939...v0.2.940)
 
 ## ✨ Features
