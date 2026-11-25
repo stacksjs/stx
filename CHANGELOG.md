@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.938...v0.2.939)
+
+## 🐛 Bug Fixes
+
+- **stx**: scan bridge declarations once per client block ([3cca527](https://github.com/stacksjs/stx/commit/3cca527)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.939 ([a8bc962](https://github.com/stacksjs/stx/commit/a8bc962)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.937...v0.2.938)
 
 ## 🐛 Bug Fixes
