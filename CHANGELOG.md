@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.934...v0.2.935)
+
+## 🐛 Bug Fixes
+
+- **css**: include preflight output in cache fingerprint ([07c48c8](https://github.com/stacksjs/stx/commit/07c48c8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **stx**: preserve ignored text during hydration ([f65b6b3](https://github.com/stacksjs/stx/commit/f65b6b3)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.935 ([56c0554](https://github.com/stacksjs/stx/commit/56c0554)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.933...v0.2.934)
 
 ## 🐛 Bug Fixes
