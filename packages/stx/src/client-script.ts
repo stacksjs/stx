@@ -1547,7 +1547,7 @@ ${escapeScriptBody(`${autoImportCode}${code}\n${eventCode}`)}
     const returnStmt = declarations.length > 0
       ? `\n  return ${scopeObject(code, declarations)};`
       : ''
-    const failureMessage = JSON.stringify(`[stx] client block failed${options.filePath ? ` (${options.filePath})` : ''}; this block will not hydrate`)
+    const failureMessage = clientBlockFailureMessage(options.filePath)
 
     return `${vendorStyleTags}<script data-stx-scoped data-stx-run="always"${instance}>
 window.stx.mount(function() {
@@ -1588,7 +1588,28 @@ ${escapeScriptBody(`${autoImportCode}${code}\n${eventCode}${returnStmt}`)}
   try {
 ${escapeScriptBody(`${autoImportCode}${code}\n${eventCode}`)}
   } catch (error) {
-    console.error(${JSON.stringify(`[stx] client block failed${options.filePath ? ` (${options.filePath})` : ''}; this block will not hydrate`)}, error);
+    console.error(${clientBlockFailureMessage(options.filePath)}, error);
   }
 })()</script>`
+}
+
+/**
+ * The console message a client block logs when it throws, naming the source
+ * file by its path inside the project.
+ *
+ * It named the absolute path, and the message is written into the built page,
+ * so every production page carried the build machine's home directory
+ * (`/Users/<name>/...`) for anyone to read in the source.
+ */
+export function clientBlockFailureMessage(filePath?: string, root: string = globalThis.process?.cwd?.() ?? ''): string {
+  const shown = filePath ? projectRelativePath(filePath, root) : ''
+  return JSON.stringify(`[stx] client block failed${shown ? ` (${shown})` : ''}; this block will not hydrate`)
+}
+
+function projectRelativePath(filePath: string, root: string): string {
+  if (!path.isAbsolute(filePath)) return filePath
+  const inside = path.relative(root, filePath)
+  // Outside the project (a package in node_modules elsewhere, a temp file):
+  // the file name alone, never the directories leading to it.
+  return inside && !inside.startsWith('..') && !path.isAbsolute(inside) ? inside.split(path.sep).join('/') : path.basename(filePath)
 }
