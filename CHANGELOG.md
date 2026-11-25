@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.941...v0.2.942)
+
+## ✨ Features
+
+- **components**: FileDrop shows work it cannot measure yet ([5de623a](https://github.com/stacksjs/stx/commit/5de623a)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.942 ([6f46899](https://github.com/stacksjs/stx/commit/6f46899)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.940...v0.2.941)
 
 ## 💄 Styles
