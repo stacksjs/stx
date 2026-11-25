@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.939...v0.2.940)
+
+## ✨ Features
+
+- **serve**: renderPriority may answer asynchronously ([6a4fc76](https://github.com/stacksjs/stx/commit/6a4fc76)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **serve**: let an application lower its own page traffic to background render priority ([deb8216](https://github.com/stacksjs/stx/commit/deb8216)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.940 ([9556521](https://github.com/stacksjs/stx/commit/9556521)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.938...v0.2.939)
 
 ## 🐛 Bug Fixes
