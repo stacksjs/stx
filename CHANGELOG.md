@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.936...v0.2.937)
+
+## 🐛 Bug Fixes
+
+- **components**: FileDrop's focus ring offset names its colour ([c1089e2](https://github.com/stacksjs/stx/commit/c1089e2)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_ ([#1993](https://github.com/stacksjs/stx/issues/1993))
+
+## 🔧 Chores
+
+- release v0.2.937 ([7f1903b](https://github.com/stacksjs/stx/commit/7f1903b)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.935...v0.2.936)
 
 ## 🐛 Bug Fixes
