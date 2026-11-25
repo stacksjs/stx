@@ -88,7 +88,7 @@ function enter() { if (!disabled() && !busy()) over.set(true) }
 
 <div class="w-full min-w-0" :data-testid="testId()" data-file-drop>
   <label :if="!file()" @dragover.prevent="enter()" @dragleave="over.set(false)" @drop.prevent="drop($event)"
-    class="flex flex-col gap-1 items-center justify-center px-4 py-6 min-h-28 text-center border-2 border-dashed rounded-xl transition-colors cursor-pointer"
+    class="flex flex-col gap-1 items-center justify-center px-4 py-6 min-h-28 text-center border-2 border-dashed rounded-xl transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-accent focus-within:ring-offset-2"
     :class="over() ? 'border-accent bg-accent-subtle' : 'border-line hover:border-line-strong'"
     data-file-drop-zone>
     <i aria-hidden="true" class="h-6 w-6 text-fg-muted i-lucide-upload"></i>
@@ -111,8 +111,8 @@ function enter() { if (!disabled() && !busy()) over.set(true) }
         <span class="block h-full bg-accent-solid rounded-full transition-all" :style="{ width: bar() + '%' }"></span>
       </span>
     </span>
-    <button :if="canPreview()" type="button" @click="previewing.set(!previewing())" :aria-expanded="previewing()" class="shrink-0 px-2 min-h-11 font-medium text-fg text-xs hover:text-fg-strong rounded-lg" data-file-drop-preview-toggle>{{ previewing() ? hidePreviewLabel() : previewLabel() }}</button>
-    <button :if="!busy()" type="button" @click="emit('clear')" :disabled="disabled()" :aria-label="removeLabel()" class="flex items-center justify-center shrink-0 h-11 w-11 text-fg-muted hover:text-fg-strong rounded-lg" data-file-drop-remove>
+    <button :if="canPreview()" type="button" @click="previewing.set(!previewing())" :aria-expanded="previewing()" class="shrink-0 px-2 min-h-11 font-medium text-fg text-xs hover:text-fg-strong rounded-lg focus-visible:ring-2 focus-visible:ring-accent" data-file-drop-preview-toggle>{{ previewing() ? hidePreviewLabel() : previewLabel() }}</button>
+    <button :if="!busy()" type="button" @click="emit('clear')" :disabled="disabled()" :aria-label="removeLabel()" class="flex items-center justify-center shrink-0 h-11 w-11 text-fg-muted hover:text-fg-strong rounded-lg focus-visible:ring-2 focus-visible:ring-accent" data-file-drop-remove>
       <i aria-hidden="true" class="h-4 w-4 i-lucide-x"></i>
     </button>
   </div>

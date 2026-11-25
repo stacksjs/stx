@@ -64,6 +64,10 @@ else {
       expect(zone).toContain('Drop a video here')
       expect(zone).toContain('Any clip works')
 
+      // Reached by keyboard: the hidden input takes focus and the zone around it shows a ring.
+      const ring = await view.evaluate<string>(`(() => { document.querySelector('[data-file-drop-input]').focus(); return getComputedStyle(document.querySelector('[data-file-drop-zone]')).boxShadow })()`)
+      expect(ring).not.toBe('none')
+
       // Chosen: the input's change hands the file over, and the input is emptied so the same file can be chosen again.
       await view.evaluate(`(() => {
         const input = document.querySelector('[data-file-drop-input]')
