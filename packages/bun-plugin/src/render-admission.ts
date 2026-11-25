@@ -14,10 +14,12 @@ export interface RenderAdmissionOptions {
    *
    * For traffic an application can name but cannot refuse outright, such as
    * signed-out visits to pages a crawler is told not to walk. A resolver that
-   * throws leaves the request where it was, so a bug here costs isolation and
-   * never a person's page.
+   * throws or rejects leaves the request where it was, so a bug here costs
+   * isolation and never a person's page. It may answer asynchronously, which
+   * is what telling a real session from a cookie that only looks like one
+   * takes; it is asked before the request waits for a slot, so keep it cheap.
    */
-  renderPriority?: (request: Request) => RenderPriority | null | undefined
+  renderPriority?: (request: Request) => RenderPriority | null | undefined | Promise<RenderPriority | null | undefined>
   /** Background renders at once. Default: half of `renderConcurrency`, at least 1. Never above it. */
   renderBackgroundConcurrency?: number
   /** Background requests waiting. Default: `renderQueueLimit` minus `renderConcurrency`. Never above the queue. */
@@ -138,12 +140,12 @@ export function createRenderAdmission(options: RenderAdmissionOptions = {}) {
 
   return {
     /** The class a request renders in: its own ask, lowered by the application's. */
-    priorityOf(request?: Request): RenderPriority {
+    async priorityOf(request?: Request): Promise<RenderPriority> {
       const own = renderRequestPriority(request)
       if (own === 'background' || !request || !options.renderPriority)
         return own
       try {
-        return options.renderPriority(request) === 'background' ? 'background' : own
+        return await options.renderPriority(request) === 'background' ? 'background' : own
       }
       catch {
         return own

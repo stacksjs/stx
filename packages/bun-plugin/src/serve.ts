@@ -3395,7 +3395,7 @@ function __stxOverlay(errs){
   }
 
   async function processTemplate(filePath: string, reqCtx?: ServeRequestContext): Promise<string> {
-    return renderAdmission.run(() => renderTemplate(filePath, reqCtx), reqCtx?.request?.signal, renderAdmission.priorityOf(reqCtx?.request))
+    return renderAdmission.run(() => renderTemplate(filePath, reqCtx), reqCtx?.request?.signal, await renderAdmission.priorityOf(reqCtx?.request))
   }
 
   async function renderTemplate(filePath: string, reqCtx?: ServeRequestContext): Promise<string> {
@@ -3806,7 +3806,7 @@ function __stxOverlay(errs){
     return renderAdmission.run(
       () => renderTemplateDynamic(filePath, paramNames, paramValues, routePath, reqCtx),
       reqCtx?.request?.signal,
-      renderAdmission.priorityOf(reqCtx?.request),
+      await renderAdmission.priorityOf(reqCtx?.request),
     )
   }
 
@@ -4924,7 +4924,7 @@ function __stxOverlay(errs){
                     const html = await renderAdmission.run(
                       () => processDirectives(componentTemplate, {}, `${componentsDir}/${componentName}.stx`, componentOpts, new Set()),
                       req.signal,
-                      renderAdmission.priorityOf(req),
+                      await renderAdmission.priorityOf(req),
                     )
                     return new Response(html, {
                       headers: { 'Content-Type': 'text/html; charset=utf-8', ...corsHeaders },

@@ -15,30 +15,38 @@ const crawlable = (request: Request) => new URL(request.url).pathname.startsWith
 const page = (path: string, headers: Record<string, string> = {}) => new Request(`http://site.test${path}`, { headers })
 
 describe('renderPriority', () => {
-  it('lowers what the application names, and leaves everything else alone', () => {
+  it('lowers what the application names, and leaves everything else alone', async () => {
     const admission = createRenderAdmission({ renderPriority: crawlable })
 
-    expect(admission.priorityOf(page('/tree/main/src'))).toBe('background')
-    expect(admission.priorityOf(page('/issues'))).toBe('foreground')
+    expect(await admission.priorityOf(page('/tree/main/src'))).toBe('background')
+    expect(await admission.priorityOf(page('/issues'))).toBe('foreground')
   })
 
-  it('cannot raise a request above what it asked for', () => {
+  it('cannot raise a request above what it asked for', async () => {
     const admission = createRenderAdmission({ renderPriority: () => 'foreground' })
 
-    expect(admission.priorityOf(page('/issues', { 'sec-purpose': 'prefetch' }))).toBe('background')
+    expect(await admission.priorityOf(page('/issues', { 'sec-purpose': 'prefetch' }))).toBe('background')
   })
 
-  it('leaves a request where it was when the resolver throws', () => {
+  it('leaves a request where it was when the resolver throws', async () => {
     const admission = createRenderAdmission({ renderPriority: () => { throw new Error('boom') } })
 
-    expect(admission.priorityOf(page('/tree/main'))).toBe('foreground')
+    expect(await admission.priorityOf(page('/tree/main'))).toBe('foreground')
   })
 
-  it('without a resolver is the request\'s own ask, as before', () => {
+  it('without a resolver is the request\'s own ask, as before', async () => {
     const admission = createRenderAdmission()
 
-    expect(admission.priorityOf(page('/tree/main'))).toBe('foreground')
-    expect(admission.priorityOf(page('/tree/main', { purpose: 'prefetch' }))).toBe('background')
+    expect(await admission.priorityOf(page('/tree/main'))).toBe('foreground')
+    expect(await admission.priorityOf(page('/tree/main', { purpose: 'prefetch' }))).toBe('background')
+  })
+
+  it('may answer asynchronously, and a rejection leaves the request where it was', async () => {
+    const lowered = createRenderAdmission({ renderPriority: async () => 'background' })
+    const failing = createRenderAdmission({ renderPriority: async () => { throw new Error('lookup failed') } })
+
+    expect(await lowered.priorityOf(page('/tree/main'))).toBe('background')
+    expect(await failing.priorityOf(page('/tree/main'))).toBe('foreground')
   })
 })
 
