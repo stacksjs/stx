@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.937...v0.2.938)
+
+## 🐛 Bug Fixes
+
+- **stx**: resolve virtual client bundle entries on Windows ([b62a868](https://github.com/stacksjs/stx/commit/b62a868)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.938 ([838cec9](https://github.com/stacksjs/stx/commit/838cec9)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.936...v0.2.937)
 
 ## 🐛 Bug Fixes
