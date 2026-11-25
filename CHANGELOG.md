@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.945...v0.2.946)
+
+## 🐛 Bug Fixes
+
+- **stx**: name a failing client block by its project path, not the machine's ([d188beb](https://github.com/stacksjs/stx/commit/d188beb)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- reuse analysis of unchanged client templates ([55e71a5](https://github.com/stacksjs/stx/commit/55e71a5)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.946 ([a4309b2](https://github.com/stacksjs/stx/commit/a4309b2)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.944...v0.2.945)
 
 ## ✨ Features
