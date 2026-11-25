@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.935...v0.2.936)
+
+## 🐛 Bug Fixes
+
+- **components**: FileDrop shows where keyboard focus is ([d6a6afe](https://github.com/stacksjs/stx/commit/d6a6afe)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.936 ([23995c1](https://github.com/stacksjs/stx/commit/23995c1)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.934...v0.2.935)
 
 ## 🐛 Bug Fixes
