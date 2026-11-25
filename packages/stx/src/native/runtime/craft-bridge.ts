@@ -42,6 +42,8 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     camera: capabilities.has('camera'),
     files: capabilities.has('files'),
     media: capabilities.has('media'),
+    // `craft.files.exportVideo`: every iOS app, Android apps built with enableVideoExport.
+    videoExport: capabilities.has('videoExport'),
     biometric: capabilities.has('biometric'),
     // A device with a Metal GPU draws a RenderSurface. The host installs
     // craft.renderSurface itself, a function rather than a message, so this
@@ -939,6 +941,15 @@ export function installCraftBridge(
   // `fetch` sends as multipart with the files read natively. A file is
   // `{ path, name, type, size }`; its bytes stay on disk. Picking waits on
   // the person; null when they closed the picker.
+  const exports = new Map<string, (fraction: number) => void>()
+  let nextExport = 0
+  if (capabilities.has('videoExport')) {
+    protocol.on<{ id: string, progress: number }>('FILES_EXPORT_PROGRESS', ({ payload }) => {
+      if (!Number.isFinite(payload?.progress)) return
+      try { exports.get(payload.id)?.(Math.max(0, Math.min(1, payload.progress))) }
+      catch { /* A progress observer cannot change the export's result. */ }
+    })
+  }
   if (capabilities.has('files')) {
     craft.files = {
       pickVideo: (options: AnyRecord = {}) => ask('Files', 'pickVideo', [{
@@ -968,6 +979,35 @@ export function installCraftBridge(
         }]).then(file => nativeBridge.resolveFile ? nativeBridge.resolveFile(file) : file)
       },
       remove: (file: string | AnyRecord) => request('Files', 'remove', [typeof file === 'string' ? file : file?.path]).then(Boolean),
+      // A picked clip made ready to send, on the device (craft-native#595): an
+      // upright SDR H.264 and AAC MP4 inside `maxBox`, moov first, and a JPEG
+      // poster of it. Untimed, since a long clip takes as long as it takes;
+      // cancelled by `signal` like a fetch, and then no files are kept.
+      // Progress comes as FILES_EXPORT_PROGRESS for the progressId sent.
+      exportVideo: (file: string | AnyRecord, options: AnyRecord = {}) => {
+        if (!capabilities.has('videoExport'))
+          return Promise.reject(Object.assign(new Error('This app build cannot convert video'), { code: 'VIDEO_EXPORT_UNSUPPORTED' }))
+        const path = typeof file === 'string' ? file : file?.path
+        if (typeof path !== 'string' || !path) return Promise.reject(new TypeError('files.exportVideo takes a file from craft.files, such as pickVideo\'s'))
+        const signal: AnyRecord | undefined = options.signal
+        if (signal?.aborted) return Promise.reject(abortError(signal.reason))
+        const progressId = typeof options.onProgress === 'function' ? `export-${++nextExport}` : ''
+        if (progressId) exports.set(progressId, fraction => { if (!signal?.aborted) options.onProgress(fraction) })
+        const settings: AnyRecord = {
+          ...(Array.isArray(options.maxBox) ? { maxBox: options.maxBox } : {}),
+          ...(typeof options.fps === 'number' ? { fps: options.fps } : {}),
+          ...(typeof options.bitrateKbps === 'number' ? { bitrateKbps: options.bitrateKbps } : {}),
+          ...(options.poster === false || (options.poster && typeof options.poster === 'object') ? { poster: options.poster } : {}),
+          ...(progressId ? { progressId } : {}),
+        }
+        const resolve = (value: unknown) => value && nativeBridge.resolveFile ? nativeBridge.resolveFile(value) : value ?? null
+        return protocol.request<AnyRecord, AnyRecord>('API_REQUEST', { version: 1, module: 'Files', method: 'exportVideo', args: [{ path }, settings], untimed: true }, null, signal as AbortSignal)
+          .then((result: AnyRecord) => ({ ...result, video: resolve(result?.video), poster: resolve(result?.poster) }), (error: any) => {
+            if (signal?.aborted) throw abortError(signal.reason)
+            throw error
+          })
+          .finally(() => { if (progressId) exports.delete(progressId) })
+      },
     }
     target.FormData ??= NativeFormData
   }

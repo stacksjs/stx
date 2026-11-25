@@ -528,6 +528,21 @@ export interface NativeCraft {
     download: (url: string, options?: { headers?: Record<string, string>, name?: string }) => Promise<NativeFile>
     write: (name: string, data: string, options?: { encoding?: 'base64' | 'utf8', type?: string }) => Promise<NativeFile>
     remove: (file: string | NativeFile) => Promise<boolean>
+    /**
+     * A picked clip made ready to send (`capabilities.videoExport`): an upright
+     * SDR H.264 and AAC MP4 inside `maxBox` (default 1280 by 720, never
+     * upscaled), at most `fps` (default 30), moov first, and a JPEG poster.
+     * Cancelled by `signal`, keeping no files; rejects `VIDEO_EXPORT_UNSUPPORTED`
+     * on a host without it, then send the original.
+     */
+    exportVideo: (file: string | NativeFile, options?: {
+      maxBox?: [number, number]
+      fps?: number
+      bitrateKbps?: number
+      poster?: false | { at?: number }
+      signal?: AbortSignal
+      onProgress?: (fraction: number) => void
+    }) => Promise<{ video: NativeFile, poster: NativeFile | null, width: number, height: number, duration: number, frameRate?: number, bytes: number }>
   }
   /** The system's alert, confirmation and action sheet (`capabilities.dialogs`). */
   dialog?: {

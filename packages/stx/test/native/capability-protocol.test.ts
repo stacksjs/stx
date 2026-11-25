@@ -63,6 +63,42 @@ describe('shared-runtime native capability protocol', () => {
     expect(updates).toHaveLength(1)
   })
 
+  it('converts a picked clip untimed, reports its progress and cancels it like a fetch', async () => {
+    const { scope, sent, receive } = await runtime('', { capabilities: ['files', 'videoExport'], timeout: 50 })
+    const updates: number[] = []
+    const pending = scope.craft.files.exportVideo({ path: '/craft/pick/clip.mov', name: 'clip.mov' }, { maxBox: [1920, 1080], fps: 30, poster: { at: 1 }, onProgress: (value: number) => updates.push(value), unknown: 1 })
+    const request = sent.find(message => message.type === 'API_REQUEST')!
+    expect(request.payload).toMatchObject({ module: 'Files', method: 'exportVideo', untimed: true })
+    const [file, settings] = request.payload.args
+    expect(file).toEqual({ path: '/craft/pick/clip.mov' })
+    expect(settings).toEqual({ maxBox: [1920, 1080], fps: 30, poster: { at: 1 }, progressId: expect.stringMatching(/^export-/) })
+    receive({ type: 'FILES_EXPORT_PROGRESS', payload: { id: settings.progressId, progress: 0.4 } })
+    receive({ type: 'FILES_EXPORT_PROGRESS', payload: { id: settings.progressId, progress: 7 } })
+    // Untimed: a long clip outlives the bridge's deadline.
+    await new Promise(resolve => setTimeout(resolve, 80))
+    receive({ type: 'API_RESPONSE', correlationId: request.id, payload: { version: 1, requestId: request.id, data: { video: { path: '/craft/out/clip.mp4', name: 'clip.mp4', size: 10 }, poster: { path: '/craft/out/clip.jpg', name: 'clip.jpg', size: 2 }, width: 720, height: 1280, duration: 3, bytes: 10 } } })
+    const result = await pending
+    expect(updates).toEqual([0.4, 1])
+    expect(result).toMatchObject({ width: 720, height: 1280, video: { path: '/craft/out/clip.mp4' }, poster: { path: '/craft/out/clip.jpg' } })
+
+    const controller = new scope.AbortController()
+    const later: number[] = []
+    const cancelled = scope.craft.files.exportVideo('/craft/pick/clip.mov', { signal: controller.signal, onProgress: (value: number) => later.push(value) }).catch((error: any) => error)
+    const second = sent.filter(message => message.type === 'API_REQUEST').at(-1)!
+    controller.abort()
+    expect((await cancelled).name).toBe('AbortError')
+    expect(sent.find(message => message.type === 'API_CANCEL')?.payload.requestId).toBe(second.id)
+    receive({ type: 'FILES_EXPORT_PROGRESS', payload: { id: second.payload.args[1].progressId, progress: 0.5 } })
+    expect(later).toEqual([])
+  })
+
+  it('does not offer video conversion on a host that has not got it', async () => {
+    const { scope, sent } = await runtime('', { capabilities: ['files'] })
+    expect(scope.craft.capabilities.videoExport).toBe(false)
+    await expect(scope.craft.files.exportVideo({ path: '/craft/pick/clip.mov' })).rejects.toMatchObject({ code: 'VIDEO_EXPORT_UNSUPPORTED' })
+    expect(sent.some(message => message.type === 'API_REQUEST')).toBe(false)
+  })
+
   it('does not send an already aborted upload or pretend an older host supports progress', async () => {
     const { scope, sent } = await runtime('', { capabilities: ['fetch'] })
     const controller = new scope.AbortController()

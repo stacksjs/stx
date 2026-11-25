@@ -59,6 +59,7 @@ export type BridgeMessageType =
   | 'SOUND_EVENT'         // A craft.audio sound ended or failed
   | 'NETWORK_STREAM'      // A piece, the end or the failure of a streaming fetch
   | 'NETWORK_UPLOAD_PROGRESS' // Bytes sent by the screen's own upload task
+  | 'FILES_EXPORT_PROGRESS' // How far a clip's conversion on the device has got (craft.files.exportVideo)
   | 'CRAFT_EVENT'         // A host event in the page's name (craftLocationUpdate)
   | 'MEMORY_WARNING'      // Low memory warning
 
