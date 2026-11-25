@@ -114,7 +114,7 @@ function enter() { if (!disabled() && !busy()) over.set(true) }
       <span :if="!busy()" class="text-fg-muted text-xs">{{ size() }}</span>
       <span :if="busy()" class="text-fg text-xs" role="status" data-file-drop-stage>{{ stageLabel() }}</span>
       <span :if="busy()" class="block overflow-hidden mt-1 h-1.5 bg-panel rounded-full" role="progressbar" :aria-label="progressLabel()" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="indeterminate() ? undefined : Math.round(bar())" :data-file-drop-indeterminate="indeterminate() ? '' : undefined">
-        <span class="block h-full bg-accent-solid rounded-full transition-all" :class="indeterminate() ? 'opacity-40 animate-pulse motion-reduce:animate-none' : ''" :style="{ width: (indeterminate() ? 100 : bar()) + '%' }"></span>
+        <span class="block h-full bg-accent-solid rounded-full transition-all" :class="indeterminate() ? 'opacity-40 motion-safe:animate-pulse' : ''" :style="{ width: (indeterminate() ? 100 : bar()) + '%' }"></span>
       </span>
     </span>
     <button :if="canPreview()" type="button" @click="previewing.set(!previewing())" :aria-expanded="previewing()" class="shrink-0 px-2 min-h-11 font-medium text-fg text-xs hover:text-fg-strong rounded-lg focus-visible:ring-2 focus-visible:ring-accent" data-file-drop-preview-toggle>{{ previewing() ? hidePreviewLabel() : previewLabel() }}</button>
