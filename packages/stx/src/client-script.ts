@@ -38,7 +38,7 @@ import fs from 'node:fs'
 import type { ParsedEvent, EventModifiers } from './events'
 import { asInvocableStatement, listensPassively } from './events'
 import { transformStoreImports } from './store-imports'
-import { declaresClientIdentifier } from './client-declarations'
+import { clientDeclaredIdentifiers } from './client-declarations'
 import { scopeObject } from './client-scope-bindings'
 import { declaredNames, parameterAnalysis, unboundNames } from './client-parameter-bindings'
 import { findInterpolationEnd, stripCommentsAndLiterals } from './strip-literals'
@@ -1011,8 +1011,9 @@ export function generateServerDataBridge(code: string, serverData?: Record<strin
   // published — a word in a comment, a segment of a URL — and the value went
   // into the response body whether or not any client code could use it
   // (stacksjs/stx#1831).
-  const referenced = unboundNames(code, new Set(Object.keys(serverData)))
   const declaredPayload = serverData.__stxDeclaredPayload === true
+  const referenced = declaredPayload ? undefined : unboundNames(code, new Set(Object.keys(serverData)))
+  let clientDeclarations: ReadonlySet<string> | undefined
   const lines: string[] = []
   // Props supplied explicitly and their equal defaults can arrive in a
   // different insertion order. Equal data must produce the same factory.
@@ -1033,12 +1034,12 @@ export function generateServerDataBridge(code: string, serverData?: Record<strin
     // contract, so a declared name is published whether or not the client
     // mentions it. Requiring both would reintroduce exactly the uncertainty
     // the declaration exists to remove (#1868).
-    if (!declaredPayload && !referenced.has(name))
+    if (referenced && !referenced.has(name))
       continue
     // …and does not itself declare it at the top level (never clobber a
     // client-owned name). A nested declaration only shadows, so it no longer
     // suppresses the value (#1953).
-    if (declaresClientIdentifier(code, name)) {
+    if ((clientDeclarations ??= clientDeclaredIdentifiers(code)).has(name)) {
       // An explicitly declared payload name that the client also declares at
       // the top level is a contract the page cannot honour: it asked for the
       // value and then made it unreachable. Silence here is what cost a

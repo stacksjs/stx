@@ -47,7 +47,7 @@ import { scanHtmlScriptElements } from './html-masking'
 import { scriptAttributes, scriptContainsCode } from './script-attributes'
 import { BROWSER_CORE_IMPORTS } from './browser-core-imports'
 import path from 'node:path'
-import { declaresClientIdentifier } from './client-declarations'
+import { clientDeclaredIdentifiers } from './client-declarations'
 import { topLevelDeclaredNames, unboundNames } from './client-parameter-bindings'
 import { parseLoopBinding } from './loop-binding'
 import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
@@ -1402,8 +1402,8 @@ export function clientPayloadDeclarations(serverCode: string, clientCode = ''): 
     // a duplicate `var` beside it. Declaring it here anyway turned every such
     // page - CodeBlock's `const code`, Accordion's `allowMultiple` - into
     // "Cannot redeclare block-scoped variable" on code that runs.
-    const scraped = collectBlockDeclarations(serverCode)
-      .filter(name => !declaresClientIdentifier(clientCode, name))
+    const ownBindings = clientDeclaredIdentifiers(clientCode)
+    const scraped = collectBlockDeclarations(serverCode).filter(name => !ownBindings.has(name))
     if (scraped.length === 0 && serverTypes.length === 0)
       return ''
 
@@ -1624,6 +1624,7 @@ export function scrapedBridgeNames(serverCode: string, clientCode: string): stri
 
   const serverNames = collectTopLevelDeclarations(serverCode)
   const referenced = unboundNames(clientCode, new Set(serverNames))
+  const ownBindings = clientDeclaredIdentifiers(clientCode)
   // The runtime destructures these from `window.stx` into every client block,
   // so the client already has them and the bridge never publishes one. Naming
   // `state` as a value that "reaches this block" was both wrong and actively
@@ -1635,7 +1636,7 @@ export function scrapedBridgeNames(serverCode: string, clientCode: string): stri
     if (provided.has(name))
       return false
     // A name the client block declares for itself is not carried in either.
-    if (declaresClientIdentifier(clientCode, name))
+    if (ownBindings.has(name))
       return false
     // The runtime uses the same lexical rule, including local shadowing.
     return referenced.has(name)

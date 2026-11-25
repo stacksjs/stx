@@ -117,6 +117,19 @@ describe('declared payload (#1868)', () => {
     expect(bridge(ctx, 'function range() {}\nuse(range)')).not.toContain('var range')
   })
 
+  it('matches the full name of each client-owned binding in a payload', () => {
+    const payload = { page: 1, page$size: 2, alias: 3, visible: 4 }
+    const out = bridge({ __stxClientPayload: payload }, [
+      'const page$size = 10',
+      'const { source: alias } = options',
+      'function later() { const visible = 6; return visible }',
+    ].join('\n'))
+    expect(out).toContain('var page = 1')
+    expect(out).not.toContain('var page$size')
+    expect(out).not.toContain('var alias')
+    expect(out).toContain('var visible = 4')
+  })
+
   it('reads depth correctly past a regex holding a brace', () => {
     // /\{/ used to leave a brace the literal stripper could not see, so every
     // later depth read one too deep and ownership fell back to withholding.

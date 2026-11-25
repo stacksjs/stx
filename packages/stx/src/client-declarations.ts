@@ -9,15 +9,14 @@
 import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
 
 /**
- * Return the local bindings introduced by a destructuring declaration.
+ * Collect the local bindings introduced by a destructuring declaration.
  *
  * The bridge only needs this to avoid emitting a same-named `var`, so being
  * conservative for nested patterns is preferable to generating invalid
  * JavaScript. Object aliases use their local name (`source: local`), while
  * defaults are removed from either form.
  */
-function extractDestructuredBindings(pattern: string, objectPattern: boolean): Set<string> {
-  const bindings = new Set<string>()
+function collectDestructuredBindings(pattern: string, objectPattern: boolean, bindings: Set<string>): void {
   for (const rawPart of pattern.split(',')) {
     let part = rawPart.trim().replace(/^\.\.\./, '').trim()
     if (!part)
@@ -33,21 +32,10 @@ function extractDestructuredBindings(pattern: string, objectPattern: boolean): S
     if (/^[A-Za-z_$][\w$]*$/.test(part))
       bindings.add(part)
   }
-  return bindings
 }
 
 /**
- * Detect whether client code already owns an identifier.
- *
- * Direct declarations were always handled, but Vue-style prop declarations
- * are normally destructured. Without this check the bridge emitted
- * `var title = ...` immediately before
- * `const { title } = defineProps()`, which is a parse-time error.
- */
-
-/**
- * Does the client block declare `name` AT THE TOP LEVEL, so the bridge would
- * clobber it?
+ * Collect the client block declarations that would collide with the bridge.
  *
  * Only a depth-0 declaration counts (stacksjs/stx#1953). Emitting `var range`
  * beside a top-level `const range` is a duplicate-binding SyntaxError, so that
@@ -60,7 +48,7 @@ function extractDestructuredBindings(pattern: string, objectPattern: boolean): S
  * Comments and string/template literals are stripped first, so the word
  * `const` inside a message cannot claim ownership of anything.
  */
-export function declaresClientIdentifier(code: string, name: string): boolean {
+export function clientDeclaredIdentifiers(code: string): ReadonlySet<string> {
   const stripped = stripCommentsAndLiterals(code)
   const { depths, balanced } = bracketDepths(stripped)
   // Unbalanced brackets (a regex literal holding a brace) make every depth
@@ -71,20 +59,25 @@ export function declaresClientIdentifier(code: string, name: string): boolean {
   // The declaration is captured so depth is read at the KEYWORD. Reading it at
   // match.index instead put `for (const range of rows)` at depth 0, because the
   // character the boundary consumed was the `(` whose own depth is still 0.
-  const keyword = new RegExp(`(?:^|[^\\w$.])((?:const|let|var|function|class)\\s+${name}\\b)`, 'g')
+  const names = new Set<string>()
+  const keyword = /(?:^|[^\w$.])((?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*))/g
   for (const match of stripped.matchAll(keyword)) {
-    const keywordIndex = (match.index ?? 0) + match[0].length - match[1].length
+    const keywordIndex = match.index + match[0].length - match[1].length
     if (atTopLevel(keywordIndex))
-      return true
+      names.add(match[2])
   }
 
   for (const match of stripped.matchAll(/(?:const|let|var)\s*\{([^}]*)\}/g)) {
-    if (atTopLevel(match.index ?? 0) && extractDestructuredBindings(match[1], true).has(name))
-      return true
+    if (atTopLevel(match.index))
+      collectDestructuredBindings(match[1], true, names)
   }
   for (const match of stripped.matchAll(/(?:const|let|var)\s*\[([^\]]*)\]/g)) {
-    if (atTopLevel(match.index ?? 0) && extractDestructuredBindings(match[1], false).has(name))
-      return true
+    if (atTopLevel(match.index))
+      collectDestructuredBindings(match[1], false, names)
   }
-  return false
+  return names
+}
+
+export function declaresClientIdentifier(code: string, name: string): boolean {
+  return clientDeclaredIdentifiers(code).has(name)
 }
