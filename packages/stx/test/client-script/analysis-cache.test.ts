@@ -1,11 +1,28 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 import { declaredNames, parameterAnalysis, unboundNames } from '../../src/client-parameter-bindings'
+import { extractExports, scopeObject } from '../../src/client-scope-bindings'
+import { clearRenderMemos } from '../../src/render-memo'
 import * as literals from '../../src/strip-literals'
 
 let scanner: ReturnType<typeof spyOn> | undefined
 afterEach(() => scanner?.mockRestore())
 
 describe('shared client-script analysis (#2158)', () => {
+  test('reuses setup scope names across renders and invalidates them by source', () => {
+    scanner = spyOn(literals, 'stripCommentsAndLiterals')
+    const source = 'const scopeCachedLabel = "let hidden"; let scopeCachedRow; async function scopeCachedLoad() {}'
+    expect(extractExports(source)).toBe('scopeCachedLabel, scopeCachedRow, scopeCachedLoad')
+    expect(extractExports(source, true)).toBe('scopeCachedRow')
+    expect(scopeObject(source)).toContain('get scopeCachedRow() { return scopeCachedRow }')
+    expect(scanner).toHaveBeenCalledTimes(2)
+
+    expect(extractExports(source.replace('scopeCachedRow', 'scopeNewRow'), true)).toBe('scopeNewRow')
+    expect(scanner).toHaveBeenCalledTimes(3)
+    clearRenderMemos()
+    expect(extractExports(source, true)).toBe('scopeCachedRow')
+    expect(scanner).toHaveBeenCalledTimes(4)
+  })
+
   test('tokenizes once across consumers even when another script intervenes', () => {
     scanner = spyOn(literals, 'stripCommentsAndLiterals')
     const source = 'const cacheFixture = 1; function run(delay) { return delay(cacheFixture) }; delay(5)'

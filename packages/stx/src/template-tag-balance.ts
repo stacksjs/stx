@@ -13,6 +13,8 @@
  * parse: the goal is a cheap, high-signal dev heads-up, not a validator.
  */
 
+import { contentKey, renderMemo } from './render-memo'
+
 // Void elements never take a closing tag — excluded from counting entirely.
 const VOID_TAGS: ReadonlySet<string> = new Set([
   'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
@@ -126,6 +128,7 @@ export function findUnbalancedTags(template: string): TagBalanceIssue[] {
 // (not once per request or per @include site); an edit that changes the file's
 // length re-arms the warning. Dev-only + bounded to actually-broken files.
 const warnedKeys = new Set<string>()
+const tagBalanceCache = renderMemo<TagBalanceIssue[]>(96)
 
 /**
  * Dev-mode warning: log any tag-balance issues for a template. Best-effort — a
@@ -134,7 +137,12 @@ const warnedKeys = new Set<string>()
 export function warnUnbalancedTags(template: string, filePath: string): void {
   let issues: TagBalanceIssue[]
   try {
-    issues = findUnbalancedTags(template)
+    // Scripts and styles may dwarf the markup. Skip masking and rescanning
+    // that source when development renders are serving the same template.
+    const key = contentKey(template)
+    const cached = tagBalanceCache.get(key)
+    issues = cached ?? findUnbalancedTags(template)
+    if (!cached) tagBalanceCache.set(key, issues)
   }
   catch {
     return

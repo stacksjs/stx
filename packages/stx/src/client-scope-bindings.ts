@@ -1,6 +1,15 @@
+import { contentKey, renderMemo } from './render-memo'
 import { stripCommentsAndLiterals } from './strip-literals'
 
+// The same client setup can serve many pages with different server data. Its
+// declarations depend only on the source, and the cached value holds names.
+const clientScopeNames = renderMemo<string>(64)
+
 export function extractExports(setupContent: string, mutableOnly = false): string {
+  const key = contentKey(setupContent, mutableOnly)
+  const cached = clientScopeNames.get(key)
+  if (cached !== undefined) return cached
+
   // Share the lexer used by bundle binding discovery. In particular, a regex
   // after `return` is an expression, not division: counting its braces can
   // expose private bundle helpers and put undefined names in the setup return.
@@ -132,7 +141,9 @@ export function extractExports(setupContent: string, mutableOnly = false): strin
     i++
   }
 
-  return names.join(', ')
+  const exports = names.join(', ')
+  clientScopeNames.set(key, exports)
+  return exports
 }
 
 /** Mutable lexical bindings stay live after setup, including onMount assignments. */
