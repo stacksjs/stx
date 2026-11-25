@@ -184,16 +184,12 @@ function syncRowVisibility() {
   pane.querySelectorAll('[data-sidebar-row][data-expanded="false"]').forEach((row) => {
     collapsedIds.add(row.dataset.itemId)
   })
-  pane.querySelectorAll('[data-sidebar-section][data-expanded="false"]').forEach((section) => {
-    section.querySelectorAll('[data-sidebar-row]').forEach((row) => {
-      row.setAttribute('data-collapsed', '')
-    })
-  })
-  pane.querySelectorAll('[data-sidebar-section][data-expanded="true"] [data-sidebar-row]').forEach((row) => {
+  pane.querySelectorAll('[data-sidebar-row]').forEach((row) => {
     const parents = (row.dataset.parents || '').split('/').filter(Boolean)
-    const hidden = parents.some(id => collapsedIds.has(id))
-    if (hidden) row.setAttribute('data-collapsed', '')
-    else row.removeAttribute('data-collapsed')
+    const collapsedSection = row.closest('[data-sidebar-section]')?.getAttribute('data-expanded') === 'false'
+    const hidden = collapsedSection || parents.some(id => collapsedIds.has(id))
+    row.toggleAttribute('data-collapsed', hidden)
+    row.toggleAttribute('inert', hidden)
   })
 }
 

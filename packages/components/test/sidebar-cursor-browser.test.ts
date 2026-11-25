@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 import { generateCss } from '../../stx/src/dev-server/ts-css'
 import { compileClassStyles } from '../../stx/src/native/compiler/utilities-to-style'
 import { sidebarThemes } from '../src/ui/sidebar/themes'
+import { openBrowserPage } from './support/browser-page'
 import { parse, renderSidebar } from './utils/render-sidebar'
 
 const themes = ['default', ...Object.keys(sidebarThemes), 'unknown-theme']
@@ -52,6 +53,34 @@ it('sidebar links, action rows and collapsible headers advertise web interaction
     }
   }
   finally { view.close(); server.stop(true) }
+}, 30_000)
+
+it('collapsed sections remove their rows from keyboard focus and restore focusability when expanded', async () => {
+  const page = await openBrowserPage({
+    name: 'sidebar-section-focus',
+    body: `<Sidebar placement="static" :sections="${sections}" />`,
+    ready: `(() => {
+      const header = document.querySelector('[data-sidebar-section-header]');
+      if (!header) return false;
+      if (header.getAttribute('aria-expanded') === 'true') header.click();
+      return header.getAttribute('aria-expanded') === 'false';
+    })()`,
+  })
+  try {
+    const state = await page.json(`
+      const header = document.querySelector('[data-sidebar-section-header]');
+      const row = document.querySelector('[data-item-id="link"]');
+      const link = row.querySelector('a');
+      header.focus();
+      link.focus();
+      const collapsed = row.inert && document.activeElement === header;
+      header.click();
+      link.focus();
+      return { collapsed, expanded: !row.inert && document.activeElement === link };
+    `)
+    expect(state).toEqual({ collapsed: true, expanded: true })
+  }
+  finally { page.close() }
 }, 30_000)
 
 it('sidebar cursor cues leave native styles and diagnostics unchanged for touch and pointer hosts', async () => {
