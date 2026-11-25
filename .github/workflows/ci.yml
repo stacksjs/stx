@@ -15,6 +15,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  windows-client-bundling:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.4'
+      - run: bun install --frozen-lockfile
+      - run: bun test packages/stx/test/client-script-bundler/layout-relative-import.test.ts packages/stx/test/client-script-bundler/browser-root-import.test.ts
+
   native-signing:
     runs-on: macos-15
     steps:

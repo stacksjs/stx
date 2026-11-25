@@ -683,8 +683,16 @@ function createBundlePlugin(
   /** More virtual entries (path to source), for a build of several. */
   moreEntries?: ReadonlyMap<string, string>,
 ): BunPlugin {
-  const entrySources = new Map<string, string>([[tmpEntry, entrySource], ...(moreEntries ?? [])])
-  const isEntry = (file: string | undefined): boolean => file !== undefined && entrySources.has(file)
+  // Bun can report Windows paths with a different drive-letter case or
+  // separator in onResolve and onLoad. Both callbacks must find the source
+  // for the same virtual entry, which does not exist on disk.
+  const entryKey = process.platform === 'win32'
+    ? (file: string) => path.win32.normalize(file).toLowerCase()
+    : (file: string) => file
+  const entrySources = new Map<string, string>([[entryKey(tmpEntry), entrySource]])
+  for (const [file, source] of moreEntries ?? [])
+    entrySources.set(entryKey(file), source)
+  const isEntry = (file: string | undefined): boolean => file !== undefined && entrySources.has(entryKey(file))
   // A direct import of the script being bundled goes to the page registry
   // instead of being inlined (#1957). Only the ENTRY's imports: the modules
   // themselves are never loaded here, so nothing transitive reaches this.
@@ -751,7 +759,8 @@ function createBundlePlugin(
       // filesystem. Keep imports such as `/__deps/charts.js` in the generated
       // browser bundle so the application's HTTP server can resolve them.
       // Preserve genuine absolute filesystem imports when the target exists.
-      build.onResolve({ filter: /^\// }, (args) => {
+      const absolutePath = process.platform === 'win32' ? /^(?:\/|[A-Za-z]:[\\/]|\\\\)/ : /^\//
+      build.onResolve({ filter: absolutePath }, (args) => {
         if (isEntry(args.path)) return { path: args.path }
         // Extensions are probed, not just the literal path. A specifier
         // written `../composables/useApp` and pinned to an absolute path (see
@@ -773,6 +782,9 @@ function createBundlePlugin(
             inputFiles.add(resolved)
           return { path: resolved }
         }
+
+        if (!args.path.startsWith('/'))
+          return
 
         // Browser-rooted URLs belong to the host application, not the local
         // filesystem: `/__deps/charts.js` stays in the bundle for the app's
@@ -864,7 +876,8 @@ function createBundlePlugin(
       // relative and aliased imports handled above, so their mtimes participate
       // in cache validation.
       build.onLoad({ filter: /\.(?:[cm]?[jt]sx?|json)$/ }, (args) => {
-        if (entrySources.has(args.path)) return { contents: entrySources.get(args.path)!, loader: 'ts' }
+        const entry = entrySources.get(entryKey(args.path))
+        if (entry !== undefined) return { contents: entry, loader: 'ts' }
         if (isPrivateClientSource(args.path, projectRoot, serverApi))
           throw new Error(`Server-only API source cannot be imported by a client script: ${args.path}`)
         const extension = path.extname(args.path).toLowerCase()
