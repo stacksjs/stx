@@ -71,8 +71,9 @@ export function createRenderAdmission(options: RenderAdmissionOptions = {}) {
   const backgroundConcurrency = Math.min(concurrency, integer(options.renderBackgroundConcurrency, Math.max(1, Math.floor(concurrency / 2)), 1))
   const backgroundQueueLimit = Math.min(queueLimit, integer(options.renderBackgroundQueueLimit, Math.max(0, queueLimit - concurrency), 0))
   const backgroundRetryAfter = integer(options.renderBackgroundRetryAfterSeconds, 1, 1)
-  const refuse = (status: 408 | 503, priority: RenderPriority) =>
-    new RenderAdmissionError(status, priority === 'background' ? backgroundRetryAfter : 1)
+  function refuse(status: 408 | 503, priority: RenderPriority): RenderAdmissionError {
+    return new RenderAdmissionError(status, priority === 'background' ? backgroundRetryAfter : 1)
+  }
   const waiting: WaitingRender[] = []
   let active = 0
   let activeBackground = 0
