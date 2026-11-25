@@ -1571,19 +1571,19 @@ catch (e) {
         preservedScript = keepOwnerStampOf(preservedScript, ownsRoot ? signalScopeId : null)
       }
 
-      // Process the partial content
-      // Process any nested includes first, passing the includeStack for circular detection
-      if (workingContent.includes('@include') || workingContent.includes('@partial')) {
-        workingContent = await processIncludes(workingContent, includeContext, includeFilePath, options, dependencies, includeStack)
-      }
-
       // Process loops first to handle array iterations
       const { processLoops, reportDeferredLoopWarnings } = await import('./loops')
-      let processedContent = processLoops(workingContent, includeContext, includeFilePath, undefined, true)
+      let processedContent = processLoops(workingContent, includeContext, includeFilePath, options, true)
 
       // Process conditionals, then warn about the loops that survived them.
       processedContent = processConditionals(processedContent, includeContext, includeFilePath)
       processedContent = reportDeferredLoopWarnings(processedContent)
+
+      // As at page level, expand nested includes after their enclosing loop
+      // and condition resolve. Their arguments can read the iteration scope.
+      if (processedContent.includes('@include') || processedContent.includes('@partial')) {
+        processedContent = await processIncludes(processedContent, includeContext, includeFilePath, options, dependencies, includeStack)
+      }
 
       // The SEO directives read variables, and a head partial is where those
       // are computed: the canonical URL, this page's preview card, structured

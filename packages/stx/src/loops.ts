@@ -48,6 +48,7 @@ import { loopBoundNames, parseLoopBinding, readsAnyName } from './loop-binding'
 import { extractClientSignalNames } from './signal-processing'
 import type { StxOptions } from './types'
 import { processConditionals } from './conditionals'
+import { splitTopLevelArgs } from './directive-arguments'
 import { ErrorCodes, inlineError } from './error-handling'
 import { escapeInterpolatedHtmlValue, findMustacheEnd, processExpressions, replaceInterpolations } from './expressions'
 import { findDirectiveBlocks, findMatchingDelimiter } from './parser'
@@ -56,6 +57,38 @@ import { createSafeFunction, freeIdentifiers, isExpressionSafe, isForExpressionS
 // Default loop configuration
 const DEFAULT_MAX_WHILE_ITERATIONS = 1000
 const DEFAULT_USE_ALT_LOOP_VARIABLE = false
+
+/** Decide conditional includes while the loop bindings are still in scope. */
+function resolveIterationIncludes(content: string, context: Record<string, any>): string {
+  let output = ''
+  let cursor = 0
+
+  for (const match of content.matchAll(/@(includeWhen|includeUnless)\s*\(/g)) {
+    const start = match.index
+    if (start < cursor) continue
+    const open = start + match[0].length - 1
+    const close = findMatchingDelimiter(content, '(', ')', open)
+    if (close < 0) continue
+    const [condition, path, data, ...extra] = splitTopLevelArgs(content.slice(open + 1, close))
+    if (!condition || !path || !/^(['"])[^'"]+\1$/.test(path) || extra.length) continue
+
+    try {
+      const expression = `Boolean(${condition})`
+      const result = isExpressionSafe(expression)
+        ? createSafeFunction(expression, Object.keys(context))(...Object.values(context))
+        : safeEvaluate(expression, context)
+      output += content.slice(cursor, start)
+      if (Boolean(result) === (match[1] === 'includeWhen'))
+        output += `@include(${path}${data ? `, ${data}` : ''})`
+      cursor = close + 1
+    }
+    catch {
+      // Let the include pass report invalid conditions as usual.
+    }
+  }
+
+  return output + content.slice(cursor)
+}
 
 /**
  * Resolve `@include('x', { … })` data maps against the current loop iteration.
@@ -71,6 +104,7 @@ const DEFAULT_USE_ALT_LOOP_VARIABLE = false
  * original expression and its original behaviour.
  */
 function preEvaluateIncludeData(content: string, ctx: Record<string, any>): string {
+  content = resolveIterationIncludes(content, ctx)
   const pattern = /@(include|partial)\s*\(\s*(['"])([^'"]+)\2\s*,\s*/g
   let result = ''
   let lastIndex = 0
@@ -1192,7 +1226,7 @@ function processForLoops(
 
     try {
       const iterVarNames = parseForIterVarNames(forExpr)
-      const containsNestedDirectives = /@(?:for|foreach|if|unless)\s*\(/.test(content)
+      const containsNestedDirectives = /@(?:for|foreach|if|unless|includeWhen|includeUnless)\s*\(/.test(content)
 
       // When the body contains nested @for/@foreach/@if directives we need
       // to evaluate the loop iteration-by-iteration so each pass can
@@ -1349,7 +1383,7 @@ function renderForLoopWithRecursion(args: {
     const continueAt = chunk.indexOf(CONTINUE_MARKER)
     const stopAt = breakAt < 0 ? continueAt : continueAt < 0 ? breakAt : Math.min(breakAt, continueAt)
     if (stopAt >= 0) chunk = chunk.slice(0, stopAt)
-    rendered += processExpressions(chunk, iterContext, fp)
+    rendered += preEvaluateIncludeData(processExpressions(chunk, iterContext, fp), iterContext)
     return stopAt < 0 || stopAt !== breakAt
   })
 

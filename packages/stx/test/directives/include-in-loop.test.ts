@@ -28,6 +28,7 @@ let dir = ''
 beforeAll(async () => {
   dir = createTempDir('stx-include-loop-')
   await Bun.write(path.join(dir, 'partials', 'Row.stx'), '<article class="row">{{ item.label }}</article>\n')
+  await Bun.write(path.join(dir, 'partials', 'List.stx'), '<div>@foreach(items as item)@includeWhen(item.id === "b", "Row", { item })@endforeach</div>')
 })
 
 afterAll(async () => {
@@ -82,6 +83,25 @@ describe('the loop variable reaches the partial', () => {
 
     expect(rendered).toHaveLength(2)
     expect(new Set(rendered).size).toBe(2)
+  })
+
+  it('uses the current row for @includeWhen, including commas in expressions', async () => {
+    expect(await rows('<div>@foreach(items as item)@includeWhen(item.label.slice(0, 1) === "B", "Row", { item })@endforeach</div>'))
+      .toEqual(['Beta'])
+  })
+
+  it('uses the current row for @includeUnless when a loop value shadows page data', async () => {
+    expect(await rows('<div>@foreach(items as site)@includeUnless(site.id === "b", "Row", { item: site })@endforeach</div>'))
+      .toEqual(['Alpha'])
+  })
+
+  it('keeps loop data for a conditional include in a numeric @for', async () => {
+    expect(await rows('<div>@for(let i = 0; i < items.length; i++)@includeWhen(i === 1, "Row", { item: items[i] })@endfor</div>'))
+      .toEqual(['Beta'])
+  })
+
+  it('resolves a conditional child include inside a partial’s loop', async () => {
+    expect(await rows('<div>@include("List")</div>')).toEqual(['Beta'])
   })
 })
 
