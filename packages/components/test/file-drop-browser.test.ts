@@ -20,13 +20,14 @@ const file = state(null)
 const stage = state('')
 const label = state('')
 const progress = state(0)
+const indeterminate = state(false)
 const picks = []
 const clears = []
-window.probe = { file, stage, label, progress, picks, clears }
+window.probe = { file, stage, label, progress, indeterminate, picks, clears }
 function picked(next) { picks.push(next.name); file.set(next) }
 function cleared() { clears.push(true); file.set(null) }
 </script>
-<FileDrop :file="file" :stage="stage" :stageLabel="label" :progress="progress" label="Drop a video here" hint="Any clip works" removeLabel="Remove video" @pick="picked($event)" @clear="cleared()" />
+<FileDrop :file="file" :stage="stage" :stageLabel="label" :progress="progress" :indeterminate="indeterminate" label="Drop a video here" hint="Any clip works" removeLabel="Remove video" @pick="picked($event)" @clear="cleared()" />
 </body></html>`, {}, join(root, 'file-drop.stx'), { ...defaultConfig, root, cache: false, debug: false }, new Set())
   const server = Bun.serve({ port: 0, hostname: '127.0.0.1', fetch: request => new URL(request.url).pathname === '/'
     ? new Response(html, { headers: { 'Content-Type': 'text/html' } }) : new Response('', { status: 404 }) })
@@ -86,6 +87,11 @@ else {
       const going = await until<{ label: string, now: string | null, remove: boolean } | null>(`(() => { const s = document.querySelector('[data-file-drop-stage]'); return s ? { label: s.innerText, now: document.querySelector('[role=progressbar]').getAttribute('aria-valuenow'), remove: !!document.querySelector('[data-file-drop-remove]') } : null })()`, value => value?.now === '40')
       expect(going).toEqual({ label: 'Uploading… 40%', now: '40', remove: false })
 
+      // Not yet able to say how far: the bar pulses and announces no value.
+      await view.evaluate(`window.probe.indeterminate.set(true)`)
+      const pulsing = await until<{ now: string | null, flag: boolean } | null>(`(() => { const b = document.querySelector('[role=progressbar]'); return b ? { now: b.getAttribute('aria-valuenow'), flag: b.hasAttribute('data-file-drop-indeterminate') } : null })()`, value => value?.flag === true)
+      expect(pulsing).toEqual({ now: null, flag: true })
+      await view.evaluate(`window.probe.indeterminate.set(false)`)
       await view.evaluate(`window.probe.stage.set('')`)
       await until<boolean>(`!!document.querySelector('[data-file-drop-remove]')`, value => value)
       await view.evaluate(`document.querySelector('[data-file-drop-remove]').click()`)
