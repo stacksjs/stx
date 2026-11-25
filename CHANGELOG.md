@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.942...v0.2.943)
+
+## 🐛 Bug Fixes
+
+- **components**: FileDrop pulses only where motion is welcome ([d4f02a8](https://github.com/stacksjs/stx/commit/d4f02a8)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.943 ([77d584b](https://github.com/stacksjs/stx/commit/77d584b)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.941...v0.2.942)
 
 ## ✨ Features
