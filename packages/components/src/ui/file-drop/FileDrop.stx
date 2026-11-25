@@ -88,7 +88,7 @@ function enter() { if (!disabled() && !busy()) over.set(true) }
 
 <div class="w-full min-w-0" :data-testid="testId()" data-file-drop>
   <label :if="!file()" @dragover.prevent="enter()" @dragleave="over.set(false)" @drop.prevent="drop($event)"
-    class="flex flex-col gap-1 items-center justify-center px-4 py-6 min-h-28 text-center border-2 border-dashed rounded-xl transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-accent focus-within:ring-offset-2"
+    class="flex flex-col gap-1 items-center justify-center px-4 py-6 min-h-28 text-center border-2 border-dashed rounded-xl transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-accent focus-within:ring-offset-2 focus-within:ring-offset-panel"
     :class="over() ? 'border-accent bg-accent-subtle' : 'border-line hover:border-line-strong'"
     data-file-drop-zone>
     <i aria-hidden="true" class="h-6 w-6 text-fg-muted i-lucide-upload"></i>
