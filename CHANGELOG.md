@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.944...v0.2.945)
+
+## ✨ Features
+
+- **native**: craft.files.exportVideo on native screens ([3ccfb30](https://github.com/stacksjs/stx/commit/3ccfb30)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.945 ([e124492](https://github.com/stacksjs/stx/commit/e124492)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.943...v0.2.944)
 
 ## 🐛 Bug Fixes
