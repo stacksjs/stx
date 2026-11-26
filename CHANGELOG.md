@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.947...v0.2.948)
+
+## ✨ Features
+
+- **serve**: renderCacheHost, the host a per-address render belongs to ([11cffef](https://github.com/stacksjs/stx/commit/11cffef)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- contain long sidebar space lists ([1ab8c88](https://github.com/stacksjs/stx/commit/1ab8c88)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.948 ([53ff52c](https://github.com/stacksjs/stx/commit/53ff52c)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.946...v0.2.947)
 
 ## 🐛 Bug Fixes
