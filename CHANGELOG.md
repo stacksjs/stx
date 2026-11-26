@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.948...v0.2.949)
+
+## 🐛 Bug Fixes
+
+- **serve**: leave imports by absolute URL to the browser ([2a5a5da](https://github.com/stacksjs/stx/commit/2a5a5da)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.949 ([185392d](https://github.com/stacksjs/stx/commit/185392d)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.947...v0.2.948)
 
 ## ✨ Features
