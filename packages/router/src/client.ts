@@ -1522,9 +1522,19 @@ function routerSource(): string {
       // The navigation this hands over to keeps both going and ends them.
       document.body.classList.add(o.loadingClass);
       startProgress();
-      return awaited.then(function(){
+      var ready=awaited.then(function(){return true});
+      var waitLimit=+o.navigationTimeout||0,prefetchTimer;
+      if(waitLimit>0){
+        // A tap waiting for a prefetch needs the same fallback as a tap
+        // that started its own request.
+        ready=Promise.race([ready,new Promise(function(resolve){
+          prefetchTimer=setTimeout(function(){resolve(false)},waitLimit);
+        })]).finally(function(){clearTimeout(prefetchTimer)});
+      }
+      return ready.then(function(finished){
         if(intent!==navSeq||awaitingKey!==awaitedKey)return false;
         awaitingKey='';
+        if(!finished){location.assign(url);return false}
         // That prefetch settled without filling the cache -- it was over the
         // sight budget, or it failed, or its entry was left dangling. Drop
         // the entry we waited on before handing back, or the re-entry matches

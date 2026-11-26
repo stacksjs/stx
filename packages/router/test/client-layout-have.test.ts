@@ -149,6 +149,18 @@ describe('a navigation with no answer', () => {
     expect(new URL(assigned[0], 'http://localhost').pathname).toBe('/brands/acme')
   })
 
+  it('becomes a page load when the promoted prefetch has not answered by navigationTimeout', async () => {
+    const { window, seen, assigned } = install(APP, { navigationTimeout: 40 }, true)
+    window.document.getElementById('go')!.dispatchEvent(new window.Event('mouseover', { bubbles: true }))
+    await settle(10)
+    void window.stxRouter.navigate('/brands/acme')
+    await settle(200)
+    expect(seen).toHaveLength(1)
+    expect(seen[0].purpose).toBe('prefetch')
+    expect(assigned).toHaveLength(1)
+    expect(new URL(assigned[0], 'http://localhost').pathname).toBe('/brands/acme')
+  })
+
   it('waits as long as it takes when the limit is off', async () => {
     const { window, assigned } = install(APP, { navigationTimeout: 0 }, true)
     void window.stxRouter.navigate('/brands/acme')
