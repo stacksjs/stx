@@ -602,7 +602,8 @@ export function parseMultilineAttributes(attributesStr: string): Record<string, 
   return props
 }
 
-export function parseAttributes(attributesStr: string): ParsedAttribute[] {
+/** Pass html for rendered markup, where backslashes do not escape attribute delimiters. */
+export function parseAttributes(attributesStr: string, options?: { html?: boolean }): ParsedAttribute[] {
   const attributes: ParsedAttribute[] = []
   let pos = 0
   const len = attributesStr.length
@@ -646,9 +647,8 @@ export function parseAttributes(attributesStr: string): ParsedAttribute[] {
         const quote = attributesStr[pos]
         pos++ // Skip opening quote
 
-        // Read until closing quote, handling escapes
         while (pos < len && attributesStr[pos] !== quote) {
-          if (attributesStr[pos] === '\\' && pos + 1 < len) {
+          if (!options?.html && attributesStr[pos] === '\\' && pos + 1 < len) {
             // Handle escape sequence
             pos++
             value += attributesStr[pos]

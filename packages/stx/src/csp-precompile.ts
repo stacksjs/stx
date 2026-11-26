@@ -9,7 +9,7 @@ import { escapeScriptBody } from './script-emit'
 /** Compile the finished author template, never data later written by a binding. */
 export function precompileCspBindings(html: string): string {
   for (const script of scanHtmlScriptElements(html).reverse()) {
-    if (parseAttributes(script.attrs).some(attr => attr.name === 'data-stx-csp')) html = html.slice(0, script.start) + html.slice(script.end)
+    if (parseAttributes(script.attrs, { html: true }).some(attr => attr.name === 'data-stx-csp')) html = html.slice(0, script.start) + html.slice(script.end)
   }
   const bodies = new Map<string, string>()
   const setups = new Map<string, string>()
@@ -47,7 +47,7 @@ export function precompileCspBindings(html: string): string {
     const name = tag.name.toLowerCase()
     raw = !tag.closing && (name === 'script' || name === 'style')
     if (tag.closing) continue
-    const attrs = parseAttributes(tag.attributes)
+    const attrs = parseAttributes(tag.attributes, { html: true })
     for (const attr of attrs) {
       const value = decodeHTMLAttribute(typeof attr.value === 'string' ? attr.value : '')
       const name = attr.name
@@ -82,7 +82,7 @@ export function precompileCspBindings(html: string): string {
   // their author strings into literal call arguments. Read those structurally,
   // rather than trying to recover JS with a regex after minification.
   for (const script of scanHtmlScriptElements(html)) {
-    const attrs = Object.fromEntries(parseAttributes(script.attrs).map(attr => [attr.name, attr.value]))
+    const attrs = Object.fromEntries(parseAttributes(script.attrs, { html: true }).map(attr => [attr.name, attr.value]))
     if (attrs.src || 'data-stx-runtime' in attrs || 'data-stx-router' in attrs) continue
     const text = html.slice(script.bodyStart, script.bodyEnd)
     const type = typeof attrs.type === 'string' ? attrs.type : ''

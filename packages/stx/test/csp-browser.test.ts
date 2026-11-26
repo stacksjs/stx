@@ -13,7 +13,7 @@ import { injectRouterScript } from '../src/runtime-injection'
 
 it.each([false, true])('hydrates, updates rows and handles models with eval forbidden (minify=%s)', async minify => {
   const csp = { enabled: true, precompile: true, useHashes: true, addMetaTag: true, directives: { 'default-src': ["'self'"], 'script-src': ["'self'"], 'style-src': ["'self'", "'unsafe-inline'"] } }
-  const page = await openBrowserPage({ name: 'csp-bindings-' + minify, renderOptions: { csp, minifyClient: minify, debug: !minify }, headers: html => ({ 'Content-Security-Policy': hashedCspHeader(html, csp) }), ready: 'window.probe && document.querySelector("#count")?.textContent === "1"', body: `<script client>
+  const page = await openBrowserPage({ name: 'csp-bindings-' + minify, renderOptions: { csp, minifyClient: minify, debug: !minify }, headers: html => ({ 'Content-Security-Policy': hashedCspHeader(html, csp) }), ready: 'window.probe && document.querySelector("#count")?.textContent === "1"', body: String.raw`<script client>
 const count = state(1); const shown = state(true); const rows = state([{id:1,label:'first'}]); const form = {title: state('initial')}
 window.probe = { count, shown, rows, form }
 window.warnings = []; console.warn = (...args) => window.warnings.push(args.map(String).join(' '))
@@ -24,12 +24,14 @@ try { new Function('return 1')() } catch { window.cspBlocked = true }
 <span id="count" :class="{active: count > 1}" :style="{opacity: count > 1 ? '1' : '0.5'}" :title="'n=' + count" @bind:data-total="count + 10" x-text="count"></span>
 <input id="model" x-model="form.title" />
 <b id="named-entity" x-text="'&copy;'"></b><b id="nested-entity" x-text="'A &amp;amp; B'"></b>
+<b id="escaped-binding" :text="'Postline\'s path is C:\\posts'"></b>
 <div :if="shown"><span id="conditional">{{ count() + 2 }}</span></div>
 <div :for="row in rows" :key="row.id"><span class="row" x-text="row.label"></span><button class="pick" @click="form.title.set(row.label)">Pick</button></div>` })
   try {
     expect(await page.json('return window.cspBlocked')).toBe(true)
     expect(await page.json('return document.querySelector("#named-entity").textContent')).toBe('©')
     expect(await page.json('return document.querySelector("#nested-entity").textContent')).toBe('A & B')
+    expect(await page.json('return document.querySelector("#escaped-binding").textContent')).toBe("Postline's path is C:\\posts")
     await page.run("document.querySelector('#increment').click()")
     expect(await page.json('return {count: probe.count(), warnings: window.warnings, errors: window.__errors}')).toMatchObject({ count: 2, warnings: [], errors: [] })
     expect(await page.until('document.querySelector("#count").textContent === "2"')).toBe(true)

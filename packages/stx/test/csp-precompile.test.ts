@@ -17,6 +17,12 @@ it('matches browser decoding for named references, encoded delimiters and legacy
   expect(html).toContain('.expressions["return count"]')
 })
 
+it('preserves JavaScript escapes from browser-parsed attributes', () => {
+  const expression = String.raw`'Postline\'s path is C:\\posts'`
+  const html = precompileCspBindings(`<span :text="${expression}"></span>`)
+  expect(html).toContain(`.expressions[${JSON.stringify(`return (${expression})`)}]`)
+})
+
   it('compiles HTML entities and scoped-slot destructuring, without scanning script strings or comments as markup', () => {
     const html = precompileCspBindings(`<head><script>const prose='<p x-text="not valid syntax">{{ prose }}</p>'</script></head><b x-text="n &#x2b; 1"></b><!--{{ invalid syntax }}--><div data-stx-slot-scope='{"binding":"{row}","names":["row"]}'></div>`)
     expect(html).toContain('.expressions["return n + 1"]')
