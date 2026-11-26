@@ -549,6 +549,16 @@ describe('data-nav-direction', () => {
 })
 
 
+it('lets a stx:before-navigate listener refuse a navigation', async () => {
+  const app = install(page('<p>Home</p>'), () => fragment('<p>Elsewhere</p>'))
+  app.window.addEventListener('stx:before-navigate', (event: any) => event.preventDefault())
+  const result = await app.window.stxRouter.navigate('/b')
+  await sleep(50)
+  expect(result).toBe(false)
+  expect(app.calls.some(url => url.includes('/b'))).toBe(false)
+  expect(app.window.location.pathname).not.toBe('/b')
+})
+
 it('scopes navigation before choosing the request and history URL', async () => {
   const app = install(page('<p>Home</p>'), () => fragment('<p>Scoped</p>'))
   app.window.addEventListener('stx:before-navigate', (event: any) => { event.detail.url += '?brand=example' })

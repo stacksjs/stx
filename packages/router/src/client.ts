@@ -1457,7 +1457,11 @@ function routerSource(): string {
     // Tenant shells can keep their explicit scope on links and programmatic
     // navigation before the cache key, request and history entry are chosen.
     var destination={url:url};
-    window.dispatchEvent(new CustomEvent('stx:before-navigate',{detail:destination}));
+    // A listener may refuse the navigation with preventDefault(): a form with
+    // unsaved changes asking first. A back/forward step (pushState false) has
+    // already moved the URL, so it is not cancelable and is never refused.
+    var before=new CustomEvent('stx:before-navigate',{detail:destination,cancelable:pushState!==false});
+    if(!window.dispatchEvent(before)){log('[router] navigation refused by a stx:before-navigate listener:',url);return Promise.resolve(false)}
     url=destination.url;
     releaseScrollHold();
     winSnap=undefined;
