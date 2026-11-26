@@ -166,15 +166,11 @@ export function findMatchingEndTag(
  * @returns Parsed conditional with all branches, or null if malformed
  */
 export function parseConditionalBlock(source: string, startPos: number): ParsedConditional | null {
-  // Match the @if directive
-  const ifMatch = source.slice(startPos).match(/^@if\s*/)
-  if (!ifMatch) {
+  if (!source.startsWith('@if', startPos)) {
     return null
   }
 
-  // Extract the condition
-  const exprStart = startPos + ifMatch[0].length
-  const exprResult = extractParenthesizedExpression(source, exprStart)
+  const exprResult = extractParenthesizedExpression(source, startPos + '@if'.length)
   if (!exprResult) {
     return null
   }
@@ -199,29 +195,31 @@ export function parseConditionalBlock(source: string, startPos: number): ParsedC
   let branchStart = 0
   let nestedDepth = 0
 
-  // Use indexOf to jump to @ positions instead of checking every character
+  // Match at each candidate offset without creating a suffix of the markup.
+  const branchPattern = /@(?:if(?=\s*\()|endif(?![a-z])|elseif|else(?![a-z]))/y
   while (currentPos < fullContent.length) {
     const atIdx = fullContent.indexOf('@', currentPos)
     if (atIdx === -1) break
     currentPos = atIdx
-    const remaining = fullContent.substring(atIdx)
+    branchPattern.lastIndex = atIdx
+    const directive = branchPattern.exec(fullContent)?.[0]
 
     // Ignore directive-looking tokens that are actually HTML attributes (inside a
     // `<...>` tag), e.g. the `<template @else>` markers the reactive-signal pass
     // emits for a nested reactive conditional. Matching them here would mismatch
     // this block's branch/@endif boundaries. See isInsideTag().
-    if (isInsideTag(fullContent, atIdx)) {
+    if (!directive || isInsideTag(fullContent, atIdx)) {
       currentPos++
       continue
     }
 
     // Track nested @if depth
-    if (/^@if\s*\(/.test(remaining)) {
+    if (directive === '@if') {
       nestedDepth++
       currentPos++
       continue
     }
-    if (/^@endif(?![a-z])/.test(remaining)) {
+    if (directive === '@endif') {
       nestedDepth--
       currentPos += '@endif'.length
       continue
@@ -229,9 +227,7 @@ export function parseConditionalBlock(source: string, startPos: number): ParsedC
 
     // Only match @elseif/@else at top level (depth 0)
     if (nestedDepth === 0) {
-      const elseifMatch = remaining.match(/^@elseif\s*/)
-
-      if (elseifMatch) {
+      if (directive === '@elseif') {
         // Save current branch
         branches.push({
           type: currentType,
@@ -242,7 +238,7 @@ export function parseConditionalBlock(source: string, startPos: number): ParsedC
         })
 
         // Parse elseif condition
-        const elseifExprStart = currentPos + elseifMatch[0].length
+        const elseifExprStart = currentPos + directive.length
         const elseifExpr = extractParenthesizedExpression(fullContent, elseifExprStart)
         if (!elseifExpr) {
           // Malformed @elseif, skip
@@ -256,7 +252,7 @@ export function parseConditionalBlock(source: string, startPos: number): ParsedC
         branchStart = currentPos
         continue
       }
-      else if (/^@else(?![a-z])/.test(remaining)) {
+      else if (directive === '@else') {
         // Save current branch
         branches.push({
           type: currentType,
