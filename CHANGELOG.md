@@ -1,5 +1,23 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.946...v0.2.947)
+
+## 🐛 Bug Fixes
+
+- **stx**: an inlined script file is no longer taken for the page's own script ([0d3ac78](https://github.com/stacksjs/stx/commit/0d3ac78)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## ⚡ Performance Improvements
+
+- avoid copying unchanged client script declarations ([323d954](https://github.com/stacksjs/stx/commit/323d954)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.947 ([1f25c0e](https://github.com/stacksjs/stx/commit/1f25c0e)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.945...v0.2.946)
 
 ## 🐛 Bug Fixes
