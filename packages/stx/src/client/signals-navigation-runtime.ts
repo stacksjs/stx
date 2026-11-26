@@ -25,7 +25,9 @@ export const SIGNALS_NAVIGATION_RUNTIME = `  // ================================
     }
     var destination = { url: url };
     // Cancelable, as on the SPA router: a listener refuses with preventDefault().
-    if (!window.dispatchEvent(new CustomEvent('stx:before-navigate', { detail: destination, cancelable: true }))) return;
+    var before = new CustomEvent('stx:before-navigate', { detail: destination, cancelable: true });
+    window.dispatchEvent(before);
+    if (before.defaultPrevented) return;
     if (typeof destination.url === 'string') url = destination.url;
     if (replace) window.location.replace(url);
     else window.location.href = url;

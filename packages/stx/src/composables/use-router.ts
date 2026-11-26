@@ -105,7 +105,9 @@ export function navigate(url: string, options?: NavigateOptions | boolean): void
 
   const destination = { url }
   // Cancelable, as on the SPA router: a listener refuses with preventDefault().
-  if (!window.dispatchEvent(new CustomEvent('stx:before-navigate', { detail: destination, cancelable: true })))
+  const before = new CustomEvent('stx:before-navigate', { detail: destination, cancelable: true })
+  window.dispatchEvent(before)
+  if (before.defaultPrevented)
     return
   if (typeof destination.url === 'string') url = destination.url
 

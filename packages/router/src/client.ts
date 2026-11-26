@@ -1461,7 +1461,8 @@ function routerSource(): string {
     // unsaved changes asking first. A back/forward step (pushState false) has
     // already moved the URL, so it is not cancelable and is never refused.
     var before=new CustomEvent('stx:before-navigate',{detail:destination,cancelable:pushState!==false});
-    if(!window.dispatchEvent(before)){log('[router] navigation refused by a stx:before-navigate listener:',url);return Promise.resolve(false)}
+    window.dispatchEvent(before);
+    if(before.defaultPrevented){log('[router] navigation refused by a stx:before-navigate listener:',url);return Promise.resolve(false)}
     url=destination.url;
     releaseScrollHold();
     winSnap=undefined;

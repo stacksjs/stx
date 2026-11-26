@@ -148,6 +148,13 @@ describe('navigate options', () => {
   })
 })
 
+it('lets a listener refuse a full reload', () => {
+  g.window.dispatchEvent = (event: CustomEvent) => event.preventDefault()
+  stx.navigate('/elsewhere', { reload: true, replace: true })
+  expect(replaceCalls).toEqual([])
+  expect(hrefWrites).toEqual([])
+})
+
 // A full document load must preserve the same tenant context as the SPA.
 it('lets the shell scope a full reload before writing its destination', () => {
   g.window.dispatchEvent = (event: CustomEvent) => { event.detail.url += '?brand=example' }
