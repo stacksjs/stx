@@ -1,3 +1,6 @@
+import type { RenderReportOptions } from './render-report'
+import { createRenderReport, renderLabel } from './render-report'
+
 /** Bounds work before a render allocates its script contexts and HTML. */
 export interface RenderAdmissionOptions {
   /** Active page renders per server. Default: 4. Proxy and asset traffic bypasses this gate. */
@@ -30,10 +33,17 @@ export interface RenderAdmissionOptions {
    * same thing comes straight back.
    */
   renderBackgroundRetryAfterSeconds?: number
+  /**
+   * Say in the log what the renderer has been doing: each render slower than
+   * `slowMs`, and a summary once every `intervalMs` that had traffic in it.
+   * Off unless set. See `render-report.ts`.
+   */
+  renderReport?: RenderReportOptions
 }
 
 export class RenderAdmissionError extends Error {
-  constructor(readonly status: 408 | 503, readonly retryAfterSeconds = 1) {
+  /** `expired` is true for a 503 that waited its whole timeout, false for one refused on arrival. */
+  constructor(readonly status: 408 | 503, readonly retryAfterSeconds = 1, readonly expired = false) {
     super(status === 408 ? 'Request aborted' : 'Page rendering is busy; please retry')
     this.name = 'RenderAdmissionError'
   }
@@ -71,9 +81,10 @@ export function createRenderAdmission(options: RenderAdmissionOptions = {}) {
   const backgroundConcurrency = Math.min(concurrency, integer(options.renderBackgroundConcurrency, Math.max(1, Math.floor(concurrency / 2)), 1))
   const backgroundQueueLimit = Math.min(queueLimit, integer(options.renderBackgroundQueueLimit, Math.max(0, queueLimit - concurrency), 0))
   const backgroundRetryAfter = integer(options.renderBackgroundRetryAfterSeconds, 1, 1)
-  function refuse(status: 408 | 503, priority: RenderPriority): RenderAdmissionError {
-    return new RenderAdmissionError(status, priority === 'background' ? backgroundRetryAfter : 1)
+  function refuse(status: 408 | 503, priority: RenderPriority, expired = false): RenderAdmissionError {
+    return new RenderAdmissionError(status, priority === 'background' ? backgroundRetryAfter : 1, expired)
   }
+  const report = options.renderReport ? createRenderReport(options.renderReport) : null
   const waiting: WaitingRender[] = []
   let active = 0
   let activeBackground = 0
@@ -115,7 +126,7 @@ export function createRenderAdmission(options: RenderAdmissionOptions = {}) {
         if (index !== -1)
           waiting.splice(index, 1)
         cleanup()
-        reject(refuse(status, priority))
+        reject(refuse(status, priority, status === 503))
       }
       const abort = () => fail(408)
       const entry: WaitingRender = {
@@ -152,18 +163,44 @@ export function createRenderAdmission(options: RenderAdmissionOptions = {}) {
         return own
       }
     },
-    async run<T>(start: () => Promise<T>, signal?: AbortSignal, priority: RenderPriority = 'foreground'): Promise<T> {
-      await acquire(signal, priority)
+    async run<T>(start: () => Promise<T>, signal?: AbortSignal, priority: RenderPriority = 'foreground', request?: Request): Promise<T> {
+      const queued = performance.now()
+      try {
+        await acquire(signal, priority)
+      }
+      catch (error) {
+        if (report) {
+          const outcome = error instanceof RenderAdmissionError && error.status === 503
+            ? (error.expired ? 'expired' : 'refused')
+            : 'aborted'
+          report.record({ label: renderLabel(request), priority, outcome, waitedMs: performance.now() - queued, ranMs: 0 })
+        }
+        throw error
+      }
+      const started = performance.now()
+      let outcome: 'rendered' | 'failed' | 'aborted' = 'failed'
       try {
         // A disconnect cannot free the slot while its script still runs.
         // Doing so would let disconnected clients create unbounded work.
-        if (signal?.aborted)
+        if (signal?.aborted) {
+          outcome = 'aborted'
           throw new RenderAdmissionError(408)
-        return await start()
+        }
+        const result = await start()
+        outcome = 'rendered'
+        return result
       }
       finally {
         release(priority)
+        report?.record({ label: renderLabel(request), priority, outcome, waitedMs: started - queued, ranMs: performance.now() - started })
       }
+    },
+    /** The summary for the interval so far, or null when there was none. For tests and shutdown. */
+    flushReport(): string | null {
+      return report?.flush() ?? null
+    },
+    stopReport(): void {
+      report?.stop()
     },
   }
 }

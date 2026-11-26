@@ -68,6 +68,17 @@ await serve({
 
 `renderPriority` can only lower a request, never move one ahead of navigation, and a resolver that throws or rejects leaves the request where it was. It may return a promise, which is what checking a session against a store takes. The background limits are clamped to the renderer's own, and a refused background request is told to wait `renderBackgroundRetryAfterSeconds` (default 1) rather than coming straight back. Page scripts share one thread, so a background slot bounds how much of the renderer that traffic can hold; it does not make a CPU-heavy page free.
 
+To see what the renderer is doing, ask it to say so in the log:
+
+```typescript
+await serve({
+  patterns: ['resources/views'],
+  renderReport: { slowMs: 2000, intervalMs: 60_000 },
+})
+```
+
+Each render that runs longer than `slowMs` is named as it finishes: `[stx] slow render 2412ms /o/r/blob/main/x.ts (background, waited 830ms)`. Once every `intervalMs` that had traffic, one line totals each class: renders, failures, refusals on arrival, waits that ran out, run time at p50 and p95, the longest wait and the slowest path. A quiet interval prints nothing, paths never include the query string, and with `renderReport` unset nothing is recorded.
+
 ## Runtime Performance
 
 ### Fast Template Compilation
