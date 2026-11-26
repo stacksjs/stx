@@ -148,4 +148,25 @@ describe('bun-plugin-stx serving', () => {
       await rm(dir, { recursive: true, force: true })
     }
   })
+
+  it('leaves an import by absolute URL for the browser to fetch', async () => {
+    const dir = createTempDir('stx-asset-')
+
+    try {
+      const entryPath = path.join(dir, 'richtext.ts')
+      await writeFile(entryPath, [
+        'const EDITOR = "/assets/scripts/editor.ts"',
+        'if (document.querySelector("[data-editor]")) import(EDITOR).then(m => m.mount())',
+      ].join('\n'))
+
+      const response = await bundleBrowserAsset(entryPath)
+      const code = await response.text()
+
+      expect(response.status).toBe(200)
+      expect(code).toContain('/assets/scripts/editor.ts')
+    }
+    finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
 })

@@ -1560,6 +1560,11 @@ function assetRequestPaths(pathname: string): string[] {
 export async function bundleBrowserAsset(entrypoint: string): Promise<Response> {
   const result = await Bun.build({
     entrypoints: [entrypoint],
+    // An absolute path is a URL on this server, not a file: an asset that
+    // loads another with `import('/assets/scripts/editor.ts')`, to keep code
+    // one page needs out of every page, is asking the browser to fetch it.
+    // Left in, the build tried to resolve it on disk and the asset failed.
+    external: ['/*'],
     format: 'esm',
     minify: true,
     packages: 'bundle',
