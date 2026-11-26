@@ -849,6 +849,10 @@ declare function $watch<T>(
  * here without the runtime reading it fails too: a documented option that does
  * nothing is the quieter half of the same problem.
  */
+type StxToastAction =
+  | { label: string, href: string, target?: '_blank', onClick?: never, dismiss?: never }
+  | { label: string, onClick: () => void | Promise<void>, dismiss?: boolean, href?: never, target?: never }
+
 interface StxToastOptions {
   /** Auto-dismiss duration in ms. 0 = persistent. Default: 3000 */
   duration?: number
@@ -866,6 +870,10 @@ interface StxToastOptions {
    * `dark` class, then `data-theme` / `data-color-mode`, then the OS setting.
    */
   dark?: boolean
+  /** Links and buttons displayed below the message. Buttons dismiss by default. */
+  actions?: readonly StxToastAction[]
+  /** Show a spinner in place of the tone icon. Set duration to 0 for persistent progress. */
+  loading?: boolean
 }
 
 interface StxToast {

@@ -75,6 +75,17 @@ describe('every option the runtime reads', () => {
     expect(result.diagnostics).toEqual([])
   })
 
+  it('accepts a progress indicator and typed actions', async () => {
+    const result = await check('actions.stx', [
+      `toast.info('Publishing', { duration: 0, loading: true })`,
+      `toast.success('Published', { actions: [
+        { label: 'Open', href: 'https://example.com/post', target: '_blank' },
+        { label: 'Undo', onClick: async () => {}, dismiss: true }
+      ] })`,
+    ].join('\n'))
+    expect(result.diagnostics).toEqual([])
+  })
+
   it('accepts duration, which was the one that was declared', async () => {
     const result = await check('duration.stx', `toast.error('a', { duration: 0 })`)
     expect(result.diagnostics).toEqual([])

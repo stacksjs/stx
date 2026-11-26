@@ -12,9 +12,6 @@
  * that clears it on completion live in different functions, so the numeric
  * handle had to be threaded between them by hand — which is the state
  * management the primitive exists to remove.
- *
- * Actions, dedupe and a loading state are deliberately NOT here; see the note
- * on the issue about where this primitive's boundary is.
  */
 
 import { beforeAll, beforeEach, describe, expect, it } from 'bun:test'

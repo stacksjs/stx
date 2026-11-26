@@ -473,6 +473,8 @@ Each call returns the new toast's id (a number).
 | `title` | `string` | — | Heading above the message, in bold |
 | `id` | `string \| number` | — | Semantic key — see below |
 | `dark` | `boolean` | *follows the document* | Force the dark or light palette |
+| `actions` | `StxToastAction[]` | — | Render links or buttons beneath the message |
+| `loading` | `boolean` | `false` | Replace the tone icon with a loading indicator |
 
 Left alone, `dark` follows the `dark` class, then `data-theme` / `data-color-mode`, then the OS setting.
 
@@ -486,7 +488,7 @@ starts it and the call that finishes it:
 ```html
 <script client>
   async function publish() {
-    toast.info('Publishing…', { id: 'publish', duration: 0 })
+    toast.info('Publishing…', { id: 'publish', duration: 0, loading: true })
     await savePost()
     toast.success('Published.', { id: 'publish', title: 'Done' })
   }
@@ -496,8 +498,28 @@ starts it and the call that finishes it:
 `toast.dismiss()` takes either kind of id — the semantic key or the numeric
 handle — so a caller does not have to know which it is holding.
 
-Other defaults: slide-in/out animation matched to the container's `position`,
-`role="alert"`, close button.
+### Actions
+
+A button takes an `onClick` callback. The toast dismisses when the button is
+activated unless `dismiss` is set to `false`. A link takes an HTTP or HTTPS
+`href` and can open in a new tab with `target: '_blank'`.
+
+```html
+<script client>
+  function showPublished(url) {
+    toast.success('Your post is live.', {
+      actions: [
+        { label: 'Open post', href: url, target: '_blank' },
+        { label: 'Copy link', onClick: () => navigator.clipboard.writeText(url), dismiss: false },
+      ],
+    })
+  }
+</script>
+```
+
+Expiry pauses while a toast is hovered or focused. Errors and warnings use
+`role="alert"`. Success and informational messages use `role="status"`.
+The entrance, exit, and loading animations respect reduced motion.
 
 **Aliases:** `<stx-toast>`
 

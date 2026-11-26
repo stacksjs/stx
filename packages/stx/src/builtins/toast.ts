@@ -62,6 +62,8 @@ export const StxToastBuiltin: BuiltinComponentDef = {
 @keyframes stx-toast-out-left{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(-100%)}}
 @keyframes stx-toast-in-center{from{opacity:0;transform:translateY(-1rem)}to{opacity:1;transform:translateY(0)}}
 @keyframes stx-toast-out-center{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-1rem)}}
+@keyframes stx-toast-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){[data-stx-toast],[data-stx-toast-loading]{animation:none!important}}
 </style>`
   },
 }

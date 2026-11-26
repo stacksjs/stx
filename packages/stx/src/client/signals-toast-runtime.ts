@@ -35,6 +35,10 @@ export const SIGNALS_TOAST_RUNTIME = `  // =====================================
     el.__stxToastRemoving = true;
     el.setAttribute('data-stx-toast-exiting', '');
     if (el.__stxToastDispose) el.__stxToastDispose();
+    var hadFocus = el.contains(document.activeElement);
+    var opener = el.__stxToastOpener;
+    el.inert = true;
+    if (hadFocus && opener && opener.isConnected && typeof opener.focus === 'function') opener.focus();
     var container = _getToastContainer();
     var anims = _getToastAnimClass(container);
     el.style.animation = anims.outAnim + ' 0.3s ease forwards';
@@ -127,13 +131,18 @@ export const SIGNALS_TOAST_RUNTIME = `  // =====================================
     el.setAttribute('data-stx-toast', String(id));
     if (key)
       el.setAttribute('data-stx-toast-key', key);
-    el.setAttribute('role', 'alert');
-    el.setAttribute('aria-live', 'assertive');
+    el.setAttribute('role', type === 'error' || type === 'warning' ? 'alert' : 'status');
+    el.__stxToastOpener = document.activeElement;
     el.style.cssText = 'pointer-events:auto;display:flex;align-items:flex-start;gap:0.75rem;padding:0.875rem 1rem;border-radius:0.5rem;border-left:4px solid ' + borderColor + ';background:' + bg + ';color:' + textColor + ';box-shadow:' + shadow + ';animation:' + anims.inAnim + ' 0.3s ease;font-family:system-ui,-apple-system,sans-serif;font-size:0.875rem;line-height:1.4;max-width:100%';
 
     var iconSpan = document.createElement('span');
     iconSpan.style.cssText = 'flex-shrink:0;display:flex;align-items:center;margin-top:1px';
-    iconSpan.innerHTML = icon;
+    iconSpan.setAttribute('aria-hidden', 'true');
+    if (opts.loading) {
+      iconSpan.setAttribute('data-stx-toast-loading', '');
+      iconSpan.style.cssText += ';width:1.25rem;height:1.25rem;box-sizing:border-box;border:2px solid ' + borderColor + ';border-inline-end-color:transparent;border-radius:50%;animation:stx-toast-spin .75s linear infinite';
+    }
+    else iconSpan.innerHTML = icon;
 
     /*
      * Title above message, when one is given (#1913).
@@ -143,7 +152,7 @@ export const SIGNALS_TOAST_RUNTIME = `  // =====================================
      * a title. A wrapper is used only when there IS a title, so the untitled
      * shape renders exactly as it did.
      */
-    var msgSpan = document.createElement(opts.title ? 'div' : 'span');
+    var msgSpan = document.createElement(opts.title || opts.actions ? 'div' : 'span');
     msgSpan.style.cssText = 'flex:1;word-wrap:break-word';
 
     if (opts.title) {
@@ -160,6 +169,41 @@ export const SIGNALS_TOAST_RUNTIME = `  // =====================================
     }
     else {
       msgSpan.textContent = message;
+    }
+
+    if (Array.isArray(opts.actions) && opts.actions.length) {
+      var actions = document.createElement('div');
+      actions.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.5rem';
+      opts.actions.forEach(function(action) {
+        if (!action || typeof action.label !== 'string' || !action.label.trim()) return;
+        var control;
+        if (typeof action.href === 'string') {
+          var url;
+          try { url = new URL(action.href, document.baseURI); } catch (_) { return; }
+          if (url.protocol !== 'https:' && url.protocol !== 'http:') return;
+          control = document.createElement('a');
+          control.href = url.href;
+          if (action.target === '_blank') {
+            control.target = '_blank';
+            control.rel = 'noopener noreferrer';
+          }
+        }
+        else if (typeof action.onClick === 'function') {
+          control = document.createElement('button');
+          control.type = 'button';
+          control.addEventListener('click', function() {
+            if (el.__stxToastRemoving) return;
+            if (action.dismiss !== false) removeToast(id);
+            action.onClick();
+          });
+        }
+        else return;
+        control.setAttribute('data-stx-toast-action', '');
+        control.textContent = action.label;
+        control.style.cssText = 'padding:0.25rem 0.5rem;border:1px solid currentColor;border-radius:0.3rem;background:none;color:inherit;cursor:pointer;font:inherit;font-weight:600;text-decoration:none';
+        actions.appendChild(control);
+      });
+      if (actions.childElementCount) msgSpan.appendChild(actions);
     }
 
     var closeBtn = document.createElement('button');

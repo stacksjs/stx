@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import { SIGNALS_TOAST_RUNTIME } from '../../src/client/signals-toast-runtime'
 
 function runtime() {
@@ -98,5 +98,70 @@ describe('toast expiry accounting (#2222)', () => {
     expect(old.isConnected).toBe(false)
     expect(clock.tasks.size).toBe(0)
     expect(current().textContent).toContain('New')
+  })
+})
+
+describe('toast actions and progress', () => {
+  it('runs undo once and returns focus after dismissing', () => {
+    const clock = runtime()
+    const opener = document.getElementById('outside')!
+    opener.focus()
+    const undo = mock(() => {})
+    clock.toast.success('Removed', { actions: [{ label: 'Undo', onClick: undo }] })
+    const toast = current()
+    const button = toast.querySelector<HTMLButtonElement>('button[data-stx-toast-action]')!
+    expect(button.textContent).toBe('Undo')
+    button.focus()
+    button.click()
+    button.click()
+    expect(undo).toHaveBeenCalledTimes(1)
+    expect(document.activeElement).toBe(opener)
+    clock.advance(300)
+    expect(toast.isConnected).toBe(false)
+  })
+
+  it('can copy repeatedly and pauses expiry while the button has focus', () => {
+    const clock = runtime()
+    const copy = mock(() => {})
+    clock.toast.success('Published', { duration: 500, actions: [{ label: 'Copy link', onClick: copy, dismiss: false }] })
+    const toast = current()
+    const button = toast.querySelector<HTMLButtonElement>('button[data-stx-toast-action]')!
+    button.focus()
+    clock.advance(1000)
+    button.click()
+    button.click()
+    expect(copy).toHaveBeenCalledTimes(2)
+    expect(current()).toBe(toast)
+    document.getElementById('outside')!.focus()
+    clock.advance(800)
+    expect(toast.isConnected).toBe(false)
+  })
+
+  it('renders HTTP links as native anchors', () => {
+    const clock = runtime()
+    clock.toast.success('Published', { actions: [
+      { label: 'Open post', href: 'https://example.com/posts/1', target: '_blank' },
+      { label: 'Unavailable', href: 'about:blank' },
+    ] })
+    const links = current().querySelectorAll<HTMLAnchorElement>('a[data-stx-toast-action]')
+    expect(links).toHaveLength(1)
+    expect(links[0]!.textContent).toBe('Open post')
+    expect(links[0]!.href).toBe('https://example.com/posts/1')
+    expect(links[0]!.target).toBe('_blank')
+    expect(links[0]!.rel).toBe('noopener noreferrer')
+  })
+
+  it('replaces persistent polite progress with an assertive error', () => {
+    const clock = runtime()
+    clock.toast.info('Publishing…', { id: 'publish', loading: true, duration: 0 })
+    const progress = current()
+    expect(progress.getAttribute('role')).toBe('status')
+    expect(progress.querySelector('[data-stx-toast-loading][aria-hidden=true]')).not.toBeNull()
+    clock.advance(10000)
+    expect(current()).toBe(progress)
+    clock.toast.error('Publishing failed', { id: 'publish' })
+    expect(current().getAttribute('role')).toBe('alert')
+    expect(current().querySelector('[data-stx-toast-loading]')).toBeNull()
+    expect(progress.isConnected).toBe(false)
   })
 })
