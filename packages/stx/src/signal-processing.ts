@@ -1379,8 +1379,10 @@ export function convertSignalLoopsToAttributes(template: string, context?: Recor
 function dedupeTopLevelDeclarations(code: string): string {
   const seen = new Set<string>()
   const out: string[] = []
+  const declaration = /(?:const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=/y
 
   let i = 0
+  let copiedThrough = 0
   let depth = 0 // brace depth — top-level means depth === 0
   const len = code.length
 
@@ -1454,61 +1456,55 @@ function dedupeTopLevelDeclarations(code: string): string {
 
     // Comments
     if (ch === '/' && code[i + 1] === '/') {
-      const end = skipLineComment()
-      out.push(code.slice(i, end))
-      i = end
+      i = skipLineComment()
       continue
     }
     if (ch === '/' && code[i + 1] === '*') {
-      const end = skipBlockComment()
-      out.push(code.slice(i, end))
-      i = end
+      i = skipBlockComment()
       continue
     }
 
     // Strings — treat as opaque so `const x = "foo"` doesn't get confused.
     if (ch === '"' || ch === '\'' || ch === '`') {
-      const end = skipString(ch)
-      out.push(code.slice(i, end))
-      i = end
+      i = skipString(ch)
       continue
     }
 
     // Brace depth
-    if (ch === '{') { depth++; out.push(ch); i++; continue }
-    if (ch === '}') { depth--; out.push(ch); i++; continue }
+    if (ch === '{') { depth++; i++; continue }
+    if (ch === '}') { depth--; i++; continue }
 
     // Only handle declarators at top level.
-    if (depth === 0) {
-      // Must be at a statement boundary — previous non-whitespace char is ;, {, } or start of file
-      // Simplest: require word boundary (previous char is whitespace or nothing).
+    if (depth === 0 && (ch === 'c' || ch === 'l' || ch === 'v')) {
       const prev = i > 0 ? code[i - 1] : ''
       const atBoundary = prev === '' || /\s/.test(prev) || prev === ';' || prev === '}' || prev === '{'
 
       if (atBoundary) {
-        const m = code.slice(i).match(/^(const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=/)
+        // Match at the cursor without creating a suffix for every candidate.
+        declaration.lastIndex = i
+        const m = declaration.exec(code)
         if (m) {
-          const name = m[2]
-          const stmtEnd = findStatementEnd(i + m[0].length)
+          const name = m[1]
+          const stmtEnd = findStatementEnd(declaration.lastIndex)
           if (seen.has(name)) {
-            // Strip the whole statement, replacing with a comment so source
-            // maps and line counts stay roughly stable.
-            out.push(`/* stx: deduped const ${name} */`)
-            i = stmtEnd
-            continue
+            // Copy unchanged text in spans and leave a marker for the removed statement.
+            out.push(code.slice(copiedThrough, i), `/* stx: deduped const ${name} */`)
+            copiedThrough = stmtEnd
           }
-          seen.add(name)
-          out.push(code.slice(i, stmtEnd))
+          else {
+            seen.add(name)
+          }
           i = stmtEnd
           continue
         }
       }
     }
 
-    out.push(ch)
     i++
   }
 
+  if (copiedThrough === 0) return code
+  out.push(code.slice(copiedThrough))
   return out.join('')
 }
 
