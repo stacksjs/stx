@@ -1,5 +1,30 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.951...v0.2.952)
+
+## ✨ Features
+
+- **serve**: renderReport says in the log what the page renderer is doing ([de0648a](https://github.com/stacksjs/stx/commit/de0648a)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#19](https://github.com/stacksjs/stx/issues/19))
+
+## 🐛 Bug Fixes
+
+- keep stx include ancestry local to each branch ([504d38e](https://github.com/stacksjs/stx/commit/504d38e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ⚡ Performance Improvements
+
+- hoist fragment head tags in one pass ([bf15611](https://github.com/stacksjs/stx/commit/bf15611)) _(by Chris Breuer <chris@stacksjs.com>)_
+- scan stx conditional tokens at their source offsets ([61db549](https://github.com/stacksjs/stx/commit/61db549)) _(by Chris Breuer <chris@stacksjs.com>)_
+- expand sibling stx includes in one document pass ([afe797d](https://github.com/stacksjs/stx/commit/afe797d)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.952 ([1f4505a](https://github.com/stacksjs/stx/commit/1f4505a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.950...v0.2.951)
 
 ## 🐛 Bug Fixes
