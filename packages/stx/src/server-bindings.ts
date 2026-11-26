@@ -36,6 +36,7 @@ const BOOLEAN_ATTRS = new Set([
 ])
 
 const LOOP_ATTRIBUTES = new Set([':for', 'x-for', 'v-for', '@for'])
+const LOOP_ASSIGNMENT = /(?::for|x-for|v-for|@for)\s*=/
 
 const VOID_TAGS = new Set([
   'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link',
@@ -64,30 +65,29 @@ export function reactiveLoopRanges(template: string): Array<[number, number]> {
  */
 export function reactiveLoopScopes(template: string): Array<{ start: number, end: number, names: string[], tag: string }> {
   const ranges: Array<{ start: number, end: number, names: string[], tag: string }> = []
+  if (!LOOP_ASSIGNMENT.test(template)) return ranges
   type Scope = (typeof ranges)[number]
-  const ancestors = new Map<string, Array<Scope | null>>()
+  const active = new Map<string, Array<Scope | null>>()
   for (const tag of scanHtmlTags(template)) {
     const tagName = tag.name.toLowerCase()
+    const stack = active.get(tagName)
     if (tag.closing) {
-      const scope = ancestors.get(tagName)?.pop()
+      const scope = stack?.pop()
       if (scope) scope.end = tag.end
+      if (stack?.length === 0) active.delete(tagName)
       continue
     }
-    const hasLoop = /(?::for|x-for|v-for|@for)\s*=/.test(tag.attributes)
-    const loopAttr = hasLoop ? parseAttributes(tag.attributes).find(attr => LOOP_ATTRIBUTES.has(attr.name)) : undefined
+    const loopAttr = LOOP_ASSIGNMENT.test(tag.attributes) ? parseAttributes(tag.attributes).find(attr => LOOP_ATTRIBUTES.has(attr.name)) : undefined
     const loopValue = typeof loopAttr?.value === 'string' ? loopAttr.value : null
     const scope = loopValue !== null
       ? { start: tag.start, end: tag.end, names: loopBoundNames(loopValue), tag: tagName }
       : null
     if (scope) ranges.push(scope)
-    if (!tag.selfClosing && !VOID_TAGS.has(tagName)) {
-      let stack = ancestors.get(tagName)
-      if (!stack) {
-        stack = []
-        ancestors.set(tagName, stack)
-      }
-      stack.push(scope)
-    }
+    // Only a live loop needs same-name descendants recorded. Ordinary
+    // elements outside it never contribute to any loop boundary.
+    if (tag.selfClosing || VOID_TAGS.has(tagName)) continue
+    if (stack) stack.push(scope)
+    else if (scope) active.set(tagName, [scope])
   }
 
   return ranges

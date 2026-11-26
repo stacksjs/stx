@@ -1114,6 +1114,8 @@ async function processCustomElementTags(
   // Client loop variables this markup inherits from a loop it was cut out of
   // (it is a component's slot; see renderComponentWithSlot).
   const inheritedLoopNames = inheritedClientLoopNames(context)
+  let loopScopeSource: string | undefined
+  let loopScopes: ReturnType<typeof reactiveLoopScopes> = []
 
   // Process kebab-case components (e.g., <my-component />)
   const kebabPattern = /[a-z][a-z0-9]*-[a-z0-9-]*/
@@ -1148,9 +1150,14 @@ async function processCustomElementTags(
 
     // Find all matching component tags
     const tags = findComponentTags(result, tagPattern, skipTags)
+    if (tags.length === 0) return result
     // Scanned per pass, over the string the tag offsets index into: an earlier
     // pass has already replaced tags and moved everything after them.
-    const clientLoopScopes = reactiveLoopScopes(result)
+    if (loopScopeSource !== result) {
+      loopScopeSource = result
+      loopScopes = reactiveLoopScopes(result)
+    }
+    const clientLoopScopes = loopScopes
     // Later children of a `space-y-*` / `space-x-*` stack, scanned only when the
     // markup names such a utility at all and only once a wrapped component
     // actually turns up inside it (stacksjs/stx#2178).

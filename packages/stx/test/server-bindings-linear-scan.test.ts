@@ -67,6 +67,15 @@ test('nested loop boundaries are matched once, including same-name elements', ()
   expect(scopes.at(-1)).toEqual({ start: opening.length * 3999, end: opening.length * 4000 + 6, names: ['row'], tag: 'div' })
 })
 
+test('a loop closes around ordinary elements of the same tag and leaves adjacent markup out', () => {
+  const loop = '<section x-for="row in rows"><section /><section><section v-for="item in row.items"></section></section></section>'
+  const html = `<section><div></div>${loop}<section>plain</section></section>`
+  expect(reactiveLoopScopes(html).map(scope => [scope.names, html.slice(scope.start, scope.end)])).toEqual([
+    [['row'], loop],
+    [['item'], '<section v-for="item in row.items"></section>'],
+  ])
+})
+
 test('the complete directive pipeline also finishes on the malformed suffix', async () => {
   const module = new URL('../src/process.ts', import.meta.url).href
   const config = new URL('../src/config.ts', import.meta.url).href
