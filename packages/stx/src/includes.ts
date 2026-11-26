@@ -657,6 +657,10 @@ export async function processIncludes(
   dependencies: Set<string>,
   includeStack: Set<string> = new Set(),
 ): Promise<string> {
+  // Siblings share the same ancestors, but completing one branch must not
+  // leave its paths in the chain used to detect cycles in the next branch.
+  const ancestors = new Set(includeStack).add(path.resolve(filePath))
+
   // Get the partials directory and resolve to absolute path if needed
   let partialsDir = options.partialsDir || path.join(path.dirname(filePath), 'partials')
 
@@ -1037,9 +1041,6 @@ catch (error: unknown) {
 
   // Add current file to include stack for circular detection
   // Use resolved absolute path for accurate tracking across recursive calls
-  const currentFilePath = path.resolve(filePath)
-  includeStack.add(currentFilePath)
-
   /**
    * Render an include failure in place, and tell anyone who asked to be told.
    *
@@ -1077,9 +1078,9 @@ catch (error: unknown) {
 
     // Check for circular includes using resolved absolute path
     const resolvedIncludePath = path.resolve(includeFilePath)
-    if (includeStack.has(resolvedIncludePath)) {
+    if (ancestors.has(resolvedIncludePath)) {
       // Build the include chain for a helpful error message
-      const chain = [...includeStack, resolvedIncludePath].map(p => path.basename(p)).join(' -> ')
+      const chain = [...ancestors, resolvedIncludePath].map(p => path.basename(p)).join(' -> ')
       return includeFailure(
         includePath,
         `Circular include detected: ${chain}`,
@@ -1582,7 +1583,7 @@ catch (e) {
       // As at page level, expand nested includes after their enclosing loop
       // and condition resolve. Their arguments can read the iteration scope.
       if (processedContent.includes('@include') || processedContent.includes('@partial')) {
-        processedContent = await processIncludes(processedContent, includeContext, includeFilePath, options, dependencies, includeStack)
+        processedContent = await processIncludes(processedContent, includeContext, includeFilePath, options, dependencies, ancestors)
       }
 
       // The SEO directives read variables, and a head partial is where those
