@@ -972,3 +972,60 @@ The capsule floats independently of the tab stacks: grouping adds no tab,
 does not narrow the tab bar, and leaves the screen's bottom safe area alone.
 Clear it with `tabAccessory: null`, or hide it together with the tab bar
 using `tabBarHidden: true`.
+
+#### Beside the tab bar
+
+`layout: 'beside'` is a different shape: ONE round action next to the tab
+bar, which **narrows** to make room for it, instead of a group floating above
+the bar's trailing end. It is the app's primary action, so it may carry a
+`badge` and a `menu` at once; a tap opens the menu when it has one and its
+`path` when it does not. It takes exactly one action and no companions.
+
+```ts
+craft.navigation.setChrome({
+  tabAccessory: floatingActions([
+    { path: '/add', label: 'Add', symbol: 'plus', badge: unread, menu: [
+      { path: '/workouts/new', title: 'Workout', symbol: 'dumbbell' },
+      { path: '/meals/new', title: 'Meal', symbol: 'fork.knife' },
+      { path: '/chat', title: 'Chat', symbol: 'message', badge: unread, accessibilityLabel: 'Chat with your coach', presentation: 'cover' },
+    ] },
+  ], 'beside'),
+})
+```
+
+The host is sent `{ layout: 'beside', path, title, symbol, accessibilityLabel,
+badge, menu }`. Every menu item, in any layout, may also carry an
+`accessibilityLabel` (read in place of its title), a `badge` (drawn at its
+trailing end: a number past 99 reads `99+`, text is cut to 8 characters) and
+`presentation: 'cover'`, which opens its path over everything instead of
+pushing it. It needs a Craft host that knows `'beside'`.
+
+On a web page `<FloatingActions layout="beside">` draws a single round
+button with the badge on it and its menu opening above it, towards the
+leading side, with each item's badge. Where it sits is the page's to say:
+place it beside the page's own tab bar with `class` (or the
+`--stx-floating-actions-*` properties).
+
+#### The top edge
+
+`setOptions({ topEdge })` says what is drawn under the status bar and the
+bar's buttons as content scrolls beneath them: `'fade'` blurs a band in,
+`'system'` is the platform's own edge (the host's default, unchanged when the
+option is left out), and `'none'` draws nothing there.
+
+#### In a screen test
+
+`phone.floatingAction()` is the `tabAccessory` the host is drawing now (the
+latest one set, by `setOptions` or `setChrome`), or `null`.
+`phone.chooseFloating(path)` taps the action or menu item that opens `path`,
+as the host does, and the path lands in `phone.opened`. An action with a menu
+only opens it, so `chooseFloating` refuses it and names the items to choose
+from instead.
+
+```ts
+const phone = mountNativeScreen(code, 'Today')
+await phone.settle()
+expect(phone.floatingAction()).toMatchObject({ layout: 'beside', path: '/add' })
+phone.chooseFloating('/chat')
+expect(phone.opened).toContain('/chat')
+```

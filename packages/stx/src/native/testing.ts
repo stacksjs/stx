@@ -37,6 +37,7 @@ import { existsSync, symlinkSync } from 'node:fs'
 import path from 'node:path'
 import vm from 'node:vm'
 import { compileSharedScreenBundle } from './compiler/bundle'
+import type { NativeTabAccessory } from './runtime/craft'
 import { NativeFormData } from './runtime/jsc-globals'
 import { type TestMutationError, validateTestMutations } from './testing-mutations'
 import { createTempDir } from '../temp-dir'
@@ -328,6 +329,14 @@ export interface NativeScreen {
   barButtons: () => string[]
   /** Tap a button in the navigation bar, or a choice in a button's menu, by id, as the host does. */
   tapBar: (id: string) => void
+  /** The floating actions the host is drawing now (the latest `tabAccessory`), or null for none. */
+  floatingAction: () => NativeTabAccessory | null
+  /**
+   * Tap a floating action, or choose an item of its menu, by path, as the host
+   * does: it opens the path (recorded in `opened`). An action with a menu only
+   * opens the menu, so choose one of its items instead.
+   */
+  chooseFloating: (path: string) => void
   /** The app going to the background (`background`) or coming back (`active`), as the host says. */
   appState: (state: 'active' | 'background' | 'inactive') => void
   /** The app sent to the background. */
@@ -868,6 +877,7 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
     send('EVENT', { handlerId: node.events[event], nativeEvent })
   }
   const appState = (state: 'active' | 'background' | 'inactive') => send('APP_STATE', { state })
+  const floatingAction = (): NativeTabAccessory | null => (bars.findLast(bar => bar && 'tabAccessory' in bar)?.tabAccessory ?? null) as NativeTabAccessory | null
   return {
     nodes, messages, mutationErrors, requests, headers, opened, replaced, moves, refused, stored, secureStorage, bars, snapshots, natives, streams, animations, alerts, picks, removed,
     hostRemoves: (action: 'back' | 'closeCover' | 'tabReselect') => {
@@ -889,6 +899,20 @@ export function mountNativeScreen(code: string, screen: string, options: NativeS
     type: (node: NativeNode, text: string) => press(node, 'onChangeText', { text }),
     /** The ids the navigation bar is currently offering on the right. */
     barButtons: (): string[] => ((bars.findLast(bar => bar.rightButtons !== undefined)?.rightButtons || []) as { id: string }[]).map(button => button.id),
+    floatingAction,
+    chooseFloating: (path: string) => {
+      if (ended) return
+      const accessory = floatingAction()
+      if (!accessory) throw new Error('no floating actions are showing')
+      const controls = [...(accessory.companions ?? []), accessory] as Array<{ path: string, menu?: Array<{ path: string }> }>
+      const control = controls.find(candidate => candidate.path === path)
+      // As with a bar button: the host opens the menu and reports nothing, so a
+      // test chooses an item of it.
+      if (control?.menu?.length) throw new Error(`floating action ${path} opens a menu: choose one of ${control.menu.map(item => item.path).join(', ')}`)
+      const item = control ?? controls.flatMap(candidate => candidate.menu ?? []).find(candidate => candidate.path === path)
+      if (!item) throw new Error(`no floating action or menu item opens ${path}`)
+      opened.push(path)
+    },
     /** Tap a button in the navigation bar, or a choice in a button's menu, by id, as the host does. */
     tapBar: (id: string) => {
       type Choice = { id: string, disabled?: boolean }

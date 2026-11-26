@@ -23,7 +23,7 @@ export interface NativeFloatingAction {
   active?: boolean
   /** An unread count or a short word. A number past 99 reads `99+`; zero and empty show nothing. Only the last action carries one. */
   badge?: string | number | null
-  /** Destinations it offers instead of opening `path`. Any action but the last may carry one. */
+  /** Destinations it offers instead of opening `path`. Any action but the last may carry one, and the one action `beside` the tab bar. */
   menu?: NativeFloatingActionChoice[]
   /**
    * Its picture on a web page: an icon class (`i-lucide-plus`). A browser has
@@ -35,19 +35,25 @@ export interface NativeFloatingAction {
   href?: string
 }
 
-/**
- * `vertical` and `horizontal` join the actions in one capsule of glass, as the
- * map controls in Maps are joined; `separate` keeps a round control each.
- */
 /** One destination of an action's menu, with what a web page draws and opens for it. */
-export interface NativeFloatingActionChoice extends NativeAccessoryMenuItem {
+export interface NativeFloatingActionChoice extends Omit<NativeAccessoryMenuItem, 'badge'> {
+  /** Drawn at the item's trailing end. A number past 99 reads `99+`; zero and empty show nothing. */
+  badge?: string | number | null
   /** Its picture on a web page: an icon class. */
   icon?: string
   /** Where it goes on a web page, when that is not `path`. */
   href?: string
 }
 
-export type NativeFloatingActionsLayout = 'vertical' | 'horizontal' | 'separate'
+/**
+ * `vertical` and `horizontal` join the actions in one capsule of glass, as the
+ * map controls in Maps are joined; `separate` keeps a round control each.
+ * `beside` is one round action next to the tab bar, which narrows for it; that
+ * action may carry a badge and a menu at once.
+ */
+export type NativeFloatingActionsLayout = 'vertical' | 'horizontal' | 'separate' | 'beside'
+
+const LAYOUTS: ReadonlySet<string> = new Set(['vertical', 'horizontal', 'separate', 'beside'])
 
 /** The most actions one group holds. */
 export const MAX_FLOATING_ACTIONS = 3
@@ -55,6 +61,22 @@ export const MAX_FLOATING_ACTIONS = 3
 function badgeText(badge: NativeFloatingAction['badge']): string | null {
   if (typeof badge === 'number') return badge > 99 ? '99+' : badge > 0 ? String(Math.floor(badge)) : null
   return badge ? String(badge).slice(0, 8) : null
+}
+
+/** A menu as the host is sent it: what only a web page uses stays out. */
+function hostMenu(owner: string, menu: readonly NativeFloatingActionChoice[]): NativeAccessoryMenuItem[] {
+  return menu.map((choice) => {
+    if (choice.presentation !== undefined && choice.presentation !== 'cover') throw new TypeError(`floatingActions: ${owner}'s menu item ${choice.path} has an unknown presentation "${String(choice.presentation)}"`)
+    const badge = badgeText(choice.badge)
+    return {
+      path: choice.path,
+      title: choice.title,
+      ...(choice.symbol ? { symbol: choice.symbol } : {}),
+      ...(choice.accessibilityLabel ? { accessibilityLabel: choice.accessibilityLabel } : {}),
+      ...(badge ? { badge } : {}),
+      ...(choice.presentation ? { presentation: choice.presentation } : {}),
+    }
+  })
 }
 
 /**
@@ -77,10 +99,25 @@ function badgeText(badge: NativeFloatingAction['badge']): string | null {
  * The host's group has one primary action, the last: it alone shows a badge,
  * and it always opens its path. A badge or a menu anywhere else is a mistake
  * in the list rather than something to draw differently, so it is refused.
+ *
+ * `beside` is the exception, and holds exactly one action: a round control next
+ * to the tab bar (which narrows for it) that may carry a badge and a menu at
+ * once, as an Add button whose menu holds the quick-add destinations.
+ *
+ * ```ts
+ * craft.navigation.setChrome({
+ *   tabAccessory: floatingActions([
+ *     { path: '/add', label: 'Add', symbol: 'plus', badge: unread, menu: [
+ *       { path: '/workouts/new', title: 'Workout', symbol: 'dumbbell' },
+ *       { path: '/chat', title: 'Chat', symbol: 'message', badge: unread, presentation: 'cover' },
+ *     ] },
+ *   ], 'beside'),
+ * })
+ * ```
  */
 export function floatingActions(actions: ReadonlyArray<NativeFloatingAction | null | undefined | false>, layout: NativeFloatingActionsLayout = 'vertical'): NativeTabAccessory | null {
   if (!Array.isArray(actions)) throw new TypeError('floatingActions needs a list of actions')
-  if (layout !== 'vertical' && layout !== 'horizontal' && layout !== 'separate') throw new TypeError(`floatingActions: unknown layout "${String(layout)}"`)
+  if (!LAYOUTS.has(layout)) throw new TypeError(`floatingActions: unknown layout "${String(layout)}"`)
   const list = actions.filter(Boolean) as NativeFloatingAction[]
   if (!list.length) return null
   if (list.length > MAX_FLOATING_ACTIONS) throw new TypeError(`floatingActions holds at most ${MAX_FLOATING_ACTIONS} actions, got ${list.length}`)
@@ -92,6 +129,20 @@ export function floatingActions(actions: ReadonlyArray<NativeFloatingAction | nu
     seen.add(action.path)
   }
   const primary = list[list.length - 1]
+  if (layout === 'beside') {
+    if (list.length !== 1) throw new TypeError(`floatingActions: 'beside' holds one action, got ${list.length}`)
+    const badge = badgeText(primary.badge)
+    return {
+      layout: 'beside',
+      path: primary.path,
+      title: primary.label,
+      symbol: primary.symbol,
+      ...(primary.accessibilityLabel ? { accessibilityLabel: primary.accessibilityLabel } : {}),
+      ...(primary.active ? { selected: true } : {}),
+      badge,
+      ...(primary.menu?.length ? { menu: hostMenu(primary.path, primary.menu) } : {}),
+    }
+  }
   if (primary.menu?.length) throw new TypeError(`floatingActions: the last action (${primary.path}) opens its path; put the menu on an earlier one`)
   const companions = list.slice(0, -1).map((action) => {
     if (badgeText(action.badge)) throw new TypeError(`floatingActions: only the last action shows a badge, not ${action.path}`)
@@ -102,7 +153,7 @@ export function floatingActions(actions: ReadonlyArray<NativeFloatingAction | nu
       ...(action.accessibilityLabel ? { accessibilityLabel: action.accessibilityLabel } : {}),
       ...(action.active ? { selected: true } : {}),
       // What only a web page uses stays out of what the host is sent.
-      ...(action.menu?.length ? { menu: action.menu.map(choice => ({ path: choice.path, title: choice.title, ...(choice.symbol ? { symbol: choice.symbol } : {}) })) } : {}),
+      ...(action.menu?.length ? { menu: hostMenu(action.path, action.menu) } : {}),
     }
   })
   return {

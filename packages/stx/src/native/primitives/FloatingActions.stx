@@ -8,8 +8,10 @@
       { path: '/messages', label: 'Messages', symbol: 'message.fill', badge: unread },
     ]" />
 
-  `layout` is `vertical` (the default), `horizontal`, or `separate` for a
-  round control each. The host draws them (Liquid Glass on iOS 26), so this
+  `layout` is `vertical` (the default), `horizontal`, `separate` for a
+  round control each, or `beside`: ONE round action next to the tab bar,
+  which narrows for it, carrying a badge and a menu at once (an Add button
+  whose menu holds the quick-add destinations). Its menu opens above it. The host draws them (Liquid Glass on iOS 26), so this
   takes no room in the screen's own layout; they follow `actions` as it
   changes and leave with the screen.
 

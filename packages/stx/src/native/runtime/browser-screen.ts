@@ -65,7 +65,16 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
       row.type = 'button'
       row.setAttribute('role', 'menuitem')
       row.textContent = choice.title
-      row.style.cssText = 'display:block;width:100%;min-height:48px;border:0;border-radius:10px;background:transparent;color:inherit;font:inherit;text-align:left;padding:12px'
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;width:100%;min-height:48px;border:0;border-radius:10px;background:transparent;color:inherit;font:inherit;text-align:left;padding:12px'
+      const badge = typeof choice.badge === 'string' ? choice.badge.slice(0, 8) : ''
+      if (choice.accessibilityLabel || badge) row.setAttribute('aria-label', `${choice.accessibilityLabel || choice.title}${badge ? `, ${badge}` : ''}`)
+      if (badge) {
+        const count = document.createElement('span')
+        count.textContent = badge
+        count.setAttribute('aria-hidden', 'true')
+        count.style.cssText = 'margin-inline-start:auto;background:#ff3b30;color:white;border-radius:10px;padding:1px 6px;font-size:12px'
+        row.append(count)
+      }
       row.onclick = () => { close(); platform.navigate(choice.path) }
       menu.append(row)
       return row

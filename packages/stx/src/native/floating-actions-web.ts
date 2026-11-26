@@ -7,7 +7,9 @@
  * website and they drifted from the app's: two separate circles side by side
  * where the app has one capsule. This draws the same group from the same
  * actions: one capsule of glass at the trailing edge, a symbol each, the last
- * one's badge, a short menu where an action offers one.
+ * one's badge, a short menu where an action offers one. `beside` is a single
+ * round button, its badge on it and its menu opening above it towards the
+ * leading side; the page places it beside its own tab bar with a class.
  *
  * Its look is one stylesheet of `:where()` rules, which weigh nothing: any
  * class the page puts on the group, the badge or the menu (`class`,
@@ -62,6 +64,7 @@ export const FLOATING_ACTIONS_CSS = [
   `:where(${G}="horizontal"],${G}="separate"]){flex-direction:row}`,
   `:where(${G}="separate"]){gap:10px}`,
   `:where(${G}="vertical"],${G}="horizontal"]){border-radius:24px;${GLASS}}`,
+  `:where(${G}="beside"]) ${A}{${GLASS}}`,
   `${A}{position:relative;display:flex;align-items:center;justify-content:center;min-width:48px;height:48px;flex-shrink:0;margin:0;padding:0;border:0;border-radius:24px;background:transparent;color:inherit;font:inherit;text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent}`,
   `:where(${G}="vertical"]) ${A}{height:55px}`,
   `:where(${G}="horizontal"]) ${A}{min-width:55px}`,
@@ -80,6 +83,7 @@ export const FLOATING_ACTIONS_CSS = [
   `:where(${G}="vertical"]) :where([data-floating-actions-menu]){inset-inline-end:calc(100% + 8px);bottom:0}`,
   `:where([data-floating-actions-choice]){display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:12px;color:inherit;text-decoration:none;font-size:16px;line-height:20px}`,
   `:where([data-floating-actions-choice]) :where([data-floating-action-symbol]){width:20px;height:20px}`,
+  `:where([data-floating-actions-choice-badge]){margin-inline-start:auto;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:${TINT};color:#fff;font-size:12px;font-weight:600;line-height:20px;text-align:center}`,
 ].join('\n')
 
 function badgeText(badge: NativeFloatingAction['badge']): string | null {
@@ -135,10 +139,21 @@ export function mountFloatingActionsWeb(doc: Document = document): FloatingActio
       link.setAttribute('role', 'menuitem')
       link.href = sitePath(choice.href, choice.path)
       link.setAttribute('data-floating-actions-choice', choice.path)
+      const badge = badgeText(choice.badge)
+      // Named as the host names it: its label, with the badge read after it.
+      if (choice.accessibilityLabel || badge) link.setAttribute('aria-label', `${choice.accessibilityLabel || choice.title}${badge ? `, ${badge}` : ''}`)
       if (choice.icon) link.append(symbol(choice.icon, choice.title))
       const title = doc.createElement('span')
       title.textContent = choice.title
       link.append(title)
+      if (badge) {
+        const count = doc.createElement('span')
+        count.setAttribute('data-floating-actions-choice-badge', '')
+        count.setAttribute('aria-hidden', 'true')
+        if (classes.badge) count.className = classes.badge
+        count.textContent = badge
+        link.append(count)
+      }
       link.addEventListener('click', () => closeMenu?.())
       menu.append(link)
     }

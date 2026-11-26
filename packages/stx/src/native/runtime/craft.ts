@@ -89,6 +89,12 @@ export interface NativeAccessoryMenuItem {
   path: string
   title: string
   symbol?: string
+  /** Read in place of `title` when the title alone is not enough. */
+  accessibilityLabel?: string
+  /** Short text drawn at the item's trailing end (an unread count, "New"): at most 8 characters. */
+  badge?: string
+  /** `'cover'`: choosing it opens `path` over everything (see NativeOpenOptions). Left out, it is pushed. */
+  presentation?: NativeOpenOptions['presentation']
 }
 
 export interface NativeAccessoryCompanion {
@@ -109,8 +115,8 @@ export interface NativeAccessoryCompanion {
   menu?: NativeAccessoryMenuItem[]
 }
 
-/** Floating actions outside the tab stacks, in companion order followed by the primary action. */
-export interface NativeTabAccessory extends Omit<NativeAccessoryCompanion, 'menu'> {
+/** Floating actions over the tab bar, in companion order followed by the primary action. */
+export interface NativeTabAccessoryGroup extends Omit<NativeAccessoryCompanion, 'menu'> {
   badge?: string | null
   iconOnly?: boolean
   /** Join the icons in one material capsule, above the trailing edge of the tab bar.
@@ -119,7 +125,24 @@ export interface NativeTabAccessory extends Omit<NativeAccessoryCompanion, 'menu
    */
   layout?: 'vertical' | 'horizontal'
   companions?: NativeAccessoryCompanion[]
+  menu?: never
 }
+
+/**
+ * One round action beside the tab bar, which narrows to make room for it. It
+ * is the only action (no companions), and it may open a menu: a tap shows
+ * `menu` when it has one and opens `path` when it does not.
+ */
+export interface NativeTabAccessoryBeside extends Omit<NativeAccessoryCompanion, 'menu'> {
+  layout: 'beside'
+  badge?: string | null
+  menu?: NativeAccessoryMenuItem[]
+  companions?: never
+  iconOnly?: never
+}
+
+/** What the host draws floating actions from (see `floatingActions` in `@stacksjs/stx/native`). */
+export type NativeTabAccessory = NativeTabAccessoryGroup | NativeTabAccessoryBeside
 
 export interface NativeNavigationOptions {
   title?: string
@@ -137,6 +160,12 @@ export interface NativeNavigationOptions {
   /** A destination beside the tab pill. Compact actions may carry up to two companion destinations; null removes the group. */
   tabAccessory?: NativeTabAccessory | null
   tabItem?: NativeTabItemOptions
+  /**
+   * The band under the status bar and the bar's buttons as content scrolls
+   * beneath them: `'fade'` blurs it in, `'system'` is the platform's own
+   * edge (the host's default), `'none'` draws nothing there.
+   */
+  topEdge?: 'fade' | 'system' | 'none'
   /**
    * Keep this screen in its stack (Craft 0.0.539 and later): nothing takes it
    * out, not Back in any form, a tab tapped again, `popToRoot()`, a replace,
