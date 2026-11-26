@@ -5,6 +5,9 @@ import { requiresAsyncBody } from './module-syntax'
 import { stripBindingLiterals } from './strip-literals'
 
 export function usesImportMeta(code: string): boolean {
+  // Stripping strings and comments copies the whole script. An import token
+  // must first be followed by a dot or a comment which could hide that dot.
+  if (!/\bimport\s*(?:\.|\/[/*])/.test(code)) return false
   return /\bimport\s*\.\s*meta\b/.test(stripBindingLiterals(code))
 }
 

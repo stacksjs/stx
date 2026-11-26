@@ -4,7 +4,7 @@ import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { clearComposableCache, getComposableScript } from '../../src/composable-loader'
 import { scanHtmlScriptElements } from '../../src/html-masking'
-import { orderPageModules } from '../../src/page-module-order'
+import { orderPageModules, usesImportMeta } from '../../src/page-module-order'
 import { createTempDir } from '../../src/temp-dir'
 
 test('static prose, URLs, comments and literal binding strings do not execute modules', async () => {
@@ -30,6 +30,11 @@ test('module ordering is explicit and classic-only pages are unchanged', () => {
   expect(orderPageModules(transformed)).toBe(transformed)
 })
 
+test('module metadata detection skips dynamic imports and preserves comment-separated tokens', () => {
+  expect(usesImportMeta(`const name = 'import.meta'; const load = () => import('./file')`)).toBe(false)
+  expect(usesImportMeta('const value = import /* comment */ . meta.url')).toBe(true)
+  expect(usesImportMeta('const value = import // comment\n .meta.url')).toBe(true)
+})
 
 test('explicit ESM exports and quoted script attributes retain their module syntax', () => {
   const output = orderPageModules('<script data-stx-scoped type="module" nonce="a&amp;b" data-note="x > y">export const value = await Promise.resolve(import.meta.url);</script>')
