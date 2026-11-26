@@ -155,6 +155,51 @@ const isAdmin = user !== undefined && user.role === 'admin'
 @endif`)
     expect(diagnostics).toEqual([])
   })
+
+  // #2227: the first line of a multi-line ternary reads as a condition, so
+  // `@if (row)` was expanded to `flag && kind === 'ssl'`, which narrows the
+  // operands and never `row` itself.
+  it.each([
+    ['flag && kind === \'ssl\''],
+    ['kind === \'ssl\''],
+    ['(flag && kind === \'ssl\')'],
+  ])('does not take the first line of a ternary on %s for an alias', async (condition) => {
+    const diagnostics = await check(`<script server>
+const kind = String(Math.random())
+const flag = Math.random() > 0.5
+const row = ${condition}
+  ? { issuer: 'x' }
+  : null
+</script>
+@if (row)
+  <p>{{ row.issuer }}</p>
+@endif`)
+    expect(diagnostics).toEqual([])
+  })
+
+  it('does not take a condition continued by an operator on the next line', async () => {
+    const diagnostics = await check(`<script server>
+const user = Math.random() > 0.5 ? { name: 'a' } : null
+const ready = user !== null
+  && user.name.length > 0
+</script>
+@if (ready)
+  <p>{{ user.name }}</p>
+@endif`)
+    expect(diagnostics).toEqual([])
+  })
+
+  it('still reports an unguarded read of the ternary', async () => {
+    const diagnostics = await check(`<script server>
+const kind = String(Math.random())
+const flag = Math.random() > 0.5
+const row = flag && kind === 'ssl'
+  ? { issuer: 'x' }
+  : null
+</script>
+<p>{{ row.issuer }}</p>`)
+    expect(diagnostics.map(d => d.code)).toContain(18047)
+  })
 })
 
 describe('a bare component event handler', () => {

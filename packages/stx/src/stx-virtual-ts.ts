@@ -1768,18 +1768,56 @@ export function collectConditionAliases(codes: readonly string[]): Map<string, s
         continue
       const name = match[2]
       const start = index + match[0].length - match[3].length
-      const original = code.slice(start, index + match[0].length).trim().replace(/;$/, '').trim()
-      const shape = match[3]
+      // The statement runs on while the next line joins it or this one is
+      // left open: `const ready = user !== null` / `  && user.name` is one
+      // condition, and reading only its first line lost half of it.
+      let end = index + match[0].length
+      while (end < stripped.length && (continuesOnNextLine(stripped, end)
+        || endsOpen(code, stripped, start, end)
+        || !bracketDepths(stripped.slice(start, end)).balanced)) {
+        const next = stripped.slice(end).search(/\S/)
+        if (next < 0)
+          break
+        const lineEnd = stripped.indexOf('\n', end + next)
+        end = lineEnd < 0 ? stripped.length : lineEnd
+      }
+      const original = code.slice(start, end).replace(/\s*\n\s*/g, ' ').trim().replace(/;$/, '').trim()
+      const shape = stripped.slice(start, end)
       const usable = CONDITION.test(shape)
         && !/\bawait\b|=>|\bfunction\b|[{}]/.test(shape)
-        // On the original text: the stripped one has blanked a trailing
-        // string, so `=== 'draft'` would read as a dangling `===`.
-        && !/[,+\-*/%&|?:=]$/.test(original)
+        // A ternary is a value, not a condition: `const row = flag && kind
+        // === 'ssl' ? user : null` expanded into `@if (row)` narrowed `flag`
+        // and `kind` and never `row`, and every read of `row` under the
+        // guard was "possibly null" (#2227).
+        && !/\?(?![.?])/.test(shape)
+        && !endsOpen(code, stripped, start, end)
         && bracketDepths(shape).balanced
       found.set(name, found.has(name) || !usable ? null : original)
     }
   }
   return new Map([...found].filter((entry): entry is [string, string] => entry[1] !== null))
+}
+
+/**
+ * Whether the code in `start..end` ends on an operator that leaves it open.
+ * Read off both copies: the stripped one has blanked a trailing string, so
+ * `=== 'draft'` reads there as a dangling `===`, and the original still has
+ * a trailing comment, so `// ready?` reads there as a dangling `?`.
+ */
+function endsOpen(code: string, stripped: string, start: number, end: number): boolean {
+  const kept = stripped.slice(start, end).trimEnd()
+  return /[,+\-*/%&|?:=]$/.test(kept) && /^\s*(?:\/\/|\/\*|$)/.test(code.slice(start + kept.length, end))
+}
+
+/**
+ * Whether the statement ending a line at `end` goes on past it: the next line
+ * that has code opens with an operator, a member access, or a bracket that
+ * JavaScript would join to the line before. Erring towards yes only costs an
+ * alias, never invents one.
+ */
+function continuesOnNextLine(stripped: string, end: number): boolean {
+  const rest = stripped.slice(end).replace(/^\s+/, '')
+  return /^(?:[?:.,&|+\-*/%=<>^[(]|!=|(?:in|instanceof|as|satisfies)\b)/.test(rest)
 }
 
 /**
