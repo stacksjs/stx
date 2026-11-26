@@ -1,5 +1,22 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.952...v0.2.953)
+
+## 🐛 Bug Fixes
+
+- **router**: bound waiting on stalled prefetches ([0bcb46b](https://github.com/stacksjs/stx/commit/0bcb46b)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+- **typecheck**: check a <script lang="js"> block as JavaScript ([46118a3](https://github.com/stacksjs/stx/commit/46118a3)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2228](https://github.com/stacksjs/stx/issues/2228))
+- **typecheck**: keep @if narrowing for a const declared as a ternary ([8952bee](https://github.com/stacksjs/stx/commit/8952bee)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2227](https://github.com/stacksjs/stx/issues/2227))
+
+## 🔧 Chores
+
+- release v0.2.953 ([1dfaa85](https://github.com/stacksjs/stx/commit/1dfaa85)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.951...v0.2.952)
 
 ## ✨ Features
