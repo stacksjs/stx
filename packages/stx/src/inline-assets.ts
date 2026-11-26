@@ -119,6 +119,15 @@ function assertInlinableForClassicScript(code: string, source: string): void {
   throw error
 }
 
+/**
+ * Carried by a script this file inlined, naming the file it came from.
+ *
+ * The client-script pass skips scripts with `src` because they are files, not
+ * the view's own code. Inlining removes the `src`, so this attribute is what
+ * keeps the script out of that pass (see process.ts).
+ */
+export const INLINED_ATTRIBUTE = 'data-stx-inlined'
+
 export async function processInlineAssets(
   template: string,
   filePath: string,
@@ -141,6 +150,7 @@ export async function processInlineAssets(
     }
 
     const resolvedPath = await resolveInlinePath(srcPath, templateDir, filePath)
+    const isModule = /\btype\s*=\s*["']module["']/i.test(`${before} ${after}`)
 
     if (resolvedPath) {
       try {
@@ -157,12 +167,20 @@ export async function processInlineAssets(
           })
           if (result.outputs.length > 0) {
             fileContent = await result.outputs[0].text()
-            assertInlinableForClassicScript(fileContent, srcPath)
+            if (!isModule)
+              assertInlinableForClassicScript(fileContent, srcPath)
           }
         }
 
-        // Replace with inline script
-        const inlineScript = `<script>\n// Source: ${srcPath}\n${fileContent}\n</script>`
+        // Replace with an inline script that is still the same script: its own
+        // attributes (a module stays a module, with module timing and syntax),
+        // marked so the client-script pass leaves it alone. Unmarked, it was
+        // indistinguishable from the view's own `<script>` block and was
+        // wrapped as the page's scope, so the bundle's top-level names (a
+        // minifier's `a`, `l`, ...) replaced the page's for every component
+        // slot rendered after it.
+        const attrs = `${before} ${after}`.replace(/\s+/g, ' ').trim()
+        const inlineScript = `<script${attrs ? ` ${attrs}` : ''} ${INLINED_ATTRIBUTE}="${srcPath}">\n// Source: ${srcPath}\n${fileContent.replace(/<\/script/gi, '<\\/script')}\n</script>`
         output = output.replace(fullMatch, inlineScript)
 
         // Reset regex to continue searching

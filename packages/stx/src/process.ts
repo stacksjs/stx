@@ -2584,7 +2584,8 @@ else {
   // Transform client <script> blocks: resolve @stores imports, inject event
   // bindings into the script scope, and auto-wrap in a scoped IIFE.
   // Client scripts include: <script>, <script client>, <script type="module">, etc.
-  // Excludes: <script server>, <script src="...">, <script data-stx-scoped>
+  // Excludes: <script server>, <script src="...">, a file inlined from one
+  // (`data-stx-inlined`, see inline-assets.ts), <script data-stx-scoped>
   const eventBindings = (context.__stx_event_bindings || []) as import('./events').ParsedEvent[]
   let clientScriptsTransformed = false
   const clientScriptMatches: { match: string, attrs: string, content: string }[] = []
@@ -2606,7 +2607,7 @@ else {
   // never saw the Product schema).
   const { scanScriptTags } = await importOnce('stx/signal-processing', () => import('./signal-processing'))
   for (const s of scanScriptTags(output, {
-    skipAttrs: /\bserver\b|\bsrc\s*=|\bdata-stx-scoped\b|\bdata-stx-router\b|\btype\s*=\s*["'](?!(?:text\/javascript|application\/javascript|module)["'])[^"']*["']/,
+    skipAttrs: /\bserver\b|\bsrc\s*=|\bdata-stx-inlined\b|\bdata-stx-scoped\b|\bdata-stx-router\b|\btype\s*=\s*["'](?!(?:text\/javascript|application\/javascript|module)["'])[^"']*["']/,
   })) {
     clientScriptMatches.push({ match: s.fullMatch, attrs: s.attrs, content: s.body })
   }
