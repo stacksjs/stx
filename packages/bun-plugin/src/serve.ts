@@ -1016,6 +1016,21 @@ export interface ServeOptions extends RenderAdmissionOptions {
   renderCacheSkip?: (request: Request) => boolean
 
   /**
+   * The host a `renderCacheVary: 'url'` entry belongs to. Defaults to the
+   * request URL's host.
+   *
+   * Behind a reverse proxy that host is whatever the proxy named the
+   * upstream (`127.0.0.1:3000`), not the address the visitor typed, and the
+   * visitor's own arrives in a forwarding header only the application knows
+   * whether to believe. So, as with `clientAddress`, the application says.
+   * A single-site application can return one constant: the host then plays
+   * no part in the key, and a render warmed over loopback is the one a
+   * visitor gets. A multi-site one returns the trusted visitor host. A
+   * resolver that throws makes that request uncacheable.
+   */
+  renderCacheHost?: (request: Request) => string | null | undefined
+
+  /**
    * Keep the render cache on disk, so a restart does not render every page
    * again (stacksjs/stx#2133). Only with `renderCache` and
    * `renderCacheVary: 'source'`.
@@ -2855,7 +2870,8 @@ function __stxOverlay(errs){
       return `${filePath}\0${locale}\0${activeServeHost || ''}\0${activeServeSearch || ''}`
     try {
       const url = new URL(raw)
-      return `${filePath}\0${locale}\0${url.host}\0${url.pathname}${url.search}`
+      const host = options.renderCacheHost ? (options.renderCacheHost(reqCtx!.request!) ?? '') : url.host
+      return `${filePath}\0${locale}\0${host}\0${url.pathname}${url.search}`
     }
     catch {
       return `${filePath}\0uncacheable:${crypto.randomUUID()}`

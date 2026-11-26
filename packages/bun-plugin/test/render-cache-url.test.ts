@@ -65,6 +65,7 @@ serve({
   stxModule: stx,
   renderCache: true,
   renderCacheVary: 'url',
+  renderCacheHost: request => request.headers.get('x-site') || 'one-site',
   renderCacheSkip: request => /(?:^|;\\s*)session=/.test(request.headers.get('cookie') || ''),
 })
 `)
@@ -130,6 +131,15 @@ describe('render cache keyed by address', () => {
     expect(marker(await get('/', { cookie: 'session=abc' }))).not.toBe(signedIn)
     expect(marker(await get('/'))).toBe(anonymous)
     expect(marker(await get('/post/first', { cookie: 'session=abc' }))).not.toBe(marker(await get('/post/first')))
+  })
+
+  test('the application decides which host a render belongs to, not the proxy\'s Host header', async () => {
+    // A proxy names the upstream in Host. With a resolver that ignores it, a
+    // render warmed over loopback is the one a visitor through the proxy gets.
+    const warmed = marker(await get('/post/second?via=host', { host: '127.0.0.1:1' }))
+    expect(marker(await get('/post/second?via=host', { host: 'upstream.internal:3000' }))).toBe(warmed)
+    // And a host the application says is another site has its own render.
+    expect(marker(await get('/post/second?via=host', { 'x-site': 'other.example' }))).not.toBe(warmed)
   })
 
   test('a page that opts out renders for each request', async () => {
