@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.949...v0.2.950)
+
+## ✨ Features
+
+- **router**: let a stx:before-navigate listener refuse the navigation ([4339697](https://github.com/stacksjs/stx/commit/4339697)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.950 ([b350194](https://github.com/stacksjs/stx/commit/b350194)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.948...v0.2.949)
 
 ## 🐛 Bug Fixes
