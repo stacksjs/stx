@@ -387,66 +387,50 @@ export function cloakStyleFragment(html: string): string | null {
  */
 export function hoistLeadingHeadTags(content: string): { body: string, hoisted: string[] } {
   const hoisted: string[] = []
-  let i = 0
+  const body: string[] = []
+  let offset = 0
+  let keptFrom = 0
 
-  while (i < content.length) {
-    const rest = content.slice(i)
-
-    const ws = rest.match(/^\s+/)
-    if (ws) { i += ws[0].length; continue }
-
-    if (rest.startsWith('<!--')) {
-      const end = content.indexOf('-->', i)
+  while (offset < content.length) {
+    DOCUMENT_PREFIX_WHITESPACE.lastIndex = offset
+    if (DOCUMENT_PREFIX_WHITESPACE.test(content)) {
+      offset = DOCUMENT_PREFIX_WHITESPACE.lastIndex
+      continue
+    }
+    if (content.startsWith('<!--', offset)) {
+      const end = content.indexOf('-->', offset)
       if (end === -1) break
-      i = end + 3
+      offset = end + 3
       continue
     }
 
-    // Stepped over, not hoisted — a script here is usually the signals/setup
-    // block, and it must keep its position relative to the markup it drives.
-    const scriptOpen = rest.match(/^<script\b[^>]*>/i)
-    if (scriptOpen) {
-      const end = content.toLowerCase().indexOf('</script>', i + scriptOpen[0].length)
-      if (end === -1) break
-      i = end + '</script>'.length
-      continue
+    HEAD_HOIST_OPEN.lastIndex = offset
+    const open = HEAD_HOIST_OPEN.exec(content)
+    if (!open) break
+    const tag = open[1].toLowerCase()
+    let end = HEAD_HOIST_OPEN.lastIndex
+    if (tag === 'script' || tag === 'style') {
+      const close = tag === 'script' ? DOCUMENT_PREFIX_SCRIPT_CLOSE : DOCUMENT_PREFIX_STYLE_CLOSE
+      close.lastIndex = end
+      if (!close.test(content)) break
+      end = close.lastIndex
     }
 
-    const link = rest.match(/^<link\b[^>]*>/i)
-    if (link) { hoisted.push(link[0]); i += link[0].length; continue }
-
-    // <meta> too: a fragment declaring `stx-layout` needs it in <head> for the
-    // router's layout-group comparison to read it off the fetched document.
-    const meta = rest.match(/^<meta\b[^>]*>/i)
-    if (meta) { hoisted.push(meta[0]); i += meta[0].length; continue }
-
-    const style = rest.match(/^<style\b[^>]*>[\s\S]*?<\/style>/i)
-    if (style) { hoisted.push(style[0]); i += style[0].length; continue }
-
-    break
+    // Remove only the ranges found in this pass. Copies of a tag inside a
+    // comment or script belong to the body, even if that tag was also hoisted.
+    if (tag !== 'script') {
+      if (keptFrom < offset) body.push(content.slice(keptFrom, offset))
+      hoisted.push(content.slice(offset, end))
+      keptFrom = end
+    }
+    offset = end
   }
 
   if (hoisted.length === 0)
     return { body: content, hoisted }
 
-  // Rebuild the body without the hoisted tags, keeping everything that was
-  // stepped over. Splicing by index would drop the scripts and comments.
-  let body = ''
-  let j = 0
-  while (j < content.length && j < i) {
-    const rest = content.slice(j)
-    const link = rest.match(/^<link\b[^>]*>/i)
-    if (link && hoisted.includes(link[0])) { j += link[0].length; continue }
-    const meta = rest.match(/^<meta\b[^>]*>/i)
-    if (meta && hoisted.includes(meta[0])) { j += meta[0].length; continue }
-    const style = rest.match(/^<style\b[^>]*>[\s\S]*?<\/style>/i)
-    if (style && hoisted.includes(style[0])) { j += style[0].length; continue }
-    body += content[j]
-    j++
-  }
-  body += content.slice(i)
-
-  return { body, hoisted }
+  body.push(content.slice(keptFrom))
+  return { body: body.join(''), hoisted }
 }
 
 /**
@@ -646,6 +630,7 @@ ${bodyParts.join('\n')}
 // close tag. On a rendered page those temporary strings are much larger than
 // the handful of bytes this predicate needs to inspect (#1945).
 const DOCUMENT_PREFIX_WHITESPACE = /\s+/y
+const HEAD_HOIST_OPEN = /<(script|style|link|meta)\b[^>]*>/iy
 const DOCUMENT_PREFIX_PREAMBLE = /<(script|style)\b[^>]*>/iy
 const DOCUMENT_PREFIX_SCRIPT_CLOSE = /<\/script>/gi
 const DOCUMENT_PREFIX_STYLE_CLOSE = /<\/style>/gi

@@ -57,6 +57,13 @@ describe('hoistLeadingHeadTags', () => {
     expect(body).toContain('<div>x</div>')
   })
 
+  it('preserves tag text in leading scripts and comments verbatim', () => {
+    const tag = '<STYLE>a{}</STYLE>'
+    const prefix = `<!-- ${tag} -->\n<SCRIPT>const markup = '${tag}'</SCRIPT>\n`
+    const suffix = '\n<main>body</main>'
+    expect(hoistLeadingHeadTags(prefix + tag + suffix)).toEqual({ body: prefix + suffix, hoisted: [tag] })
+  })
+
   it('is a no-op when there is nothing to hoist', () => {
     const { body, hoisted } = hoistLeadingHeadTags('<main>hello</main>')
     expect(hoisted).toHaveLength(0)
