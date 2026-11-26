@@ -202,7 +202,8 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
   // content-hashed assets, so they are downloaded and cached once instead of
   // re-shipped inline per page (#1865, #1878). Runs before the asset copies so
   // it only ever walks pages this build rendered, never a user's static HTML.
-  const externalized = externalizeSharedAssets(outDir)
+  const stxConfig = await loadStxConfig(process.cwd())
+  const externalized = externalizeSharedAssets(outDir, { deferScripts: stxConfig.deferScripts })
   if (externalized.assets > 0) {
     console.log(
       `[stx] externalized ${externalized.assets} asset(s) from ${externalized.pages} page(s) `
@@ -271,7 +272,7 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
     writeFileSync(join(outDir, 'robots.txt'), robots)
 
   const builtPages = htmlFiles.map(pathFromFile)
-  finalizeStaticCsp(outDir, (await loadStxConfig(process.cwd())).csp)
+  finalizeStaticCsp(outDir, stxConfig.csp)
   return { outDir, pages: builtPages, durationMs: Date.now() - start }
 }
 

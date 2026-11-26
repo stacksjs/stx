@@ -1607,7 +1607,7 @@ export async function processScriptSetup(
   // literal `<script>` text inside comments or string literals in an
   // already-emitted signals runtime (e.g. a comment like `// partial <script client> blocks`).
   const scripts = scanScriptTags(template, {
-    skipAttrs: /\bserver\b|\bsrc\s*=|\bdata-stx-scoped\b|\bdata-stx-router\b/,
+    skipAttrs: /\bserver\b|\bsrc\s*=|(?:^|\s)stx-inline(?:\s|=|$)|\bdata-stx-scoped\b|\bdata-stx-router\b/,
   })
 
   // Broader signal-API detection — layout scripts may use store/composable

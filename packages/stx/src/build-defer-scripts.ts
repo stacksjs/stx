@@ -30,7 +30,7 @@ export function deferScripts(html: string, basePath = '/_stx'): ExternalizeHtmlR
   let bytesInlined = 0
   const output = html.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, (whole, attrs: string, body: string, index: number) => {
     if (templates.some(([start, end]) => index >= start && index < end)) return whole
-    if (/(?:^|\s)(?:async|defer|stx-inline)(?:\s|=|$)|\bdata-stx-(?:color-mode-boot|appearance-bootstrap)\b/i.test(attrs)) return whole
+    if (/(?:^|\s)(?:async|defer|stx-inline)(?:\s|=|$)|\bdata-stx-(?:color-mode-boot|appearance-bootstrap|theme-guard)\b/i.test(attrs)) return whole
     const type = /(?:^|\s)type\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(attrs)
     if (type && !['', 'text/javascript', 'application/javascript'].includes((type[1] ?? type[2] ?? type[3] ?? '').toLowerCase().trim())) return whole
     if (/(?:^|\s)src\s*=/i.test(attrs)) return `<script${attrs} defer>${body}</script>`

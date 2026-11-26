@@ -185,6 +185,8 @@ export interface SSGConfig {
   hooks?: SSGHooks
   /** Minify HTML output (default: true) */
   minify?: boolean
+  /** Defer ordered classic scripts. Defaults to the project's setting. */
+  deferScripts?: boolean
   /** Generate 404 page */
   generate404?: boolean
   /** Additional files to copy to output */
@@ -1157,6 +1159,7 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     // third operand never ran. Two defaults for one setting that disagreed, one
     // of them dead — the fallback now says what the documented default says.
     minify: options.minify ?? buildConfig.minify ?? true,
+    deferScripts: options.deferScripts ?? stxConfig.deferScripts ?? false,
     generate404: options.generate404 ?? buildConfig.generate404 ?? true,
     publicDir: options.publicDir ?? buildConfig.publicDir ?? stxConfig.publicDir ?? 'public',
     fingerprintAssets: options.fingerprintAssets ?? stxConfig.fingerprintAssets ?? true,
@@ -1692,7 +1695,7 @@ else {
     // runtime per page, cacheable by nobody (#1865, #1878). Runs before the
     // asset copies so it only ever walks pages this build rendered, never a
     // user's own static HTML.
-    const externalized = externalizeSharedAssets(cfg.outputDir)
+    const externalized = externalizeSharedAssets(cfg.outputDir, { deferScripts: cfg.deferScripts })
     if (externalized.assets > 0) {
       console.log(
         `Externalized ${externalized.assets} asset(s) from ${externalized.pages} page(s) `

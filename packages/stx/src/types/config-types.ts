@@ -695,7 +695,7 @@ export interface StxConfig {
    * @default false
    */
   ssr?: boolean
-  /** Defer ordered SSR setup scripts and serve island code as cached assets. */
+  /** Defer ordered setup scripts and serve island code as cached assets in served and statically built pages. */
   deferScripts?: boolean
   /**
    * Load the signals runtime on the first island trigger instead of from the

@@ -29,6 +29,7 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import { deferScripts } from './build-defer-scripts'
 
 /** Where externalized assets are written, relative to the output directory. */
 export const EXTERNALIZED_ASSET_DIR = '_stx'
@@ -161,19 +162,21 @@ export function externalizeHtml(html: string, basePath: string = `/${EXTERNALIZE
  * Safe to run twice: a page whose runtime is already a `src=` reference has no
  * inline body to match, so a second pass is a no-op.
  */
-export function externalizeSharedAssets(outDir: string): ExternalizeResult {
+export function externalizeSharedAssets(outDir: string, options: { deferScripts?: boolean } = {}): ExternalizeResult {
   const result: ExternalizeResult = { pages: 0, assets: 0, bytesInlined: 0 }
   const assetDir = path.join(outDir, EXTERNALIZED_ASSET_DIR)
   const written = new Set<string>()
 
   for (const file of listHtmlFiles(outDir)) {
     const original = fs.readFileSync(file, 'utf8')
-    const { html, assets, bytesInlined } = externalizeHtml(original)
+    const shared = externalizeHtml(original)
+    const deferred = options.deferScripts ? deferScripts(shared.html) : undefined
+    const html = deferred?.html ?? shared.html
 
     if (html === original)
       continue
 
-    for (const asset of assets) {
+    for (const asset of [...shared.assets, ...(deferred?.assets ?? [])]) {
       // Content-addressed, so the same blob on a second page is the same file
       // and writing it again would be pure work.
       if (written.has(asset.filename))
@@ -185,7 +188,7 @@ export function externalizeSharedAssets(outDir: string): ExternalizeResult {
     }
 
     fs.writeFileSync(file, html)
-    result.bytesInlined += bytesInlined
+    result.bytesInlined += shared.bytesInlined + (deferred?.bytesInlined ?? 0)
     result.pages++
   }
 
