@@ -3,6 +3,7 @@
  */
 import { describe, expect, it } from 'bun:test'
 import { processDirectives } from '../../src/process'
+import { processScriptSetup } from '../../src/signal-processing'
 
 const defaultOptions = {
   partialsDir: '/tmp',
@@ -16,6 +17,20 @@ async function processTemplate(template: string, context: Record<string, unknown
 
 describe('Script setup processing', () => {
   describe('Basic script processing', () => {
+    it('seeds each request independently when client setup is reused', async () => {
+      const template = '<script>const count = state(initialCount)</script><div :text="count()"></div>'
+      const first = await processScriptSetup(template, '/counter.stx', { initialCount: 'request-one' })
+      const second = await processScriptSetup(template, '/counter.stx', { initialCount: 'request-two' })
+      expect(first.setupCode).toContain('var initialCount = "request-one"')
+      expect(second.setupCode).toBe(first.setupCode?.replace('request-one', 'request-two'))
+      expect(second.output).toBe(first.output)
+
+      const changed = await processScriptSetup(template.replace('initialCount)', 'initialCount + 1)'), '/counter.stx', { initialCount: 41 })
+      expect(changed.setupCode).toContain('state(initialCount + 1)')
+      expect(changed.setupCode).toContain('var initialCount = 41')
+      expect(changed.output).not.toBe(first.output)
+    })
+
     it('should process simple script content', async () => {
       const html = `<script>const count = 0</script><div>{{ count }}</div>`
       const result = await processTemplate(html, {})

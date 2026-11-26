@@ -22,6 +22,7 @@ import { importOnce } from './lazy-module'
 import { findBodyOpenTag } from './find-body-tag'
 import { stripCommentsAndLiterals } from './strip-literals'
 import { extractExports, scopeObject } from './client-scope-bindings'
+import { LRUCache } from './performance-utils'
 export { extractExports } from './client-scope-bindings'
 
 // Counter for unique signal setup function names (avoids Date.now() collisions)
@@ -1568,6 +1569,32 @@ function rebuildSetupOwner(
   return chunks.join('')
 }
 
+interface PreparedClientSetup {
+  source: string
+  runtimeGlobals: string
+  scope: string
+  bytes: number
+}
+
+const preparedClientSetups = new LRUCache<string, PreparedClientSetup>(32, {
+  maxBytes: 2 * 1024 * 1024,
+  sizeOf: setup => setup.bytes,
+})
+
+function prepareClientSetup(mergedSource: string): PreparedClientSetup {
+  const cached = preparedClientSetups.get(mergedSource)
+  if (cached) return cached
+
+  const source = dedupeTopLevelDeclarations(mergedSource)
+  const names = extractExports(source).split(',').map(name => name.trim()).filter(Boolean)
+  const runtimeGlobals = buildRuntimeGlobalsDestructure('const', names)
+  const scope = scopeObject(source, names)
+  const bytes = 2 * (mergedSource.length + source.length + runtimeGlobals.length + scope.length)
+  const setup = { source, runtimeGlobals, scope, bytes }
+  preparedClientSetups.set(mergedSource, setup)
+  return setup
+}
+
 export async function processScriptSetup(
   template: string,
   filePath?: string,
@@ -1699,8 +1726,6 @@ export async function processScriptSetup(
     const resolved = transformStoreImports(scriptContent)
     resolvedParts.push(`// ── merged signal script #${i + 1} ──\n${resolved}`)
   }
-  let mergedContent = resolvedParts.join('\n\n')
-
   // Dedup top-level `const/let/var NAME = …` across merged scripts. When
   // layout and page both declare `const favorites = useStore('favorites')`,
   // plain concatenation would throw "Identifier 'favorites' has already been
@@ -1708,25 +1733,23 @@ export async function processScriptSetup(
   // this is safe for the common useStore()/useLocalStorage() case where both
   // sides resolve to the same singleton. (Intentional shadowing across
   // scripts is a user anti-pattern; name them differently.)
-  mergedContent = dedupeTopLevelDeclarations(mergedContent)
-  const mergedExports = extractExports(mergedContent)
-  const mergedExportNames = mergedExports.split(',').map(name => name.trim()).filter(Boolean)
+  const setup = prepareClientSetup(resolvedParts.join('\n\n'))
 
   // Server → client data bridge: inject `var NAME = <json>;` for each
   // `<script server>` value the merged client setup references but does not
   // itself declare. Lets `state(initialLogs)` seed from build-time data with
   // no fetch. Generated against the deduped merged content so a name declared
   // by any signal script is never clobbered.
-  const bridge = generateServerDataBridge(mergedContent, serverData)
+  const bridge = generateServerDataBridge(setup.source, serverData)
 
   // Generate the setup function that provides signal APIs. Mark the script
   // with data-stx-scoped so the client-script loop skips it.
   const setupCode = `
 <script data-stx-scoped>
 function ${setupFnName}() {
-  ${buildRuntimeGlobalsDestructure('const', mergedExportNames)}
-${escapeScriptBody(`${bridge}${mergedContent}`)}
-  return ${scopeObject(mergedContent, mergedExportNames)};
+  ${setup.runtimeGlobals}
+${escapeScriptBody(`${bridge}${setup.source}`)}
+  return ${setup.scope};
 }
 window.__stx_latestSetup=${setupFnName};
 if(window.stx)window.stx._latestSetup=${setupFnName};

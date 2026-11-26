@@ -7,6 +7,12 @@
  * place, so the two cannot disagree about what a page does.
  */
 import { bracketDepths, stripCommentsAndLiterals } from './strip-literals'
+import { LRUCache } from './performance-utils'
+
+const declarationsByScript = new LRUCache<string, { names: ReadonlySet<string>, bytes: number }>(32, {
+  maxBytes: 1024 * 1024,
+  sizeOf: result => result.bytes,
+})
 
 /**
  * Collect the local bindings introduced by a destructuring declaration.
@@ -49,6 +55,9 @@ function collectDestructuredBindings(pattern: string, objectPattern: boolean, bi
  * `const` inside a message cannot claim ownership of anything.
  */
 export function clientDeclaredIdentifiers(code: string): ReadonlySet<string> {
+  const cached = declarationsByScript.get(code)
+  if (cached) return cached.names
+
   const stripped = stripCommentsAndLiterals(code)
   const { depths, balanced } = bracketDepths(stripped)
   // Unbalanced brackets (a regex literal holding a brace) make every depth
@@ -75,6 +84,9 @@ export function clientDeclaredIdentifiers(code: string): ReadonlySet<string> {
     if (atTopLevel(match.index))
       collectDestructuredBindings(match[1], false, names)
   }
+  let bytes = code.length * 2
+  for (const name of names) bytes += name.length * 2 + 32
+  declarationsByScript.set(code, { names, bytes })
   return names
 }
 
