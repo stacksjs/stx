@@ -1633,7 +1633,10 @@ catch (e) {
 
   // Find all includes using balanced parsing (handles nested objects in variables)
   const includePattern = /@include\s*\(/g
+  const emittedInclude = /@include\s*\(/
   let includeMatch: RegExpExecArray | null
+  const chunks: string[] = []
+  let copiedThrough = 0
 
   while ((includeMatch = includePattern.exec(output)) !== null) {
     const matchStart = includeMatch.index
@@ -1649,7 +1652,6 @@ catch (e) {
     }
     if (depth !== 0) break
 
-    const fullMatch = output.substring(matchStart, pos)
     const inner = output.substring(openParen + 1, pos - 1)
 
     // Parse: 'path' or "path" optionally followed by , { vars }
@@ -1670,30 +1672,41 @@ catch (e) {
     }
 
     let localVars: Record<string, unknown> = {}
+    let replacement: string | undefined
     if (varsString) {
       try {
         localVars = safeEvaluateObject(varsString, context)
       }
       catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error)
-        output = output.replace(
-          fullMatch,
-          createDetailedErrorMessage(
-            'Include',
-            `Error parsing include variables for ${includePath}: ${errorMessage}`,
-            filePath,
-            template,
-            matchStart,
-          ),
+        replacement = createDetailedErrorMessage(
+          'Include',
+          `Error parsing include variables for ${includePath}: ${errorMessage}`,
+          filePath,
+          template,
+          matchStart,
         )
-        includePattern.lastIndex = 0
-        continue
       }
     }
 
-    const processedContent = await processIncludeHelper(includePath, localVars, template, matchStart)
-    output = output.substring(0, matchStart) + processedContent + output.substring(pos)
-    includePattern.lastIndex = 0
+    replacement ??= await processIncludeHelper(includePath, localVars, template, matchStart)
+    chunks.push(output.slice(copiedThrough, matchStart), replacement)
+    copiedThrough = pos
+    includePattern.lastIndex = pos
+    // A partial normally expands its own includes. If its final output still
+    // contains one, rescan as before. Ordinary siblings share one rebuild.
+    if (emittedInclude.test(replacement)) {
+      chunks.push(output.slice(copiedThrough))
+      output = chunks.join('')
+      chunks.length = 0
+      copiedThrough = 0
+      includePattern.lastIndex = 0
+    }
+  }
+
+  if (chunks.length) {
+    chunks.push(output.slice(copiedThrough))
+    output = chunks.join('')
   }
 
   return output
