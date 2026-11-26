@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.950...v0.2.951)
+
+## 🐛 Bug Fixes
+
+- **router**: read a refused navigation from defaultPrevented ([2092408](https://github.com/stacksjs/stx/commit/2092408)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## 🔧 Chores
+
+- release v0.2.951 ([897611f](https://github.com/stacksjs/stx/commit/897611f)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.949...v0.2.950)
 
 ## ✨ Features
