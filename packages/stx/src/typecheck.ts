@@ -61,6 +61,7 @@ import { stxImportDiagnostics } from './stx-module-imports'
 import { stxReactivityDiagnostics } from './reactivity-diagnostics'
 import { findStxPluginEntry } from './stx-plugin-config'
 import { stripCommentsAndLiterals } from './strip-literals'
+import { isJavaScriptScript } from './utils'
 
 export type { ScriptBlock, ScriptKind } from './stx-virtual-ts'
 export {
@@ -286,7 +287,46 @@ export function virtualPathFor(filePath: string, kind: DiagnosticOrigin, index: 
 
 /** Map a virtual path back to the `.stx` file it came from. */
 export function sourcePathFor(virtualPath: string): string {
-  return virtualPath.replace(/\.__stx_(?:server|client|plain|template)\d+\.ts$/, '')
+  return virtualPath.replace(/\.__stx_(?:server|client|plain|template)\d+\.[jt]s$/, '')
+}
+
+/** Stands in for the companion's written name until the buffers are written. */
+const COMPANION_SPECIFIER = '__stx_companion__'
+
+/**
+ * A block marked as JavaScript (`lang="js"`, `js`) as a `.js` buffer and a
+ * `.ts` companion, or null when the block cannot be checked that way.
+ *
+ * Every other client block is compiled as TypeScript before it ships, so it is
+ * checked as TypeScript. A JavaScript block is not: it reaches the browser as
+ * written. Checking it as TypeScript ignored its JSDoc, so an untyped
+ * parameter had no fix but an annotation, and the annotation would have
+ * shipped and broken the page (#2228). As JavaScript, JSDoc types it and an
+ * annotation is the error.
+ *
+ * The declarations appended after the body (interpolated values, the server
+ * bridge) are TypeScript, so they move to the companion and the script imports
+ * them at its end, where an import still hoists. Both buffers keep the body's
+ * line numbers, the companion by blanking them, so one line map serves both.
+ * `// @ts-check` goes on line 1, which is padding unless the body starts on
+ * the file's first line; if code is there, the block stays TypeScript.
+ */
+export function javaScriptBuffers(virtual: VirtualFile): { script: string, companion: string } | null {
+  const lines = virtual.text.split('\n')
+  const body = lines.slice(0, virtual.sourceLineCount)
+  if (body.length === 0 || body[0]!.trim() !== '')
+    return null
+  body[0] = '// @ts-check'
+  const appended = lines.slice(virtual.sourceLineCount)
+    .map(line => /^declare (?:var|let|const|function|class|enum) /.test(line) ? `export ${line}` : line)
+  const names = [...new Set(appended.flatMap(line => line.match(/^export declare (?:var|let|const|function|class|enum) ([A-Za-z_$][\w$]*)/)?.[1] ?? []))]
+  const script = [
+    ...body,
+    ...(names.length > 0 ? [`import { ${names.join(', ')} } from ${JSON.stringify(COMPANION_SPECIFIER)}`] : []),
+    'export {}',
+    '',
+  ].join('\n')
+  return { script, companion: [...body.map(() => ''), ...appended].join('\n') }
 }
 
 /**
@@ -350,8 +390,16 @@ const TSC_LINE_RE = /^(.*?)\((\d+),(\d+)\):\s+(error|warning)\s+TS(\d+):\s+(.*)$
  * count one of those as a parse failure.
  */
 function isSyntactic(code: number): boolean {
-  return code >= 1000 && code < 2000
+  return code >= 1000 && code < 2000 || JAVASCRIPT_GRAMMAR_CODES.has(code)
 }
+
+/**
+ * TypeScript-only syntax in a JavaScript buffer ("Type annotations can only be
+ * used in TypeScript files", and its siblings). tsc reports these with the
+ * syntax errors, so they hold back semantic checking program-wide in the same
+ * way: one annotation in a `lang="js"` block (#2228) silenced every other file.
+ */
+const JAVASCRIPT_GRAMMAR_CODES = new Set([8002, 8003, 8004, 8005, 8006, 8008, 8009, 8010, 8011, 8012, 8013, 8016, 8017, 8037])
 
 // Character scan, not regex. A glob is indistinguishable from a comment to a
 // regex: `"app/Models/**/*.ts"` contains a literal `/**/`, which a block-comment
@@ -538,6 +586,8 @@ export async function typecheckStxFiles(
     source: string
     origin: string
     kind: DiagnosticOrigin
+    /** A JavaScript block's companion, which its source imports (see javaScriptBuffers). */
+    companion?: string
     /** Present for the whole-file template buffer, which needs a line map. */
     virtual?: VirtualFile
   }
@@ -633,6 +683,13 @@ export async function typecheckStxFiles(
     blocks.forEach((block, i) => {
       if (component && block.kind !== 'server') return
       const virtual = buildScriptVirtualFile(block, serverCode, originDir, interpolationScope)
+      const javaScript = block.kind !== 'server' && isJavaScriptScript(block.attrs) ? javaScriptBuffers(virtual) : null
+      if (javaScript) {
+        const companion = virtualPathFor(file, block.kind, i)
+        virtualFiles.set(companion, { virtual, source: javaScript.companion, origin: file, kind: block.kind })
+        virtualFiles.set(companion.replace(/\.ts$/, '.js'), { virtual, source: javaScript.script, origin: file, kind: block.kind, companion })
+        return
+      }
       virtualFiles.set(virtualPathFor(file, block.kind, i), { virtual, source: virtual.text, origin: file, kind: block.kind })
     })
 
@@ -738,10 +795,16 @@ export async function typecheckStxFiles(
   // `views/a.stx`, so its errors were reported against a different file. A
   // counter makes the name unique, and an exact lookup makes the way back exact.
   const writtenToOrigin = new Map<string, VirtualEntry>()
+  const writtenAs = new Map<string, string>()
   let counter = 0
   for (const [virtualPath, meta] of virtualFiles) {
     const safe = `${counter++}_${virtualPath.replace(/[^\w.-]+/g, '_')}`
-    await Bun.write(`${workDir}/${safe}`, meta.source)
+    writtenAs.set(virtualPath, safe)
+    // The companion is registered first, so its written name is known here.
+    const companion = meta.companion ? writtenAs.get(meta.companion) : undefined
+    await Bun.write(`${workDir}/${safe}`, companion
+      ? meta.source.replace(JSON.stringify(COMPANION_SPECIFIER), JSON.stringify(`./${companion.replace(/\.ts$/, '')}`))
+      : meta.source)
     writtenToOrigin.set(safe, meta)
   }
 
