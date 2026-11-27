@@ -31,6 +31,8 @@ setDefaultTimeout(60_000)
 
 const PORT = freePort()
 const BASE = `http://localhost:${PORT}`
+const PROJECT_PORT = freePort()
+const PROJECT_BASE = `http://localhost:${PROJECT_PORT}`
 const SERVE_SRC = path.join(import.meta.dir, '..', 'src', 'serve.ts')
 
 let dir: string
@@ -44,6 +46,7 @@ function standalonePage(title: string, heading: string): string {
   <body>
     <nav><a href="/">Home</a></nav>
     <main><h1>${heading}</h1></main>
+    <aside id="workspace">Workspace content</aside>
   </body>
 </html>
 `
@@ -55,9 +58,13 @@ beforeAll(async () => {
   await Bun.write(path.join(dir, 'views', 'benefits.stx'), standalonePage('Benefits', 'A club, not a gym floor'))
   await Bun.write(path.join(dir, 'views', 'classes.stx'), standalonePage('Classes', 'Sixteen classes'))
 
+  await Bun.write(path.join(dir, 'stx.config.ts'), "export default { router: { container: '#workspace', enabled: false } }")
   await Bun.write(path.join(dir, 'driver.ts'), `import { serve } from ${JSON.stringify(SERVE_SRC)}
 
-serve({ patterns: ['views'], port: ${PORT} })
+Promise.all([
+  serve({ patterns: ['views'], port: ${PORT}, router: { container: 'main' } }),
+  serve({ patterns: ['views'], port: ${PROJECT_PORT} }),
+])
 `)
 
   proc = Bun.spawn(['bun', 'driver.ts'], { cwd: dir, stdout: 'pipe', stderr: 'pipe' })
@@ -65,7 +72,7 @@ serve({ patterns: ['views'], port: ${PORT} })
   const deadline = Date.now() + 30_000
   while (true) {
     try {
-      await fetch(`${BASE}/definitely-not-a-page`)
+      await Promise.all([BASE, PROJECT_BASE].map(origin => fetch(`${origin}/definitely-not-a-page`)))
       break
     }
     catch {
@@ -106,6 +113,23 @@ describe('layout headers for a page with no layout', () => {
     // document, which is the comparison that was firing on every navigation.
     const { layout } = await layoutHeaders('/benefits')
     expect(layout ?? '').toBe('')
+  })
+
+  it('uses the server router for the document and its fragments', async () => {
+    const document = await fetch(`${BASE}/benefits`)
+    expect(await document.text()).toContain('data-stx-router')
+    const response = await fetch(`${BASE}/classes`, { headers: { 'X-STX-Router': 'true' } })
+    expect(response.headers.get('X-STX-Fragment')).toBe('true')
+    expect(await response.text()).toContain('<h1>Sixteen classes</h1>')
+  })
+
+  it('keeps the project router settings for a server without an override', async () => {
+    const document = await fetch(`${PROJECT_BASE}/benefits`)
+    expect(await document.text()).not.toContain('data-stx-router')
+    const response = await fetch(`${PROJECT_BASE}/classes`, { headers: { 'X-STX-Router': 'true' } })
+    const fragment = await response.text()
+    expect(fragment).toContain('Workspace content')
+    expect(fragment).not.toContain('<h1>Sixteen classes</h1>')
   })
 
   it('agrees across two layout-less pages, so navigation between them can swap', async () => {

@@ -13,7 +13,7 @@
  *   serve pages/home.stx pages/about.md pages/index.html
  */
 
-import type { PageWarmupOptions } from '@stacksjs/stx'
+import type { PageWarmupOptions, StxOptions } from '@stacksjs/stx'
 import type { CssConfig } from '@stacksjs/ts-css/engine'
 import type { SQLQueryBindings } from 'bun:sqlite'
 import { serve as bunServe, Glob } from 'bun'
@@ -936,6 +936,8 @@ export interface ServeOptions extends RenderAdmissionOptions {
    * extended or rendered by path like any other template.
    */
   exclude?: string[]
+  /** Use a separate router configuration for this server, independent of the project's pages. */
+  router?: StxOptions['router']
   port?: number
   /** Bind address for the main HTTP listener. Defaults to Bun's listener address. */
   hostname?: string
@@ -1738,7 +1740,7 @@ function formatSeconds(ms: number): string {
  */
 export async function serve(options: ServeOptions): Promise<void> {
   // Load STX config via bunfig - supports stx.config.ts, .stx.config.ts, etc.
-  const stxConfig = await loadConfig({
+  const projectConfig = await loadConfig({
     name: 'stx',
     alias: ['ui'],
     cwd: process.cwd(),
@@ -1746,6 +1748,10 @@ export async function serve(options: ServeOptions): Promise<void> {
     checkEnv: false,
     verbose: false,
   }) as Record<string, any>
+  const stxConfig = options.router === undefined
+    ? projectConfig
+    : { ...projectConfig, router: options.router }
+
   const production = isProductionServe()
 
   // Resolve `root` and the template directories through stx's own single
