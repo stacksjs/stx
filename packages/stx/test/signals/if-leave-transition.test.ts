@@ -25,12 +25,12 @@ function bootRuntime(): void {
   new Function(generateSignalsRuntimeDev())()
 }
 
-function mount(markup: string) {
+function mount(markup: string, initiallyOpen = true) {
   const root = document.createElement('section')
   root.setAttribute('data-stx-scope', 'leaving')
   root.innerHTML = markup
   document.body.append(root)
-  const open = window.stx.state(true)
+  const open = window.stx.state(initiallyOpen)
   const label = window.stx.state('Delete this user?')
   window.stx._scopes = { leaving: { open, label } }
   window.__stxDomReadyHandler()
@@ -41,6 +41,28 @@ describe('a leave transition on a single-element :if', () => {
   beforeEach(() => {
     bootRuntime()
     document.body.innerHTML = ''
+  })
+
+  it('does not animate initially hidden markup or leave its unbound text in the document', async () => {
+    const { root, open } = mount('<div :if="open()" data-stx-if-transition="fade"><p>{{ label() }}</p></div>', false)
+
+    expect(root.querySelector('[data-stx-if-transition]')).toBeNull()
+    expect(root.textContent).not.toContain('{{ label() }}')
+
+    open.set(true)
+    await Promise.resolve()
+    expect(root.querySelector('p')?.textContent).toBe('Delete this user?')
+    open.set(false)
+    expect(root.querySelector('.fade-leave-active p')?.textContent).toBe('Delete this user?')
+  })
+
+  it('does not animate a branch hidden before it hydrates', () => {
+    const { root, open } = mount('<div :if="open()" data-stx-if-transition="fade"><p>{{ label() }}</p></div>')
+
+    open.set(false)
+
+    expect(root.querySelector('[data-stx-if-transition]')).toBeNull()
+    expect(root.textContent).not.toContain('{{ label() }}')
   })
 
   it('leaves a still copy, as it last looked, that animates out and then goes', async () => {

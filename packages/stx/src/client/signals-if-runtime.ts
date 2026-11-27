@@ -271,10 +271,10 @@ else {
         }
 else if (!value && isInserted) {
           console.log('[stx] bindIf REMOVING element for :if=' + expr, 'el.isConnected:', el.isConnected, 'parent:', parent.tagName);
-          // The copy is taken first, before anything below can change what
-          // the element shows. A native host has no DOM to copy.
+          // Only snapshot a bound branch. Initially false markup and branches
+          // still waiting to hydrate can contain raw template expressions.
           var leaveTransition = !stxHost.isNative && el.getAttribute ? el.getAttribute('data-stx-if-transition') : null;
-          if (leaveTransition && el.isConnected && parent) leaveIfWithCopy(el, parent, leaveTransition);
+          if (leaveTransition && childrenProcessed && !el.__stx_if_pending && el.isConnected && parent) leaveIfWithCopy(el, parent, leaveTransition);
           el.__stx_if_visible.set(false);
           // Unmounted, not disposed: the components in it release what they
           // hold while their markup is still on the page, and keep their scopes.
