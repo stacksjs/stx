@@ -1,5 +1,30 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.954...v0.2.955)
+
+## 🐛 Bug Fixes
+
+- **csp**: compile the alternate read for callable lists ([6cffb0b](https://github.com/stacksjs/stx/commit/6cffb0b)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#2236](https://github.com/stacksjs/stx/issues/2236), [stacksjs/postline#90](https://github.com/stacksjs/postline/issues/90))
+- **router**: run destination CSP bindings before hydration ([4d869b4](https://github.com/stacksjs/stx/commit/4d869b4)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#2234](https://github.com/stacksjs/stx/issues/2234), [stacksjs/postline#90](https://github.com/stacksjs/postline/issues/90))
+- **router**: honor the explicit SPA opt-out ([8fa1e7f](https://github.com/stacksjs/stx/commit/8fa1e7f)) _(by Chris Breuer <chris@stacksjs.com>)_ ([stacksjs/postline#186](https://github.com/stacksjs/postline/issues/186))
+
+## ⚡ Performance Improvements
+
+- **stx**: share factories for equivalent CSP bindings ([f4f33af](https://github.com/stacksjs/stx/commit/f4f33af)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **stx**: avoid duplicate setup source under strict CSP ([f15c2ff](https://github.com/stacksjs/stx/commit/f15c2ff)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#2234](https://github.com/stacksjs/stx/issues/2234), [stacksjs/postline#90](https://github.com/stacksjs/postline/issues/90))
+
+## ✅ Tests
+
+- **stx**: verify lifecycle aliases in the minified runtime ([4ff80e3](https://github.com/stacksjs/stx/commit/4ff80e3)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#2234](https://github.com/stacksjs/stx/issues/2234))
+
+## 🔧 Chores
+
+- release v0.2.955 ([23daf5c](https://github.com/stacksjs/stx/commit/23daf5c)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.953...v0.2.954)
 
 ## ✨ Features
