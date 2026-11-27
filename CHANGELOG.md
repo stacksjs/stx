@@ -1,5 +1,29 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.959...HEAD)
+
+## ✨ Features
+
+- **components**: support localized Calendar navigation names ([ab29a41](https://github.com/stacksjs/stx/commit/ab29a41)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_ ([#2246](https://github.com/stacksjs/stx/issues/2246))
+- **components**: SwipeRow slides its actions in instead of jumping ([7cb8874](https://github.com/stacksjs/stx/commit/7cb8874)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **components**: cancel Tooltip delays through STX composables ([f9d69e4](https://github.com/stacksjs/stx/commit/f9d69e4)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_ ([#2245](https://github.com/stacksjs/stx/issues/2245))
+
+## ⚡ Performance Improvements
+
+- **ssg**: reuse responsive images during clean builds ([1cce770](https://github.com/stacksjs/stx/commit/1cce770)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#2241](https://github.com/stacksjs/stx/issues/2241))
+
+## 🔧 Chores
+
+- release v0.2.960 ([0761717](https://github.com/stacksjs/stx/commit/0761717)) _(by Chris Breuer <chrisbreuer93@gmail.com>)_
+
+## Contributors
+
+- _Chris Breuer <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.958...v0.2.959)
 
 ## ✨ Features
