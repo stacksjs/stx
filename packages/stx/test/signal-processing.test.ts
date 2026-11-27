@@ -870,6 +870,15 @@ describe('processScriptSetup — multi-script merge', () => {
     expect(result.output).toMatch(/^<BODY class="page" data-stx="__stx_setup_/)
     expect(result.output).toEndWith('</BODY>')
   })
+
+  it('prefers the real body to body-like text and the fragment fallback', async () => {
+    const head = `<html><head><!-- <body fake> --><meta content="<body fake>"><style>/* <body fake> */</style><template><div></div></template></head>`
+    const body = `<body data-label="one > zero"><script client>const count = state(0)</script><main></main></body></html>`
+    const result = await processScriptSetup(head + body, '/app/page.stx')
+
+    expect(result.output.startsWith(head)).toBe(true)
+    expect(result.output.slice(head.length)).toMatch(/^<body data-label="one > zero" data-stx="__stx_setup_/)
+  })
 })
 
 describe('processSignals — body ownership marker', () => {

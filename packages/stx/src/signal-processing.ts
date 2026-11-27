@@ -1520,20 +1520,17 @@ const SETUP_MARKER_SKIP_TAGS = new Set(['script', 'style', 'html', 'head', 'meta
 function findSetupMarkerInsertion(template: string): number | null {
   const openingTagRe = new RegExp(`<([a-zA-Z][a-zA-Z0-9-]*)\\b(${TAG_ATTR_RUN})>`, 'iy')
   let first: number | null = null
-  let body: number | null = null
-  scanAtElementPosition(template, (html, index) => {
+  const [body] = scanAtElementPosition(template, (html, index) => {
     openingTagRe.lastIndex = index
     const match = openingTagRe.exec(html)
     if (!match) return -1
     const tag = match[1].toLowerCase()
-    // Let the scanner consume raw-text elements as a whole.
-    if (tag === 'script' || tag === 'style') return -1
-    const insertion = index + match[0].length - 1
-    if (tag === 'body' && body === null) body = insertion
-    if (first === null && !SETUP_MARKER_SKIP_TAGS.has(tag)) first = insertion
-    return index + match[0].length
-  })
-  return body ?? first
+    const end = index + match[0].length
+    if (tag === 'body') return end
+    if (first === null && !SETUP_MARKER_SKIP_TAGS.has(tag)) first = end - 1
+    return -1
+  }, { firstOnly: true })
+  return body ? body.end - 1 : first
 }
 
 /** Remove known script ranges and insert the owner marker in one materializing rebuild. */

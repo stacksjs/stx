@@ -208,9 +208,10 @@ function matchOpaqueRegion(html: string, i: number): number {
  * Find tokens that begin where an HTML element can actually start.
  *
  * The walk also treats comments and script/style raw-text bodies as opaque, so
- * callers never see tag-like text nested inside those regions.
+ * callers never see tag-like text nested inside those regions. A caller that
+ * only needs the first match can stop the scan there.
  */
-export function scanAtElementPosition(html: string, match: TokenMatcher): ElementPositionToken[] {
+export function scanAtElementPosition(html: string, match: TokenMatcher, { firstOnly = false } = {}): ElementPositionToken[] {
   const tokens: ElementPositionToken[] = []
   let i = 0
   const n = html.length
@@ -248,6 +249,8 @@ export function scanAtElementPosition(html: string, match: TokenMatcher): Elemen
     const end = match(html, i)
     if (end > i) {
       tokens.push({ start: i, end, token: html.slice(i, end) })
+      if (firstOnly)
+        break
       i = end
       continue
     }
