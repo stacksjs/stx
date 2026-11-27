@@ -400,6 +400,21 @@ describe('stx Custom Directives', () => {
 })
 
 describe('Custom Directive Fixes', () => {
+  it('finds a directive introduced by an earlier handler and preserves pattern names', async () => {
+    const { defaultConfig } = await import('../../src/config')
+    const { processCustomDirectives } = await import('../../src/custom-directives')
+    const result = await processCustomDirectives('@emit() @rule42(extra)', {}, '', {
+      ...defaultConfig,
+      customDirectives: [
+        { name: 'absent', handler: () => { throw new Error('Unexpected directive') } },
+        { name: 'emit', handler: () => '@finish-v2(done)' },
+        { name: 'finish-v2', rawParams: true, handler: (_content, params) => params.join('') },
+        { name: 'rule\\d+', handler: (_content, params) => params.join('') },
+      ],
+    })
+    expect(result).toBe('done extra')
+  })
+
   it('should handle block directives with params including nested parens', async () => {
     const { processCustomDirectives } = await import('../../src/custom-directives')
     const opts = {

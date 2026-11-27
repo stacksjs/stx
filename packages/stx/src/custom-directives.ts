@@ -3,6 +3,8 @@ import { findDirectiveCalls, splitTopLevelArgs } from './directive-arguments'
 import { ErrorCodes, inlineError } from './error-handling'
 import { getCachedRegex } from './performance-utils'
 
+const literalDirectiveName = /^[A-Za-z_][\w-]*$/u
+
 /**
  * Process all custom directives registered in the app
  */
@@ -27,6 +29,9 @@ export async function processCustomDirectives(
       }
       continue
     }
+
+    // Earlier handlers can emit another directive, so inspect the current output.
+    if (literalDirectiveName.test(directive.name) && !output.includes(`@${directive.name}`)) continue
 
     if (directive.hasEndTag) {
       // Process directives with end tags
