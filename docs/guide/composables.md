@@ -434,8 +434,34 @@ The first render doesn't animate (only subsequent list changes do). Leaving
 elements stay in the DOM until their transition ends — and every phase has a
 duration-based timeout fallback, so a missed `transitionend` can't strand a node.
 
-> Use `<TransitionGroup>` for *lists*. For a single element toggled by `:if` /
-> `:show`, use `<Transition>` (from `@stacksjs/components`).
+> Use `<TransitionGroup>` for *lists*. For a single element toggled by `:if`,
+> use `data-stx-if-transition` below; for a `show` prop, use `<Transition>`
+> (from `@stacksjs/components`).
+
+### Leaving a single-element `:if`
+
+Give a single-element `:if` a `data-stx-if-transition="name"` and it animates
+out when its condition turns false, with the same leave classes as
+`<TransitionGroup>`:
+
+```stx
+<div :if="open()" data-stx-if-transition="panel" class="panel">{{ message() }}</div>
+```
+
+```css
+.panel-leave-active { transition: opacity 160ms ease-in; }
+.panel-leave-to { opacity: 0; }
+```
+
+What animates out is a still copy of the element as it last looked: inert,
+hidden from assistive technology, without ids, and removed when the transition
+ends (or on the duration fallback). The element itself is put away as it
+always is, so its bindings may change while it is hidden (the state that
+closed a dialog is often cleared in the same turn) without the leaving copy
+changing with them. Showing it again while the copy is leaving drops the copy
+at once. The copy is a picture: a value a control holds only as a property,
+or what a canvas drew, is not in it. A closed `<dialog>` is not drawn, so a
+dialog's leave class should set `display: block`. Native hosts skip the copy.
 
 ### useLocalStorage
 

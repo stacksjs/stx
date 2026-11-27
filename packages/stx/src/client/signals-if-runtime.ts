@@ -9,6 +9,34 @@ export const SIGNALS_IF_RUNTIME = `  const detachedBranches = new Set();
     });
   }
 
+  // A leave transition on a single-element :if (data-stx-if-transition="name").
+  // The element is a toggle: it is kept while hidden and put back on the next
+  // show, and its bindings stay live meanwhile. Kept on the page to animate,
+  // it would change under the animation (a dialog's text going blank as the
+  // state that closed it is cleared). So what leaves is a still copy of it as
+  // it last looked: no bindings, inert, hidden from assistive technology, no
+  // ids, with the name's leave classes, removed when the transition ends. The
+  // element itself is put away as it always was. A copy is a picture: what a
+  // control holds only as a property (a typed value) or a canvas draws is not
+  // in it, which does not show in a fade.
+  function leaveIfWithCopy(el, parent, name) {
+    var copy = stxHost.clone(el);
+    if (!copy || copy.nodeType !== 1) return;
+    copy.setAttribute('inert', '');
+    copy.setAttribute('aria-hidden', 'true');
+    copy.removeAttribute('id');
+    copy.querySelectorAll('[id]').forEach(function(node) { node.removeAttribute('id'); });
+    stxHost.insert(parent, copy, el);
+    el.__stx_if_leaving = copy;
+    tgLeave(copy, name);
+  }
+  function dropIfLeavingCopy(el) {
+    var copy = el.__stx_if_leaving;
+    if (!copy) return;
+    el.__stx_if_leaving = null;
+    if (copy.parentNode) stxHost.remove(copy);
+  }
+
   function bindIf(el, passedScope = componentScope, attrName = '@if') {
     // Guard: prevent double-binding on the same element
     if (el.__stx_if_bound) { console.log('[stx] bindIf SKIPPED (already bound):', el.getAttribute(attrName) || '(attr removed)', 'on', el.tagName); return; }
@@ -220,6 +248,8 @@ else {
         if (stxHost.isNative) stxHost.setVisible(el, !!value);
         if (value && !isInserted) {
           console.log('[stx] bindIf INSERTING element for :if=' + expr);
+          // Shown again before its leaving copy finished: the copy goes now.
+          dropIfLeavingCopy(el);
           const insertionAnchor = placeholder.nextSibling;
           currentNodes.forEach(node => stxHost.insert(parent, node, insertionAnchor));
           if (parent && parent.__stx_detached_if) currentNodes.forEach(node => parent.__stx_detached_if.delete(node));
@@ -241,6 +271,10 @@ else {
         }
 else if (!value && isInserted) {
           console.log('[stx] bindIf REMOVING element for :if=' + expr, 'el.isConnected:', el.isConnected, 'parent:', parent.tagName);
+          // The copy is taken first, before anything below can change what
+          // the element shows. A native host has no DOM to copy.
+          var leaveTransition = !stxHost.isNative && el.getAttribute ? el.getAttribute('data-stx-if-transition') : null;
+          if (leaveTransition && el.isConnected && parent) leaveIfWithCopy(el, parent, leaveTransition);
           el.__stx_if_visible.set(false);
           // Unmounted, not disposed: the components in it release what they
           // hold while their markup is still on the page, and keep their scopes.
