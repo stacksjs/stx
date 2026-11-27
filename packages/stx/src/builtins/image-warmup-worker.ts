@@ -27,7 +27,7 @@ port.on('message', async (message: TaskMessage) => {
   const { task, args } = message
   try {
     if (task === 'delivery') {
-      const result = await prepareImageDelivery(args.publicDir, args.outputDir)
+      const result = await prepareImageDelivery(args.publicDir, args.outputDir, { reuseDir: args.reuseDir })
       port.postMessage({ type: 'result', value: { result, state: snapshotImageDelivery() } })
     }
     else {

@@ -158,7 +158,7 @@ function catalogName(relativePath: string): string {
  * Two builds of identical bytes therefore agree on the filename, which is what
  * makes the on-disk cache reusable at all.
  */
-function deliveryStorage(outDir: string, cacheNamespace = `stx:${DELIVERY_URL}`): ImageDeliveryStorage {
+function deliveryStorage(outDir: string, cacheNamespace: string, reuseDir?: string): ImageDeliveryStorage {
   const url = (key: string) => `${DELIVERY_URL}/${key.split('/').map(encodeURIComponent).join('/')}`
 
   return {
@@ -170,11 +170,26 @@ function deliveryStorage(outDir: string, cacheNamespace = `stx:${DELIVERY_URL}`)
         // A zero-byte file is a half-finished write from a previous run that
         // was killed mid-encode. Treat it as absent so it gets rewritten
         // rather than served as a broken image forever.
-        return stats.size > 0 ? { bytes: stats.size, path: file, url: url(key) } : null
+        if (stats.isFile() && stats.size > 0)
+          return { bytes: stats.size, path: file, url: url(key) }
       }
-      catch {
-        return null
+      catch {}
+
+      if (reuseDir) {
+        const previous = path.join(reuseDir, key)
+        try {
+          const stats = await fs.promises.lstat(previous)
+          if (stats.isFile() && stats.size > 0) {
+            await fs.promises.mkdir(path.dirname(file), { recursive: true })
+            await fs.promises.link(previous, file)
+            return { bytes: stats.size, path: file, url: url(key) }
+          }
+        }
+        catch {
+          // A missing or unusable previous variant is encoded as usual.
+        }
       }
+      return null
     },
     async write(key, bytes) {
       const file = path.join(outDir, key)
@@ -524,6 +539,8 @@ export interface PrepareImageDeliveryOptions {
    * catalog; falls back to running in-thread where no worker can start.
    */
   offThread?: boolean
+  /** Previous static output variants held aside during a clean rebuild. */
+  reuseDir?: string
 }
 
 /**
@@ -546,7 +563,7 @@ export async function prepareImageDelivery(
   if (options.offThread) {
     const reply = await runImageTask<{ result: { count: number, fingerprint: string }, state: ImageDeliverySnapshot }>(
       'delivery',
-      { publicDir, outputDir },
+      { publicDir, outputDir, reuseDir: options.reuseDir },
     )
     if (reply !== WORKER_UNAVAILABLE) {
       installImageDelivery(reply.state)
@@ -576,10 +593,12 @@ export async function prepareImageDelivery(
     return { count: 0, fingerprint: '' }
   }
 
-  const alphaStorage = deliveryStorage(path.join(outputDir, '_stx', 'images'), `${ALPHA_NAMESPACE}:${imageEncoderIdentity()}`)
+  const outDir = path.join(outputDir, '_stx', 'images')
+  const identity = imageEncoderIdentity()
+  const alphaStorage = deliveryStorage(outDir, `${ALPHA_NAMESPACE}:${identity}`, options.reuseDir)
   const catalogOptions = {
-    outDir: path.join(outputDir, '_stx', 'images'),
-    storage: deliveryStorage(path.join(outputDir, '_stx', 'images'), `${OPAQUE_NAMESPACE}:${imageEncoderIdentity()}`),
+    outDir,
+    storage: deliveryStorage(outDir, `${OPAQUE_NAMESPACE}:${identity}`, options.reuseDir),
     baseUrl: DELIVERY_URL,
     widths: DEFAULT_WIDTHS,
     formats: ['avif', 'webp'] as const,

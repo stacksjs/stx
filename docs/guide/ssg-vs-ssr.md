@@ -264,7 +264,7 @@ export default {
     minify: true,            // Minify HTML output
     generate404: true,       // Generate a 404.html page
     trailingSlash: false,    // URL style: /about vs /about/
-    cleanOutput: true,       // Delete output dir before build
+    cleanOutput: true,       // Replace output, reusing matching responsive images when cached
     concurrency: 10,         // Parallel page processing
   },
 }

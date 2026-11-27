@@ -1210,9 +1210,12 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
   // Build hooks
   await cfg.hooks.onBuildStart?.()
 
+  let previousImages: Awaited<ReturnType<typeof stageImageVariants>>
   try {
     // Clean output directory
     if (cfg.cleanOutput && fs.existsSync(cfg.outputDir)) {
+      if (cfg.cache)
+        previousImages = await stageImageVariants(cfg.outputDir, cfg.publicDir)
       await fs.promises.rm(cfg.outputDir, { recursive: true })
     }
     await fs.promises.mkdir(cfg.outputDir, { recursive: true })
@@ -1242,7 +1245,7 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     // The content fingerprint joins the build-wide salt so changed image bytes
     // can never reuse cached HTML containing stale content-addressed URLs.
     const { prepareImageDelivery } = await import('./builtins/image-delivery')
-    const imageDelivery = await prepareImageDelivery(cfg.publicDir, cfg.outputDir)
+    const imageDelivery = await prepareImageDelivery(cfg.publicDir, cfg.outputDir, { reuseDir: previousImages?.variants })
     if (imageDelivery.count > 0) {
       console.log(`Optimized ${imageDelivery.count} image(s) for responsive delivery`)
       cacheSalt = [cacheSalt, imageDelivery.fingerprint].filter(Boolean).join(':')
@@ -1760,6 +1763,10 @@ catch (error) {
     await cfg.hooks.onError?.(error as Error)
     throw error
   }
+  finally {
+    if (previousImages)
+      await fs.promises.rm(previousImages.directory, { recursive: true, force: true })
+  }
 
   result.buildTime = Date.now() - startTime
 
@@ -1793,6 +1800,35 @@ Build complete!
 `)
 
   return result
+}
+
+/** Preserve the last output's variants only until the clean build can reuse them. */
+async function stageImageVariants(outputDir: string, publicDir: string): Promise<{ directory: string, variants: string } | undefined> {
+  const stxDir = path.join(outputDir, '_stx')
+  const images = path.join(stxDir, 'images')
+  if (![outputDir, stxDir, images].every(dir => fs.lstatSync(dir, { throwIfNoEntry: false })?.isDirectory()))
+    return undefined
+
+  // Use the same filesystem so variants can be linked back by content key.
+  // Keep temporary files out of the trees scanned and copied as public assets.
+  const parent = fs.realpathSync(path.dirname(path.resolve(outputDir)))
+  for (const assetRoot of [publicDir, resolveConventionalAssetRoot()]) {
+    if (!assetRoot || !fs.existsSync(assetRoot)) continue
+    const relative = path.relative(fs.realpathSync(assetRoot), parent)
+    if (!path.isAbsolute(relative) && relative !== '..' && !relative.startsWith(`..${path.sep}`))
+      return undefined
+  }
+
+  const directory = await fs.promises.mkdtemp(path.join(parent, '.stx-images-'))
+  const variants = path.join(directory, 'images')
+  try {
+    await fs.promises.rename(images, variants)
+    return { directory, variants }
+  }
+  catch (error) {
+    await fs.promises.rm(directory, { recursive: true, force: true })
+    throw error
+  }
 }
 
 /**
