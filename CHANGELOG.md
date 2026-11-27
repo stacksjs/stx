@@ -1,5 +1,20 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.955...v0.2.956)
+
+## 🐛 Bug Fixes
+
+- **serve**: isolate per-server router options ([c93e3a3](https://github.com/stacksjs/stx/commit/c93e3a3)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **components**: update Badge colours when the variant changes ([077a8b0](https://github.com/stacksjs/stx/commit/077a8b0)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#2235](https://github.com/stacksjs/stx/issues/2235))
+
+## 🔧 Chores
+
+- release v0.2.956 ([5f9d633](https://github.com/stacksjs/stx/commit/5f9d633)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.954...v0.2.955)
 
 ## 🐛 Bug Fixes
