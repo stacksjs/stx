@@ -477,7 +477,34 @@ export function createNode(
   events: Record<string, string> = {},
   children: (STXNode | string)[] = []
 ): STXNode {
-  return { type, props, style, events, children }
+  return { type, props, style: withoutIntrinsicFrame(type, style), events, children }
+}
+
+/**
+ * Controls the platform draws at their own size, and the dimensions a style may
+ * not set on them.
+ *
+ * A UISwitch is about 63 points wide on iOS 26 whatever its frame says, and it
+ * draws from the frame's leading edge. A web rule sizing the switch's box
+ * (`.set-switch { width: 3.1875rem; height: 1.9375rem }`, the size of the web's
+ * drawn switch) reached it as a 51 by 31 frame, and the switch ran 11 points
+ * past the end of its row. A spinner draws at its `size` the same way, and a
+ * slider's track at the platform's height; a slider's width is its length, and
+ * stays.
+ */
+const INTRINSIC_FRAME: Record<string, readonly string[]> = {
+  Switch: ['width', 'height', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight', 'aspectRatio'],
+  ActivityIndicator: ['width', 'height', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight', 'aspectRatio'],
+  Slider: ['height', 'minHeight', 'maxHeight'],
+}
+
+/** `style` without the dimensions a control of this type draws for itself (the same object when there are none). */
+export function withoutIntrinsicFrame<T extends Record<string, unknown>>(type: string, style: T): T {
+  const fixed = INTRINSIC_FRAME[type]
+  if (!fixed || !fixed.some(key => key in style)) return style
+  const kept = { ...style }
+  for (const key of fixed) delete kept[key]
+  return kept
 }
 
 export function createDocument(

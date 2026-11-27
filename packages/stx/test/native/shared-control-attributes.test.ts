@@ -93,7 +93,11 @@ window.probe = { suffix, label, styles, classes, checked, shown }
         const control = phone.byTestID(`${prefix}-one`)!
         expect(control.type).toBe(type)
         expect(control.props.accessibilityLabel).toBe('Native name')
-        expect(control.style).toMatchObject({ paddingLeft: 3, opacity: 0.3, width: 48, borderWidth: 3 })
+        expect(control.style).toMatchObject({ paddingLeft: 3, opacity: 0.3, borderWidth: 3 })
+        // The platform switch draws at its own size, so `w-12` reaches the
+        // Checkbox and not the Switch (intrinsic-control-size.test.ts).
+        if (type === 'Switch') expect(control.style.width).toBeUndefined()
+        else expect(control.style.width).toBe(48)
         expect(phone.byTestID(`static-${prefix}`)!.type).toBe(type)
       }
       phone.press(phone.byTestID('checkbox-one')!, 'onValueChange', { value: true })
@@ -108,7 +112,8 @@ window.probe = { suffix, label, styles, classes, checked, shown }
       for (const prefix of ['checkbox', 'switch']) {
         expect(phone.byTestID(`${prefix}-one`)).toBeUndefined()
         expect(phone.byTestID(`${prefix}-two`)!.props.accessibilityLabel).toBe('Updated name')
-        expect(phone.byTestID(`${prefix}-two`)!.style).toMatchObject({ paddingLeft: 7, opacity: 0.7, width: 64, borderWidth: 4 })
+        expect(phone.byTestID(`${prefix}-two`)!.style).toMatchObject({ paddingLeft: 7, opacity: 0.7, borderWidth: 4 })
+        expect(phone.byTestID(`${prefix}-two`)!.style.width).toBe(prefix === 'switch' ? undefined : 64)
       }
       phone.press(phone.byTestID('switch-two')!, 'onValueChange', { value: false })
       await phone.settle()

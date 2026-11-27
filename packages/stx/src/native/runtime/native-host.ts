@@ -32,6 +32,7 @@
 
 import type { NativeMutationOperation } from '../bridge/protocol'
 import type { STXNode, STXStyle } from '../compiler/ir'
+import { withoutIntrinsicFrame } from '../compiler/ir'
 import { ACCESSIBILITY_FIELDS, accessibilityChanges, authoredAccessibilityProps, isAccessibilityAttribute, projectAccessibility } from '../accessibility'
 import { type NativeClassTable, seedClassTable } from '../compiler/class-table'
 import { activeNativeLeaf, compileClassStyles, impliedLeadingApplies, type LeafEntry, leafFromEntries, NATIVE_STATE_VARIANTS, setNativeLeaf } from '../compiler/utilities-to-style'
@@ -861,7 +862,14 @@ export function createNativeHost(options: NativeHostOptions): NativeHost {
     return memo.props ??= withHostLeaf(() => compileClassStyles(classes, record.variables, { focus: record.type === 'TextInput', focusWithin: true, rules: options.stylesheetRules }))
   }
 
+  // A Switch or a spinner draws at its own size, whatever its classes say
+  // (withoutIntrinsicFrame). Applied to what the cache below hands out, which is
+  // shared by every node with the same classes, whatever its type.
   function resolveStyle(record: NodeRecord, id: string): Record<string, unknown> {
+    return withoutIntrinsicFrame(record.type, resolveClassedStyle(record, id))
+  }
+
+  function resolveClassedStyle(record: NodeRecord, id: string): Record<string, unknown> {
     resolvingId = id
     const report = reportStyle
     let inherited = record.inheritedVariables
