@@ -221,7 +221,9 @@ export function mountFloatingActionsWeb(doc: Document = document): FloatingActio
         control.setAttribute('data-floating-action', action.path)
         if (index === 0) control.setAttribute('data-first', '')
         if (index === list.length - 1) control.setAttribute('data-last', '')
-        control.setAttribute('aria-label', `${action.accessibilityLabel || action.label}${badge ? `, ${badge}` : ''}`)
+        // accessibilityValue reads in the badge's place, as on the hosts; '' reads nothing there.
+        const spoken = index === list.length - 1 && action.accessibilityValue !== undefined ? String(action.accessibilityValue) : badge
+        control.setAttribute('aria-label', `${action.accessibilityLabel || action.label}${spoken ? `, ${spoken}` : ''}`)
         control.title = action.label
         const current = href.split('?')[0]!.replace(/\/$/, '') === here
         // On: the tint, as the hosts draw an action whose screen is showing.

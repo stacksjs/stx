@@ -15,6 +15,12 @@ export interface NativeFloatingAction {
   /** Read in place of `label` when the name alone is not enough. */
   accessibilityLabel?: string
   /**
+   * Read after the name in place of the badge, on the last action (the one
+   * with the badge). `''` reads nothing there, for a name that already says
+   * the count ("Add, 3 unread messages"); left out, the badge is read.
+   */
+  accessibilityValue?: string
+  /**
    * On: drawn in the app's tint, filled where its symbol has a fill, and
    * announced as selected. For a mode the action switched, as Maps' location
    * arrow is blue while tracking. An action is already drawn this way while
@@ -138,6 +144,8 @@ export function floatingActions(actions: ReadonlyArray<NativeFloatingAction | nu
       title: primary.label,
       symbol: primary.symbol,
       ...(primary.accessibilityLabel ? { accessibilityLabel: primary.accessibilityLabel } : {}),
+      // Kept when empty: '' is the instruction to read nothing in the badge's place.
+      ...(primary.accessibilityValue !== undefined ? { accessibilityValue: String(primary.accessibilityValue) } : {}),
       ...(primary.active ? { selected: true } : {}),
       badge,
       ...(primary.menu?.length ? { menu: hostMenu(primary.path, primary.menu) } : {}),
@@ -161,6 +169,7 @@ export function floatingActions(actions: ReadonlyArray<NativeFloatingAction | nu
     title: primary.label,
     symbol: primary.symbol,
     ...(primary.accessibilityLabel ? { accessibilityLabel: primary.accessibilityLabel } : {}),
+    ...(primary.accessibilityValue !== undefined ? { accessibilityValue: String(primary.accessibilityValue) } : {}),
     ...(primary.active ? { selected: true } : {}),
     badge: badgeText(primary.badge),
     ...(layout === 'separate' ? { iconOnly: true } : { layout }),

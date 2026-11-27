@@ -148,3 +148,31 @@ describe('<FloatingActions layout="beside"> on a web page', () => {
     }
   })
 })
+
+describe('accessibilityValue', () => {
+  const action = { path: '/add', label: 'Add', accessibilityLabel: 'Add, 3 unread messages', symbol: 'plus', badge: 3 }
+
+  it.each(['beside', 'vertical', 'horizontal', 'separate'] as const)('reaches the host in %s, an empty one included', (layout) => {
+    expect(floatingActions([{ ...action, accessibilityValue: '' }], layout)).toMatchObject({ accessibilityLabel: 'Add, 3 unread messages', accessibilityValue: '', badge: '3' })
+    expect(floatingActions([{ ...action, accessibilityValue: 'three new' }], layout)).toMatchObject({ accessibilityValue: 'three new' })
+    expect(floatingActions([action], layout)).not.toHaveProperty('accessibilityValue')
+  })
+
+  it('reads in place of the badge on a web page, and an empty one reads nothing there', () => {
+    const browser = new Window({ url: 'https://fixture.invalid/home' })
+    try {
+      const web = mountFloatingActionsWeb(browser.document as unknown as Document)
+      const label = () => browser.document.querySelector('[data-floating-action]')!.getAttribute('aria-label')
+      web.update([{ ...action, accessibilityValue: '' }], 'beside')
+      expect(label()).toBe('Add, 3 unread messages')
+      web.update([{ ...action, accessibilityValue: 'three new' }], 'beside')
+      expect(label()).toBe('Add, 3 unread messages, three new')
+      web.update([action], 'beside')
+      expect(label()).toBe('Add, 3 unread messages, 3')
+      web.dispose()
+    }
+    finally {
+      browser.close()
+    }
+  })
+})

@@ -216,7 +216,9 @@ export function createBrowserScreenBridge(platform: BrowserPlatform, options: Br
         const button = document.createElement('button')
         button.type = 'button'
         button.setAttribute('data-tab-accessory', '')
-        button.setAttribute('aria-label', `${item.accessibilityLabel || item.title}${item.badge ? `, ${item.badge}` : ''}`)
+        // The primary's accessibilityValue reads in the badge's place, as on the hosts; '' reads nothing there.
+        const spoken = item === primary && typeof primary.accessibilityValue === 'string' ? primary.accessibilityValue : item.badge
+        button.setAttribute('aria-label', `${item.accessibilityLabel || item.title}${spoken ? `, ${spoken}` : ''}`)
         button.style.cssText = 'position:relative;display:flex;align-items:center;justify-content:center;width:56px;height:56px;flex-shrink:0;border:0;border-radius:50%;background:#8882;color:inherit'
         if (grouped) {
           // One control, as the host draws it: 48 across, symbols 55 apart, no divider.

@@ -118,6 +118,11 @@ export interface NativeAccessoryCompanion {
 /** Floating actions over the tab bar, in companion order followed by the primary action. */
 export interface NativeTabAccessoryGroup extends Omit<NativeAccessoryCompanion, 'menu'> {
   badge?: string | null
+  /**
+   * Read after the label in place of the badge (Craft main 16d0003b9). `''`
+   * reads nothing there, for a label that already says the count.
+   */
+  accessibilityValue?: string
   iconOnly?: boolean
   /** Join the icons in one material capsule, above the trailing edge of the tab bar.
    * Vertical reads top to bottom; horizontal reads in the host's layout direction.
@@ -136,6 +141,11 @@ export interface NativeTabAccessoryGroup extends Omit<NativeAccessoryCompanion, 
 export interface NativeTabAccessoryBeside extends Omit<NativeAccessoryCompanion, 'menu'> {
   layout: 'beside'
   badge?: string | null
+  /**
+   * Read after the label in place of the badge (Craft main 16d0003b9). `''`
+   * reads nothing there, for a label that already says the count.
+   */
+  accessibilityValue?: string
   menu?: NativeAccessoryMenuItem[]
   companions?: never
   iconOnly?: never
