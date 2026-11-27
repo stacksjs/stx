@@ -71,7 +71,14 @@ export function precompileCspBindings(html: string, minify = false): string {
       const base = name.split('.')[0]
       if ([':for', '@for', 'x-for'].includes(base)) {
         const list = /^\s*\(?\s*\w+(?:\s*,\s*\w+)?\s*\)?\s+(?:in|of)\s+(.+)\s*$/.exec(value)
-        if (list) read(list[1])
+        if (list) {
+          const expression = list[1]
+          read(expression)
+          // bindFor retries a callable list as a bare reference while its
+          // value is unavailable. The retry must have a compiled read too.
+          const bare = expression.replace(/(?:\?\.)?\(\s*\)\s*$/, '')
+          if (bare !== expression) add('return ' + bare)
+        }
       }
       else if (['x-data', 'data-stx-xdata'].includes(name)) add('return (' + value + ')')
       else if (['x-init', 'data-stx-xinit', 'x-destroy', 'data-stx-xdestroy'].includes(name)) add('reactive:' + value, value + ';')

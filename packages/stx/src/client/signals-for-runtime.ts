@@ -427,7 +427,7 @@ catch (e) {
       // string-literal parse strips the escapes again — collapsing the pattern
       // to a bare-letter match that never fires (stacksjs/stx#1748). So use a
       // regex literal, not new RegExp(string), for patterns with backslashes.
-      var trailingParens = /\\(\\s*\\)\\s*$/;
+      var trailingParens = /(?:\\?\\.)?\\(\\s*\\)\\s*$/;
       if (!Array.isArray(list) && trailingParens.test(listExpr)) {
         list = evalLazy(listExpr.replace(trailingParens, ''));
       }

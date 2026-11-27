@@ -15,7 +15,8 @@ it.each([false, true])('hydrates, updates rows and handles models with eval forb
   const csp = { enabled: true, precompile: true, useHashes: true, addMetaTag: true, directives: { 'default-src': ["'self'"], 'script-src': ["'self'"], 'style-src': ["'self'", "'unsafe-inline'"] } }
   const page = await openBrowserPage({ name: 'csp-bindings-' + minify, renderOptions: { csp, minifyClient: minify, debug: !minify }, headers: html => ({ 'Content-Security-Policy': hashedCspHeader(html, csp) }), ready: 'window.probe && document.querySelector("#count")?.textContent === "1"', body: String.raw`<script client>
 const count = state(1); const shown = state(true); const rows = state([{id:1,label:'first'}]); const form = {title: state('initial')}
-window.probe = { count, shown, rows, form }
+const optionsReady = state(false); function optionsWhenReady() { return optionsReady() ? ['Ready choice'] : undefined }
+window.probe = { count, shown, rows, form, optionsReady }
 window.warnings = []; console.warn = (...args) => window.warnings.push(args.map(String).join(' '))
 window.cspBlocked = false
 try { new Function('return 1')() } catch { window.cspBlocked = true }
@@ -26,7 +27,9 @@ try { new Function('return 1')() } catch { window.cspBlocked = true }
 <b id="named-entity" x-text="'&copy;'"></b><b id="nested-entity" x-text="'A &amp;amp; B'"></b>
 <b id="escaped-binding" :text="'Postline\'s path is C:\\posts'"></b>
 <div :if="shown"><span id="conditional">{{ count() + 2 }}</span></div>
-<div :for="row in rows" :key="row.id"><span class="row" x-text="row.label"></span><button class="pick" @click="form.title.set(row.label)">Pick</button></div>` })
+<div :for="row in rows" :key="row.id"><span class="row" x-text="row.label"></span><button class="pick" @click="form.title.set(row.label)">Pick</button></div>
+<span :for="option in optionsWhenReady()" :if="optionsReady" class="choice" :text="option"></span>
+<span :for="option in optionsWhenReady?.()" :if="optionsReady" class="optional-choice" :text="option"></span>` })
   try {
     expect(await page.json('return window.cspBlocked')).toBe(true)
     expect(await page.json('return document.querySelector("#named-entity").textContent')).toBe('©')
@@ -34,6 +37,9 @@ try { new Function('return 1')() } catch { window.cspBlocked = true }
     expect(await page.json('return document.querySelector("#escaped-binding").textContent')).toBe("Postline's path is C:\\posts")
     await page.run("document.querySelector('#increment').click()")
     expect(await page.json('return {count: probe.count(), warnings: window.warnings, errors: window.__errors}')).toMatchObject({ count: 2, warnings: [], errors: [] })
+    await page.run('probe.optionsReady.set(true)')
+    expect(await page.until('document.querySelector(".choice")?.textContent === "Ready choice" && document.querySelector(".optional-choice")?.textContent === "Ready choice"')).toBe(true)
+    expect(await page.json('return window.warnings')).toEqual([])
     expect(await page.until('document.querySelector("#count").textContent === "2"')).toBe(true)
     expect(await page.json('return document.querySelector("#count").title')).toBe('n=2')
     expect(await page.json('return document.querySelector("#count").getAttribute("data-total")')).toBe('12')
