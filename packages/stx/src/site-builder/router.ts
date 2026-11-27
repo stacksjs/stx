@@ -40,6 +40,8 @@ async function getRouterScript(): Promise<string> {
  * it up on init.
  */
 export async function injectRouterScript(html: string, options?: RouterOptions): Promise<string> {
+  if (options?.enabled === false) return html
+
   const script = await getRouterScript()
   if (!script) return html
 

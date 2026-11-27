@@ -477,7 +477,7 @@ export async function renderTemplateString(
     }
 
     // Inject SPA router script for client-side navigation
-    output = await injectRouterScript(output)
+    output = await injectRouterScript(output, options)
   }
 
   // Optionally wrap in full HTML document

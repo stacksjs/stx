@@ -54,6 +54,7 @@ export interface BuildResult {
  * 7. Generate sitemap.xml and robots.txt
  */
 export async function buildStaticSite(options: BuildOptions): Promise<BuildResult> {
+  const stxConfig = await loadStxConfig(process.cwd())
   const start = Date.now()
   const pagesDir = options.pagesDir ?? 'pages'
   const outDir = options.outDir ?? 'dist'
@@ -181,7 +182,7 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
         html = insertBeforeBodyClose(html, buildLangPickerScript(i18n, locale))
 
       if (options.spa !== false)
-        html = await injectRouterScript(html, options.router)
+        html = await injectRouterScript(html, { ...stxConfig.router, ...options.router })
 
       const targetFile = i18n ? localePathToFile(basePath, locale, i18n.defaultLocale) : file
       const targetPath = join(outDir, targetFile)
@@ -202,7 +203,6 @@ export async function buildStaticSite(options: BuildOptions): Promise<BuildResul
   // content-hashed assets, so they are downloaded and cached once instead of
   // re-shipped inline per page (#1865, #1878). Runs before the asset copies so
   // it only ever walks pages this build rendered, never a user's static HTML.
-  const stxConfig = await loadStxConfig(process.cwd())
   const externalized = externalizeSharedAssets(outDir, { deferScripts: stxConfig.deferScripts })
   if (externalized.assets > 0) {
     console.log(

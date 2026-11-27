@@ -188,6 +188,7 @@ export interface BuildOptions extends SiteConfig {
  * Inlined to avoid a circular import in this types file.
  */
 export interface SiteRouterOptions {
+  enabled?: boolean
   color?: string
   /** Top loading bar color (hex/rgb). Matches stx-router `progressColor`. */
   progressColor?: string

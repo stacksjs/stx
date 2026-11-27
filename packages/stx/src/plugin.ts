@@ -182,7 +182,7 @@ export const plugin: BunPlugin = {
         }
 
         // Inject SPA router for full-page templates (has </body> guard built in)
-        output = await injectRouterScript(output)
+        output = await injectRouterScript(output, options)
 
         // Track dependencies for this file
         dependencies.forEach(dep => allDependencies.add(dep))

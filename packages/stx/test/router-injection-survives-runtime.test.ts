@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { hasRouterScript, injectRouterScript } from '../src/runtime-injection'
+import { renderString } from '../src/render'
+import { injectRouterScript as injectStaticRouter } from '../src/site-builder/router'
 
 /**
  * The signals runtime is inlined into every reactive page before the router is
@@ -15,6 +17,15 @@ import { hasRouterScript, injectRouterScript } from '../src/runtime-injection'
  */
 describe('router injection vs. the inlined signals runtime', () => {
   const RUNTIME_SELECTOR = 'document.querySelector("[data-stx-router-container]")'
+
+  it('honors the explicit router opt-out in rendered pages and standalone sites', async () => {
+    const html = '<html><body><main><a href="/second">Second</a></main></body></html>'
+    const router = { enabled: false }
+
+    expect(await injectRouterScript(html, { router })).toBe(html)
+    expect(await injectStaticRouter(html, router)).toBe(html)
+    expect(hasRouterScript(await renderString(html, {}, { options: { router } }))).toBe(false)
+  })
 
   it('does not mistake the runtime\'s container selector for an injected router', () => {
     expect(hasRouterScript(`<script>var c=${RUNTIME_SELECTOR};</script>`)).toBe(false)

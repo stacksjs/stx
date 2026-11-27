@@ -1240,7 +1240,9 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
       cacheSalt = [cacheSalt, imageDelivery.fingerprint].filter(Boolean).join(':')
     }
 
-    const buildCache = new BuildCache(cfg.cacheDir, cacheSalt)
+    // These render options affect the cached markup even when no page changed.
+    const markupSalt = Bun.hash(JSON.stringify({ router: cfg.router, csp: stxConfig.csp })).toString(16)
+    const buildCache = new BuildCache(cfg.cacheDir, [cacheSalt, markupSalt].filter(Boolean).join(':'))
     if (cfg.cache) {
       await buildCache.load()
     }

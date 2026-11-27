@@ -64,6 +64,15 @@ function routerConfig(html: string): Record<string, unknown> | null {
 }
 
 describe('the static build forwards router config', () => {
+  it('omits the SPA router when disabled and lets a caller opt back in', async () => {
+    await writeConfig({ enabled: false })
+
+    const html = await build()
+    expect(routerConfig(html)).toBeNull()
+    expect(html).not.toContain('data-stx-router src=')
+    expect(routerConfig(await build({ router: { enabled: true, container: 'main' } }))).toMatchObject({ container: 'main' })
+  })
+
   it('carries a container declared in stx.config.ts onto the page', async () => {
     await writeConfig({ container: '#app-shell' })
 

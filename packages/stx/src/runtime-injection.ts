@@ -408,6 +408,8 @@ export function hasRouterScript(template: string): boolean {
 }
 
 export async function injectRouterScript(template: string, options?: StxOptions): Promise<string> {
+  if (options?.router?.enabled === false) return template
+
   // Only inject into full HTML pages (not template fragments or components)
   if (!template.includes('</body>')) {
     return template
