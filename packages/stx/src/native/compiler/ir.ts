@@ -368,6 +368,7 @@ export type STXEventType =
   | 'onRequestClose'
   // Gesture events
   | 'onSwipe'
+  | 'onSwipeSettle'
   | 'onPan'
   | 'onPinch'
   // Text input events

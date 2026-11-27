@@ -17,7 +17,7 @@ const NATIVE_PROP_NAMES = [
   'pressRetentionOffset', 'progressBackgroundColor', 'progressViewOffset', 'refreshControl', 'resizeMode',
   'returnKeyType', 'scrollEnabled', 'scrollTarget', 'secureTextEntry', 'selectedValue', 'selectionColor',
   'showsHorizontalScrollIndicator', 'showsVerticalScrollIndicator',
-  'stickyHeaderIndices', 'swipeDirection', 'swipeEnabled', 'testID', 'textContentType', 'thumbColor', 'thumbTintColor', 'titleColor', 'trackColor',
+  'stickyHeaderIndices', 'swipeDirection', 'swipeEnabled', 'swipeOpen', 'swipeReveal', 'testID', 'textContentType', 'thumbColor', 'thumbTintColor', 'titleColor', 'trackColor',
   'underlayColor', 'windowSize',
   'initialRegion', 'tileOverlay', 'edgePadding', 'fitToBounds', 'showsUserLocation', 'zoomEnabled', 'rotateEnabled', 'pitchEnabled', 'mapType', 'fillColor', 'strokeColor', 'pinColor',
   'showsCompass', 'showsScale', 'cameraPitch', 'cameraHeading',
@@ -51,7 +51,7 @@ export const NATIVE_BOOLEAN_PROPS = new Set([
   'refreshing', 'scrollEnabled', 'secureTextEntry', 'selectTextOnFocus', 'showsHorizontalScrollIndicator',
   'showsVerticalScrollIndicator', 'transparent', 'visible', 'nonModal', 'dismissOnOutsideTap',
   'fitToBounds', 'showsUserLocation', 'zoomEnabled', 'rotateEnabled', 'pitchEnabled', 'showsCompass', 'showsScale',
-  'pictureInPicture', 'grabberVisible', 'iconOnly', 'opaque', 'swipeEnabled',
+  'pictureInPicture', 'grabberVisible', 'iconOnly', 'opaque', 'swipeEnabled', 'swipeOpen',
 ])
 
 const nativePropNames = new Map(

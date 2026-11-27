@@ -8,17 +8,31 @@ export const initialDisabled = $bool($props.disabled)
 </script>
 
 <script client>
-import { closeSwipeRow, openSwipeRow } from './swipe-row'
+import { closeSwipeRow, openSwipeRow, SWIPE_SLOP, swipeOffset, swipeSettlesOpen } from './swipe-row'
 
 const emit = defineEmits(['action'])
 const nativeHost = {{ nativeHost }}
+// A host that pans the row with the finger and animates it (Craft's
+// capabilities.interactiveSwipe): it owns the content's translation, and says
+// where a swipe came to rest. Without it the row jumps open on a finished swipe.
+const interactive = nativeHost && typeof craft !== 'undefined' && !!craft && !!craft.capabilities && craft.capabilities.interactiveSwipe === true
 const actions = useReactiveProp('actions', {{ initialActions }})
 const actionsLabel = useReactiveProp('actionsLabel', {{ defaultLabel }})
 const disabled = useReactiveProp('disabled', {{ initialDisabled }})
 const testId = useReactiveProp('testID', {{ testID }})
 const opened = state(false)
 const actionWidth = 88
-const offset = derived(() => opened() ? actionWidth * actions().length : 0)
+const reveal = derived(() => actionWidth * actions().length)
+const offset = derived(() => opened() ? reveal() : 0)
+// Where a finger is holding the row on a web page, or null when nothing is.
+const dragged = state(null)
+const reduceMotion = !nativeHost && typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+const webStyle = derived(() => {
+  const position = dragged() === null ? -offset() : dragged()
+  // pan-y: the browser keeps vertical scrolling and leaves the horizontal drag to us.
+  return { transform: 'translateX(' + position + 'px)', transition: dragged() !== null || reduceMotion ? 'none' : 'transform 250ms ease-out', touchAction: 'pan-y' }
+})
+const trayStyle = derived(() => nativeHost ? { right: -reveal(), width: reveal() } : { right: -reveal() + 'px', width: reveal() + 'px' })
 
 function close() {
   closeSwipeRow(close)
@@ -36,10 +50,51 @@ function swipe(direction) {
   else if (direction === 'right') close()
 }
 
+// An interactive swipe the user made came to rest.
+function settle(isOpen) {
+  if (isOpen) open()
+  else close()
+}
+
 function activate(id) {
   if (disabled() || !actions().some(action => action.id === id)) return
   close()
   emit('action', id)
+}
+
+// A finger dragging the row on a web page: it follows 1:1 once the drag is
+// horizontal, and lets a vertical one scroll the page.
+let drag = null
+function dragStart(event) {
+  if (event.pointerType !== 'touch' || disabled() || !actions().length) return
+  drag = { x: event.clientX, y: event.clientY, from: -offset(), horizontal: null, at: event.timeStamp, last: event.clientX }
+}
+function dragMove(event) {
+  if (!drag) return
+  const dx = event.clientX - drag.x
+  if (drag.horizontal === null) {
+    const dy = event.clientY - drag.y
+    if (Math.abs(dx) < SWIPE_SLOP && Math.abs(dy) < SWIPE_SLOP) return
+    drag.horizontal = Math.abs(dx) > Math.abs(dy)
+    if (!drag.horizontal) {
+      drag = null
+      return
+    }
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+  }
+  drag.velocity = (event.clientX - drag.last) / Math.max(1, event.timeStamp - drag.at)
+  drag.last = event.clientX
+  drag.at = event.timeStamp
+  dragged.set(swipeOffset(drag.from + dx, reveal()))
+}
+function dragEnd() {
+  const ended = drag
+  drag = null
+  if (!ended || dragged() === null) return
+  const position = dragged()
+  dragged.set(null)
+  if (swipeSettlesOpen(position, reveal(), ended.velocity || 0)) open()
+  else close()
 }
 
 effect(() => {
@@ -49,30 +104,53 @@ onMount(() => close)
 </script>
 
 <div class="relative overflow-hidden {{ className }}" :testID="testId()"
-     :swipeEnabled="nativeHost && !disabled() && actions().length > 0"
+     @if(nativeHost)
+     :swipeEnabled="!interactive && !disabled() && actions().length > 0"
      :swipeDirection="opened() ? 'right' : 'left'"
      @swipe="swipe($event.direction)"
-     @if(!nativeHost)
+     @else
      @keydown.escape="opened() && close()"
      @endif
      >
-  <div class="flex flex-row items-center"
-       :style="nativeHost ? { transform: [{ translateX: -offset() }] } : { transform: 'translateX(' + -offset() + 'px)' }">
+  <div class="relative flex flex-row items-center"
+       @if(nativeHost)
+       :swipeReveal="interactive && !disabled() ? reveal() : 0"
+       :swipeOpen="opened()"
+       @swipe-settle="settle($event.open)"
+       :style="interactive ? {} : { transform: [{ translateX: -offset() }] }"
+       @else
+       :style="webStyle()"
+       @pointerdown="dragStart($event)"
+       @pointermove="dragMove($event)"
+       @pointerup="dragEnd()"
+       @pointercancel="dragEnd()"
+       @endif
+       >
     <div class="flex flex-1 flex-col min-w-0"><slot /></div>
     <button :if="actions().length" type="button" class="flex shrink-0 items-center justify-center h-11 w-11"
             :disabled="disabled()" :aria-label="actionsLabel()" :aria-expanded="opened() ? 'true' : 'false'"
             :testID="testId() && testId() + '-actions'" @click="opened() ? close() : open()">
       <i class="h-5 w-5 text-[#636366] dark:text-[#aeaeb2] i-lucide-more-horizontal" aria-hidden="true"></i>
     </button>
-  </div>
-  <div :if="opened()" class="flex absolute inset-y-0 right-0 flex-row">
-    <button :for="item in actions()" :key="item.id" type="button"
-            class="flex shrink-0 items-center justify-center px-1 min-h-11"
-            :class="item.destructive ? 'bg-[#b4232b] dark:bg-[#b4232b]' : 'bg-[#245fa9] dark:bg-[#245fa9]'"
-            :style="{ width: actionWidth + 'px' }" :disabled="disabled()"
-            :accessibilityLabel="item.accessibilityLabel || item.label" :aria-label="item.accessibilityLabel || item.label"
-            :testID="item.testID || (testId() && testId() + '-' + item.id)" @click="activate(item.id)">
-      <span class="text-xs font-semibold text-center text-white" :text="item.label"></span>
-    </button>
+    <!-- Just past the trailing edge, riding on the sliding content: the row
+         clips them while closed and the slide reveals them, so nothing pops
+         in. Hidden from assistive tech and from touch until open. -->
+    <div class="flex absolute inset-y-0 flex-row" :style="trayStyle()"
+         :aria-hidden="opened() ? 'false' : 'true'"
+         @if(nativeHost)
+         :pointerEvents="opened() ? 'auto' : 'none'"
+         @else
+         :class="opened() ? '' : 'pointer-events-none'"
+         @endif
+         >
+      <button :for="item in actions()" :key="item.id" type="button"
+              class="flex shrink-0 items-center justify-center px-1 min-h-11"
+              :class="item.destructive ? 'bg-[#b4232b] dark:bg-[#b4232b]' : 'bg-[#245fa9] dark:bg-[#245fa9]'"
+              :style="{ width: actionWidth + 'px' }" :disabled="disabled()" :tabindex="opened() ? 0 : -1"
+              :accessibilityLabel="item.accessibilityLabel || item.label" :aria-label="item.accessibilityLabel || item.label"
+              :testID="item.testID || (testId() && testId() + '-' + item.id)" @click="activate(item.id)">
+        <span class="text-xs font-semibold text-center text-white" :text="item.label"></span>
+      </button>
+    </div>
   </div>
 </div>

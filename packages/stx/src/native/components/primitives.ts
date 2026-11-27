@@ -94,6 +94,16 @@ export interface ViewProps extends BaseProps {
   swipeEnabled?: boolean
   /** Which direction to recognize. Defaults to both. */
   swipeDirection?: 'left' | 'right' | 'both'
+  /**
+   * An interactive row swipe (`capabilities.interactiveSwipe`): the points this
+   * view slides to reveal at its trailing edge. The host pans it with the
+   * finger, settles it open or closed, and owns its horizontal translation.
+   */
+  swipeReveal?: number
+  /** Where the interactive swipe should be; the host animates to a change. */
+  swipeOpen?: boolean
+  /** An interactive swipe the user made came to rest (not echoed for `swipeOpen`). */
+  onSwipeSettle?: (event: { open: boolean }) => void
   /** Layout change handler */
   onLayout?: (event: LayoutEvent) => void
 }

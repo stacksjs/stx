@@ -69,6 +69,8 @@ function capabilityFlags(capabilities: Set<string>): Record<string, boolean> {
     scheduledWorkouts: capabilities.has('scheduledWorkouts'),
     liveActivities: capabilities.has('liveActivities'),
     clipboard: capabilities.has('clipboard'),
+    // A row the host pans with the finger and settles (swipeReveal, swipeOpen, onSwipeSettle).
+    interactiveSwipe: capabilities.has('interactiveSwipe'),
     contacts: false,
     calendar: false,
     localNotifications: capabilities.has('notifications'),
