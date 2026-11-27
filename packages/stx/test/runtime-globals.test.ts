@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { processDirectives } from '../src/process'
 import { STX_AUTO_IMPORTS } from '../src/client-script'
-import { COMPONENT_SCOPE_LOCAL_GLOBALS, STX_RUNTIME_GLOBALS, buildRuntimeGlobalsDestructure } from '../src/runtime-globals'
+import { COMPONENT_SCOPE_LOCAL_GLOBALS, STX_RUNTIME_GLOBALS, buildRuntimeGlobalsDestructure, templateNeedsRuntime } from '../src/runtime-globals'
 import { generateSignalsRuntimeDev } from '../src/signals'
 import { runtimeWindowStxSurface } from '../test-utils/runtime-surface'
 
@@ -34,6 +34,17 @@ function destructuredNames(generated: string): Set<string> {
   if (!match) throw new Error('no window.stx destructure found in the generated script')
   return new Set(match[1].split(',').map(n => n.trim()).filter(Boolean))
 }
+
+describe('server script runtime detection', () => {
+  it('finds the server attribute after quoted punctuation', () => {
+    expect(templateNeedsRuntime('<script data-label="a > b" server>useHead({})</script>')).toBe(false)
+  })
+
+  it('keeps client scripts with server in other attribute names or values', () => {
+    expect(templateNeedsRuntime('<script data-label="server">useHead({})</script>')).toBe(true)
+    expect(templateNeedsRuntime('<script data-server>useHead({})</script>')).toBe(true)
+  })
+})
 
 describe('stx#1785: runtime globals come from one source', () => {
   it('every declared global actually exists on window.stx', () => {

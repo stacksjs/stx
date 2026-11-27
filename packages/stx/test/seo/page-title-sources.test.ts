@@ -65,6 +65,28 @@ useHead({ title: 'From useHead' })
   })
 })
 
+describe('useHead runtime requirements', () => {
+  const runtimeTag = /<script\b[^>]*\bdata-stx-runtime(?=[\s=>])/
+  const serverHead = `<script server>
+useHead({ title: 'Static page', meta: [{ name: 'description', content: 'Server metadata' }] })
+</script>`
+
+  it('renders server metadata without loading the client runtime', async () => {
+    const out = await processDirectives(`${serverHead}<main>Content</main>`, {}, '/app/page.stx', base, new Set<string>())
+    expect(out).toContain('<title>Static page</title>')
+    expect(out).toContain('Server metadata')
+    expect(runtimeTag.test(out)).toBe(false)
+  })
+
+  it('loads the runtime when a client script also uses the head API', async () => {
+    const out = await processDirectives(`${serverHead}
+<script client>useHead({ title: 'Client page' })</script>
+<main>Content</main>`, {}, '/app/page.stx', base, new Set<string>())
+    expect(out).toContain('<title>Static page</title>')
+    expect(runtimeTag.test(out)).toBe(true)
+  })
+})
+
 describe('site config title', () => {
   const site = { name: 'Site', url: 'https://example.test', seo: { title: 'From site config' } } as never
   const shell = '<!DOCTYPE html><html><head><title>stx App</title></head><body><main>x</main></body></html>'

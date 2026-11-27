@@ -33,7 +33,9 @@
  * @module runtime-globals
  */
 
+import { scanHtmlScriptElements } from './html-masking'
 import { importsSignalDeclarations } from './imported-signals'
+import { scriptAttributes } from './script-attributes'
 
 /**
  * Public stx APIs made available as bare identifiers inside client scripts.
@@ -455,9 +457,8 @@ export function isRuntimeEventName(name: string): boolean {
  * the whole ~159KB signals runtime for markup that is inert text
  * (stacksjs/stx#1835).
  *
- * Only TEXT is blanked, and only inside `<pre>` / `<code>` and HTML comments.
- * Tags are kept intact, including their attributes, because that is where a
- * directive actually lives:
+ * Server scripts and HTML comments are blanked in full. Inside `<pre>` and
+ * `<code>`, keep tags and their attributes because they can carry directives:
  *
  *   <pre><code>&lt;div :if="open"&gt;</code></pre>   -> blanked, it is text
  *   <pre><code><span>&lt;div :if="x"&gt;</span></pre> -> span kept, text blanked
@@ -503,9 +504,10 @@ export function clearBlankCache(): void {
 export function blankInertHtmlRegions(html: string): string {
   if (!html)
     return html
+  const mayHaveServerScripts = /<script\b/i.test(html) && /\bserver\b/i.test(html)
   // Nothing inert to blank: the same string comes back, which costs nothing and
   // must not take a cache slot.
-  if (!html.includes('<!--') && !/<(?:pre|code)\b/i.test(html))
+  if (!mayHaveServerScripts && !html.includes('<!--') && !/<(?:pre|code)\b/i.test(html))
     return html
 
   const cacheable = html.length >= BLANK_CACHE_MIN_BYTES
@@ -518,7 +520,21 @@ export function blankInertHtmlRegions(html: string): string {
   const blankText = (segment: string): string =>
     segment.replace(/(<[^>]*>)|([^<]+)/g, (_match, tag: string, text: string) => tag ?? ' '.repeat(text.length))
 
-  const blanked = html
+  // Server APIs such as useHead are also available in the browser. Only calls
+  // from a client script should influence whether the page loads the runtime.
+  let clientHtml = html
+  if (mayHaveServerScripts) {
+    let cursor = 0
+    let result = ''
+    for (const script of scanHtmlScriptElements(html)) {
+      if (!scriptAttributes(script.attrs).has('server')) continue
+      result += html.slice(cursor, script.start) + ' '.repeat(script.end - script.start)
+      cursor = script.end
+    }
+    if (cursor > 0) clientHtml = result + html.slice(cursor)
+  }
+
+  const blanked = clientHtml
     .replace(/(<pre\b[^>]*>)([\s\S]*?)(<\/pre>)/gi, (_m, open: string, body: string, close: string) => open + blankText(body) + close)
     .replace(/(<code\b[^>]*>)([\s\S]*?)(<\/code>)/gi, (_m, open: string, body: string, close: string) => open + blankText(body) + close)
     .replace(/<!--[\s\S]*?-->/g, match => ' '.repeat(match.length))
