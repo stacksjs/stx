@@ -18,10 +18,9 @@ toast.dispatchEvent(new MouseEvent('mouseenter'));
 await wait(550);
 const held = toast.isConnected;
 toast.dispatchEvent(new MouseEvent('mouseleave'));
-return { held, role: toast.getAttribute('role'), live: toast.getAttribute('aria-live'), id }; })()`)
+return { held, role: toast.getAttribute('role'), id }; })()`)
     expect(result.held).toBe(true)
-    expect(result.role).toBe('alert')
-    expect(result.live).toBe('assertive')
+    expect(result.role).toBe('status')
     expect(await page.until(`!document.getElementById('stx-toast-${result.id}')`)).toBe(true)
   })
 
@@ -38,9 +37,10 @@ const focused = toast.isConnected && document.activeElement === close;
 second.focus(); await wait(550);
 const internal = toast.isConnected && document.activeElement === second;
 document.getElementById('outside').focus();
-return { focused, internal, id }; })()`)
+return { focused, internal, role: toast.getAttribute('role'), id }; })()`)
     expect(result.focused).toBe(true)
     expect(result.internal).toBe(true)
+    expect(result.role).toBe('alert')
     expect(await page.until(`!document.getElementById('stx-toast-${result.id}')`)).toBe(true)
     expect(await page.errors()).toEqual([])
   })

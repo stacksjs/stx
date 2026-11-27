@@ -17,8 +17,9 @@ watch(text, value => { if (body() !== value) body.set(value) })
     'views/editor.stx': page('default', `<script client>
 const first = { id: 1, text: 'Opening' }
 const second = { id: 2, text: 'Conclusion' }
-const rows = state([first, second])
-window.SHOW_SECOND = visible => rows.set(visible ? [first, second] : [first])
+const drafts = state([first, second])
+const rows = derived(() => drafts().map((draft, index) => ({ ...draft, number: index + 1 })))
+window.SHOW_SECOND = visible => drafts.set(visible ? [first, second] : [first])
 </script>
 <article x-for="row in rows()" :key="row.id" data-row><Editor :text="row.text" /></article>`),
   }, { '/editor': 'views/editor.stx' })

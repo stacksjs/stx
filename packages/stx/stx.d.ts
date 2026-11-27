@@ -850,8 +850,8 @@ declare function $watch<T>(
  * nothing is the quieter half of the same problem.
  */
 type StxToastAction =
-  | { label: string, href: string, target?: '_blank', onClick?: never, dismiss?: never }
-  | { label: string, onClick: () => void | Promise<void>, dismiss?: boolean, href?: never, target?: never }
+| { label: string, href: string, target?: '_blank', onClick?: never, dismiss?: never }
+| { label: string, onClick: () => void | Promise<void>, dismiss?: boolean, href?: never, target?: never }
 
 interface StxToastOptions {
   /** Auto-dismiss duration in ms. 0 = persistent. Default: 3000 */
