@@ -2134,6 +2134,7 @@ else {
             var scoped=/(?:^|\\s)data-stx-scoped(?:\\s|=|$)/i.test(attrs);
             var runDecl=(attrs.match(/data-stx-run\\s*=\\s*["']?(always|once)["']?/i)||[])[1];
             var ownerDecl=(attrs.match(/data-stx-owner\\s*=\\s*["']([^"']+)["']/i)||[])[1]||'';
+            var cspSetup=(attrs.match(/(?:^|\\s)data-stx-csp-setup\\s*=\\s*["']([a-f0-9]{64})["']/i)||[])[1]||'';
             var registry=/(?:^|\\s)data-stx-modules(?:\\s|=|$)/i.test(attrs)||REGISTRY_TEXT.test(code);
             var composables=/(?:^|\\s)data-stx-(?:framework-)?composables(?:\\s|=|$)/i.test(attrs)||COMPOSABLES_TEXT.test(code);
             fragScripts.push({text:code,slot:slot,setupName:generatedSetupName(code),scoped:scoped,run:runDecl?runDecl.toLowerCase():'',owner:ownerDecl,registry:registry,composables:composables,csp:/(?:^|\\s)data-stx-csp-script(?:\\s|=|$)/i.test(attrs),module:scriptType==='module',moduleJob:externalAttrs['data-stx-module-job']||''});
@@ -2144,6 +2145,7 @@ else {
               +(scoped?' data-stx-scoped':'')
               +(runDecl?' data-stx-run="'+runDecl.toLowerCase()+'"':'')
               +(ownerDecl?' data-stx-owner="'+ownerDecl+'"':'')
+              +(cspSetup?' data-stx-csp-setup="'+cspSetup+'"':'')
               +(externalAttrs['data-stx-module-job']?' data-stx-module-job="'+externalAttrs['data-stx-module-job']+'"':'')
               +'>'+code+'<\\/scr'+'ipt>';
           }
@@ -2658,13 +2660,15 @@ else {
           // stx.mount wrapper re-run from here mounted onto the container, the
           // incoming page's content (#1958). Fragments leave these out.
           if(s.hasAttribute('data-stx-instance'))return;
-          if(text.indexOf('__stx_setup_')===-1&&!s.hasAttribute('data-stx-scoped')&&!s.hasAttribute('data-stx-page')&&!s.hasAttribute('data-stx-route-params'))return;
+          var registry=isModuleRegistryScript(s);
+          var composables=isComposablesScript(s);
+          if(!registry&&!composables&&text.indexOf('__stx_setup_')===-1&&!s.hasAttribute('data-stx-scoped')&&!s.hasAttribute('data-stx-page')&&!s.hasAttribute('data-stx-route-params'))return;
           var key=text;
           if(seenSetups[key])return;
           seenSetups[key]=1;
           // A layout component outside the container carries its owner, so
           // execScripts skips it when it stayed on the page (#1958).
-          addScript(text,true,'',s.getAttribute('data-stx-owner')||'',s.type==='module',s.getAttribute('data-stx-module-job'),isModuleRegistryScript(s),isComposablesScript(s),s.hasAttribute('data-stx-csp-script'));
+          addScript(text,true,'',s.getAttribute('data-stx-owner')||'',s.type==='module',s.getAttribute('data-stx-module-job'),registry,composables,s.hasAttribute('data-stx-csp-script'));
         });
       }
       // Component setup scripts also assign window.stx._latestSetup. Run the

@@ -93,7 +93,7 @@ it.each(['document', 'fragment', 'nonce-document', 'nonce-fragment'])('preserves
   const nonce = mode.startsWith('nonce')
   const fragment = mode.endsWith('fragment')
   const csp = { enabled: true, precompile: true, useNonce: nonce, nonceGenerator: () => 'c3R4LWZpcnN0LWRvY3VtZW50', directives: { 'script-src': ["'self'"] } }
-  const body = (name: string) => `<main data-stx-content><script client>const n=state(1);window.routeProbe={name:'${name}',n}</script><button id="route-add" @click="n += 2">More</button><span id="route-value" x-text="n"></span><StxLink to="/two">Two</StxLink><StxLink to="/">One</StxLink></main>`
+  const body = (name: string) => `<main data-stx-content><script client>const n=state(1);window.routeProbe={name:'${name}',n}</script><button id="route-add" @click="n += 2">More</button><span id="route-value" x-text="${name === 'two' ? 'n * 10' : 'n'}"></span><StxLink to="/two">Two</StxLink><StxLink to="/">One</StxLink></main>`
   const nextCsp = { ...csp, nonceGenerator: () => 'c3R4LXNlY29uZC1kb2N1bWVudA==' }
   const second = finalizeCspDocument(await injectRouterScript(await processDirectives(`<!doctype html><html><head></head><body>${body('two')}</body></html>`, {}, join(tmpdir(), 'csp-two.stx'), { csp: nextCsp, cache: false, debug: false } as any, new Set())), nextCsp)
   const region = findContainerRegion(second)!
@@ -105,7 +105,7 @@ it.each(['document', 'fragment', 'nonce-document', 'nonce-fragment'])('preserves
     await page.run("document.querySelector('a[href=\"/two\"]').click()")
     expect(await page.until('window.routeProbe.name === "two"')).toBe(true)
     await page.run("document.querySelector('#route-add').click()")
-    expect(await page.until('document.querySelector("#route-value").textContent === "3"')).toBe(true)
+    expect(await page.until('document.querySelector("#route-value").textContent === "30"')).toBe(true)
     await page.run("document.querySelector('a[href=\"/\"]').click()")
     expect(await page.until('window.routeProbe.name === "one"')).toBe(true)
     expect(await page.errors()).toEqual([])
