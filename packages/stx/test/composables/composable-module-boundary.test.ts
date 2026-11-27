@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { clearComposableCache, getComposableScript } from '../../src/composable-loader'
 import { scanHtmlScriptElements } from '../../src/html-masking'
 import { orderPageModules, usesImportMeta } from '../../src/page-module-order'
+import { processScriptSetup } from '../../src/signal-processing'
 import { createTempDir } from '../../src/temp-dir'
 
 test('static prose, URLs, comments and literal binding strings do not execute modules', async () => {
@@ -28,6 +29,24 @@ test('module ordering is explicit and classic-only pages are unchanged', () => {
   expect(transformed).toContain('globalThis.__stxPageModulesReady||Promise.resolve()).then')
   expect(transformed).toContain('data-stx-module-bootstrap')
   expect(orderPageModules(transformed)).toBe(transformed)
+})
+
+test('keeps page setup classic and queues it after a real module', async () => {
+  const template = '<script>const selected = state(value); const refresh = async () => await reload();</script><main></main>'
+  const { setupCode } = await processScriptSetup(template, undefined, { value: 'draft-12' })
+  expect(setupCode).toContain('data-stx-page-setup')
+  expect(setupCode).toContain('draft-12')
+  expect(orderPageModules(setupCode!)).toBe(setupCode!)
+  const ordered = orderPageModules('<script data-stx-modules type="module">await initialize()</script>' + setupCode)
+  expect(ordered).toContain('data-stx-module-bootstrap')
+  expect(ordered).toContain('globalThis.__stxPageModulesReady||Promise.resolve()).then')
+  expect(ordered).toContain('draft-12')
+})
+
+test('retains module semantics for import.meta inside a generated setup', async () => {
+  const template = '<script>const selected = state(import.meta.url)</script><main></main>'
+  const { setupCode } = await processScriptSetup(template)
+  expect(orderPageModules(setupCode!)).toContain('data-stx-module-bootstrap')
 })
 
 test('module metadata detection skips dynamic imports and preserves comment-separated tokens', () => {

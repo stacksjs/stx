@@ -1742,7 +1742,7 @@ export async function processScriptSetup(
   // Generate the setup function that provides signal APIs. Mark the script
   // with data-stx-scoped so the client-script loop skips it.
   const setupCode = `
-<script data-stx-scoped>
+<script data-stx-scoped data-stx-page-setup>
 function ${setupFnName}() {
   ${setup.runtimeGlobals}
 ${escapeScriptBody(`${bridge}${setup.source}`)}

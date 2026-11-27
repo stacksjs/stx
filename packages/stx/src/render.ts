@@ -436,7 +436,7 @@ export async function renderTemplateString(
   if (renderOptions.templateOnly) {
     // Template-only mode: strip injected runtimes (signals, router, SEO tags).
     // Keep only the processed template HTML + any raw client scripts.
-    output = output.replace(/<script data-stx-scoped>[\s\S]*?<\/script>\s*/gi, '')
+    output = output.replace(/<script data-stx-scoped(?: data-stx-page-setup)?>[\s\S]*?<\/script>\s*/gi, '')
     output = output.replace(/<!-- stx SEO Tags -->[\s\S]*?(?=<)/i, '')
     if (clientScripts.length > 0) {
       output += `\n${clientScripts.join('\n')}`

@@ -39,25 +39,31 @@ function renderAttributes(attrs: Map<string, string | true>): string {
  * hydration, and structural clones must retain their native setup protocol.
  */
 export function orderPageModules(html: string): string {
-  const scripts = pageScripts(html)
-  if (scripts.some(script => scriptAttributes(script.attrs).has('data-stx-module-bootstrap'))) return html
-  const needsModule = (body: string): boolean => {
-    if (usesImportMeta(body)) return true
+  const scripts = pageScripts(html).map(script => ({ ...script, attributes: scriptAttributes(script.attrs) }))
+  if (scripts.some(({ attributes }) => attributes.has('data-stx-module-bootstrap'))) return html
+  const candidates = scripts.filter(({ inert, attributes }) => {
+    if (inert || attributes.has('data-stx-module-job') || attributes.has('data-stx-runtime') || attributes.has('data-stx-router')) return false
+    const type = attributes.get('type')
+    if (typeof type === 'string' && !['module', 'text/javascript', 'application/javascript'].includes(type.toLowerCase())) return false
+    return [...attributes.keys()].some(name => /^data-stx-(?:scoped|modules|stores|(?:framework-)?composables)$/.test(name))
+  })
+  const needsModule = ({ attributes, body }: (typeof scripts)[number]): boolean => {
+    if (attributes.get('type') === 'module' || usesImportMeta(body)) return true
+    // The compiler emits page setup as a synchronous registration. Its
+    // request-specific data and nested async callbacks cannot introduce
+    // top-level await into the registration outside the setup function.
+    if (attributes.has('data-stx-page-setup') || !/\bawait\b/.test(body)) return false
     try { return requiresAsyncBody(body) }
-    catch { return false } // Explicit external ESM imports are identified by their type attribute.
+    catch { return false }
   }
-  if (!scripts.some(script => needsModule(script.body) || scriptAttributes(script.attrs).get('type') === 'module')) return html
+  const firstModule = candidates.findIndex(needsModule)
+  if (firstModule === -1) return html
   const batch = new Bun.CryptoHasher('md5').update(html).digest('hex').slice(0, 16)
-  let result = '', cursor = 0, started = false, index = 0
-  for (const script of scripts) {
-    const attrs = scriptAttributes(script.attrs), type = attrs.get('type')
-    if (script.inert || attrs.has('data-stx-module-job') || attrs.has('data-stx-runtime') || attrs.has('data-stx-router')) continue
-    if (typeof type === 'string' && !['module', 'text/javascript', 'application/javascript'].includes(type.toLowerCase())) continue
-    const owned = [...attrs.keys()].some(name => /^data-stx-(?:scoped|modules|stores|(?:framework-)?composables)$/.test(name))
-    if (!owned) continue
-    const module = type === 'module' || needsModule(script.body)
-    if (module) started = true
-    if (!started) continue
+  let result = '', cursor = 0, index = 0
+  for (let i = firstModule; i < candidates.length; i++) {
+    const script = candidates[i]
+    const attrs = script.attributes
+    const module = i === firstModule || needsModule(script)
     // Component scripts register setup functions for a later scope walk. They
     // must also work when compiled as a structural clone's synchronous setup.
     if (!module && (attrs.has('data-stx-owner') || attrs.has('data-stx-instance'))) continue
