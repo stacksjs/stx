@@ -38,7 +38,7 @@ export const className = $props.className || ''
  * badge whose whole job is to distinguish would render two of its variants
  * identically. A wrong colour is worse than an unthemeable one.
  */
-const variantClasses = {
+export const badgeColorClasses = {
   default: 'bg-surface-raised text-fg-strong',
   primary: 'bg-accent-soft text-accent-soft-ink',
   secondary: 'bg-secondary-soft text-secondary-soft-ink',
@@ -50,7 +50,7 @@ const variantClasses = {
 
 const sizeClasses = { sm: 'px-2 py-0.5 text-xs', md: 'px-2.5 py-0.5 text-sm', lg: 'px-3 py-1 text-base' }
 
-const dotColorClasses = {
+export const badgeDotColorClasses = {
   default: 'bg-fg-soft',
   primary: 'bg-accent',
   secondary: 'bg-secondary',
@@ -60,13 +60,28 @@ const dotColorClasses = {
   info: 'bg-info',
 }
 
-export const badgeClasses = `inline-flex items-center gap-1.5 font-medium rounded-pill ${variantClasses[variant] || variantClasses.default} ${sizeClasses[size] || sizeClasses.md} ${className}`.trim()
-export const dotClasses = `w-2 h-2 rounded-full ${dotColorClasses[variant] || dotColorClasses.default}`.trim()
+const initialVariant = Object.hasOwn(badgeColorClasses, variant) ? variant : 'default'
+export const badgeClasses = `inline-flex items-center gap-1.5 font-medium rounded-pill ${badgeColorClasses[initialVariant]} ${sizeClasses[size] || sizeClasses.md} ${className}`.trim()
+export const dotClasses = `w-2 h-2 rounded-full ${badgeDotColorClasses[initialVariant]}`.trim()
 export const removeButtonClasses = `ml-0.5 -mr-1 text-current hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-0.5 transition-colors duration-150`.trim()
 </script>
 
 <script client>
 const emit = defineEmits()
+const colorVariant = useReactiveProp('variant', {{ variant }})
+const badgeColors = {{ badgeColorClasses }}
+const dotColors = {{ badgeDotColorClasses }}
+const callerClasses = {{ className }}.split(/\s+/)
+
+function colorToggles(options, extraClasses = []) {
+  const tone = colorVariant()
+  const current = Object.hasOwn(options, tone) ? options[tone] : options.default
+  const retained = new Set([...current.split(' '), ...extraClasses])
+  return Object.fromEntries(Object.values(options).flatMap(classes => classes.split(' ').map(token => [token, retained.has(token)])))
+}
+
+const badgeColorToggles = derived(() => colorToggles(badgeColors, callerClasses))
+const dotColorToggles = derived(() => colorToggles(dotColors))
 
 function onRemove() {
   emit('remove')
@@ -75,10 +90,11 @@ function onRemove() {
 
 <span
   class="{{ badgeClasses }}"
+  :class="badgeColorToggles()"
   @if(live)role="status" aria-live="{{ live }}"@endif
 >
   @if(dot)
-    <span class="{{ dotClasses }}" aria-hidden="true"></span>
+    <span class="{{ dotClasses }}" :class="dotColorToggles()" aria-hidden="true"></span>
   @endif
 
   <slot />

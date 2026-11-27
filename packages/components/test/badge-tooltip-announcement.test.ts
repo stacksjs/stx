@@ -64,6 +64,48 @@ describe('Badge announces only when asked to', () => {
   })
 })
 
+it('updates a keyed badge variant and dot without remounting its live label', async () => {
+  const app = await renderApp({
+    'layouts/app.stx': layout(''),
+    'components/Badge.stx': readFileSync(path.join(UI_DIR, 'badge/Badge.stx'), 'utf-8'),
+    'pages/index.stx': page('app', `
+      <script client>
+        const rows = state([{ id: 1, variant: 'warning' }])
+        function connect() { rows.set([{ id: 1, variant: 'success' }]) }
+      </script>
+      <div :for="row in rows" :key="row.id">
+        <Badge :variant="row.variant" live dot className="whitespace-nowrap">
+          <button id="account" type="button" @click="connect()">Channel</button>
+        </Badge>
+      </div>`),
+  }, { '/': 'pages/index.stx' })
+  try {
+    const browser = await boot(app, '/')
+    await settle()
+    const badge = browser.document.querySelector('[role="status"]')!
+    const dot = badge.querySelector('[aria-hidden="true"]')!
+    const button = browser.document.querySelector('#account')!
+    expect(badge.classList.contains('bg-warning-soft')).toBe(true)
+    expect(dot.classList.contains('bg-warning')).toBe(true)
+    button.focus()
+    button.click()
+    await settle()
+    expect(badge.classList.contains('bg-success-soft')).toBe(true)
+    expect(badge.classList.contains('bg-warning-soft')).toBe(false)
+    expect(dot.classList.contains('bg-success')).toBe(true)
+    expect(dot.classList.contains('bg-warning')).toBe(false)
+    expect(badge.classList.contains('whitespace-nowrap')).toBe(true)
+    expect(badge.getAttribute('aria-live')).toBe('polite')
+    expect(browser.document.querySelector('[role="status"]')).toBe(badge)
+    expect(browser.document.activeElement).toBe(button)
+    expect(button.textContent).toBe('Channel')
+  }
+  finally {
+    closeBrowser()
+    await app.dispose()
+  }
+})
+
 describe('Tooltip is reachable from what it describes', () => {
   it('gives the panel an id and the tooltip role', async () => {
     /*
