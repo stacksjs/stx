@@ -1,15 +1,17 @@
 import { beforeAll, describe, expect, it } from 'bun:test'
+import { Window } from 'very-happy-dom'
 import { generateSignalsRuntimeDev } from '../../src/signals'
 import { installNodeConstants, shimAttributes } from '../../test-utils/dom-runtime-shim'
 
-// eslint-disable-next-line ts/no-explicit-any
-declare const window: any
-// eslint-disable-next-line ts/no-explicit-any
-declare const document: any
-
 async function render(variable: string): Promise<string> {
+  // Keep rendered rows and runtime listeners out of the suite's shared DOM.
+  const window = new Window({ url: 'http://localhost/' })
+  const { document } = window
+  // eslint-disable-next-line no-new-func
+  new Function('window', 'document', 'MutationObserver', generateSignalsRuntimeDev())(window, document, window.MutationObserver)
   const id = `__stx_setup_for_${variable}`
-  window[id] = () => ({ items: window.stx.state([{ key: 'app', port: 22 }]) })
+  const stx = Reflect.get(window, 'stx')
+  Reflect.set(window, id, () => ({ items: stx.state([{ key: 'app', port: 22 }]) }))
   document.body.innerHTML = `
     <main data-stx="${id}">
       <ul><template :for="${variable} in items()"><li>{{ ${variable}.key }}:{{ ${variable}.port }}</li></template></ul>
@@ -21,12 +23,7 @@ async function render(variable: string): Promise<string> {
 }
 
 describe(':for loop variable names', () => {
-  beforeAll(() => {
-    installNodeConstants()
-    globalThis.MutationObserver = window.MutationObserver
-    // eslint-disable-next-line no-new-func
-    new Function(generateSignalsRuntimeDev())()
-  })
+  beforeAll(installNodeConstants)
 
   for (const variable of ['entry', 'host', 'name', 'location', 'status', 'top', 'parent', 'length'])
     it(`renders {{ ${variable}.field }}`, async () => {
