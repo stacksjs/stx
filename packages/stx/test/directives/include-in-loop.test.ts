@@ -110,6 +110,18 @@ describe('what must keep working', () => {
     expect(await rows('<div>@include("Row", { item: items[0] })</div>')).toEqual(['Alpha'])
   })
 
+  it('keeps adjacent conditional includes and ordinary includes in document order', async () => {
+    const template = [
+      '<div>@includeWhen(false, "Row", { item: site })',
+      '@includeWhen(true, "Row", { item: items[0] })',
+      '@include("Row", { item: site })',
+      '@includeUnless(true, "Row", { item: site })',
+      '@includeWhen(true, "Row", { item: items[1] })',
+      '@includeUnless(false, "Row", { item: items[0] })</div>',
+    ].join('')
+    expect(await rows(template)).toEqual(['Alpha', 'SiteName', 'Beta', 'Alpha'])
+  })
+
   it('still resolves page-level values from inside a loop', async () => {
     // The map reads nothing the iteration owns, so it keeps its original
     // expression and is evaluated later against the page context, as before.

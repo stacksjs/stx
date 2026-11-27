@@ -722,6 +722,10 @@ export async function processIncludes(
   // Handles conditions with commas (e.g., items.slice(0, 5).length > 0)
   for (const [directive, invert] of [['@includeWhen', false], ['@includeUnless', true]] as const) {
     const pat = new RegExp(`${directive.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\(`, 'g')
+    const emittedDirective = new RegExp(pat.source)
+    const chunks: string[] = []
+    let copiedThrough = 0
+    let offset = 0
     let m: RegExpExecArray | null
     while ((m = pat.exec(output)) !== null) {
       const start = m.index
@@ -749,6 +753,7 @@ export async function processIncludes(
         varsString = afterPath.substring(varsComma + 1).trim()
       }
 
+      let replacement = ''
       try {
         const condExpr = `Boolean(${condition})`
         let condResult: boolean
@@ -756,26 +761,41 @@ export async function processIncludes(
           const condFn = createSafeFunction(condExpr, Object.keys(context))
           condResult = Boolean(condFn(...Object.values(context)))
         }
-else {
+        else {
           condResult = Boolean(safeEvaluate(condExpr, context))
         }
 
         const shouldInclude = invert ? !condResult : condResult
-        let replacement = ''
         if (shouldInclude) {
           const incFile = resolvePath(includePath, partialsDir, filePath)
           if (incFile && await Bun.file(incFile).exists()) dependencies.add(incFile)
           replacement = `@include('${includePath}'${varsString ? `, ${varsString}` : ''})`
         }
-        output = output.substring(0, start) + replacement + output.substring(p)
-        pat.lastIndex = 0
       }
-catch (error: unknown) {
+      catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error)
-        const errHtml = createDetailedErrorMessage('Include', `Error evaluating ${directive} condition: ${errorMessage}`, filePath, template, start)
-        output = output.substring(0, start) + errHtml + output.substring(p)
+        replacement = createDetailedErrorMessage('Include', `Error evaluating ${directive} condition: ${errorMessage}`, filePath, template, start + offset)
+      }
+
+      // Rewrite siblings together. Splicing and restarting after each one
+      // rebuilds the whole page even when the replacement is empty.
+      chunks.push(output.slice(copiedThrough, start), replacement)
+      copiedThrough = p
+      offset += replacement.length - (p - start)
+      pat.lastIndex = p
+      // Preserve rescanning when a replacement produces the current directive.
+      if (emittedDirective.test(replacement)) {
+        chunks.push(output.slice(copiedThrough))
+        output = chunks.join('')
+        chunks.length = 0
+        copiedThrough = 0
+        offset = 0
         pat.lastIndex = 0
       }
+    }
+    if (chunks.length) {
+      chunks.push(output.slice(copiedThrough))
+      output = chunks.join('')
     }
   }
 
