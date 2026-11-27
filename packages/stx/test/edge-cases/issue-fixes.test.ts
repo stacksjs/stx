@@ -9,10 +9,11 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import vm from 'node:vm'
+import { Window } from 'very-happy-dom'
 import { signalsAuthoringRuntime } from '../../src/client/signals-authoring-runtime'
 import { SIGNALS_HELPERS_RUNTIME } from '../../src/client/signals-helpers-runtime'
 import { processDirectives } from '../../src/process'
-import { generateSignalsRuntimeDev } from '../../src/signals'
+import { generateSignalsRuntime, generateSignalsRuntimeDev } from '../../src/signals'
 import { runtimeWindowStxSurface } from '../../test-utils/runtime-surface'
 import { createTempDir } from '../../src/temp-dir'
 
@@ -275,8 +276,20 @@ onUnmounted(() => status.set('unmounted'))
     const destructure = out.match(/(?:const|var)\s*\{[^}]*\}\s*=\s*window\.stx/)?.[0] ?? ''
     for (const alias of ['onMounted', 'onBeforeUnmount', 'onUnmounted'])
       expect(destructure).toContain(alias)
-    expect(out).toMatch(/onMounted:\s*onMount/)
-    expect(out).toMatch(/onUnmounted:\s*onDestroy/)
+    const window = new Window()
+    try {
+      const boot = new Function('window', 'document', 'Node', generateSignalsRuntime())
+      boot(window, window.document, window.Node)
+      const { onMount, onDestroy, onMounted, onBeforeUnmount, onUnmounted } = (window as any).stx
+      expect(typeof onMount).toBe('function')
+      expect(typeof onDestroy).toBe('function')
+      expect(onMounted).toBe(onMount)
+      expect(onBeforeUnmount).toBe(onDestroy)
+      expect(onUnmounted).toBe(onDestroy)
+    }
+    finally {
+      window.close()
+    }
   })
 
   it('preserves a layout import map when the layout also has reactive client code', async () => {
