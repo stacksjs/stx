@@ -1,5 +1,5 @@
 import { escapeAttr } from './builtins/escape'
-import { tagAttributes } from './document-tags'
+import { headCloseIndex, tagAttributes } from './document-tags'
 import { scanAtElementPosition } from './html-masking'
 import { decodeTitleEntities } from './spa-nav'
 
@@ -11,8 +11,12 @@ function quoteValue(value: string): string {
 
 // Tags where an element can start, so one written inside a script, style or
 // comment is never read as the page's own.
-function headTags(html: string): string[] {
-  const head = /<head\b[^>]*>([\s\S]*?)<\/head\s*>/i.exec(html)?.[1] ?? ''
+export function headTags(html: string): string[] {
+  const opening = /<head\b[^>]*>/i.exec(html)
+  const end = headCloseIndex(html)
+  const head = opening && end >= opening.index + opening[0].length
+    ? html.slice(opening.index + opening[0].length, end)
+    : ''
   const tag = /<(meta|link)\b(?:[^>"']|"[^"]*"|'[^']*')*>|<title\b[^>]*>[\s\S]*?<\/title\s*>/giy
   return scanAtElementPosition(head, (source, index) => {
     tag.lastIndex = index

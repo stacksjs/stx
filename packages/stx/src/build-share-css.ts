@@ -34,6 +34,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { EXTERNALIZED_ASSET_DIR } from './build-externalize'
+import { tagAttributes } from './document-tags'
+import { headTags } from './page-head'
 
 /** The inline generated stylesheet a rendered page carries. */
 const GENERATED_STYLE = /<style\b([^>]*\bdata-css=(?:"generated"|'generated')[^>]*)>([\s\S]*?)<\/style>/gi
@@ -41,9 +43,9 @@ const GENERATED_STYLE = /<style\b([^>]*\bdata-css=(?:"generated"|'generated')[^>
 export interface ShareCssResult {
   /** Pages whose generated stylesheet was split. */
   pages: number
-  /** The shared sheet's file name under `_stx/`, when one was written. */
+  /** The first shared sheet's file name under `_stx/`, when one was written. */
   shared?: string
-  /** Its size. */
+  /** Combined size of the shared sheets written. */
   sharedBytes: number
   /** Generated CSS bytes the pages carried before. */
   bytesBefore: number
@@ -258,45 +260,70 @@ function listHtmlFiles(dir: string): string[] {
  * what the page keeps (which `externalizeSharedAssets` then lifts into a file of
  * its own). Pages are left as they are when no safe split exists.
  *
+ * A page can opt into sharing the full stylesheet of a named group. The
+ * remaining pages still share rules according to the automatic threshold.
+ *
  * Runs before `externalizeSharedAssets`; a page whose generated sheet is
  * already a link has nothing to split and is skipped.
  */
 export function shareGeneratedCss(outDir: string, basePath = `/${EXTERNALIZED_ASSET_DIR}`): ShareCssResult {
   const result: ShareCssResult = { pages: 0, sharedBytes: 0, bytesBefore: 0, bytesAfter: 0 }
-  const pages: Array<{ file: string, html: string, body: string, chunks: string[] }> = []
+  const groups = new Map<string, Array<{ file: string, html: string, body: string, chunks: string[] }>>()
   for (const file of listHtmlFiles(outDir)) {
     const html = fs.readFileSync(file, 'utf8')
     const styles = [...html.matchAll(GENERATED_STYLE)]
     // One inline sheet, or the page is not one this pass understands.
     if (styles.length !== 1 || /(?:^|\s)stx-inline(?:\s|=|$)/i.test(styles[0]![1]!) || !styles[0]![2]!.trim())
       continue
+
+    let group = ''
+    if (/stx-css-group/i.test(html)) {
+      for (const token of headTags(html)) {
+        if (!/^<meta\s/i.test(token)) continue
+        const attrs = tagAttributes(token)
+        if (attrs.name?.toLowerCase() === 'stx-css-group') {
+          group = attrs.content?.trim() ?? ''
+          break
+        }
+      }
+    }
+    let pages = groups.get(group)
+    if (!pages) groups.set(group, pages = [])
     pages.push({ file, html, body: styles[0]![2]!, chunks: splitTopLevelCss(styles[0]![2]!) })
   }
 
-  const plan = planSharedCss(pages.map(page => page.chunks))
-  if (!plan)
-    return result
-
-  const sharedCss = `${plan.shared.join('\n\n')}\n`
-  const shared = `css.${contentHash(sharedCss)}.css`
   const assetDir = path.join(outDir, EXTERNALIZED_ASSET_DIR)
-  fs.mkdirSync(assetDir, { recursive: true })
-  fs.writeFileSync(path.join(assetDir, shared), sharedCss)
-  result.shared = shared
-  result.sharedBytes = sharedCss.length
+  const written = new Set<string>()
+  for (const [group, pages] of groups) {
+    // Pages that opt into a named group share the whole generated stylesheet.
+    // Unmarked pages keep the automatic split and can cache its own assets.
+    const plan = planSharedCss(pages.map(page => page.chunks), group ? 1 : undefined)
+    if (!plan)
+      continue
 
-  const link = `<link data-css="generated" rel="stylesheet" href="${basePath}/${shared}">`
-  pages.forEach((page, index) => {
-    const kept = plan.pages[index]!
-    const remainder = kept.length ? `${kept.join('\n\n')}\n` : ''
-    // The shared sheet where the page's sheet was, and what the page keeps
-    // right after it: authored styles around them keep their places.
-    const html = page.html.replace(GENERATED_STYLE, (_whole, attrs: string) =>
-      remainder ? `${link}<style${attrs}>${remainder}</style>` : link)
-    fs.writeFileSync(page.file, html)
-    result.pages++
-    result.bytesBefore += page.body.length
-    result.bytesAfter += remainder.length
-  })
+    const sharedCss = `${plan.shared.join('\n\n')}\n`
+    const shared = `css.${contentHash(sharedCss)}.css`
+    if (!written.has(shared)) {
+      fs.mkdirSync(assetDir, { recursive: true })
+      fs.writeFileSync(path.join(assetDir, shared), sharedCss)
+      written.add(shared)
+      result.shared ??= shared
+      result.sharedBytes += sharedCss.length
+    }
+
+    const link = `<link data-css="generated" rel="stylesheet" href="${basePath}/${shared}">`
+    pages.forEach((page, index) => {
+      const kept = plan.pages[index]!
+      const remainder = kept.length ? `${kept.join('\n\n')}\n` : ''
+      // The shared sheet where the page's sheet was, and what the page keeps
+      // right after it: authored styles around them keep their places.
+      const html = page.html.replace(GENERATED_STYLE, (_whole, attrs: string) =>
+        remainder ? `${link}<style${attrs}>${remainder}</style>` : link)
+      fs.writeFileSync(page.file, html)
+      result.pages++
+      result.bytesBefore += page.body.length
+      result.bytesAfter += remainder.length
+    })
+  }
   return result
 }

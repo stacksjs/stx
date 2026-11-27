@@ -206,7 +206,7 @@ export default defineConfig({
 | `outDir` | `string` | `dist` | Build output directory |
 | `publicDir` | `string` | `public` | Public assets directory. Files are mounted at the URL root — `public/images/hero.jpg` is reachable at `/images/hero.jpg`. Matches the Nuxt/Vite/Next/Astro convention. |
 | `fingerprintAssets` | `boolean` | `true` | Fingerprint public assets referenced directly in production HTML using their file contents. |
-| `shareCss` | `boolean` | `true` | In a static build, split the generated utility CSS into one sheet shared by every page (the rules enough pages carry) and a small sheet per page, so a navigation downloads only the next page's remainder. Cascade order is kept: a page re-states any shared rule that must still beat one of its own. |
+| `shareCss` | `boolean` | `true` | In a static build, split the generated utility CSS into one sheet shared by every page (the rules enough pages carry) and a small sheet per page, so a navigation downloads only the next page's remainder. Cascade order is kept: a page re-states any shared rule that must still beat one of its own. Pages declaring the same `<meta name="stx-css-group" content="workspace">` share their full generated stylesheet. |
 | `base` | `string` | `/` | Public base path |
 
 ### Server Options

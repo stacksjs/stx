@@ -77,6 +77,7 @@ async function snapshot(base: string, page: string, width: number, from?: string
 
 let on = ''
 let off = ''
+let grouped = ''
 beforeAll(async () => {
   root = createTempDir('stx-share-css-')
   await Bun.write(path.join(root, 'stx.config.ts'), 'export default {}\n')
@@ -85,6 +86,13 @@ beforeAll(async () => {
     await Bun.write(path.join(root, 'views', `${page}.stx`), `<!doctype html><html><head><title>${page}</title></head><body><nav class="flex gap-2 p-2 bg-gray-100 text-gray-900">${nav}</nav><main data-stx-content class="mx-auto max-w-3xl">${body}</main></body></html>\n`)
   await build('dist-on', true)
   await build('dist-off', false)
+  for (const page of ['index', 'about']) {
+    const file = path.join(root, 'views', `${page}.stx`)
+    const html = await Bun.file(file).text()
+    await Bun.write(file, html.replace('<head>', '<head><meta name="stx-css-group" content="workspace">'))
+  }
+  await build('dist-grouped', true)
+  grouped = serveDir(path.join(root, 'dist-grouped'))
   on = serveDir(path.join(root, 'dist-on'))
   off = serveDir(path.join(root, 'dist-off'))
 }, 120_000)
@@ -121,3 +129,18 @@ it.each([['index', 'about'], ['about', 'pricing'], ['pricing', 'contact'], ['con
     expect(await snapshot(on, page, width, from)).toEqual(await snapshot(off, page, width, from))
 }, 60_000)
 
+
+it('gives a named group one full stylesheet without adding its rules to other pages', async () => {
+  const urlsFor = (page: string) => [...readFileSync(path.join(root, 'dist-grouped', `${page}.html`), 'utf8')
+    .matchAll(/<link data-css="generated" rel="stylesheet" href="([^"]+)">/g)].map(match => match[1]!)
+  const workspace = urlsFor('index')
+  expect(workspace).toHaveLength(1)
+  expect(urlsFor('about')).toEqual(workspace)
+  expect(urlsFor('pricing')).not.toContain(workspace[0]!)
+
+  for (const width of [390, 1100]) {
+    expect(await snapshot(grouped, 'index', width)).toEqual(await snapshot(off, 'index', width))
+    expect(await snapshot(grouped, 'about', width, 'index')).toEqual(await snapshot(off, 'about', width, 'index'))
+    expect(await snapshot(grouped, 'pricing', width, 'about')).toEqual(await snapshot(off, 'pricing', width, 'about'))
+  }
+}, 60_000)
