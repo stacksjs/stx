@@ -154,6 +154,7 @@ export const NATIVE_EVENTS = new Set([
   'onLoadStart',
   'onLongPress',
   'onSwipe',
+  'onSwipeSettle',
   'onMomentumScrollBegin',
   'onMomentumScrollEnd',
   'onPause',

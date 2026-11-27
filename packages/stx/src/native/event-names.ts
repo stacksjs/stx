@@ -13,6 +13,9 @@ export const NATIVE_EVENT_NAMES: Readonly<Record<string, string>> = {
   'long-press': 'onLongPress',
   longpress: 'onLongPress',
   swipe: 'onSwipe',
+  // An interactive row swipe coming to rest ({ open }), under `swipeReveal`.
+  'swipe-settle': 'onSwipeSettle',
+  swipesettle: 'onSwipeSettle',
   contextmenu: 'onLongPress',
   input: 'onChangeText',
   onchange: 'onChange',
