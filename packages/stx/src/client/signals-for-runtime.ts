@@ -676,30 +676,36 @@ catch (e) {
             stxHost.insert(parent, el, cursor || placeholder);
             if (tgReady && el.isConnected) tgEnter(el, tgName);
           });
-          hydrateComponentScopes(elements, elements.find(function(node) {
-            return node && node.__stx_for_scope;
-          })?.__stx_for_scope || passedScope);
-          elements.forEach(el => {
-            if (el.nodeType === 1) {
-              var itemScope = el.__stx_for_scope || passedScope;
-              delete el.__stx_for_scope;
-              // Tracked so removeGroup can dispose the row's effects (#1954). Kept
-              // off __stx_disposers, which marks a hydrated component root here
-              // and in the deferred :if pass.
-              if (!el.__stx_disposers && el.tagName !== 'SCRIPT')
-                el.__stx_effect_disposers = trackEffects(function() { processElement(el, itemScope); });
-              el.removeAttribute('x-cloak');
-              el.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
-            } else if (slotScopeInfo && el.nodeType === Node.TEXT_NODE && (el.textContent || '').includes('{{')) {
-              const itemScope = el.__stx_for_scope;
-              delete el.__stx_for_scope;
-              // Interpolation replaces the original text node. Its effects
-              // therefore belong to the range anchor that survives removal.
-              const release = trackEffects(function() { processElement(el, itemScope); });
-              const anchor = elements[0];
-              const previous = anchor.__stx_effect_disposers;
-              anchor.__stx_effect_disposers = function() { if (previous) previous(); release(); };
-            }
+          // The loop tracks its list and keys, not reads made while wiring up
+          // a row. A child can read a forwarded prop and then reconcile that
+          // prop during setup. Tracking those reads here reenters the diff
+          // before this row has been recorded and inserts another copy.
+          peek(function() {
+            hydrateComponentScopes(elements, elements.find(function(node) {
+              return node && node.__stx_for_scope;
+            })?.__stx_for_scope || passedScope);
+            elements.forEach(el => {
+              if (el.nodeType === 1) {
+                var itemScope = el.__stx_for_scope || passedScope;
+                delete el.__stx_for_scope;
+                // Tracked so removeGroup can dispose the row's effects (#1954). Kept
+                // off __stx_disposers, which marks a hydrated component root here
+                // and in the deferred :if pass.
+                if (!el.__stx_disposers && el.tagName !== 'SCRIPT')
+                  el.__stx_effect_disposers = trackEffects(function() { processElement(el, itemScope); });
+                el.removeAttribute('x-cloak');
+                el.querySelectorAll('[x-cloak]').forEach(c => c.removeAttribute('x-cloak'));
+              } else if (slotScopeInfo && el.nodeType === Node.TEXT_NODE && (el.textContent || '').includes('{{')) {
+                const itemScope = el.__stx_for_scope;
+                delete el.__stx_for_scope;
+                // Interpolation replaces the original text node. Its effects
+                // therefore belong to the range anchor that survives removal.
+                const release = trackEffects(function() { processElement(el, itemScope); });
+                const anchor = elements[0];
+                const previous = anchor.__stx_effect_disposers;
+                anchor.__stx_effect_disposers = function() { if (previous) previous(); release(); };
+              }
+            });
           });
           newElements.push(...elements);
           newGroups.push(elements);
