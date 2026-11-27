@@ -1,5 +1,21 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.958...v0.2.959)
+
+## ✨ Features
+
+- **native**: pass a floating action's accessibilityValue to the host ([efe8446](https://github.com/stacksjs/stx/commit/efe8446)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- bind native toggle events in standalone templates ([a92de9d](https://github.com/stacksjs/stx/commit/a92de9d)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **ssg**: share only CSS common to all default routes ([3773362](https://github.com/stacksjs/stx/commit/3773362)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#2240](https://github.com/stacksjs/stx/issues/2240))
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.957...v0.2.958)
 
 ## ✨ Features
