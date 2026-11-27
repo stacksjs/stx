@@ -63,10 +63,17 @@ describe('planSharedCss', () => {
     expect(planSharedCss([['.a{}'], ['.b{}']], 2), 'nothing in common').toBeNull()
   })
 
-  it('needs a rule on two pages, or on a quarter of a larger site', () => {
-    expect(sharedThreshold(2)).toBe(2)
-    expect(sharedThreshold(8)).toBe(2)
-    expect(sharedThreshold(12)).toBe(3)
+  it('keeps rules used by only some routes out of the default shared sheet', () => {
+    const settings = '.settings { display: grid; }'
+    const charts = '.chart { min-height: 240px; }'
+    const plans = [[base, settings, charts], [base, charts], [base, settings], [base]]
+    const plan = planSharedCss(plans)
+    expect(plan?.shared).toEqual([base])
+    expect(plan?.pages).toEqual([[settings, charts], [charts], [settings], []])
+    expect(sharedThreshold(12)).toBe(12)
+    expect(sharedThreshold(1)).toBe(2)
+    // A named group can still share the union when the site opts into it.
+    expect(planSharedCss(plans, 1)?.shared).toEqual([base, settings, charts])
   })
 
   /*

@@ -145,9 +145,9 @@ function overlaps(a: Set<string>, b: Set<string>): boolean {
   return false
 }
 
-/** The fewest pages a rule must be on to be shared: two, or a quarter of the site. */
+/** Default sharing only moves rules every receiving page already uses. */
 export function sharedThreshold(pageCount: number): number {
-  return Math.max(2, Math.ceil(pageCount / 4))
+  return Math.max(2, pageCount)
 }
 
 /**
