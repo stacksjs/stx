@@ -52,6 +52,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { CONVENTIONAL_ASSET_OUTPUT, CONVENTIONAL_ASSET_ROOT, resolveConventionalAssetRoot } from './asset-roots'
 import { externalizeSharedAssets } from './build-externalize'
+import { shareGeneratedCss } from './build-share-css'
 import { finalizeStaticCsp } from './csp-build'
 import { clientBundleDependencies } from './client-script-bundler'
 import { externalizeRepeatedAssets } from './build-externalize-repeated'
@@ -187,6 +188,12 @@ export interface SSGConfig {
   minify?: boolean
   /** Defer ordered classic scripts. Defaults to the project's setting. */
   deferScripts?: boolean
+  /**
+   * Share the generated utility stylesheet across pages: one sheet of the
+   * rules enough pages carry, linked first, and a small sheet per page with
+   * the rest (build-share-css.ts). Defaults to the project's setting, then on.
+   */
+  shareCss?: boolean
   /** Generate 404 page */
   generate404?: boolean
   /** Additional files to copy to output */
@@ -1160,6 +1167,7 @@ export async function generateStaticSite(options: SSGConfig = {}): Promise<SSGRe
     // of them dead — the fallback now says what the documented default says.
     minify: options.minify ?? buildConfig.minify ?? true,
     deferScripts: options.deferScripts ?? stxConfig.deferScripts ?? false,
+    shareCss: options.shareCss ?? stxConfig.shareCss ?? true,
     generate404: options.generate404 ?? buildConfig.generate404 ?? true,
     publicDir: options.publicDir ?? buildConfig.publicDir ?? stxConfig.publicDir ?? 'public',
     fingerprintAssets: options.fingerprintAssets ?? stxConfig.fingerprintAssets ?? true,
@@ -1697,6 +1705,18 @@ else {
     // runtime per page, cacheable by nobody (#1865, #1878). Runs before the
     // asset copies so it only ever walks pages this build rendered, never a
     // user's own static HTML.
+    // First, while each page's generated stylesheet is still inline: the rules
+    // most pages carry go into one sheet they all link (#2230).
+    if (cfg.shareCss) {
+      const sharedCss = shareGeneratedCss(cfg.outputDir)
+      if (sharedCss.shared) {
+        console.log(
+          `Shared ${(sharedCss.sharedBytes / 1024).toFixed(1)}KB of generated CSS across ${sharedCss.pages} page(s) `
+          + `(page sheets ${(sharedCss.bytesBefore / 1024).toFixed(1)}KB -> ${(sharedCss.bytesAfter / 1024).toFixed(1)}KB)`,
+        )
+      }
+    }
+
     const externalized = externalizeSharedAssets(cfg.outputDir, { deferScripts: cfg.deferScripts })
     if (externalized.assets > 0) {
       console.log(

@@ -698,6 +698,12 @@ export interface StxConfig {
   /** Defer ordered setup scripts and serve island code as cached assets in served and statically built pages. */
   deferScripts?: boolean
   /**
+   * In a static build, share the generated utility stylesheet across pages:
+   * one sheet of the rules enough pages carry, and a small one per page with
+   * the rest, cascade order preserved (stacksjs/stx#2230). On unless false.
+   */
+  shareCss?: boolean
+  /**
    * Load the signals runtime on the first island trigger instead of from the
    * head, on documents whose only reactive content is islands
    * (`client="interaction|visible|idle|media:…"` components). Such a page
