@@ -1,5 +1,19 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.956...v0.2.957)
+
+## ✅ Tests
+
+- **signals**: isolate loop rendering from the shared DOM ([6c36bc4](https://github.com/stacksjs/stx/commit/6c36bc4)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.957 ([7c4f0ea](https://github.com/stacksjs/stx/commit/7c4f0ea)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.955...v0.2.956)
 
 ## 🐛 Bug Fixes
