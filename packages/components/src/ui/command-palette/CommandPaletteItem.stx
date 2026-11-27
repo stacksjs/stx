@@ -3,7 +3,8 @@ export const className = $props.className || ''
 export const value = $props.value
 export const valueJson = JSON.stringify(value === undefined ? null : value)
 
-const baseClasses = 'flex cursor-pointer select-none items-center px-4 py-2 text-fg hover:bg-accent-solid hover:text-accent-ink'
+// aria-selected marks the command the keyboard is on (CommandPalette's onPaletteKey).
+const baseClasses = 'flex cursor-pointer select-none items-center px-4 py-2 text-fg hover:bg-accent-solid hover:text-accent-ink aria-selected:bg-accent-solid aria-selected:text-accent-ink'
 export const itemClasses = `${baseClasses} ${className}`.trim()
 </script>
 
@@ -33,6 +34,8 @@ function onClick(event) {
 
 <div
   class="{{ itemClasses }}"
+  role="option"
+  aria-selected="false"
   data-stx-command-item
   @click="onClick($event)"
 >

@@ -17,6 +17,7 @@ const query = state({{ initialQuery }})
 function close() {
   if (!isOpen()) return
   isOpen.set(false)
+  setActive(null)
   emit('close')
 }
 
@@ -41,6 +42,94 @@ function panelEl() {
 }
 
 /*
+ * The keyboard, as a combobox (stacksjs/stx#2231). Focus stays in the search
+ * field so the user can keep typing; the command arrowed to is the ACTIVE
+ * option, named by aria-activedescendant on the field and marked
+ * aria-selected, and Enter clicks it, so it is selected exactly as a pointer
+ * selects it. The items used to be plain divs with only a click handler, so a
+ * keyboard could open the palette and close it and do nothing in between.
+ *
+ * Held as the element rather than an index: the page filters the results as
+ * the query changes, and an index would then point at a different command.
+ */
+let activeItem = null
+
+function listEl() {
+  return panelEl()?.querySelector('[data-stx-command-palette-list]') ?? null
+}
+
+/** The commands showing now: an item the page hid with :show or hidden is skipped. */
+function itemElements() {
+  const list = listEl()
+  if (!list) return []
+  return Array.prototype.filter.call(list.querySelectorAll('[data-stx-command-item]'), (item) => {
+    for (let node = item; node && node !== list; node = node.parentElement) {
+      if (node.hidden || (node.style && node.style.display === 'none')) return false
+    }
+    return true
+  })
+}
+
+function setActive(item) {
+  activeItem = item
+  const items = itemElements()
+  const doc = panelEl()?.ownerDocument || document
+  items.forEach((option, index) => {
+    // aria-activedescendant needs an id that is unique on the page.
+    if (!option.id || doc.querySelectorAll('[id="' + option.id + '"]').length !== 1)
+      option.id = 'stx-command-option-' + paletteInstanceId + '-' + index
+    option.setAttribute('aria-selected', option === item ? 'true' : 'false')
+  })
+  const input = panelEl()?.querySelector('[data-stx-command-palette-input]')
+  if (!input) return
+  if (item) input.setAttribute('aria-activedescendant', item.id)
+  else input.removeAttribute('aria-activedescendant')
+}
+
+function moveActive(delta) {
+  const items = itemElements()
+  if (!items.length) return
+  const from = items.indexOf(activeItem)
+  const next = from < 0
+    ? (delta > 0 ? 0 : items.length - 1)
+    : (from + delta + items.length) % items.length
+  setActive(items[next])
+  // The list scrolls, and nothing moves focus there to bring the option in.
+  if (items[next].scrollIntoView) items[next].scrollIntoView({ block: 'nearest' })
+}
+
+function onPaletteKey(event) {
+  const key = event.key
+  if (key === 'ArrowDown' || key === 'ArrowUp') {
+    event.preventDefault()
+    moveActive(key === 'ArrowDown' ? 1 : -1)
+  }
+  else if (key === 'Home' || key === 'End') {
+    event.preventDefault()
+    activeItem = null
+    moveActive(key === 'Home' ? 1 : -1)
+  }
+  else if (key === 'Enter' && activeItem && itemElements().includes(activeItem)) {
+    event.preventDefault()
+    activeItem.click()
+  }
+}
+
+/*
+ * The results changed under the active command: keep it while it still
+ * shows, and point at nothing once it is gone rather than at a stale id.
+ */
+let resultsObserver = null
+onMount(() => {
+  const list = listEl()
+  if (!list || typeof MutationObserver === 'undefined') return
+  resultsObserver = new MutationObserver(() => {
+    if (activeItem && !itemElements().includes(activeItem)) setActive(null)
+  })
+  resultsObserver.observe(list, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'hidden'] })
+})
+
+/*
  * The palette takes over the page, so it is a modal layer on the page's
  * overlay stack (window.stx.overlays): the page held still behind it, focus
  * straight into the search field and back to whatever opened it, Tab kept
@@ -63,6 +152,7 @@ effect(() => {
 
 onDestroy(() => {
   window.stx.overlays.close(paletteInstanceId)
+  resultsObserver?.disconnect()
 })
 
 defineExpose({ isOpen, query, show, close })
@@ -91,15 +181,27 @@ defineExpose({ isOpen, query, show, close })
       </svg>
       <input
         type="text"
+        role="combobox"
+        aria-expanded="true"
+        aria-autocomplete="list"
+        aria-controls="stx-command-palette-list-{{ paletteInstanceId }}"
+        data-stx-command-palette-input
         class="h-12 w-full border-0 bg-transparent pl-11 pr-4 text-fg placeholder-fg-soft focus:ring-0 sm:text-sm"
         placeholder="Search..."
         aria-label="Search commands"
         :value="query()"
         @input="onQueryInput($event)"
+        @keydown="onPaletteKey($event)"
       />
     </div>
 
-    <div class="max-h-96 overflow-y-auto py-2">
+    <div
+      id="stx-command-palette-list-{{ paletteInstanceId }}"
+      role="listbox"
+      aria-label="Commands"
+      data-stx-command-palette-list
+      class="max-h-96 overflow-y-auto py-2"
+    >
       <slot />
     </div>
   </div>
