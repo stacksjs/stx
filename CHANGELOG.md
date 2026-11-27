@@ -1,5 +1,37 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.953...v0.2.954)
+
+## ✨ Features
+
+- **toast**: support actions and loading feedback ([03b8f83](https://github.com/stacksjs/stx/commit/03b8f83)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#2232](https://github.com/stacksjs/stx/issues/2232), [stacksjs/postline#148](https://github.com/stacksjs/postline/issues/148))
+- **native**: a floating action beside the tab bar, with a badge and a menu ([4cd0814](https://github.com/stacksjs/stx/commit/4cd0814)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+## 🐛 Bug Fixes
+
+- **stx**: isolate keyed row setup from list tracking ([2848400](https://github.com/stacksjs/stx/commit/2848400)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#2233](https://github.com/stacksjs/stx/issues/2233))
+- **stx**: preserve escapes in CSP binding attributes ([d8715d8](https://github.com/stacksjs/stx/commit/d8715d8)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#2229](https://github.com/stacksjs/stx/issues/2229), [stacksjs/postline#90](https://github.com/stacksjs/postline/issues/90))
+- **ssg**: honor deferred scripts in both static builders ([2dde268](https://github.com/stacksjs/stx/commit/2dde268)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#2210](https://github.com/stacksjs/stx/issues/2210), [stacksjs/postline#186](https://github.com/stacksjs/postline/issues/186))
+
+## ⚡ Performance Improvements
+
+- bypass module metadata scans for classic scripts ([0f54ace](https://github.com/stacksjs/stx/commit/0f54ace)) _(by Chris Breuer <chris@stacksjs.com>)_
+- limit reactive loop scans to component passes that need them ([312e5af](https://github.com/stacksjs/stx/commit/312e5af)) _(by Chris Breuer <chris@stacksjs.com>)_
+- reuse static client setup analysis across renders ([dd888dc](https://github.com/stacksjs/stx/commit/dd888dc)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## ✅ Tests
+
+- **stx**: verify toast severity and keyed row updates ([09f866e](https://github.com/stacksjs/stx/commit/09f866e)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## 🔧 Chores
+
+- release v0.2.954 ([b60c70b](https://github.com/stacksjs/stx/commit/b60c70b)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.952...v0.2.953)
 
 ## 🐛 Bug Fixes
