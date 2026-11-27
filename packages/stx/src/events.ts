@@ -143,7 +143,7 @@ const DOM_EVENTS = new Set([
   // Drag events
   'drag', 'dragstart', 'dragend', 'dragenter', 'dragleave', 'dragover', 'drop',
   // Other events
-  'scroll', 'resize', 'load', 'error', 'abort',
+  'scroll', 'resize', 'load', 'error', 'abort', 'toggle',
   'animationstart', 'animationend', 'animationiteration',
   'transitionstart', 'transitionend', 'transitionrun', 'transitioncancel',
   // Lifecycle events (custom)

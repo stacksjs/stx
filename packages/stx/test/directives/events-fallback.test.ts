@@ -15,6 +15,12 @@ function run(template: string): string {
 }
 
 describe('non-reactive @event fallback', () => {
+  it('binds toggle directly to a native disclosure', () => {
+    const out = run('<details id="filters" @toggle="changed($event)"><summary>Filters</summary></details>')
+    expect(out).not.toContain('@toggle=')
+    expect(out).toContain("addEventListener('toggle'")
+  })
+
   it('routes the fallback through __stx_runHandler (not raw-inlined)', () => {
     const out = run('<button @click="doIt(&quot;a&quot;)">x</button>')
     expect(out).toContain('__stx_runHandler(')
