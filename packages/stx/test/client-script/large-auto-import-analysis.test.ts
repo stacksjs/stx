@@ -13,7 +13,7 @@ test('large bundles reuse lexical analysis for the whole auto-import pass', () =
     expect(result.stxImports).toContain('state')
     expect(result.browserImports).toContain('retry')
     expect(result.browserImports).not.toContain('delay')
-    expect(scanner.mock.calls.length).toBeLessThanOrEqual(5)
+    expect(scanner).toHaveBeenCalledTimes(1)
   }
   finally { scanner.mockRestore() }
 }, 60_000)

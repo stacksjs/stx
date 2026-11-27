@@ -40,8 +40,8 @@ import { asInvocableStatement, listensPassively } from './events'
 import { transformStoreImports } from './store-imports'
 import { clientDeclaredIdentifiers } from './client-declarations'
 import { scopeObject } from './client-scope-bindings'
-import { declaredNames, parameterAnalysis, unboundNames } from './client-parameter-bindings'
-import { findInterpolationEnd, stripCommentsAndLiterals } from './strip-literals'
+import { parameterAnalysis, unboundNames } from './client-parameter-bindings'
+import { findInterpolationEnd } from './strip-literals'
 // Re-exported from its old home. It moved to `strip-literals.ts` so the
 // editor-facing extractor could share it without pulling the bundler in behind
 // it, and the runtime bridge and `stx typecheck` MUST agree on what counts as a
@@ -401,7 +401,7 @@ function injectBrowserCoreAutoImportsUncached(code: string): BrowserCoreAutoImpo
   // anywhere pulled packages in off prose, and the copy "Your Mac can sleep"
   // was enough to add an `@stacksjs/browser` import that a compiled binary
   // cannot resolve, taking the whole client bundle down with it.
-  const searchable = stripCommentsAndLiterals(code)
+  const analysis = parameterAnalysis(code)
 
   const explicitlyImported = new Set<string>()
   for (const match of code.matchAll(/^\s*import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+['"][^'"]+['"]\s*;?\s*$/gm)) {
@@ -412,18 +412,15 @@ function injectBrowserCoreAutoImportsUncached(code: string): BrowserCoreAutoImpo
     }
   }
 
-  const locallyDeclared = declaredNames(searchable)
-
   const imports = BROWSER_CORE_IMPORTS.filter((symbol) => {
-    if (explicitlyImported.has(symbol) || locallyDeclared.has(symbol))
+    if (explicitlyImported.has(symbol) || analysis.declares(symbol))
       return false
     // Followed by a `(` — a call, not a mention — and not a method on
     // something else (`timer.delay(…)`).
-    return referencesName(searchable, symbol, true)
+    return referencesAnalyzed(analysis, symbol, true)
   })
 
-  const models = detectModelUsage(searchable).filter(model =>
-    !explicitlyImported.has(model) && !locallyDeclared.has(model))
+  const models = detectModelUsage(analysis).filter(model => !explicitlyImported.has(model))
 
   if (imports.length === 0 && models.length === 0)
     return { code, imports, models }
@@ -469,12 +466,10 @@ const JS_BUILTINS = new Set([
 ])
 
 
-function detectModelUsage(code: string, analysis = parameterAnalysis(code)): string[] {
+function detectModelUsage(analysis: ReturnType<typeof parameterAnalysis>): string[] {
   const models: Set<string> = new Set()
   // Read with comments and literals blanked, and with parameter scopes known:
   // `(J) => J.get(key)` queries the parameter, not a model.
-  const declared = declaredNames(code)
-
   // Pattern: PascalCase identifier followed by query method
   // e.g., Trail.all(), User.find(1), Activity.where('type', 'run')
   const modelPattern = /(?<![\w$.])([A-Z][a-zA-Z0-9]*)\s*\.\s*(all|find|first|get|where|orderBy|orderByDesc|limit|select|pluck|create|update|delete)\s*\(/g
@@ -484,7 +479,7 @@ function detectModelUsage(code: string, analysis = parameterAnalysis(code)): str
     // Skip JS built-ins that happen to have matching method names, and names
     // the script binds itself. A model is never one or two characters, which
     // is exactly what a minifier names a `new Map()` (`J.get(key)`).
-    if (JS_BUILTINS.has(name) || declared.has(name) || name.length < 3)
+    if (JS_BUILTINS.has(name) || analysis.declares(name) || name.length < 3)
       continue
     if (analysis.shadows(name, match.index ?? 0))
       continue
@@ -546,11 +541,6 @@ interface AutoImportResult {
   code: string
   stxImports: string[]
   browserImports: string[]
-}
-
-function collectLocalBindings(code: string): Set<string> {
-  // Every declarator of a list (`var a=0,J=new Map`), not just the first.
-  return declaredNames(code)
 }
 
 /**
@@ -663,7 +653,6 @@ function transformAutoImportsUncached(code: string): AutoImportResult {
     transformedCode = transformedCode.replace(match[0], replacement)
   }
 
-  const locallyDeclared = collectLocalBindings(transformedCode)
   // A large bundled registry can exceed the global analysis-cache budget.
   // Keep this pass's analysis alive locally instead of re-tokenizing it for
   // every ambient symbol; the shared cache stays bounded for other renders.
@@ -671,7 +660,7 @@ function transformAutoImportsUncached(code: string): AutoImportResult {
 
   // Detect usage of auto-importable symbols that weren't explicitly imported
   for (const symbol of STX_AUTO_IMPORTS) {
-    if (existingImports.has(symbol) || locallyDeclared.has(symbol)) continue
+    if (existingImports.has(symbol) || sourceAnalysis.declares(symbol)) continue
     // Check if symbol is used in code (as identifier boundary).
     //
     // The `(?:<[^>]*>)?` segment lets a TypeScript-typed call count as a call.
@@ -706,8 +695,8 @@ function transformAutoImportsUncached(code: string): AutoImportResult {
   // all functions. BrowserQueryError is a class, reached through `instanceof`
   // and `new`, and requiring `(` would drop the legitimate uses along with the
   // prose.
-  const searchableForBrowser = stripCommentsAndLiterals(transformedCode)
-  const browserAnalysis = parameterAnalysis(searchableForBrowser)
+  // Read the same lexical analysis for both sets of imports. Masking again
+  // would hide the expression before a division slash.
 
   // Names imported from ANY module, not just the three the regex above matches.
   //
@@ -742,16 +731,15 @@ function transformAutoImportsUncached(code: string): AutoImportResult {
   }
 
   for (const symbol of BROWSER_CORE_IMPORTS) {
-    if (existingImports.has(symbol) || locallyDeclared.has(symbol) || importedFromAnywhere.has(symbol)) continue
-    if (referencesAnalyzed(browserAnalysis, symbol)) {
+    if (existingImports.has(symbol) || sourceAnalysis.declares(symbol) || importedFromAnywhere.has(symbol)) continue
+    if (referencesAnalyzed(sourceAnalysis, symbol)) {
       usedBrowserImports.add(symbol)
     }
   }
 
   // Dynamically detect app-specific models (PascalCase with query methods)
-  const detectedModels = detectModelUsage(searchableForBrowser, browserAnalysis)
-  for (const model of detectedModels) {
-    if (!existingImports.has(model) && !locallyDeclared.has(model)) {
+  for (const model of detectModelUsage(sourceAnalysis)) {
+    if (!existingImports.has(model)) {
       usedBrowserImports.add(model)
     }
   }

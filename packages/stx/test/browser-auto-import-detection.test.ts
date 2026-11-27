@@ -22,7 +22,7 @@
  * and `new`, and a `(` requirement would drop real uses with the prose.
  */
 import { describe, expect, it } from 'bun:test'
-import { transformAutoImports } from '../src/client-script'
+import { injectBrowserCoreAutoImports, transformAutoImports } from '../src/client-script'
 
 const browserImportsFor = (code: string): string[] => transformAutoImports(code).browserImports
 const stxImportsFor = (code: string): string[] => transformAutoImports(code).stxImports
@@ -43,6 +43,14 @@ describe('browser auto-import detection reads code, not prose', () => {
 
   it('still detects a real call', () => {
     expect(stxImportsFor('const t = useTimeoutFn(() => {}, 10)')).toContain('useTimeoutFn')
+  })
+
+  it('detects calls inside division expressions with literal operands', () => {
+    const code = "const value = '64' / delay(2) / '2'\nconst count = '64' / Order.find(2) / '2'"
+    expect(browserImportsFor(code)).toEqual(expect.arrayContaining(['delay', 'Order']))
+    const injected = injectBrowserCoreAutoImports(code)
+    expect(injected.imports).toContain('delay')
+    expect(injected.models).toContain('Order')
   })
 
   it('still detects a class used through instanceof', () => {

@@ -248,9 +248,13 @@ function analyze(source: string): Analysis {
   return analysis
 }
 
-export function parameterAnalysis(source: string): { code: string, shadows: (name: string, offset: number) => boolean } {
+export function parameterAnalysis(source: string): { code: string, declares: (name: string) => boolean, shadows: (name: string, offset: number) => boolean } {
   const analysis = analyze(source)
-  return { code: analysis.code, shadows: (name, offset) => analysis.scopes.some(scope => offset >= scope.start && offset < scope.end && scope.names.has(name)) }
+  return {
+    code: analysis.code,
+    declares: name => analysis.declarations.has(name),
+    shadows: (name, offset) => analysis.scopes.some(scope => offset >= scope.start && offset < scope.end && scope.names.has(name)),
+  }
 }
 
 /**
