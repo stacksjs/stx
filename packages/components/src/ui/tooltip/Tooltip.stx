@@ -80,10 +80,12 @@ const isDisabled = useReactiveProp('disabled', {{ disabled }})
 const pressToToggle = useReactiveProp('pressToToggle', {{ pressToToggle }})
 // Reactive prop binding — parent can drive `show` via signals. See #1704.
 const isVisible = useReactiveProp('show', {{ show }})
-let timeoutId = null
-let pointerExitTimeout = null
 let positionGeneration = 0
 let destroyed = false
+const showAfterDelay = useDebounce(() => {
+  if (!destroyed && !isDisabled() && !pressToToggle()) isVisible.set(true)
+}, delay)
+const hideAfterExit = useDebounce(hideTooltip, 160)
 
 // Use the actual offset parent, so a tooltip inside a modal or a transformed
 // container still gets viewport bounds rather than assuming document origin.
@@ -117,31 +119,20 @@ function showTooltip() {
   if (isDisabled() || pressToToggle()) return
   cancelPointerExit()
   if (isVisible()) return
-  if (timeoutId) clearTimeout(timeoutId)
-  if (delay > 0) {
-    timeoutId = setTimeout(() => {
-      timeoutId = null
-      if (!destroyed && !isDisabled() && !pressToToggle()) isVisible.set(true)
-    }, delay)
-  }
-  else {
-    isVisible.set(true)
-  }
+  if (delay > 0) showAfterDelay()
+  else isVisible.set(true)
 }
 
 function cancelPointerExit() {
-  if (pointerExitTimeout === null) return
-  clearTimeout(pointerExitTimeout)
-  pointerExitTimeout = null
+  hideAfterExit.cancel()
 }
 
 function leaveTooltip() {
   if (pressToToggle()) return
   if (!isVisible()) { hideTooltip(); return }
-  cancelPointerExit()
   // A portaled panel has an eight-pixel gap from its trigger. Let a pointer
   // cross that gap without losing the text it was approaching to read.
-  pointerExitTimeout = setTimeout(hideTooltip, 160)
+  hideAfterExit()
 }
 
 function toggleTouch(event) {
@@ -159,10 +150,7 @@ function toggleTouch(event) {
 function hideTooltip() {
   ++positionGeneration
   cancelPointerExit()
-  if (timeoutId) {
-    clearTimeout(timeoutId)
-    timeoutId = null
-  }
+  showAfterDelay.cancel()
   isVisible.set(false)
 }
 
@@ -198,8 +186,6 @@ effect(() => {
 onDestroy(() => {
   destroyed = true
   ++positionGeneration
-  cancelPointerExit()
-  if (timeoutId) clearTimeout(timeoutId)
   if (stopPositioning) stopPositioning()
   window.stx.overlays.close(activeTooltipId)
 })
