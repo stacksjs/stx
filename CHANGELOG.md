@@ -1,5 +1,30 @@
 # Changelog
 
+[Compare changes](https://github.com/stacksjs/stx/compare/v0.2.957...v0.2.958)
+
+## ✨ Features
+
+- **signals**: a single-element :if can animate out ([2b2579a](https://github.com/stacksjs/stx/commit/2b2579a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **ssg**: let related pages share one utility stylesheet ([3ca9fa2](https://github.com/stacksjs/stx/commit/3ca9fa2)) _(by Chris Breuer <chris@stacksjs.com>)_ ([stacksjs/postline#185](https://github.com/stacksjs/postline/issues/185))
+- **ssg**: share the generated CSS across pages, keeping cascade order ([5944a3b](https://github.com/stacksjs/stx/commit/5944a3b)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2230](https://github.com/stacksjs/stx/issues/2230))
+- **components**: CommandPalette is a combobox the keyboard can drive ([4d8dcb6](https://github.com/stacksjs/stx/commit/4d8dcb6)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2231](https://github.com/stacksjs/stx/issues/2231))
+
+## 🐛 Bug Fixes
+
+- **native**: preserve typed styles when dropping intrinsic sizing ([0c2443f](https://github.com/stacksjs/stx/commit/0c2443f)) _(by Chris Breuer <chris@stacksjs.com>)_
+- **native**: a Switch or spinner takes no frame from CSS ([6182fa1](https://github.com/stacksjs/stx/commit/6182fa1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- **typecheck**: blank {{-- --}} comments inside a script block ([b17f74f](https://github.com/stacksjs/stx/commit/b17f74f)) _(by glennmichael123 <gtorregosa@gmail.com>)_ ([#2226](https://github.com/stacksjs/stx/issues/2226))
+- ignore server scripts when detecting browser reactivity ([ac7a40f](https://github.com/stacksjs/stx/commit/ac7a40f)) _(by Chris Breuer <chris@stacksjs.com>)_ ([#2238](https://github.com/stacksjs/stx/issues/2238))
+
+## ⚡ Performance Improvements
+
+- skip scanning for absent custom directives ([2e8488a](https://github.com/stacksjs/stx/commit/2e8488a)) _(by Chris Breuer <chris@stacksjs.com>)_
+
+## Contributors
+
+- _Chris Breuer <chris@stacksjs.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/stacksjs/stx/compare/v0.2.956...v0.2.957)
 
 ## ✅ Tests
