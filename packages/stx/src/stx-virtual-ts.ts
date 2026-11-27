@@ -169,13 +169,20 @@ export interface VirtualFile {
  * still sliced from the original text.
  */
 function blankCommentContents(source: string): string {
-  const blank = (match: string): string =>
-    match.replace(/[^\n]/g, ' ')
+  // HTML comments, and the stx template comment, which is equally prose.
+  return blankTemplateComments(source.replace(/<!--[\s\S]*?-->/g, blankKeepingLines))
+}
 
-  return source
-    // HTML comments, and the stx template comment, which is equally prose.
-    .replace(/<!--[\s\S]*?-->/g, blank)
-    .replace(/\{\{--[\s\S]*?--\}\}/g, blank)
+const blankKeepingLines = (match: string): string => match.replace(/[^\n]/g, ' ')
+
+/**
+ * `{{-- --}}` blanked, newlines kept. The engine strips these from the whole
+ * template before anything else runs, script bodies included, so one inside a
+ * `<script>` never ships; read as code it was a string of syntax errors that
+ * held back type checking for every file in the run (#2226).
+ */
+function blankTemplateComments(source: string): string {
+  return source.replace(/\{\{--[\s\S]*?--\}\}/g, blankKeepingLines)
 }
 
 /**
@@ -197,7 +204,7 @@ export function extractScriptBlocks(source: string): ScriptBlock[] {
     const attrs = script.attrs.trim()
     const attributes = scriptAttributes(attrs)
     const { bodyStart, bodyEnd } = script
-    const body = source.slice(bodyStart, bodyEnd)
+    const body = blankTemplateComments(source.slice(bodyStart, bodyEnd))
 
     // `src` scripts have no inline body to check.
     if (attributes.has('src') || attributes.has('component') || attributes.has('stx:component'))
