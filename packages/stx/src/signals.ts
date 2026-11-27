@@ -9,6 +9,7 @@
  */
 
 import { state, derived, effect, batch, onMount, onDestroy, isSignal, isDerived, untrack, peek } from './signals-api'
+import { escapeScriptBody } from './script-emit'
 import { runtimeDirectiveNamesLiteral, runtimeEventRegexLiteral, runtimeHandledXAttrsLiteral } from './runtime-globals'
 import { createModelSignal } from './component-model'
 import { createAsyncData, readHydratedData, clearServerData } from './composables/use-fetch'
@@ -125,12 +126,16 @@ export function generateSignalsRuntime(options: SignalsRuntimeOptions = {}): str
   // like `}var` or `}let`. While Bun's parser handles these, browsers in strict
   // mode may reject them.
   try {
-    const transpiler = new Bun.Transpiler({ loader: 'js', minifyWhitespace: true })
+    // Bun supports the same minifier settings as Bun.build here, although the
+    // TranspilerOptions declaration only lists whitespace.
+    const transpiler = new Bun.Transpiler(options.native
+      ? { loader: 'js', minifyWhitespace: true }
+      : { loader: 'js', minify: { whitespace: true, identifiers: true, syntax: true } } as ConstructorParameters<typeof Bun.Transpiler>[0])
     let minified = transpiler.transformSync(stripped)
     // Insert semicolons at `}keyword` boundaries where ASI would have applied
     // with a newline but doesn't on a single line
     minified = minified.replace(/\}(var |let |const |function )/g, '};$1')
-    return minified
+    return escapeScriptBody(minified)
   }
   catch {
     // Fallback: unminified but still stripped — larger, correct, and quiet.

@@ -91,15 +91,16 @@ export const SIGNALS_COMPONENT_HYDRATION_RUNTIME = `  /*
       });
       if (!pendingRoots.length) return;
 
-      var setup = __forComponentSetupFactories.get(text);
+      var setupKey = old.getAttribute('data-stx-csp-setup') || text;
+      var setup = __forComponentSetupFactories.get(setupKey);
       if (!setup) {
         try {
           if (window.__STX_CSP__) {
-            setup = window.__STX_CSP__.setups[text];
+            setup = window.__STX_CSP__.setups[setupKey];
             if (!setup) throw new Error('[stx:csp] Missing precompiled component setup');
           }
           else setup = new Function(text);
-          __forComponentSetupFactories.set(text, setup);
+          __forComponentSetupFactories.set(setupKey, setup);
         }
         catch (e) {
           console.error('[stx] cloned component setup compile error:', e);

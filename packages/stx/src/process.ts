@@ -1083,7 +1083,7 @@ export async function processDirectives(
         if (options.csp?.enabled && options.csp.precompile) {
           try {
             const { precompileCspBindings } = await import('./csp-precompile')
-            result = precompileCspBindings(result)
+            result = precompileCspBindings(result, minifiesClientCode(options.buildMode, options.minifyClient))
           }
           catch (error) { throw new StxValidationError('CSP precompilation failed: ' + String(error)) }
         }

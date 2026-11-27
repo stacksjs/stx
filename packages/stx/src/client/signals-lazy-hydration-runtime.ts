@@ -110,7 +110,8 @@ export const SIGNALS_LAZY_HYDRATION_RUNTIME = `  // Lazy hydration: defer proces
         // eslint-disable-next-line no-new-func
         try {
           if (window.__STX_CSP__) {
-            var compiledSetup = window.__STX_CSP__.setups[islandScript.textContent];
+            var setupKey = islandScript.getAttribute('data-stx-csp-setup') || islandScript.textContent;
+            var compiledSetup = window.__STX_CSP__.setups[setupKey];
             if (!compiledSetup) throw new Error('[stx:csp] Missing precompiled island setup');
             compiledSetup();
           }

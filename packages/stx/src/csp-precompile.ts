@@ -1,18 +1,26 @@
 import { parse, type Node } from 'acorn'
 import { decodeHTML, decodeHTMLAttribute } from 'entities'
+import { createHash } from 'node:crypto'
 import { parseAttributes, decodeAttributeEntities } from './component-processing'
 import { compileCspExpression } from './csp-expression'
 import { scanHtmlScriptElements, scanHtmlTags } from './html-masking'
 import { splitByPipe } from './parser'
 import { escapeScriptBody } from './script-emit'
 
+const STRUCTURAL_ATTRIBUTE = /^(?:@|:|x-)(?:for|if|else-if|else)$/
+const VOID_TAGS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'])
+
 /** Compile the finished author template, never data later written by a binding. */
-export function precompileCspBindings(html: string): string {
+export function precompileCspBindings(html: string, minify = false): string {
   for (const script of scanHtmlScriptElements(html).reverse()) {
     if (parseAttributes(script.attrs, { html: true }).some(attr => attr.name === 'data-stx-csp')) html = html.slice(0, script.start) + html.slice(script.end)
   }
   const bodies = new Map<string, string>()
   const setups = new Map<string, string>()
+  const setupKeys = new Map<number, string>()
+  const eagerOwners = new Set<string>()
+  const cloneOwners = new Set<string>()
+  const ancestors: Array<{ name: string, cloned: boolean }> = []
   const add = (key: string, body = key): void => {
     if (!bodies.has(key)) bodies.set(key, compileCspExpression(body))
   }
@@ -46,8 +54,17 @@ export function precompileCspBindings(html: string): string {
     previousEnd = tag.end
     const name = tag.name.toLowerCase()
     raw = !tag.closing && (name === 'script' || name === 'style')
-    if (tag.closing) continue
+    if (tag.closing) {
+      const open = ancestors.findLastIndex(ancestor => ancestor.name === name)
+      if (open >= 0) ancestors.length = open
+      continue
+    }
     const attrs = parseAttributes(tag.attributes, { html: true })
+    const cloned = name === 'template' || ancestors.at(-1)?.cloned === true
+      || attrs.some(attr => STRUCTURAL_ATTRIBUTE.test(attr.name))
+    const scope = attrs.find(attr => attr.name === 'data-stx-scope')?.value
+    if (typeof scope === 'string') (cloned ? cloneOwners : eagerOwners).add(scope)
+    if (!tag.selfClosing && !VOID_TAGS.has(name)) ancestors.push({ name, cloned })
     for (const attr of attrs) {
       const value = decodeHTMLAttribute(typeof attr.value === 'string' ? attr.value : '')
       const name = attr.name
@@ -87,7 +104,14 @@ export function precompileCspBindings(html: string): string {
     const text = html.slice(script.bodyStart, script.bodyEnd)
     const type = typeof attrs.type === 'string' ? attrs.type : ''
     if (type && !['module', 'text/javascript', 'application/javascript', 'stx/island'].includes(type)) continue
-    if ('data-stx-scoped' in attrs || type === 'stx/island') setups.set(text, `function(){\n${text}\n}`)
+    // The browser executes eager page setup and shared modules directly.
+    // Only component clones and lazy islands need callable setup factories.
+    const owner = attrs['data-stx-owner']
+    if (type === 'stx/island' || (typeof owner === 'string' && (!eagerOwners.has(owner) || cloneOwners.has(owner)))) {
+      const key = createHash('sha256').update(text).digest('hex')
+      setups.set(key, `function(){\n${text}\n}`)
+      setupKeys.set(script.start, key)
+    }
     const ast = parse(text, { ecmaVersion: 'latest', sourceType: type === 'module' ? 'module' : 'script' })
     const visit = (node: Node): void => {
       if (node.type === 'CallExpression') {
@@ -116,15 +140,22 @@ export function precompileCspBindings(html: string): string {
   const code = `(function(){var ${registry}=window.__STX_CSP__||(window.__STX_CSP__={expressions:Object.create(null),setups:Object.create(null)});\n${entries}\n${factories}\n})();`
   // The router must preserve these bytes: wrapping or appending completion
   // markers changes their CSP hash. Registry ordering also applies to fragments.
-  const script = `<script data-stx-csp data-stx-modules data-stx-csp-script>${escapeScriptBody(code)}</script>`
-  const firstScript = scanHtmlScriptElements(html)[0]
-  const head = /<head\b[^>]*>/i.exec(html)
-  const at = firstScript?.start ?? (head ? head.index + head[0].length : 0)
-  let output = html.slice(0, at) + script + html.slice(at)
-  for (const entry of scanHtmlScriptElements(output).reverse()) {
+  const source = minify
+    ? new Bun.Transpiler({ loader: 'js', minify: { whitespace: true, identifiers: true, syntax: true } } as ConstructorParameters<typeof Bun.Transpiler>[0]).transformSync(code)
+    : code
+  const script = `<script data-stx-csp data-stx-modules data-stx-csp-script>${escapeScriptBody(source)}</script>`
+  let output = html
+  for (const entry of scanHtmlScriptElements(html).reverse()) {
     const open = output.slice(entry.start, entry.bodyStart)
-    if (/\bdata-stx-csp-script\b/.test(open)) continue
-    output = output.slice(0, entry.start) + open.replace(/^<script\b/i, '<script data-stx-csp-script') + output.slice(entry.bodyStart)
+    const key = setupKeys.get(entry.start)
+    let attributes = ''
+    if (!/\bdata-stx-csp-script\b/.test(open)) attributes += ' data-stx-csp-script'
+    if (key && !/\bdata-stx-csp-setup\b/.test(open)) attributes += ` data-stx-csp-setup="${key}"`
+    if (attributes)
+      output = output.slice(0, entry.start) + open.replace(/^<script\b/i, tag => tag + attributes) + output.slice(entry.bodyStart)
   }
-  return output
+  const firstScript = scanHtmlScriptElements(output)[0]
+  const head = /<head\b[^>]*>/i.exec(output)
+  const at = firstScript?.start ?? (head ? head.index + head[0].length : 0)
+  return output.slice(0, at) + script + output.slice(at)
 }

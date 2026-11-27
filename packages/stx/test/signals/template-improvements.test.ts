@@ -11,6 +11,8 @@
  * 8. Event handler shorthand (count++, !visible)
  */
 import { describe, expect, it } from 'bun:test'
+import { gzipSync } from 'node:zlib'
+import { Window } from 'very-happy-dom'
 import { generateSignalsRuntime, generateSignalsRuntimeDev } from '../../src/signals'
 
 describe('Feature #1: Auto-unwrap signals in expressions', () => {
@@ -365,16 +367,21 @@ describe('Feature #8: Event handler shorthand', () => {
 describe('Minified runtime compatibility', () => {
   it('should produce valid minified output with new features', () => {
     const minified = generateSignalsRuntime()
-    expect(minified).toBeTruthy()
-    expect(minified.length).toBeLessThan(generateSignalsRuntimeDev().length)
+    expect(() => new Function(minified)).not.toThrow()
+    expect(gzipSync(minified).length).toBeLessThan(65 * 1024)
   })
 
-  it('should preserve globalHelpers in minified form', () => {
-    const minified = generateSignalsRuntime()
-    expect(minified).toContain('globalHelpers')
-    expect(minified).toContain('fmt')
-    expect(minified).toContain('formatDate')
-    expect(minified).toContain('debounce')
+  it('preserves the public formatting helpers after minification', () => {
+    const window = new Window()
+    try {
+      const boot = new Function('window', 'document', 'Node', generateSignalsRuntime())
+      boot(window, window.document, window.Node)
+      const { helpers } = (window as any).stx
+      expect(helpers.fmt(2500)).toBe('2.5K')
+      expect(helpers.formatDate(new Date(2026, 10, 26))).toBe('2026-11-26')
+      expect(typeof helpers.debounce(() => {})).toBe('function')
+    }
+    finally { window.close() }
   })
 
   it('should preserve useFetch in minified form', () => {
