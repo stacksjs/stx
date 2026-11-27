@@ -499,11 +499,11 @@ const INTRINSIC_FRAME: Record<string, readonly string[]> = {
 }
 
 /** `style` without the dimensions a control of this type draws for itself (the same object when there are none). */
-export function withoutIntrinsicFrame<T extends Record<string, unknown>>(type: string, style: T): T {
+export function withoutIntrinsicFrame<T extends object>(type: string, style: T): T {
   const fixed = INTRINSIC_FRAME[type]
   if (!fixed || !fixed.some(key => key in style)) return style
   const kept = { ...style }
-  for (const key of fixed) delete kept[key]
+  for (const key of fixed) Reflect.deleteProperty(kept, key)
   return kept
 }
 
