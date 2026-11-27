@@ -23,6 +23,13 @@ it('preserves JavaScript escapes from browser-parsed attributes', () => {
   expect(html).toContain(`.expressions[${JSON.stringify(`return (${expression})`)}]`)
 })
 
+it('emits one factory for both spellings of a compiled read', () => {
+  const html = precompileCspBindings('<p :text="formatTitle(post.title)"></p>')
+  expect(html).toContain('.expressions["return (formatTitle(post.title))"]=__stxCspRegistry__.expressions["return formatTitle(post.title)"]=')
+  expect(html.match(/\["formatTitle"\]:\{/g)).toHaveLength(1)
+  expect(precompileCspBindings(html)).toBe(html)
+})
+
 it('registers only callable setup factories and addresses them without repeating their source', () => {
   const page = '<script data-stx-scoped>window.pageSetup()</script>'
   const eager = '<div data-stx-scope="eager"></div><script data-stx-scoped data-stx-owner="eager">window.eagerSetup()</script>'
