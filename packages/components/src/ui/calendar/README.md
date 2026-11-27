@@ -90,6 +90,8 @@ let selectedDate = new Date()
 <Calendar
   value={selectedDate}
   locale="es-ES"
+  previousMonthLabel="Mes anterior"
+  nextMonthLabel="Mes siguiente"
   firstDayOfWeek={1}
   onChange={(date) => selectedDate = date}
 />

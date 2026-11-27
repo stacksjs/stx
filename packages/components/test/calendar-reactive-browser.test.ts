@@ -5,8 +5,9 @@ let page: BrowserPage
 beforeAll(async () => {
   page = await openBrowserPage({ name: 'calendar-reactive', ready: 'window.calendarProbe && document.querySelector("[data-calendar-host] button[aria-selected=true]")', body: `<script client>
 const locale = state('en-US'); const value = state('2026-12-15T00:00:00'); const min = state(null); const max = state(null); const shown = state(true)
-window.calendarProbe = { value, min, max, shown, locale }
-</script><div data-calendar-host :if="shown"><Calendar :value="value" :minDate="min" :maxDate="max" :locale="locale" /></div>` })
+const previousLabel = state(undefined); const nextLabel = state(undefined)
+window.calendarProbe = { value, min, max, shown, locale, previousLabel, nextLabel }
+</script><div data-calendar-host :if="shown"><Calendar :value="value" :minDate="min" :maxDate="max" :locale="locale" :previousMonthLabel="previousLabel" :nextMonthLabel="nextLabel" /></div>` })
 }, 90_000)
 afterAll(() => page?.close())
 
@@ -35,5 +36,15 @@ it('updates the displayed locale without changing the selected day', async () =>
   await page.run("calendarProbe.locale.set('fr-FR')")
   expect(await page.until('document.querySelector("[data-calendar-host]").textContent.includes("février")')).toBe(true)
   expect(await page.json('return document.querySelector("button[aria-selected=true]").textContent')).toBe('10')
+  expect(await page.errors()).toEqual([])
+})
+
+it('accepts localized accessible names for previous and next month', async () => {
+  const buttonsNamed = (labels: string[]) => labels.map(label => `document.querySelector('[data-calendar-host] button[aria-label="${label}"]')`).join(' && ')
+  const defaults = buttonsNamed(['Previous month', 'Next month'])
+  expect(await page.json(`return Boolean(${defaults})`)).toBe(true)
+  await page.run("calendarProbe.previousLabel.set('Mes anterior'); calendarProbe.nextLabel.set('Mes siguiente')")
+  expect(await page.until(buttonsNamed(['Mes anterior', 'Mes siguiente']))).toBe(true)
+  expect(await page.json(`return Boolean(${defaults})`)).toBe(false)
   expect(await page.errors()).toEqual([])
 })

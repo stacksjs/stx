@@ -17,6 +17,8 @@ export const minDate = $props.minDate || null
 export const maxDate = $props.maxDate || null
 export const disabledDates = $props.disabledDates || []
 export const locale = $props.locale || 'en-US'
+export const previousMonthLabel = $props.previousMonthLabel || 'Previous month'
+export const nextMonthLabel = $props.nextMonthLabel || 'Next month'
 export const firstDayOfWeek = $num($props.firstDayOfWeek) || 0
 export const showToday = $bool($props.showToday, true)
 export const className = $props.className || ''
@@ -45,6 +47,8 @@ export const disabledIsoList = disabledDates.map(d => new Date(d).toISOString())
 <script client>
 const emit = defineEmits()
 const locale = useReactiveProp('locale', {{ locale }})
+const previousLabel = useReactiveProp('previousMonthLabel', {{ previousMonthLabel }})
+const nextLabel = useReactiveProp('nextMonthLabel', {{ nextMonthLabel }})
 const firstDayOfWeek = {{ firstDayOfWeek }}
 const highlightToday = {{ highlightToday }}
 /*
@@ -284,7 +288,8 @@ defineExpose({ selectedDate, currentMonth, selectDate, rangeStart, rangeEnd })
       type="button"
       class="{{ buttonClasses }}"
       @click="previousMonth()"
-      aria-label="Previous month"
+      :aria-label="previousLabel()"
+      aria-label="{{ previousMonthLabel }}"
     >
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -297,7 +302,8 @@ defineExpose({ selectedDate, currentMonth, selectDate, rangeStart, rangeEnd })
       type="button"
       class="{{ buttonClasses }}"
       @click="nextMonthFn()"
-      aria-label="Next month"
+      :aria-label="nextLabel()"
+      aria-label="{{ nextMonthLabel }}"
     >
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />

@@ -7,6 +7,8 @@ export interface CalendarProps {
   maxDate?: Date | string | null
   disabledDates?: Date[]
   locale?: string
+  previousMonthLabel?: string
+  nextMonthLabel?: string
   firstDayOfWeek?: number // 0 = Sunday, 1 = Monday, etc.
   showToday?: boolean
   highlightToday?: boolean
