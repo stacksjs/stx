@@ -3,6 +3,11 @@ import { analyze } from 'eslint-scope'
 
 /** Server-only code generation. No expression is evaluated while compiling. */
 export function compileCspExpression(body: string): string {
+  const { run, globals } = compileCspExpressionParts(body)
+  return `{run:${run},globals:${emitCspGlobalAccessors(globals)}}`
+}
+
+export function compileCspExpressionParts(body: string): { run: string, globals: Map<string, boolean> } {
   const prefix = '(function(){\n'
   const source = prefix + body + '\n})'
   const ast = parse(source, { ecmaVersion: 'latest', ranges: true })
@@ -26,7 +31,6 @@ export function compileCspExpression(body: string): string {
   const frame = unique('__stx_csp_frame__')
   const args = unique('__stx_csp_arguments__')
   const typeOf = unique('__stx_csp_typeof__')
-  const assigned = unique('__stx_csp_assigned__')
   const edits = new Map<number, { end: number, text: string }>()
   const globals = new Map<string, boolean>()
   for (const reference of scopes.globalScope!.through) {
@@ -62,8 +66,17 @@ export function compileCspExpression(body: string): string {
   let rewritten = source
   for (const [start, edit] of [...edits].sort((a, b) => b[0] - a[0])) rewritten = rewritten.slice(0, start) + edit.text + rewritten.slice(edit.end)
   rewritten = rewritten.slice(prefix.length, -3)
-  const fallbacks = [...globals].map(([name, writes]) => `[${JSON.stringify(name)}]:{get:function(){return ${name}},type:function(){return typeof ${name}}${writes ? `,set:function(${assigned}){${name}=${assigned}}` : ''}}`).join(',')
-  const result = `{run:function(${frame},${args},${typeOf}){\n${rewritten}\n},globals:{${fallbacks}}}`
-  parse('(' + result + ')', { ecmaVersion: 'latest' })
-  return result
+  const run = `function(${frame},${args},${typeOf}){\n${rewritten}\n}`
+  parse('(' + run + ')', { ecmaVersion: 'latest' })
+  return { run, globals }
+}
+
+/** Emit one set of lazy accessors for the names used by the registry. */
+export function emitCspGlobalAccessors(globals: ReadonlyMap<string, boolean>): string {
+  const fallbacks = [...globals].map(([name, writes]) => {
+    const value = name === 'value' ? 'assigned' : 'value'
+    const setter = writes ? `,set:function(${value}){${name}=${value}}` : ''
+    return `[${JSON.stringify(name)}]:{get:function(){return ${name}},type:function(){return typeof ${name}}${setter}}`
+  })
+  return `{${fallbacks.join(',')}}`
 }

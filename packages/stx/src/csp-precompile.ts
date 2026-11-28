@@ -2,7 +2,7 @@ import { parse, type Node } from 'acorn'
 import { decodeHTML, decodeHTMLAttribute } from 'entities'
 import { createHash } from 'node:crypto'
 import { parseAttributes, decodeAttributeEntities } from './component-processing'
-import { compileCspExpression } from './csp-expression'
+import { compileCspExpressionParts, emitCspGlobalAccessors } from './csp-expression'
 import { scanHtmlScriptElements, scanHtmlTags } from './html-masking'
 import { splitByPipe } from './parser'
 import { escapeScriptBody } from './script-emit'
@@ -16,6 +16,7 @@ export function precompileCspBindings(html: string, minify = false): string {
     if (parseAttributes(script.attrs, { html: true }).some(attr => attr.name === 'data-stx-csp')) html = html.slice(0, script.start) + html.slice(script.end)
   }
   const bodies = new Map<string, string>()
+  const globals = new Map<string, boolean>()
   const setups = new Map<string, string>()
   const setupKeys = new Map<number, string>()
   const eagerOwners = new Set<string>()
@@ -24,9 +25,10 @@ export function precompileCspBindings(html: string, minify = false): string {
   const add = (key: string, body = key): string => {
     const existing = bodies.get(key)
     if (existing !== undefined) return existing
-    const compiled = compileCspExpression(body)
-    bodies.set(key, compiled)
-    return compiled
+    const compiled = compileCspExpressionParts(body)
+    for (const [name, writes] of compiled.globals) globals.set(name, (globals.get(name) ?? false) || writes)
+    bodies.set(key, compiled.run)
+    return compiled.run
   }
   const read = (expression: string): void => {
     if (!expression || /^__[A-Z_]+__$/.test(expression.trim())) return
@@ -147,8 +149,11 @@ export function precompileCspBindings(html: string, minify = false): string {
     visit(ast)
   }
   let registry = '__stxCspRegistry__'
-  const definitions = [...bodies.values(), ...setups.values()].join('\n')
+  let sharedGlobals = '__stxCspGlobals__'
+  const accessors = emitCspGlobalAccessors(globals)
+  const definitions = [...bodies.values(), ...setups.values(), accessors].join('\n')
   while (definitions.includes(registry)) registry += '_'
+  while (definitions.includes(sharedGlobals)) sharedGlobals += '_'
   const aliases = new Map<string, string[]>()
   for (const [key, compiled] of bodies) {
     const keys = aliases.get(compiled)
@@ -156,10 +161,10 @@ export function precompileCspBindings(html: string, minify = false): string {
     else aliases.set(compiled, [key])
   }
   const entries = [...aliases].map(([compiled, keys]) =>
-    `${keys.map(key => `${registry}.expressions[${JSON.stringify(key)}]=`).join('')}${compiled};`,
+    `${keys.map(key => `${registry}.expressions[${JSON.stringify(key)}]=`).join('')}{run:${compiled},globals:${sharedGlobals}};`,
   ).join('\n')
   const factories = [...setups].map(([key, value]) => `${registry}.setups[${JSON.stringify(key)}]=${value};`).join('\n')
-  const code = `(function(){var ${registry}=window.__STX_CSP__||(window.__STX_CSP__={expressions:Object.create(null),setups:Object.create(null)});\n${entries}\n${factories}\n})();`
+  const code = `(function(){var ${registry}=window.__STX_CSP__||(window.__STX_CSP__={expressions:Object.create(null),setups:Object.create(null)});\nvar ${sharedGlobals}=${accessors};\n${entries}\n${factories}\n})();`
   // The router must preserve these bytes: wrapping or appending completion
   // markers changes their CSP hash. Registry ordering also applies to fragments.
   const source = minify

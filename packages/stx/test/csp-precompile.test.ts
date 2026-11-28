@@ -30,6 +30,22 @@ it('emits one factory for both spellings of a compiled read', () => {
   expect(precompileCspBindings(html)).toBe(html)
 })
 
+it('shares global accessors across different bindings and retains write access', () => {
+  const html = precompileCspBindings('<b x-text="fixtureGlobal + 1"></b><b x-text="typeof fixtureGlobal"></b><button @click="fixtureGlobal += 2"></button>')
+  expect(html.match(/\["fixtureGlobal"\]:\{/g)).toHaveLength(1)
+
+  const code = /<script[^>]*>([\s\S]*?)<\/script>/.exec(html)![1]
+  const window: Record<string, any> = {}
+  const inspectRegistry = new Function('window', `let fixtureGlobal = 3; ${code}; return () => fixtureGlobal`)
+  const readGlobal: () => number = inspectRegistry(window)
+  const expressions = window.__STX_CSP__.expressions
+  const accessor = expressions['return fixtureGlobal + 1'].globals.fixtureGlobal
+  expect(accessor.get()).toBe(3)
+  expect(expressions['return typeof fixtureGlobal'].globals.fixtureGlobal.type()).toBe('number')
+  expressions['fixtureGlobal += 2'].globals.fixtureGlobal.set(5)
+  expect(readGlobal()).toBe(5)
+})
+
 it('registers only callable setup factories and addresses them without repeating their source', () => {
   const page = '<script data-stx-scoped>window.pageSetup()</script>'
   const eager = '<div data-stx-scope="eager"></div><script data-stx-scoped data-stx-owner="eager">window.eagerSetup()</script>'
