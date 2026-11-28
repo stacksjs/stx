@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { mightContainOwnTextMustache, scanAtElementPosition } from '../src/html-masking'
+import { mightContainOwnTextMustache, scanAtElementPosition, scanHtmlTags, scanHtmlScriptElements } from '../src/html-masking'
 
 function markTokens(html: string): string[] {
   return scanAtElementPosition(html, (source, i) =>
@@ -19,8 +19,30 @@ describe('element-position mask scan', () => {
     expect(markTokens(html)).toEqual(['<mark>'])
   })
 
+  it('stops at an unfinished quoted attribute', () => {
+    const html = '<mark><div title="quote > <mark> {{ text }}'
+    expect(markTokens(html)).toEqual(['<mark>'])
+    expect(mightContainOwnTextMustache(html)).toBe(false)
+  })
+
   it('treats an unclosed script as opaque through the document end', () => {
     expect(markTokens('<script>const x = "<mark>"')).toEqual([])
+  })
+})
+
+describe('selective HTML tag scans', () => {
+  it('retains script boundaries while skipping raw text and quoted lookalikes', () => {
+    const html = '<title><script>Title text</script></title>'
+      + '<textarea><script>Editor text</script></textarea>'
+      + '<DIV title="a > <script>attribute text</script>">'
+      + '<SCRIPT data-label="a > b">let text = "<script>"</SCRIPT>'
+      + '</DIV><!-- <script>comment text</script> -->'
+    const names = new Set(['script'])
+    const tags = scanHtmlTags(html, names)
+
+    expect(tags).toEqual(scanHtmlTags(html).filter(tag => names.has(tag.name.toLowerCase())))
+    expect(tags.map(tag => [tag.name, tag.closing])).toEqual([['SCRIPT', false], ['SCRIPT', true]])
+    expect(scanHtmlScriptElements(html).map(script => html.slice(script.bodyStart, script.bodyEnd))).toEqual(['let text = "<script>"'])
   })
 })
 

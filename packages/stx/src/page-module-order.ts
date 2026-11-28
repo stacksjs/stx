@@ -11,9 +11,11 @@ export function usesImportMeta(code: string): boolean {
   return /\bimport\s*\.\s*meta\b/.test(stripBindingLiterals(code))
 }
 
+const SCRIPT_SCOPE_TAGS = new Set(['script', 'template'])
+
 /** Only actual element-position scripts; tag-looking prose/attributes are opaque. */
 function pageScripts(html: string) {
-  const tags = scanHtmlTags(html), scripts: Array<{ start: number, end: number, attrs: string, body: string, inert: boolean }> = []
+  const tags = scanHtmlTags(html, SCRIPT_SCOPE_TAGS), scripts: Array<{ start: number, end: number, attrs: string, body: string, inert: boolean }> = []
   let templateDepth = 0
   for (let index = 0; index < tags.length; index++) {
     const tag = tags[index]!, name = tag.name.toLowerCase()

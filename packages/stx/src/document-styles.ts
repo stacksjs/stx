@@ -1,5 +1,8 @@
 import { scanHtmlTags } from './html-masking'
 
+const protectedTags = new Set(['template', 'svg', 'noscript', 'math', 'textarea', 'title', 'xmp', 'iframe', 'noembed', 'noframes', 'plaintext'])
+const styleBoundaryTags = new Set(['head', 'style', ...protectedTags])
+
 /**
  * Put authored page and component CSS before the first body paint.
  * Components are rendered in place, often after a large log or table. Leaving
@@ -13,12 +16,11 @@ import { scanHtmlTags } from './html-masking'
  * identical copy changes nothing but the size of the page.
  */
 export function hoistDocumentStyles(html: string): string {
-  const tags = scanHtmlTags(html)
+  const tags = scanHtmlTags(html, styleBoundaryTags)
   const headClose = tags.find(tag => tag.closing && tag.name.toLowerCase() === 'head')
   if (!headClose)
     return html
 
-  const protectedTags = new Set(['template', 'svg', 'noscript', 'math', 'textarea', 'title', 'xmp', 'iframe', 'noembed', 'noframes', 'plaintext'])
   let protectedDepth = 0
   const ranges: { start: number, end: number }[] = []
   for (let index = 0; index < tags.length; index++) {

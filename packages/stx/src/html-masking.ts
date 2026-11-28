@@ -74,8 +74,26 @@ const HTML_TAG_NAME = /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)\b/y
 const RAW_TEXT_CLOSE = new Map(['textarea', 'title', 'xmp', 'iframe', 'noembed', 'noframes'].map(name => [name, new RegExp(`</${name}\\s*>`, 'ig')]))
 
 
-/** Scan tags once, without overlapping whitespace quantifiers or rescanning suffixes. */
-export function scanHtmlTags(html: string): HtmlTagToken[] {
+/** Find an opening or closing tag's delimiter, skipping each quoted value. */
+function htmlTagEnd(html: string, start: number): number {
+  for (let i = start; i < html.length; i++) {
+    const code = html.charCodeAt(i)
+    if (code === 0x3e) return i // >
+    if (code === 0x22 || code === 0x27) {
+      // HTML attribute quotes have no backslash escape.
+      const close = html.indexOf(html[i], i + 1)
+      if (close === -1) return -1
+      i = close
+    }
+  }
+  return -1
+}
+
+/**
+ * Scan tag boundaries once. A lowercase name filter limits the allocated tokens,
+ * while every tag still participates in comment, attribute and raw-text handling.
+ */
+export function scanHtmlTags(html: string, names?: ReadonlySet<string>): HtmlTagToken[] {
   const tags: HtmlTagToken[] = []
   let cursor = 0
   while (cursor < html.length) {
@@ -94,28 +112,17 @@ export function scanHtmlTags(html: string): HtmlTagToken[] {
       continue
     }
     const attributeStart = HTML_TAG_NAME.lastIndex
-    let end = attributeStart
-    let quote: string | null = null
-    for (; end < html.length; end++) {
-      const ch = html[end]
-      if (quote) {
-        if (ch === quote) quote = null
-      }
-      else if (ch === '"' || ch === "'") {
-        quote = ch
-      }
-      else if (ch === '>') {
-        break
-      }
-    }
-    // An unfinished tag consumes the suffix, including any tag-looking text
-    // inside its attributes. Retrying each '<' would be quadratic again.
-    if (end === html.length) break
+    const end = htmlTagEnd(html, attributeStart)
+    // An unfinished tag consumes the suffix. Retrying its inner '<' would
+    // read quoted content as markup and can rescan the suffix repeatedly.
+    if (end === -1) break
     const closing = name[1] === '/'
-    const selfClosing = html[end - 1] === '/'
-    tags.push({ start, end: end + 1, name: name[2], attributes: html.slice(attributeStart, selfClosing ? end - 1 : end), closing, selfClosing })
-    cursor = end + 1
     const lower = name[2].toLowerCase()
+    if (!names || names.has(lower)) {
+      const selfClosing = html[end - 1] === '/'
+      tags.push({ start, end: end + 1, name: name[2], attributes: html.slice(attributeStart, selfClosing ? end - 1 : end), closing, selfClosing })
+    }
+    cursor = end + 1
     if (!closing && lower === 'plaintext')
       break
     const rawClose = RAW_TEXT_CLOSE.get(lower)
@@ -209,26 +216,8 @@ export function scanAtElementPosition(html: string, match: TokenMatcher, { first
   const tokens: ElementPositionToken[] = []
   let i = 0
   const n = html.length
-  let inTag = false
-  let quote: string | null = null
-
   while (i < n) {
     const ch = html[i]
-
-    if (inTag) {
-      if (quote) {
-        if (ch === quote)
-          quote = null
-      }
-      else if (ch === '"' || ch === '\'') {
-        quote = ch
-      }
-      else if (ch === '>') {
-        inTag = false
-      }
-      i++
-      continue
-    }
 
     if (ch !== '<') {
       // Most pages are text (or a large inlined runtime). Seek the next tag
@@ -258,9 +247,14 @@ export function scanAtElementPosition(html: string, match: TokenMatcher, { first
     // Preserve the old two-character anchored test: it did not enter tag
     // state for a closing `</...>` because the slash occupied that span.
     const letter = html.charCodeAt(i + 1)
-    if ((letter >= 65 && letter <= 90) || (letter >= 97 && letter <= 122))
-      inTag = true
-    i++
+    if ((letter >= 65 && letter <= 90) || (letter >= 97 && letter <= 122)) {
+      const tagEnd = htmlTagEnd(html, i + 1)
+      if (tagEnd === -1) break
+      i = tagEnd + 1
+    }
+    else {
+      i++
+    }
   }
 
   return tokens
@@ -279,25 +273,7 @@ export function mightContainOwnTextMustache(html: string): boolean {
   let opening = 0
   let closing = 0
   let i = 0
-  let inTag = false
-  let quote: string | null = null
-
   while (i < html.length) {
-    if (inTag) {
-      const ch = html[i]
-      if (quote) {
-        if (ch === quote) quote = null
-      }
-      else if (ch === '"' || ch === '\'') {
-        quote = ch
-      }
-      else if (ch === '>') {
-        inTag = false
-      }
-      i++
-      continue
-    }
-
     const lt = html.indexOf('<', i)
     const textEnd = lt === -1 ? html.length : lt
     while (i < textEnd) {
@@ -318,9 +294,14 @@ export function mightContainOwnTextMustache(html: string): boolean {
 
     const first = html.charCodeAt(lt + 1)
     const letter = first === 47 ? html.charCodeAt(lt + 2) : first
-    if ((letter >= 65 && letter <= 90) || (letter >= 97 && letter <= 122))
-      inTag = true
-    i = lt + 1
+    if ((letter >= 65 && letter <= 90) || (letter >= 97 && letter <= 122)) {
+      const tagEnd = htmlTagEnd(html, lt + 1)
+      if (tagEnd === -1) break
+      i = tagEnd + 1
+    }
+    else {
+      i = lt + 1
+    }
   }
 
   return false
@@ -576,9 +557,11 @@ export function restoreStashedScripts(html: string, scripts: string[]): string {
   return html.replace(/\x00STX_SCRIPT_(\d+)\x00/g, (_, idx) => scripts[+idx] ?? '')
 }
 
+const SCRIPT_TAGS = new Set(['script'])
+
 /** Shared script boundaries for the compiler, author checker and composable discovery. */
 export function scanHtmlScriptElements(html: string): Array<{ start: number, end: number, bodyStart: number, bodyEnd: number, attrs: string }> {
-  const tags = scanHtmlTags(html), result: Array<{ start: number, end: number, bodyStart: number, bodyEnd: number, attrs: string }> = []
+  const tags = scanHtmlTags(html, SCRIPT_TAGS), result: Array<{ start: number, end: number, bodyStart: number, bodyEnd: number, attrs: string }> = []
   for (let index = 0; index < tags.length; index++) {
     const tag = tags[index]!, close = tags[index + 1]
     if (tag.name.toLowerCase() !== 'script' || tag.closing || close?.name.toLowerCase() !== 'script' || !close.closing) continue

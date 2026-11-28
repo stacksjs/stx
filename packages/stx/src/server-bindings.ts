@@ -24,6 +24,7 @@ import { classifyHtmlInterpolation, UnsafeInterpolationContextError } from './in
 import { escapeAttributeValue, escapeHtmlValue } from './expressions'
 import { inheritedClientLoopNames, loopBoundNames, readsAnyName } from './loop-binding'
 import { isRuntimeOwnedColonAttr } from './runtime-globals'
+import type { HtmlTagToken } from './html-masking'
 import { scanHtmlTags } from './html-masking'
 import { parseAttributes } from './component-processing'
 
@@ -63,12 +64,16 @@ export function reactiveLoopRanges(template: string): Array<[number, number]> {
  * A component tag inside one of these renders its slot in a separate pass,
  * which needs the names to keep treating them as the loop's.
  */
-export function reactiveLoopScopes(template: string): Array<{ start: number, end: number, names: string[], tag: string }> {
-  const ranges: Array<{ start: number, end: number, names: string[], tag: string }> = []
-  if (!LOOP_ASSIGNMENT.test(template)) return ranges
-  type Scope = (typeof ranges)[number]
-  const active = new Map<string, Array<Scope | null>>()
-  for (const tag of scanHtmlTags(template)) {
+export function reactiveLoopScopes(template: string): ReactiveLoopScope[] {
+  return LOOP_ASSIGNMENT.test(template) ? collectReactiveLoopScopes(scanHtmlTags(template)) : []
+}
+
+interface ReactiveLoopScope { start: number, end: number, names: string[], tag: string }
+
+function collectReactiveLoopScopes(tags: readonly HtmlTagToken[]): ReactiveLoopScope[] {
+  const ranges: ReactiveLoopScope[] = []
+  const active = new Map<string, Array<ReactiveLoopScope | null>>()
+  for (const tag of tags) {
     const tagName = tag.name.toLowerCase()
     const stack = active.get(tagName)
     if (tag.closing) {
@@ -180,7 +185,11 @@ export function processServerBindings(
   while ((match = scriptStyleRegex.exec(template)) !== null) {
     protectedRanges.push([match.index, match.index + match[0].length])
   }
-  protectedRanges.push(...reactiveLoopRanges(template))
+  const tags = scanHtmlTags(template)
+  if (LOOP_ASSIGNMENT.test(template)) {
+    for (const { start, end } of collectReactiveLoopScopes(tags))
+      protectedRanges.push([start, end])
+  }
   const clientOwnedNames = new Set([
     ...inheritedClientLoopNames(context),
     ...(Array.isArray(context.__stx_client_declared_names) ? context.__stx_client_declared_names as string[] : []),
@@ -201,7 +210,7 @@ export function processServerBindings(
   const compiledBindings = new Map<string, (...args: unknown[]) => unknown>()
   const maxCompiledBindings = 256
 
-  for (const tag of scanHtmlTags(output)) {
+  for (const tag of tags) {
     if (tag.closing || isProtected(tag.start)) continue
 
     const attrs = tag.attributes.trimEnd()
