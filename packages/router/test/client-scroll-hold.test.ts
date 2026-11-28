@@ -159,6 +159,56 @@ describe('a restored position on a page still filling in', () => {
   })
 })
 
+describe('a restored inner scroller whose content is still loading', () => {
+  it.each([false, true])('respects user input while waiting (interrupted: %s)', async (interrupted) => {
+    const { window } = installRouter()
+    const originalFetch = globalThis.fetch
+    globalThis.fetch = (async (...args: Parameters<typeof fetch>) => {
+      const response = await originalFetch(...args)
+      return new Response(`<div data-stx-scroll="list">${await response.text()}</div>`, { headers: response.headers })
+    }) as typeof fetch
+
+    const prototype = window.Element.prototype
+    const scrollTop = Object.getOwnPropertyDescriptor(prototype, 'scrollTop')!
+    let maximum = 1000
+    Object.defineProperty(prototype, 'scrollTop', {
+      ...scrollTop,
+      set(this: Element, top: number) {
+        scrollTop.set!.call(this, this.hasAttribute('data-stx-scroll') ? Math.min(top, maximum) : top)
+      },
+    })
+    const pane = () => window.document.querySelector('[data-stx-scroll="list"]') as HTMLElement
+    try {
+      await window.stxRouter.navigate('/list')
+      await settle()
+      const entry = { ...window.history.state }
+      pane().scrollTop = 200
+      await window.stxRouter.navigate('/list/42')
+      await settle()
+      expect(pane().scrollTop).toBe(0)
+
+      maximum = 25
+      const restored = new Promise<void>(resolve => window.addEventListener('stx:navigate', () => resolve(), { once: true }))
+      goBackTo(window, '/list', entry)
+      await restored
+      await settle()
+      expect(pane().scrollTop).toBe(25)
+
+      if (interrupted) {
+        pane().dispatchEvent(new window.Event('wheel', { bubbles: true }))
+        pane().scrollTop = 10
+      }
+      maximum = 1000
+      await settle()
+      expect(pane().scrollTop).toBe(interrupted ? 10 : 200)
+    }
+    finally {
+      Object.defineProperty(prototype, 'scrollTop', scrollTop)
+      window.dispatchEvent(new window.Event('wheel'))
+    }
+  })
+})
+
 describe('the position an entry is left at', () => {
   it('is the one it had as the swap began, not after the next page clamped the window', async () => {
     const { window, page } = installRouter()

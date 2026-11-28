@@ -179,6 +179,8 @@ function routerSource(): string {
   var scrollSeq=0;
   var pendingScroll=null;
   var restoreScroll=!!o.scrollRestoration;
+  function viewportX(){return window.pageXOffset||window.scrollX||0}
+  function viewportY(){return window.pageYOffset||window.scrollY||0}
   function newScrollToken(){return 's'+(++scrollSeq)+'-'+Date.now()}
   var scrollToken=(history.state&&history.state[SCROLL_TOKEN])||newScrollToken();
   // sessionStorage is the only store: it is synchronous, it is per tab, it dies
@@ -203,11 +205,16 @@ function routerSource(): string {
     return m;
   }
   function applyInner(root,m){
-    if(!m||!root||!root.querySelectorAll)return;
+    if(!m||!root||!root.querySelectorAll)return false;
+    var remaining=Object.keys(m).length;
     root.querySelectorAll('[data-stx-scroll]').forEach(function(el,i){
       var at=m[scrollerKey(el,i)];
-      if(at){el.scrollLeft=at[0];el.scrollTop=at[1]}
+      if(!at)return;
+      el.scrollLeft=at[0];
+      el.scrollTop=at[1];
+      if(Math.abs(el.scrollLeft-at[0])<1&&Math.abs(el.scrollTop-at[1])<1)remaining--;
     });
+    return remaining===0;
   }
   // Called while the outgoing entry is still the current one, so the position
   // read here belongs to the token being written.
@@ -218,7 +225,7 @@ function routerSource(): string {
     // Read now it is wrong: the outgoing page has been replaced by one still
     // filling in, a few hundred pixels tall, and the window has clamped to it
     // -- every entry was filed at 0,0 and Back went to the top.
-    var win=winSnap||[window.pageXOffset||window.scrollX||0,window.pageYOffset||window.scrollY||0];
+    var win=winSnap||[viewportX(),viewportY()];
     winSnap=undefined;
     try{
       window.sessionStorage.setItem(SCROLL_STORE+scrollToken,win[0]+','+win[1]);
@@ -235,7 +242,7 @@ function routerSource(): string {
   var winSnap;
   function snapScroll(){
     innerSnap=innerScroll(activeRoot());
-    winSnap=[window.pageXOffset||window.scrollX||0,window.pageYOffset||window.scrollY||0];
+    winSnap=[viewportX(),viewportY()];
   }
   function readInner(token){
     try{return JSON.parse(window.sessionStorage.getItem(SCROLL_STORE+token+':i')||'null')}catch(e){return null}
@@ -257,29 +264,30 @@ function routerSource(): string {
     var h=scrollHold;scrollHold=null;
     if(h.ro)h.ro.disconnect();
     clearTimeout(h.timer);
+    clearTimeout(h.innerTimer);
     // The window and root the hold was made on: by the time its timer fires
     // the document may be another one.
     if(h.onScroll)h.win.removeEventListener('scroll',h.onScroll);
     if(h.anchor!==null&&h.root)h.root.style.overflowAnchor=h.anchor;
     HOLD_ENDERS.forEach(function(n){h.win.removeEventListener(n,h.stop,true)});
   }
-  function holdScroll(x,y){
+  function holdScroll(x,y,inner){
     releaseScrollHold();
-    var reached=function(){return Math.abs((window.pageYOffset||window.scrollY||0)-y)<2};
-    if(typeof ResizeObserver!=='function')return;
+    var reached=function(){return Math.abs(viewportY()-y)<2};
+    if(typeof ResizeObserver!=='function'&&!inner)return;
     var h={stop:releaseScrollHold,ro:null,timer:0,onScroll:null,anchor:null,win:window,root:document.documentElement,seen:{}};
     // Every place the page was at while the hold kept it: where the hold put
     // it, and where the page's own height clamped it as it grew and shrank.
     // Their scroll events arrive a frame later, when the height they were
     // clamped to may be gone, so they are recognised by place, not by height.
-    var note=function(){h.seen[Math.round(window.pageYOffset||window.scrollY||0)]=true};
+    var note=function(){h.seen[Math.round(viewportY())]=true};
     note();
     // Scroll anchoring off while held: content filling in above the place
     // would otherwise carry the window down with it (Chrome keeps what is
     // on screen in view), and Back landed thousands of pixels past it.
     var rootStyle=document.documentElement&&document.documentElement.style;
     if(rootStyle){h.anchor=rootStyle.overflowAnchor||'';rootStyle.overflowAnchor='none'}
-    h.ro=new ResizeObserver(function(){
+    if(typeof ResizeObserver==='function')h.ro=new ResizeObserver(function(){
       // Held for the whole window even once reached: a page that is tall
       // enough when it is put back is often still drawing, above the place
       // as much as below it.
@@ -289,14 +297,22 @@ function routerSource(): string {
       window.scrollTo({left:x,top:y,behavior:'instant'});
       note();
     });
-    h.ro.observe(document.body||document.documentElement);
+    if(h.ro)h.ro.observe(document.body||document.documentElement);
+    // A fixed-size pane can clamp while its content is still loading.
+    if(inner){
+      var root=activeRoot();
+      applyInner(root,inner);
+      h.innerTimer=setTimeout(function retry(){
+        if(scrollHold===h&&root===activeRoot()&&!applyInner(root,inner))h.innerTimer=setTimeout(retry,60);
+      },60);
+    }
     h.timer=setTimeout(releaseScrollHold,4000);
     HOLD_ENDERS.forEach(function(n){window.addEventListener(n,h.stop,{capture:true,passive:true})});
     // Moved by something else (a scrollbar dragged, the page scrolling to
     // what it wants to show): theirs wins. Only the clamp to a page still
     // too short, at its very end, is the hold's own business.
     h.onScroll=function(){
-      var at=window.pageYOffset||window.scrollY||0;
+      var at=viewportY();
       var end=Math.max(0,(document.documentElement.scrollHeight||0)-(window.innerHeight||0));
       if(Math.abs(at-y)<2||(at<y&&at>=end-1)||h.seen[Math.round(at)])return;
       releaseScrollHold();
@@ -310,18 +326,8 @@ function routerSource(): string {
       var at=pendingScroll;
       pendingScroll=null;
       window.scrollTo({left:at[0],top:at[1],behavior:'instant'});
-      holdScroll(at[0],at[1]);
-      // Again once the page has bound: a scroller's content is often drawn
-      // by a :for that has not run yet, and a box with nothing in it cannot
-      // be scrolled anywhere.
       var inner=pendingInner;pendingInner=null;
-      if(inner){
-        var root=activeRoot(),nav=navSeq,token=scrollToken;
-        applyInner(root,inner);
-        setTimeout(function(){
-          if(nav===navSeq&&token===scrollToken&&root===activeRoot())applyInner(root,inner)
-        },60)
-      }
+      holdScroll(at[0],at[1],inner);
       return;
     }
     pendingInner=null;
@@ -2955,8 +2961,8 @@ else {
     el.removeAttribute(HIDDEN);
   }
   function saveScroll(e){
-    e.sx=window.pageXOffset||window.scrollX||0;
-    e.sy=window.pageYOffset||window.scrollY||0;
+    e.sx=viewportX();
+    e.sy=viewportY();
     e.inner=innerScroll(e.el);
   }
   // Everything that is global to the page on screen, kept with it while it is
@@ -3350,7 +3356,7 @@ else {
   // stx:tabreselect says which, and a page that cancels it keeps its own.
   function reselectTab(href){
     var root=activeRoot();
-    var y=window.pageYOffset||window.scrollY||0;
+    var y=viewportY();
     var inner=innerScroll(root);
     var atRoot=active?active.depth===0&&active.key===tabId(href):cacheKey(location.href)===tabId(href);
     var action=(y>0||inner)?'top':atRoot?'none':'root';
@@ -3424,7 +3430,7 @@ else {
     var cur=active,prev=swipe.prev,host=getContainer();
     var w=host.getBoundingClientRect().width||window.innerWidth||1;
     saveScroll(cur);
-    var docTop=cur.el.getBoundingClientRect().top+(window.pageYOffset||window.scrollY||0);
+    var docTop=cur.el.getBoundingClientRect().top+viewportY();
     swipe.w=w;
     swipe.cur=cur;
     swipe.bg=screenBackground(host);
