@@ -42,6 +42,15 @@ describe('referencedFrameworkComposables', () => {
     expect(referencedFrameworkComposables('lib.useClipboard()')).toEqual([])
   })
 
+  it('finds nested bare calls and excludes qualified and longer names', () => {
+    const source = [
+      '<script data-stx-runtime>useFullscreen()</script>',
+      'lib.useGeolocation(); $useGeolocation(); reuseGeolocation();',
+      'useForm (useClipboard\u00A0()); useForm();',
+    ].join('\n')
+    expect(referencedFrameworkComposables(source)).toEqual(['useClipboard', 'useForm'])
+  })
+
   it('ignores composables the runtime already provides', () => {
     // Dragging in a module copy of a runtime-provided name would shadow the
     // signal-based version, which is a regression rather than a fix.

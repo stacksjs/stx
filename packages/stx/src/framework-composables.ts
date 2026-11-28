@@ -58,7 +58,8 @@ const RUNTIME_OWNED = new Set<string>()
  */
 let runtimeOwnedGeneration = 0
 
-const SERVER_ONLY = new Set(SERVER_ONLY_COMPOSABLES)
+// Keep known names in the memo without retaining slices of rendered pages.
+const SERVER_ONLY = new Map(SERVER_ONLY_COMPOSABLES.map(name => [name, name]))
 
 /** Clear the cache. Dev HMR calls this when composables change on disk. */
 export function clearFrameworkComposableCache(): void {
@@ -135,8 +136,7 @@ export function referencedFrameworkComposables(source: string): string[] {
   if (!source)
     return []
 
-  // The page is scanned whole — a few hundred KB with a component bundle
-  // inlined — once per candidate name, on every render (#1945).
+  // A rendered page can contain hundreds of kilobytes of inline scripts.
   const key = contentKey(source, runtimeOwnedGeneration)
   const remembered = referenced.get(key)
   if (remembered)
@@ -151,18 +151,27 @@ export function referencedFrameworkComposables(source: string): string[] {
     .replace(/<script\b[^>]*\bdata-stx-stores\b[^>]*>[\s\S]*?<\/script>/gi, '')
     .replace(/<script\b[^>]*\bdata-stx-composables\b[^>]*>[\s\S]*?<\/script>/gi, '')
 
-  const found: string[] = []
-  for (const name of SERVER_ONLY) {
-    if (RUNTIME_OWNED.has(name))
+  const found = new Set<string>()
+  // Seek call sites once. The preceding identifier and its boundary preserve
+  // the existing bare-call convention without scanning again for each name.
+  for (let open = authored.indexOf('('); open !== -1; open = authored.indexOf('(', open + 1)) {
+    let end = open
+    while (end > 0 && /\s/.test(authored[end - 1]!))
+      end--
+    let start = end
+    while (start > 0 && /[\w$]/.test(authored[start - 1]!))
+      start--
+    if (start === end || authored[start - 1] === '.')
       continue
-    // Called, not merely mentioned — a bare word could be a property or prose.
-    const escaped = name.replace(/[$()*+.?[\\\]^{|}-]/g, '\\$&')
-    if (new RegExp(`(^|[^\\w$.])${escaped}\\s*\\(`).test(authored))
-      found.push(name)
+
+    const name = SERVER_ONLY.get(authored.slice(start, end))
+    if (name && !RUNTIME_OWNED.has(name))
+      found.add(name)
   }
-  found.sort()
-  referenced.set(key, found)
-  return found.slice()
+
+  const sorted = [...found].sort()
+  referenced.set(key, sorted)
+  return sorted.slice()
 }
 
 function frameworkComposablesDirectory(): string | undefined {
