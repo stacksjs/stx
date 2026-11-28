@@ -2,6 +2,8 @@
  * Tests for script setup processing and export extraction
  */
 import { describe, expect, it } from 'bun:test'
+import { deferScripts } from '../../src/build-defer-scripts'
+import { getServeModuleBundle } from '../../src/caching'
 import { processDirectives } from '../../src/process'
 import { processScriptSetup } from '../../src/signal-processing'
 
@@ -17,6 +19,42 @@ async function processTemplate(template: string, context: Record<string, unknown
 
 describe('Script setup processing', () => {
   describe('Basic script processing', () => {
+    it('shares served setup code while keeping request data in each document', async () => {
+      const padding = 'shared-code-'.repeat(500)
+      const template = `<main :text="count()"></main><script>const description = "${padding}"; const count = state(initialCount)</script>`
+      const render = (value: string) => processScriptSetup(template, '/counter.stx', { initialCount: value }, { isShareableSource: () => true })
+      const first = await render('first-request')
+      const second = await render('second-request')
+      const hashOf = (html: string) => /\/_stx\/modules\.([0-9a-f]{16})\.js/.exec(html)?.[1]
+      const assetHash = hashOf(first.setupCode ?? '')
+      expect(assetHash).toBeDefined()
+      expect(hashOf(second.setupCode ?? '')).toBe(assetHash)
+      const asset = getServeModuleBundle(assetHash!)!
+      expect(asset).toContain('state(initialCount)')
+      expect(asset).not.toContain('first-request')
+      expect(asset).not.toContain('second-request')
+      expect(deferScripts(first.setupCode!)).toEqual({ html: first.setupCode, assets: [], bytesInlined: 0 })
+
+      const runtime = { stx: { state: (value: string) => () => value } }
+      const execute = (html: string) => Function('window', html.match(/<script data-stx-scoped data-stx-page-setup>([\s\S]*?)<\/script>/)?.[1] ?? '')
+      Function('window', asset)(runtime)
+      execute(first.setupCode!)(runtime)
+      const firstScope = (runtime as any).__stx_latestSetup()
+      execute(second.setupCode!)(runtime)
+      expect((runtime as any).__stx_latestSetup().count()).toBe('second-request')
+      expect(firstScope.count()).toBe('first-request')
+    })
+
+    it('keeps a client script with an interpolated request value inline', async () => {
+      const padding = 'original-code-'.repeat(500)
+      const template = `<main :text="count()"></main><script client>const description = "${padding}"; const count = state({{ initialCount }})</script>`
+      const html = await processDirectives(template, { initialCount: 'request-scoped-value' }, '/counter.stx', {
+        ...defaultOptions, buildMode: 'serve', externalizePageSetup: true,
+      }, new Set())
+      expect(html).not.toContain('data-stx-page-factory')
+      expect(html).toContain('request-scoped-value')
+    })
+
     it('seeds each request independently when client setup is reused', async () => {
       const template = '<script>const count = state(initialCount)</script><div :text="count()"></div>'
       const first = await processScriptSetup(template, '/counter.stx', { initialCount: 'request-one' })

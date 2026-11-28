@@ -1069,6 +1069,9 @@ export interface StxConfig {
    */
   buildMode?: 'compile' | 'serve' | 'spa'
 
+  /** Serve large synchronous page setup code as a shared asset, with request data kept in the document. */
+  externalizePageSetup?: boolean
+
   /** Inline generated CSS up to this UTF-8 byte limit in served documents. */
   inlineGeneratedCssBytes?: number
 

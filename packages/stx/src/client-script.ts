@@ -992,8 +992,16 @@ function warnAboutBridgedValue(name: string, json: string): void {
  * skipped so client-owned variables are never clobbered.
  */
 export function generateServerDataBridge(code: string, serverData?: Record<string, unknown>): string {
-  if (!serverData)
+  const bindings = collectServerDataBindings(code, serverData)
+  if (!bindings.length)
     return ''
+  return `  // stx: server -> client data bridge (seeded from server scope)\n${bindings.map(({ name, json }) => `  var ${name} = ${json};`).join('\n')}\n`
+}
+
+/** Select and serialize the same payload for inline and served page setup. */
+export function collectServerDataBindings(code: string, serverData?: Record<string, unknown>): Array<{ name: string, json: string }> {
+  if (!serverData)
+    return []
   // Reference detection reads the code with comments and string literals
   // blanked. Matching raw text meant a name only had to APPEAR somewhere to be
   // published — a word in a comment, a segment of a URL — and the value went
@@ -1002,7 +1010,7 @@ export function generateServerDataBridge(code: string, serverData?: Record<strin
   const declaredPayload = serverData.__stxDeclaredPayload === true
   const referenced = declaredPayload ? undefined : unboundNames(code, new Set(Object.keys(serverData)))
   let clientDeclarations: ReadonlySet<string> | undefined
-  const lines: string[] = []
+  const bindings: Array<{ name: string, json: string }> = []
   // Props supplied explicitly and their equal defaults can arrive in a
   // different insertion order. Equal data must produce the same factory.
   const entries = Object.entries(serverData).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
@@ -1054,14 +1062,9 @@ export function generateServerDataBridge(code: string, serverData?: Record<strin
     // Escape `<` so a value containing markup (e.g. `</script>`) can't break out
     // of the surrounding tag, AND so the generated text never contains a literal
     // `<script…>` that a downstream tag scanner would treat as a real boundary.
-    lines.push(`  var ${name} = ${json.replace(/</g, '\\u003c')};`)
+    bindings.push({ name, json: json.replace(/</g, '\\u003c') })
   }
-  if (lines.length === 0)
-    return ''
-  // NB: keep this comment free of any `<script…>`-like text — the merged setup
-  // block is re-scanned for script tags downstream, and a literal tag here would
-  // be mistaken for a real boundary, swallowing the rest of the document.
-  return `  // stx: server -> client data bridge (seeded from server scope)\n${lines.join('\n')}\n`
+  return bindings
 }
 
 // =============================================================================

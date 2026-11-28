@@ -422,6 +422,7 @@ async function buildPageBundles(
   context: Record<string, any>,
 ): Promise<PageBundles> {
   const built: PageBundles = { modulesTag: null, modulesCode: null, storeTag: null, storeCode: null, composableTag: null, composableCode: null, frameworkScript: null }
+  const sharedSetup = context.__stx_shared_page_setup as string | undefined
 
   // Framework composables the page actually calls but the runtime does
   // not provide (#1805). Bundled from the real modules rather than
@@ -434,7 +435,7 @@ async function buildPageBundles(
       'stx/framework-composables',
       () => import('./framework-composables'),
     )
-    built.frameworkScript = await getFrameworkComposableScript(result)
+    built.frameworkScript = await getFrameworkComposableScript(result, undefined, sharedSetup)
   }
   catch {
     // Framework composables are an enhancement; never fail a render.
@@ -469,7 +470,7 @@ async function buildPageBundles(
       if (storeLoader) {
         const stores = everyStore
           ? await storeLoader.getStoreScript(storesDir).then(code => code ? { code, stores: ['*'], functions: null } : null)
-          : await storeLoader.getStoreScriptFor(storesDir, [authored], {
+          : await storeLoader.getStoreScriptFor(storesDir, sharedSetup ? [authored, sharedSetup] : [authored], {
               reads: storeLoader.storesReadInFiles([...registryInputs, ...composableInputs]),
               runOnce: true,
             })
@@ -501,7 +502,7 @@ async function buildPageBundles(
     // store imports, bundled and evaluated ONCE for the page, so module
     // state is shared instead of duplicated per component bundle.
     const registry: { code?: string, inputs?: string[] } = {}
-    built.modulesTag = await buildModulesTag([result, storeScan], options, dependencies, registry)
+    built.modulesTag = await buildModulesTag([result, sharedSetup ?? null, storeScan], options, dependencies, registry)
     built.modulesCode = registry.code ?? null
     registryInputs = registry.inputs ?? []
 
@@ -523,7 +524,7 @@ async function buildPageBundles(
     try {
       const { getComposableScript } = await importOnce('stx/composable-loader', () => import('./composable-loader'))
       const resolvedComposablesDir = (options as any).composablesDir as string | undefined
-      const pending = [built.modulesCode ?? built.modulesTag, storeScan, built.frameworkScript].filter((text): text is string => text !== null)
+      const pending = [sharedSetup ?? null, built.modulesCode ?? built.modulesTag, storeScan, built.frameworkScript].filter((text): text is string => text !== null)
       const composableCode = await getComposableScript(options._layerComposableDirs ?? resolvedComposablesDir, result, pending, composableInputs)
       if (composableCode) {
         built.composableCode = composableCode
@@ -755,6 +756,15 @@ export async function processDirectives(
   if (isTopLevel && options.runtimeConfig)
     await prepareRuntimeConfig(context, filePath, options.runtimeConfig)
   if (isTopLevel) {
+    context.__stx_shared_page_setup = undefined
+    context.__stx_authored_page_scripts = undefined
+    if (options.externalizePageSetup && options.buildMode === 'serve' && !options.csp?.enabled) {
+      const { scanScriptTags } = await importOnce('stx/signal-processing', () => import('./signal-processing'))
+      // Injected or interpolated script bodies can hold request data. Only
+      // exact matches to the original client bodies may enter shared assets.
+      const scripts = scanScriptTags(template, { skipAttrs: /\bserver\b|\bsrc\s*=/ })
+      context.__stx_authored_page_scripts = new Set(scripts.map(script => script.body))
+    }
     initializeComponentClientFactories(context)
     // The render's scope-id sequence (#1945), seeded before anything draws
     // from it. Components already shared one through the context, created by
@@ -1126,6 +1136,12 @@ export async function processDirectives(
 
     // In production, try to recover
     return errorRecovery.createFallbackContent('Template Processing', enhancedError)
+  }
+  finally {
+    if (isTopLevel) {
+      delete context.__stx_authored_page_scripts
+      delete context.__stx_shared_page_setup
+    }
   }
 }
 
@@ -2377,7 +2393,13 @@ async function processOtherDirectives(
   // excluded; the transforms only serialize the names actually referenced. Used
   // by both the signals/SFC setup path (below) and the client-script loop.
   const serverData = extractBridgeData(context as Record<string, unknown>)
-  output = await processSignals(output, opts, pageFilePath, serverData)
+  const authoredBodies = context.__stxProcessingDepth === 1
+    ? context.__stx_authored_page_scripts as Set<string> | undefined
+    : undefined
+  output = await processSignals(output, opts, pageFilePath, serverData, authoredBodies && {
+    authoredBodies,
+    collectSource(source) { context.__stx_shared_page_setup = source },
+  })
   await yieldDuringRendering()
 
   // Apply persisted appearance after signal analysis so this compiler-owned

@@ -183,8 +183,16 @@ function frameworkComposablesDirectory(): string | undefined {
  *
  * Returns null when nothing is needed.
  */
-export async function getFrameworkComposableScript(source: string, composablesDir?: string): Promise<string | null> {
-  const names = referencedFrameworkComposables(source)
+export async function getFrameworkComposableScript(
+  source: string,
+  composablesDir?: string,
+  sharedSource?: string,
+): Promise<string | null> {
+  // Scan the shared setup separately. Its referenced names are reusable
+  // even when this request's rendered markup or initial values changed.
+  const names = sharedSource
+    ? [...new Set([...referencedFrameworkComposables(source), ...referencedFrameworkComposables(sharedSource)])].sort()
+    : referencedFrameworkComposables(source)
   if (names.length === 0)
     return null
 

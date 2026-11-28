@@ -580,6 +580,16 @@ Use `inlineGeneratedCssBytes` in the same config to keep small generated
 utility stylesheets in the HTML during serving. The limit measures UTF-8
 bytes before compression. Larger stylesheets keep their cacheable asset URL.
 
+For dynamic serving, `externalizePageSetup: true` puts large synchronous page
+setup code at the existing immutable `/_stx/modules.*.js` endpoint. Each page
+keeps its own server-to-client data in the HTML, so pages can reuse the same
+asset while initializing with different values. Supply authored templates
+and pass request data through the server-to-client bridge. Scripts whose
+bodies changed during template processing stay inline. Static builds and
+CSP-enabled renders keep their existing script handling. Served documents
+using a shared setup keep script execution ordered, including when
+`deferScripts` is enabled.
+
 Mark a render-critical stylesheet `<style stx-inline>` to keep it in HTML through
 both shared and repeated asset extraction. This avoids a first-paint stylesheet
 request without changing the treatment of other stylesheets.

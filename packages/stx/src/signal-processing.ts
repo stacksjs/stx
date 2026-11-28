@@ -10,7 +10,7 @@
  */
 
 import type { StxOptions } from './types'
-import { generateServerDataBridge, injectBrowserCoreAutoImports } from './client-script'
+import { collectServerDataBindings, generateServerDataBridge, injectBrowserCoreAutoImports } from './client-script'
 import { findIfBlocks } from './parser'
 import { buildRuntimeGlobalsDestructure, templateNeedsRuntime, usesReactiveRuntime } from './runtime-globals'
 import { escapeScriptBody } from './script-emit'
@@ -23,6 +23,7 @@ import { findBodyOpenTag } from './find-body-tag'
 import { stripCommentsAndLiterals } from './strip-literals'
 import { extractExports, scopeObject } from './client-scope-bindings'
 import { LRUCache } from './performance-utils'
+import { requiresAsyncBody } from './module-syntax'
 export { extractExports } from './client-scope-bindings'
 
 // Counter for unique signal setup function names (avoids Date.now() collisions)
@@ -1592,12 +1593,65 @@ function prepareClientSetup(mergedSource: string): PreparedClientSetup {
   return setup
 }
 
+// One factory per prepared setup. Its lifetime follows the byte-bounded
+// prepared-code cache above. Only binding names cross into the factory.
+const sharedPageFactories = new WeakMap<PreparedClientSetup, { bindings: string, key: string, code: string }>()
+
+function sharedPageFactory(setup: PreparedClientSetup, names: string[]) {
+  const bindings = names.join('\0')
+  const remembered = sharedPageFactories.get(setup)
+  if (remembered?.bindings === bindings) return remembered
+
+  let parameter = '__stxPageData'
+  while (setup.source.includes(parameter)) parameter += '_'
+  const readValues = names.map((name, index) => `  var ${name} = ${parameter}[${index}];`).join('\n')
+  const factory = `function (${parameter}) {
+  return function () {
+  ${setup.runtimeGlobals}
+${readValues}
+${escapeScriptBody(setup.source)}
+  return ${setup.scope};
+  };
+}`
+  const key = `__stx_page_factory_${Bun.hash(factory).toString(36)}`
+  const shared = { bindings, key, code: `window.${key}=${factory};\n` }
+  sharedPageFactories.set(setup, shared)
+  return shared
+}
+
+async function servePageSetup(setupFnName: string, setup: PreparedClientSetup, serverData?: Record<string, unknown>): Promise<string> {
+  const bindings = collectServerDataBindings(setup.source, serverData)
+  const { key, code } = sharedPageFactory(setup, bindings.map(({ name }) => name))
+  const { registerServeModuleBundle } = await importOnce('stx/caching', () => import('./caching'))
+  const src = registerServeModuleBundle(code)
+  return `
+<script data-stx-scoped data-stx-page-factory src="${src}"></script>
+<script data-stx-scoped data-stx-page-setup>
+function ${setupFnName}() {
+  return window.${key}([${bindings.map(({ json }) => json).join(',')}]).apply(this, arguments);
+}
+window.__stx_latestSetup=${setupFnName};
+if(window.stx)window.stx._latestSetup=${setupFnName};
+</script>`
+}
+
+function supportsSharedPageSetup(source: string): boolean {
+  if (source.length < 4096 || source.includes('\x00STX_') || /\bimport\s*\.\s*meta\b/.test(source))
+    return false
+  try {
+    return !requiresAsyncBody(source)
+  }
+  catch {
+    return false
+  }
+}
+
 export async function processScriptSetup(
   template: string,
   filePath?: string,
   serverData?: Record<string, unknown>,
-  options: { forceClientSetup?: boolean } = {},
-): Promise<{ output: string, setupCode: string | null }> {
+  options: { forceClientSetup?: boolean, isShareableSource?: (source: string) => boolean } = {},
+): Promise<{ output: string, setupCode: string | null, sharedSource?: string }> {
   // Walk the template like a browser: find each `<script>` opening tag, then
   // the FIRST `</script>` that closes it — don't re-scan for nested `<script`
   // substrings inside script bodies. This prevents false matches against
@@ -1622,7 +1676,7 @@ export async function processScriptSetup(
   // old first-script-only behavior that left subsequent signal scripts for
   // processClientScript to stx.mount() wrap — which set __stx_scope on the
   // sibling <main> and blocked processElement from walking page content.
-  const signalScripts: { content: string, start: number, end: number, bundled?: string }[] = []
+  const signalScripts: { content: string, authoredBody: string, start: number, end: number, bundled?: string }[] = []
 
   const { hasUserImports, bundleClientScript } = await importOnce('stx/client-script-bundler', () => import('./client-script-bundler'))
 
@@ -1632,7 +1686,7 @@ export async function processScriptSetup(
       content = transpileTypeScript(content)
     }
     if (options.forceClientSetup || SIGNAL_API_RE.test(content)) {
-      signalScripts.push({ content, start: s.start, end: s.end })
+      signalScripts.push({ content, authoredBody: s.body, start: s.start, end: s.end })
       continue
     }
 
@@ -1659,7 +1713,7 @@ export async function processScriptSetup(
         externalizeUserModules: false,
       })
       if (SIGNAL_API_RE.test(inlined))
-        signalScripts.push({ content, start: s.start, end: s.end })
+        signalScripts.push({ content, authoredBody: s.body, start: s.start, end: s.end })
     }
     catch {
       // A script that cannot be bundled is not a signal script we can prove.
@@ -1737,15 +1791,16 @@ export async function processScriptSetup(
   // itself declare. Lets `state(initialLogs)` seed from build-time data with
   // no fetch. Generated against the deduped merged content so a name declared
   // by any signal script is never clobbered.
-  const bridge = generateServerDataBridge(setup.source, serverData)
-
-  // Generate the setup function that provides signal APIs. Mark the script
-  // with data-stx-scoped so the client-script loop skips it.
-  const setupCode = `
+  // Keep bodies needing document substitutions or module syntax in the
+  // existing inline pipeline.
+  const isShareableSource = options.isShareableSource
+  const external = isShareableSource && signalScripts.every(script => isShareableSource(script.authoredBody))
+    && supportsSharedPageSetup(setup.source)
+  const setupCode = external ? await servePageSetup(setupFnName, setup, serverData) : `
 <script data-stx-scoped data-stx-page-setup>
 function ${setupFnName}() {
   ${setup.runtimeGlobals}
-${escapeScriptBody(`${bridge}${setup.source}`)}
+${escapeScriptBody(`${generateServerDataBridge(setup.source, serverData)}${setup.source}`)}
   return ${setup.scope};
 }
 window.__stx_latestSetup=${setupFnName};
@@ -1758,7 +1813,7 @@ if(window.stx)window.stx._latestSetup=${setupFnName};
   const markerAt = findSetupMarkerInsertion(template)
   const output = rebuildSetupOwner(template, signalScripts, markerAt, setupFnName)
 
-  return { output, setupCode }
+  return { output, setupCode, ...(external && { sharedSource: setup.source }) }
 }
 
 /**
@@ -1768,7 +1823,13 @@ if(window.stx)window.stx._latestSetup=${setupFnName};
  * signals runtime. Browser helpers and model bootstraps enter the same client
  * bundle as the setup code, so rendered pages never depend on bare specifiers.
  */
-export async function processSignals(template: string, options: StxOptions, filePath?: string, serverData?: Record<string, unknown>): Promise<string> {
+export async function processSignals(
+  template: string,
+  options: StxOptions,
+  filePath?: string,
+  serverData?: Record<string, unknown>,
+  sharedSetup?: { authoredBodies: ReadonlySet<string>, collectSource: (source: string) => void },
+): Promise<string> {
   if (!hasSignalsSyntax(template, filePath)) {
     return template
   }
@@ -1782,7 +1843,11 @@ export async function processSignals(template: string, options: StxOptions, file
   }
 
   // Process <script setup> blocks
-  const { output: processedOutput, setupCode } = await processScriptSetup(output, filePath, serverData)
+  const { output: processedOutput, setupCode, sharedSource } = await processScriptSetup(output, filePath, serverData, {
+    isShareableSource: sharedSetup && (source => sharedSetup.authoredBodies.has(source)),
+  })
+  if (sharedSource)
+    sharedSetup?.collectSource(sharedSource)
   output = processedOutput
 
   if (!setupCode) {

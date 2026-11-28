@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import type { ExternalizeHtmlResult } from './build-externalize'
+import { scanHtmlTags } from './html-masking'
 
 /**
  * Defer a document's classic scripts together, retaining their execution order.
@@ -12,6 +13,13 @@ import type { ExternalizeHtmlResult } from './build-externalize'
  * scripts that must execute during parsing opt out with `stx-inline`.
  */
 export function deferScripts(html: string, basePath = '/_stx'): ExternalizeHtmlResult {
+  // A shared page factory is loaded before its inline, request-specific
+  // setup. Keep that execution order and keep the initial values in HTML.
+  if (html.includes('data-stx-page-factory') && scanHtmlTags(html).some(tag =>
+    !tag.closing && tag.name.toLowerCase() === 'script' && /(?:^|\s)data-stx-page-factory(?:\s|=|$)/.test(tag.attributes),
+  ))
+    return { html, assets: [], bytesInlined: 0 }
+
   const assets: ExternalizeHtmlResult['assets'] = []
   const seen = new Set<string>()
   const templates: [number, number][] = []
