@@ -26,7 +26,7 @@ jobs:
       - run: bun test packages/stx/test/client-script-bundler/layout-relative-import.test.ts packages/stx/test/client-script-bundler/browser-root-import.test.ts
 
   native-signing:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: pantry-pm/pantry/packages/action@362da3ef0602f51232ab9431da8d05c84c5f49ba # v0.11.197
