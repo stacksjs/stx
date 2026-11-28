@@ -36,6 +36,16 @@ describe('stripCommentsAndLiterals and regex literals', () => {
     expect(stripCommentsAndLiterals('a = b\n/ c')).toBe('a = b\n/ c')
   })
 
+  it('preserves Unicode whitespace and regex offsets around ASCII words', () => {
+    for (const space of ['\t', '\n', '\r', '\u00a0', '\u1680', '\u2003', '\u2028', '\u2029', '\u202f', '\u3000', '\ufeff']) {
+      const regex = `if (active) return${space}/a[b]+/; const count_2 = 9`
+      const division = `const value = $counter_2${space}/ divisor / tail`
+      expect(stripCommentsAndLiterals(regex)).toBe(regex.replace('/a[b]+/', '/     /'))
+      expect(stripBindingLiterals(regex)).toBe(regex.replace('/a[b]+/', '/     /'))
+      expect(stripCommentsAndLiterals(division)).toBe(division)
+    }
+  })
+
   it('treats a string or template as the end of an expression', () => {
     expect(stripCommentsAndLiterals(`'a' / 2 / 'b'`)).toBe(`    / 2 /    `)
   })

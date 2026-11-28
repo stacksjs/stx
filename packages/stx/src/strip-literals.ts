@@ -204,6 +204,11 @@ export function stripCommentsAndLiterals(code: string): string { return stripLit
 /** Keep a literal terminator and template expression boundaries for binding scopes. */
 export function stripBindingLiterals(code: string): string { return stripLiterals(code, true) }
 
+/** The previous scanner's ASCII word characters, including JavaScript's $. */
+function isWordCode(unit: number): boolean {
+  return unit === 36 || unit === 95 || (unit >= 48 && unit <= 57) || (unit >= 65 && unit <= 90) || (unit >= 97 && unit <= 122)
+}
+
 function stripLiterals(code: string, bindingBoundaries: boolean): string {
   // Copy ordinary code in spans. Appending each token made the next reader
   // flatten thousands of rope segments even when most of the script was unchanged.
@@ -215,25 +220,26 @@ function stripLiterals(code: string, bindingBoundaries: boolean): string {
     copiedThrough = end
   }
   let i = 0
-  // Consume identifiers and whitespace as runs. Large generated client modules
-  // otherwise allocate a slice and run several regular expressions per byte.
-  const tokens = /[\w$]+|\s+|[^\w$\s]/g
   // The last significant token, for telling a regex `/` from division.
   let lastSig = ''
   let lastWord = ''
 
   while (i < code.length) {
-    tokens.lastIndex = i
-    const token = tokens.exec(code)![0]
-    if (token.length > 1 || /[\w$\s]/.test(token)) {
-      i += token.length
-      if (!/\s/.test(token[0])) {
-        lastWord = /[\w$]/.test(lastSig) ? lastWord + token : token
-        lastSig = token[token.length - 1]!
-      }
+    const unit = code.charCodeAt(i)
+    if (isWordCode(unit)) {
+      const start = i
+      do { i++ } while (isWordCode(code.charCodeAt(i)))
+      lastWord += code.slice(start, i)
+      lastSig = code[i - 1]!
       continue
     }
-    const ch = token
+    // Most of the source is ASCII. The Unicode fallback preserves the full
+    // whitespace set used by the previous token matcher.
+    if (unit === 32 || (unit >= 9 && unit <= 13) || (unit > 127 && /\s/.test(code[i]!))) {
+      i++
+      continue
+    }
+    const ch = code[i]
 
     if (ch === '/' && code[i + 1] === '/') {
       const end = code.indexOf('\n', i)
