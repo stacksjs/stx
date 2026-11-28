@@ -163,6 +163,8 @@ interface StxNavigateOptions {
   replace?: boolean
   /** Bypass the SPA router and perform a full document load. */
   reload?: boolean
+  /** Swap without the navigation transition. */
+  instant?: boolean
 }
 
 /**
