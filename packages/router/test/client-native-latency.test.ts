@@ -410,7 +410,6 @@ describe('prefetch on sight', () => {
     // Its utility sheet is already on its way, unapplied, so the tap never
     // waits for it.
     const sheet = window.document.querySelector('head link[href="/css/one.css"]')
-    expect(sheet?.getAttribute('media')).toBe('print')
     expect(sheet?.hasAttribute('data-stx-css-pending')).toBe(true)
   })
 

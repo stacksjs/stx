@@ -32,9 +32,7 @@ beforeAll(async () => {
   await Bun.write(path.join(directory, 'views/plain.stx'), shell('', 'Plain'))
   await Bun.write(path.join(directory, 'public/assets/styles/production/app.css'), 'main { display: block }')
   await Bun.write(path.join(directory, 'public/assets/styles/production/home.css'), 'h1 { color: rgb(10, 20, 30) }')
-  await Bun.write(path.join(directory, 'public/assets/styles/production/format.css'), 'h1 { letter-spacing: 7px }')
   await Bun.write(path.join(directory, 'public/assets/styles/production/print.css'), 'h1 { text-indent: 9px }')
-  await Bun.write(path.join(directory, 'public/docs/local.css'), 'h1 { word-spacing: 5px }')
   const { getRouterScript } = await import(routerPath)
   const router = `window.__stxRouterConfig={interceptAllLinks:true,screens:false,prefetch:false,progress:false,viewTransitions:false,revalidate:false,keepOpening:false};\n${getRouterScript()}`
   await Bun.write(path.join(directory, 'public/__probe-router.js'), router)
@@ -42,6 +40,17 @@ beforeAll(async () => {
   // that takes the metadata template off and puts it back.
   await Bun.write(path.join(directory, 'driver.ts'), `import { serve } from ${JSON.stringify(servePath)}
 await serve({ patterns: ['views'], port: ${port}, imageWarmup: false,
+  async onRequest(request) {
+    const pathname = new URL(request.url).pathname
+    const headers = { 'Content-Type': 'text/css', 'Cache-Control': 'no-store' }
+    if (pathname === '/assets/styles/production/format.css')
+      return new Response('h1 { letter-spacing: 7px }', { headers })
+    if (pathname === '/docs/local.css') {
+      await Bun.sleep(160)
+      return new Response('h1 { word-spacing: 5px }', { headers })
+    }
+    return null
+  },
   i18n: { locales: ['en', 'de'], defaultLocale: 'en', labels: {}, pickerSelector: '#lang-picker', translations: { en: {}, de: {} } }
 })`)
   child = Bun.spawn([process.execPath, 'driver.ts'], { cwd: directory, stdout: 'pipe', stderr: 'pipe' })
@@ -113,7 +122,27 @@ test('real browser gets the destination stylesheets on a link click, once, and k
     await view.evaluate('window.noReload = true')
     expect(await view.evaluate(read)).toMatchObject({ sheets: home, heading: 'Home', color: 'rgb(10, 20, 30)', letterSpacing: 'normal', wordSpacing: '0px' })
 
-    await view.evaluate('document.querySelector("#format").click()')
+    await view.evaluate(`(() => {
+      window.navigationStyles = null;
+      window.outgoingFrames = [];
+      function captureOutgoingFrame() {
+        const heading = document.querySelector('main h1');
+        if (heading.textContent !== 'Home') return;
+        const style = getComputedStyle(heading);
+        window.outgoingFrames.push([style.letterSpacing, style.wordSpacing]);
+        requestAnimationFrame(captureOutgoingFrame);
+      }
+      window.addEventListener('stx:navigate', () => {
+        const style = getComputedStyle(document.querySelector('main h1'));
+        window.navigationStyles = [style.letterSpacing, style.wordSpacing];
+      }, { once: true });
+      requestAnimationFrame(captureOutgoingFrame);
+      document.querySelector('#format').click();
+    })()`)
+    await until(view, 'window.navigationStyles !== null')
+    expect(await view.evaluate('window.navigationStyles')).toEqual(['7px', '5px'])
+    expect(await view.evaluate('window.outgoingFrames.length')).toBeGreaterThan(1)
+    expect(await view.evaluate('window.outgoingFrames.every(([letters, words]) => letters === "normal" && words === "0px")')).toBeTrue()
     await until(view, 'document.querySelector("main h1").textContent === "Format"')
     // The page's own CSS is in and applied by the time its markup is; the
     // print sheet is there under its own media, so it does not style the screen.

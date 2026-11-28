@@ -263,15 +263,20 @@ describe('page stylesheets on a fragment navigation', () => {
 
     // Downloading, but inert: it must not restyle the page still on screen.
     const pending = linkFor(window, FORMAT_CSS)
-    expect(pending?.getAttribute('media')).toBe('print')
+    expect(pending?.hasAttribute('data-stx-css-pending')).toBeTrue()
+    expect(pending?.getAttribute('media')).toBe('screen')
     expect(window.document.querySelector('main')?.textContent).toBe('Home')
     expect(settled).toBeFalse()
 
+    const parsedSheet = { disabled: false }
+    Object.defineProperty(pending, 'sheet', { value: parsedSheet })
     pending.onload()
+    expect(parsedSheet.disabled).toBeTrue()
     await nav
     await waitForRouterSwap()
 
     expect(window.document.querySelector('main')?.textContent).toContain('Format')
+    expect(parsedSheet.disabled).toBeFalse()
     expect(pending.getAttribute('media')).toBe('screen')
     expect(pending.hasAttribute('data-stx-css-pending')).toBeFalse()
     expect(pageSheets(window)).toEqual(['/app.css', HOME_CSS, FORMAT_CSS])
@@ -307,7 +312,7 @@ describe('page stylesheets on a fragment navigation', () => {
     // unable to restyle the one still on screen.
     const warmed = linkFor(window, '/docs/format.css')
     expect(window.document.querySelector('main')?.textContent).toContain('Home')
-    expect(warmed?.getAttribute('media')).toBe('print')
+    expect(warmed?.hasAttribute('data-stx-css-pending')).toBeTrue()
 
     const nav = window.stxRouter.navigate('/docs/format')
     await new Promise(resolve => setTimeout(resolve, 20))
@@ -335,7 +340,7 @@ describe('page stylesheets on a fragment navigation', () => {
     // Starts preloading format.css, then is superseded before it swaps.
     window.stxRouter.navigate('/slow')
     await new Promise(resolve => setTimeout(resolve, 50))
-    expect(linkFor(window, FORMAT_CSS)?.getAttribute('media')).toBe('print')
+    expect(linkFor(window, FORMAT_CSS)?.hasAttribute('data-stx-css-pending')).toBeTrue()
 
     await window.stxRouter.navigate('/document')
     await waitForRouterSwap()
