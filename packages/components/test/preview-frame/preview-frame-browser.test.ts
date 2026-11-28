@@ -49,6 +49,7 @@ const HELPERS = `
   const frame = id => host(id).querySelector('iframe')
   const said = name => window.messages.filter(m => m.from === name)
   const last = name => said(name).slice(-1)[0] || null
+  const latestScheme = name => window.messages.findLast(m => m.from === name || m.from === name + ':scheme')?.dark
   const box = el => { const r = el.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height) } }
   const later = (fn, ms) => new Promise(done => setTimeout(() => done(fn()), ms || 500))
 `
@@ -59,7 +60,7 @@ beforeAll(async () => {
     name: 'preview-frame-browser',
     width: 1100,
     height: 900,
-    ready: `document.querySelectorAll('[data-preview-ready]').length === 4 && window.messages && window.messages.length >= 2`,
+    ready: `document.querySelectorAll('[data-preview-ready]').length === 4 && ['scripted', 'phone'].every(name => window.messages?.some(message => message.from === name))`,
     context: { scripted: report('scripted'), silent: report('silent'), phone: report('phone') },
     body: `
 <script>window.messages = []; window.secret = 'host only'; addEventListener('message', e => window.messages.push(e.data)); document.title = 'Host page'; localStorage.setItem('host-key', '1'); document.cookie = 'host=1'</script>
@@ -138,7 +139,7 @@ describe('the colour scheme', () => {
    * set. It used to pass or fail by that setting.
    */
   it('reaches the page as prefers-color-scheme', async () => {
-    const result = await page.json(on(`return { scripted: last('scripted').dark, phone: last('phone').dark, style: frame('scripted').style.colorScheme, phoneStyle: frame('phone').style.colorScheme, attr: host('scripted').getAttribute('data-scheme'), phoneAttr: host('phone').getAttribute('data-scheme') }`))
+    const result = await page.json(on(`return { scripted: latestScheme('scripted'), phone: latestScheme('phone'), style: frame('scripted').style.colorScheme, phoneStyle: frame('phone').style.colorScheme, attr: host('scripted').getAttribute('data-scheme'), phoneAttr: host('phone').getAttribute('data-scheme') }`))
 
     expect(result).toEqual({ scripted: true, phone: false, style: 'dark', phoneStyle: 'light', attr: 'dark', phoneAttr: 'light' })
   })
@@ -170,9 +171,7 @@ describe('the colour scheme', () => {
       const before = frame('scripted')
       const loads = probe.events.load.length
       probe.scheme.set('light')
-      // Whichever the page said last: that its scheme changed, or, loaded again, what it sees.
-      const sees = () => window.messages.filter(m => m.from === 'scripted' || m.from === 'scripted:scheme').slice(-1)[0].dark
-      return later(() => ({ same: frame('scripted') === before, loaded: probe.events.load.length - loads, page: sees(), style: frame('scripted').style.colorScheme, event: probe.events.scheme.slice(-1)[0] }), 400)
+      return later(() => ({ same: frame('scripted') === before, loaded: probe.events.load.length - loads, page: latestScheme('scripted'), style: frame('scripted').style.colorScheme, event: probe.events.scheme.slice(-1)[0] }), 400)
     `))
 
     // The page sees the new scheme, in every engine.
