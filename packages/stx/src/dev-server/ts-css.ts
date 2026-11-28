@@ -11,6 +11,7 @@ import { hasLocalConfig } from 'bunfig'
 import { getServeModuleBundle } from '../caching'
 import { mergeCssConfig, renderFontCSS } from '../ts-css-config'
 import { stateDir } from '../state-dir'
+import { LRUCache } from '../performance-utils'
 import { dedupeScopedStyles, findDuplicateScopedStyleRanges } from '../style-scoping'
 import { colors } from './terminal-colors'
 import { contentKey, renderMemo } from '../render-memo'
@@ -346,12 +347,7 @@ export async function loadCssEngine(): Promise<CssModule | null> {
  */
 export function resetCssCache(): void {
   cssByPage.clear()
-  cssByClassSet.clear()
-  clearCssServeAssets()
-}
-
-export function resetCssCache(): void {
-  cssByPage.clear()
+  cssClassesByBundle.clear()
   cssModule = null
   cssLoadAttempted = false
   cachedConfig = null
@@ -706,6 +702,14 @@ export function extractClassNames(htmlContent: string): Set<string> {
  * that. Cleared with the other caches.
  */
 const cssByPage = renderMemo<string>(64)
+const cssClassesByBundle = new LRUCache<string, ReadonlySet<string>>(64, {
+  maxBytes: 2 * 1024 * 1024,
+  sizeOf: (names) => {
+    let bytes = 0
+    for (const name of names) bytes += 32 + 2 * name.length
+    return bytes
+  },
+})
 
 export async function generateCss(htmlContent: string, appDir?: string): Promise<string> {
   const rootFingerprint = () => configByRoot.get(appDir ? path.resolve(appDir) : process.cwd())?.fingerprint ?? null
@@ -740,8 +744,7 @@ export async function generateCss(htmlContent: string, appDir?: string): Promise
  * phone's sport icons drew as empty boxes. The URL carries the bundle's hash,
  * so the page text still decides what is cached.
  */
-function* cssSources(htmlContent: string): Generator<string> {
-  yield htmlContent
+function* linkedCssBundles(htmlContent: string): Generator<{ hash: string, code: string }> {
   const seen = new Set<string>()
   for (const match of htmlContent.matchAll(/\/_stx\/modules\.([0-9a-f]{16})\.js/g)) {
     // Repeated components and their script strings can reference one bundle
@@ -750,13 +753,13 @@ function* cssSources(htmlContent: string): Generator<string> {
     if (seen.has(hash)) continue
     seen.add(hash)
     const code = getServeModuleBundle(hash)
-    if (code) yield code
+    if (code) yield { hash, code }
   }
 }
 
 /** Compatibility helper for callers that need the combined source text. */
 export function withLinkedModuleBundles(htmlContent: string): string {
-  return [...cssSources(htmlContent)].join('\n')
+  return [htmlContent, ...Array.from(linkedCssBundles(htmlContent), bundle => bundle.code)].join('\n')
 }
 
 async function generateCssUncached(htmlContent: string, appDir?: string): Promise<string> {
@@ -772,12 +775,19 @@ async function generateCssUncached(htmlContent: string, appDir?: string): Promis
     // Scan one source at a time. Joining every linked bundle first duplicates
     // all of their code in one allocation, which can exhaust the string heap
     // even when each source individually fits. Only class names need a union.
-    const classes = new Set<string>()
-    for (const source of cssSources(htmlContent)) {
-      const extracted = typeof hw.extractClasses === 'function'
-        ? hw.extractClasses(source)
-        : extractClassNames(source)
-      for (const className of extracted) classes.add(className)
+    const extract = (source: string) => typeof hw.extractClasses === 'function'
+      ? hw.extractClasses(source)
+      : extractClassNames(source)
+    const classes = new Set(extract(htmlContent))
+    for (const { hash, code } of linkedCssBundles(htmlContent)) {
+      // Its content-addressed URL is stable across pages, even when those
+      // pages' rendered markup and class sets differ.
+      let candidates = cssClassesByBundle.get(hash)
+      if (!candidates) {
+        candidates = extract(code)
+        cssClassesByBundle.set(hash, candidates)
+      }
+      for (const className of candidates) classes.add(className)
     }
 
     if (classes.size === 0) {

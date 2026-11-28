@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { extractClassNames, loadCssEngine } from '../../src/dev-server/ts-css'
+import { extractClassNames, generateCss, loadCssEngine, resetCssCache } from '../../src/dev-server/ts-css'
 
 /**
  * Who extracts the class names.
@@ -55,6 +55,22 @@ describe('css class extraction', () => {
 })
 
 describe('classes assigned by served module bundles', () => {
+  it('combines a shared bundle with each page’s own candidates', async () => {
+    const { registerServeModuleBundle } = await import('../../src/caching')
+    if (!await loadCssEngine()) return
+    const url = registerServeModuleBundle("export const tone = 'text-emerald-600'")
+    const firstPage = `<main class="underline"><script src="${url}"></script></main>`
+    const secondPage = `<main class="line-through"><script src="${url}"></script></main>`
+
+    for (const [page, ownClass] of [[firstPage, '.underline'], [secondPage, '.line-through']] as const) {
+      const css = await generateCss(page)
+      expect(css).toContain(ownClass)
+      expect(css).toContain('.text-emerald-600')
+    }
+    resetCssCache()
+    expect(await generateCss(secondPage)).toContain('.text-emerald-600')
+  })
+
   it('scans each linked module once when a page repeats its URL', async () => {
     const { registerServeModuleBundle } = await import('../../src/caching')
     const { withLinkedModuleBundles } = await import('../../src/dev-server/ts-css')
