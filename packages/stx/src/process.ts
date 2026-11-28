@@ -20,7 +20,7 @@ import { injectCss } from './dev-server/ts-css'
 import { hoistDocumentStyles } from './document-styles'
 import { findBodyOpenTag, replaceBodyOpenTag } from './find-body-tag'
 import { findFirstScriptTag } from './first-script-tag'
-import { matchHtmlComment, matchStyleElement, maskAtElementPosition, restoreStashedScripts, stashScriptElements } from './html-masking'
+import { matchHtmlComment, matchStyleElement, maskAtElementPosition, restoreStashedScripts, stashScriptElements, withHtmlMaskMemos } from './html-masking'
 import { processA11yDirectives } from './a11y'
 import { generateLifecycleRuntime } from './composables'
 import { processTemplateBindings } from './reactive-bindings'
@@ -713,7 +713,17 @@ function restoreEscapedMustaches(html: string): string {
   })
 }
 
-export async function processDirectives(
+export function processDirectives(
+  template: string,
+  context: Record<string, any>,
+  filePath: string,
+  options: StxOptions,
+  dependencies: Set<string>,
+): Promise<string> {
+  return withHtmlMaskMemos(() => renderDirectives(template, context, filePath, options, dependencies))
+}
+
+async function renderDirectives(
   template: string,
   context: Record<string, any>,
   filePath: string,

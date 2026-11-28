@@ -15,11 +15,11 @@
  * inside a quoted attribute value). A token embedded in an attribute is left in
  * place to be escaped normally.
  *
- * This is a leaf module (no stx imports) so any stage can use it without risking
- * an import cycle.
- *
  * @module html-masking
  */
+
+import { AsyncLocalStorage } from 'node:async_hooks'
+import { LRUCache } from './performance-utils'
 
 /**
  * Locate a maskable token starting at `html[i]`.
@@ -344,20 +344,50 @@ export function evictOldest(cache: Map<string, unknown>, maxEntries: number): vo
  * large entries, because a real page masks dozens of distinct templates per
  * render, every one the same on the next request (see the stash cache).
  */
-const MASK_CACHE_MIN_BYTES = 1024
-const MASK_CACHE_MAX_CHARS = 16 * 1024 * 1024
-const maskCache = new Map<string, { output: string, tokens: string[] }>()
-let maskCacheChars = 0
+const MIN_MEMO_CHARS = 1024
+// Partials and components usually repeat across requests. Larger documents
+// are commonly partially rendered pages that contain request-specific HTML.
+const SHARED_INPUT_LIMIT = 64 * 1024
+const SHARED_BUDGET_BYTES = 32 * 1024 * 1024
+// One render only revisits a few consecutive representations of a page.
+const RENDER_BUDGET_BYTES = 4 * 1024 * 1024
+type CachedMask = { output: string, tokens: string[], bytes: number }
+type MaskMemo = LRUCache<string, CachedMask>
 
-function rememberMask(key: string, entry: { output: string, tokens: string[] }): void {
-  maskCache.set(key, entry)
-  maskCacheChars += key.length + entry.output.length
-  for (const [oldest, kept] of maskCache) {
-    if (maskCacheChars <= MASK_CACHE_MAX_CHARS)
-      break
-    maskCache.delete(oldest)
-    maskCacheChars -= oldest.length + kept.output.length
-  }
+function createMaskMemo(maxBytes: number): MaskMemo {
+  // A token is a slice of the input. The retained key already accounts for
+  // that string, including its backing content when the slice is cheap.
+  return new LRUCache<string, CachedMask>(Infinity, { maxBytes, sizeOf: entry => entry.bytes })
+}
+
+const maskCache = createMaskMemo(SHARED_BUDGET_BYTES)
+const stashCache = createMaskMemo(SHARED_BUDGET_BYTES)
+const renderMemos = new AsyncLocalStorage<{ mask: MaskMemo, stash: MaskMemo, active: boolean }>()
+
+/** Let nested and concurrent render passes reuse masks within one request. */
+export async function withHtmlMaskMemos<T>(render: () => Promise<T>): Promise<T> {
+  if (renderMemos.getStore()?.active) return render()
+  const memo = { mask: createMaskMemo(RENDER_BUDGET_BYTES), stash: createMaskMemo(RENDER_BUDGET_BYTES), active: true }
+  return renderMemos.run(memo, async () => {
+    try { return await render() }
+    finally {
+      // Async resources started by a render can outlive its Promise.
+      memo.active = false
+      memo.mask.clear()
+      memo.stash.clear()
+    }
+  })
+}
+
+function memoFor(input: string, kind: 'mask' | 'stash'): MaskMemo | undefined {
+  if (input.length < MIN_MEMO_CHARS) return undefined
+  if (input.length <= SHARED_INPUT_LIMIT) return kind === 'mask' ? maskCache : stashCache
+  const scoped = renderMemos.getStore()
+  return scoped?.active ? scoped[kind] : undefined
+}
+
+function memoize(memo: MaskMemo, key: string, output: string, tokens: string[]): void {
+  memo.set(key, { output, tokens, bytes: (key.length + output.length) * 2 })
 }
 
 /**
@@ -371,7 +401,7 @@ function rememberMask(key: string, entry: { output: string, tokens: string[] }):
  */
 export function clearMaskCache(): void {
   maskCache.clear()
-  maskCacheChars = 0
+  renderMemos.getStore()?.mask.clear()
 }
 
 /**
@@ -392,17 +422,14 @@ export function maskAtElementPosition(
    */
   cacheKey?: string,
 ): { output: string, tokens: string[] } {
-  const cacheable = cacheKey !== undefined && html.length >= MASK_CACHE_MIN_BYTES
-  const key = cacheable ? `${cacheKey}\u0000${html}` : ''
-  if (cacheable) {
-    const hit = maskCache.get(key)
+  const memo = cacheKey === undefined ? undefined : memoFor(html, 'mask')
+  const key = memo ? `${cacheKey}\u0000${html}` : ''
+  if (memo) {
+    const hit = memo.get(key)
     // Tokens copied out: callers spread this array into their own, and a shared
     // one would let a later mutation reach an earlier caller's restore.
-    if (hit) {
-      maskCache.delete(key)
-      maskCache.set(key, hit)
+    if (hit)
       return { output: hit.output, tokens: hit.tokens.slice() }
-    }
   }
 
   const matches = scanAtElementPosition(html, match)
@@ -420,8 +447,8 @@ export function maskAtElementPosition(
   }
   output += html.slice(cursor)
 
-  if (cacheable) {
-    rememberMask(key, { output, tokens })
+  if (memo) {
+    memoize(memo, key, output, tokens)
     return { output, tokens: tokens.slice() }
   }
 
@@ -447,37 +474,10 @@ export function maskAtElementPosition(
  * would restore the wrong script bodies into a page, and the input has to be
  * retained to compare against anyway.
  *
- * The trade is explicit. This holds a small number of documents alive — bounded
- * below, roughly 340KB at the cap on this fixture — to stop re-deriving them.
- * That is retention bought with allocation, which is worth stating plainly
- * rather than burying: the win is real for a server rendering the same view
- * repeatedly, and it is a cost, not a free lunch.
- *
- * Bounded by the characters it holds, not by a count of entries. Four
- * entries of 64KB and up covered that fixture and not a real app: hq.training's
- * coach calendar masks 68 distinct documents per request, 1.8MB in all, most
- * of them component and partial templates between 1KB and 64KB, and every one
- * of them is the same string on the next request (#1945) -- so each request
- * re-scanned all of it, ~25ms. A budget keeps a working set of a few pages and
- * still bounds the retention; least recently used goes first. Inputs under
- * 1KB are still left alone, being cheaper to redo than to look up.
+ * Small templates are reused across renders. Large intermediate documents
+ * stay in the current render so a changing page cannot keep a series of old
+ * outputs and their script slices in the shared cache.
  */
-const STASH_CACHE_MIN_BYTES = 1024
-const STASH_CACHE_MAX_CHARS = 16 * 1024 * 1024
-const stashCache = new Map<string, { output: string, scripts: string[] }>()
-let stashCacheChars = 0
-
-function rememberStash(html: string, entry: { output: string, scripts: string[] }): void {
-  stashCache.set(html, entry)
-  stashCacheChars += html.length + entry.output.length
-  for (const [oldest, kept] of stashCache) {
-    if (stashCacheChars <= STASH_CACHE_MAX_CHARS)
-      break
-    stashCache.delete(oldest)
-    stashCacheChars -= oldest.length + kept.output.length
-  }
-}
-
 export interface StashedScripts {
   /** The document with each `<script>` element replaced by a NUL sentinel. */
   output: string
@@ -509,18 +509,14 @@ function stashResult(input: string, output: string, scripts: string[]): StashedS
 }
 
 export function stashScriptElements(html: string): StashedScripts {
-  const cacheable = html.length >= STASH_CACHE_MIN_BYTES
-  if (cacheable) {
-    const hit = stashCache.get(html)
+  const memo = memoFor(html, 'stash')
+  if (memo) {
+    const hit = memo.get(html)
     // The array is copied out. Callers receive it as `stashed.scripts` and a
     // shared array would let one caller's mutation reach another's restore;
     // the strings inside are shared, so this is a handful of pointers.
-    if (hit) {
-      // Most recently used last, so the budget drops what is not reused.
-      stashCache.delete(html)
-      stashCache.set(html, hit)
-      return stashResult(html, hit.output, hit.scripts.slice())
-    }
+    if (hit)
+      return stashResult(html, hit.output, hit.tokens.slice())
   }
 
   const { output, tokens } = maskAtElementPosition(
@@ -529,8 +525,8 @@ export function stashScriptElements(html: string): StashedScripts {
     (_token, index) => `\x00STX_SCRIPT_${index}\x00`,
   )
 
-  if (cacheable) {
-    rememberStash(html, { output, scripts: tokens })
+  if (memo) {
+    memoize(memo, html, output, tokens)
     return stashResult(html, output, tokens.slice())
   }
 
@@ -547,7 +543,7 @@ export function stashScriptElements(html: string): StashedScripts {
  */
 export function clearStashCache(): void {
   stashCache.clear()
-  stashCacheChars = 0
+  renderMemos.getStore()?.stash.clear()
 }
 
 /** Restore scripts stashed by {@link stashScriptElements}. */

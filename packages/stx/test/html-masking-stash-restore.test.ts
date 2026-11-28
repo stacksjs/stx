@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
-import { clearStashCache, stashScriptElements } from '../src/html-masking'
+import { clearStashCache, maskAtElementPosition, matchScriptElement, stashScriptElements, withHtmlMaskMemos } from '../src/html-masking'
 
-/** Big enough to take the cached path (the stash memo starts at 64KB). */
+/** Larger than the shared memo accepts. */
 function padded(body: string): string {
   return `<html><body>${'<p>filler filler filler</p>\n'.repeat(3000)}${body}</body></html>`
 }
@@ -42,7 +42,7 @@ describe('stashScriptElements().restore', () => {
     expect(stashed.restore(stashed.output)).toBe(html)
   })
 
-  it('is the inverse on the cached path, including on a cache hit', () => {
+  it('is the inverse on the cached path, including on a cache hit', async () => withHtmlMaskMemos(async () => {
     clearStashCache()
     const html = padded('<script>big()</script><script server>data()</script>')
     expect(html.length).toBeGreaterThan(65536)
@@ -57,9 +57,9 @@ describe('stashScriptElements().restore', () => {
     expect(second.restore(second.output)).toBe(html)
     expect(second.restore(second.output.replace('<html>', '<html lang="en">')))
       .toBe(html.replace('<html>', '<html lang="en">'))
-  })
+  }))
 
-  it('does not let one caller mutate the scripts another will restore', () => {
+  it('does not let one caller mutate the scripts another will restore', async () => withHtmlMaskMemos(async () => {
     clearStashCache()
     const html = padded('<script>shared()</script>')
 
@@ -69,5 +69,41 @@ describe('stashScriptElements().restore', () => {
     const second = stashScriptElements(html)
     expect(second.scripts).toHaveLength(1)
     expect(second.restore(second.output)).toBe(html)
+  }))
+})
+
+describe('request-local HTML memo', () => {
+  it('shares large input within a render and drops it between concurrent renders', async () => {
+    const html = padded('<script>large()</script>')
+    let scans = 0
+    const mask = () => maskAtElementPosition(html, matchScriptElement, () => {
+      scans++
+      return '<!--script-->'
+    }, 'large-input-test')
+
+    const render = () => withHtmlMaskMemos(async () => {
+      const result = mask()
+      await withHtmlMaskMemos(async () => {
+        await Promise.resolve()
+        expect(mask()).toEqual(result)
+      })
+      expect(result.tokens).toEqual(['<script>large()</script>'])
+    })
+
+    await Promise.all([render(), render()])
+    expect(scans).toBe(2)
+    await render()
+    expect(scans).toBe(3)
+  })
+
+  it('still shares small input between renders', async () => {
+    const html = `${'<p>short</p>'.repeat(200)}<script>small()</script>`
+    let scans = 0
+    const render = () => withHtmlMaskMemos(async () => maskAtElementPosition(html, matchScriptElement, () => {
+      scans++
+      return '<!--script-->'
+    }, 'small-input-test'))
+    expect(await render()).toEqual(await render())
+    expect(scans).toBe(1)
   })
 })
