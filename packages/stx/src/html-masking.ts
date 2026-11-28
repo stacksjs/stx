@@ -179,29 +179,23 @@ export function matchHtmlComment(html: string, i: number): number {
  * of the document, matching browser parsing closely enough for template scans.
  */
 function matchOpaqueRegion(html: string, i: number): number {
-  if (html.startsWith('<!--', i)) {
+  const first = html.charCodeAt(i + 1)
+  if (first === 0x21 && html.startsWith('<!--', i)) {
     const end = matchHtmlComment(html, i)
     return end === -1 ? html.length : end
   }
 
-  // No short-lived pair array/iterator for every ordinary opening tag.
-  SCRIPT_OPEN.lastIndex = i
-  const scriptOpen = SCRIPT_OPEN.exec(html)
-  if (scriptOpen?.index === i) {
-    SCRIPT_CLOSE.lastIndex = SCRIPT_OPEN.lastIndex
-    const close = SCRIPT_CLOSE.exec(html)
-    return close ? close.index + close[0].length : html.length
-  }
-
-  STYLE_OPEN.lastIndex = i
-  const styleOpen = STYLE_OPEN.exec(html)
-  if (styleOpen?.index === i) {
-    STYLE_CLOSE.lastIndex = STYLE_OPEN.lastIndex
-    const close = STYLE_CLOSE.exec(html)
-    return close ? close.index + close[0].length : html.length
-  }
-
-  return -1
+  // Most tags are ordinary elements. Reject them before invoking a regexp.
+  if ((first | 0x20) !== 0x73) return -1
+  const second = html.charCodeAt(i + 2) | 0x20
+  if (second !== 0x63 && second !== 0x74) return -1
+  const open = second === 0x63 ? SCRIPT_OPEN : STYLE_OPEN
+  const close = second === 0x63 ? SCRIPT_CLOSE : STYLE_CLOSE
+  open.lastIndex = i
+  if (!open.test(html)) return -1
+  close.lastIndex = open.lastIndex
+  const found = close.exec(html)
+  return found ? close.lastIndex : html.length
 }
 
 /**
