@@ -147,7 +147,7 @@
     "@stacksjs/stx": "workspace:*",
     "bun-plugin-stx": "workspace:*",
     "ts-syntax-highlighter": "^0.2.20",
-    "ts-video-player": "^0.1.11"
+    "ts-video-player": "^0.1.12"
   },
   "devDependencies": {
     "better-dx": "^0.2.38"
