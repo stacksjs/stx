@@ -1414,6 +1414,13 @@ function routerSource(): string {
   // swap() through pendingCtx, the same way pendingContainerAttrs is.
   var navCtxNext=null;
   var pendingCtx=null;
+  function cancelPendingNavigation(){
+    if(navAbort){try{navAbort.abort()}catch(e){}navAbort=null}
+    navSeq++;
+    awaitingKey='';
+    isNavigating=false;
+    document.body.classList.remove(o.loadingClass);
+  }
   // The page belongs to another origin: the server says so with
   // X-STX-Location (it cannot redirect a router fetch there, because a
   // cross-origin redirect of a request carrying X-STX-Router fails CORS), or
@@ -3127,11 +3134,7 @@ else {
     settleSwapFade();
     settleAnimation();
     var from=active,host=getContainer();
-    if(navAbort){try{navAbort.abort()}catch(e){}navAbort=null}
-    navSeq++;
-    awaitingKey='';
-    isNavigating=false;
-    document.body.classList.remove(o.loadingClass);
+    cancelPendingNavigation();
     if(from&&from.el){if(!opts.settled)saveScroll(from);saveEntry(from)}
     setDirection(dir);
     var anim=!opts.settled&&from&&from.el&&from!==to&&canAnimate(dir,true);
@@ -3918,6 +3921,15 @@ else {
       if(target&&target.el&&target.token===scrollToken&&target!==active){showRetained(target,dir==='replace'?'pop':dir,{settled:settled===target});return}
     }
     if(renderedPage===pagePath()){
+      // A fast Back then Forward can return to the page still on screen.
+      // This popstate supersedes the Back request even without another swap.
+      if(isNavigating||awaitingKey){
+        cancelPendingNavigation();
+        settleSwapFade();
+        finishProgress();
+        settleDirection();
+        pumpPrefetch();
+      }
       applyScroll(location.hash);
       refreshCurrentLinks();
       return;

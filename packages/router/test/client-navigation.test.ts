@@ -140,6 +140,45 @@ describe('router browser navigation behavior', () => {
     expect(calls.length).toBeGreaterThan(0)
   })
 
+  it('keeps the rendered history entry when an earlier popstate response arrives late', async () => {
+    const pendingBack = Promise.withResolvers<Response>()
+    const calls: string[] = []
+    let backSignal: AbortSignal | null | undefined
+    const fragment = { 'X-STX-Fragment': 'true', 'X-STX-Runtime': 'false' }
+    const window = installRouter('<html><head><title>Settings</title></head><body><main>General</main></body></html>', async (input, init) => {
+      const path = new URL(String(input), 'http://localhost').pathname
+      calls.push(path)
+      if (path === '/') {
+        backSignal = init?.signal
+        return pendingBack.promise
+      }
+      return response('<section>Appearance</section>', fragment)
+    }, { cache: false, prefetch: false, screens: false })
+
+    await window.stxRouter.navigate('/appearance')
+    const appearance = window.document.querySelector('main section')
+    expect(appearance?.textContent).toBe('Appearance')
+
+    function pop(path: string) {
+      window.history.replaceState(null, '', path)
+      window.dispatchEvent(new window.PopStateEvent('popstate', { state: null }))
+    }
+
+    pop('/')
+    expect(window.document.body.classList.contains('stx-navigating')).toBe(true)
+    pop('/appearance')
+    // Ignore the abort like a fetch that already received its response body.
+    pendingBack.resolve(response('<section>General</section>', fragment))
+    await waitForRouterSwap()
+
+    expect(window.location.pathname).toBe('/appearance')
+    expect(window.document.querySelector('main section')?.textContent).toBe('Appearance')
+    expect(window.document.querySelector('main section')).toBe(appearance)
+    expect(window.document.body.classList.contains('stx-navigating')).toBe(false)
+    expect(backSignal?.aborted).toBe(true)
+    expect(calls).toEqual(['/appearance', '/'])
+  })
+
   it('swaps only the container for same-layout fragments', async () => {
     const calls: string[] = []
     const window = installRouter(`
