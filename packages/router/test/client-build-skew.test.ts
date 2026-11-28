@@ -22,24 +22,17 @@ import { afterEach, describe, expect, it } from 'bun:test'
 import { Window } from 'very-happy-dom'
 import { getRouterScript } from '../src/client'
 
-const originalGlobals = {
-  window: globalThis.window,
-  document: globalThis.document,
-  location: globalThis.location,
-  history: globalThis.history,
-  fetch: globalThis.fetch,
-  CustomEvent: globalThis.CustomEvent,
-  Event: globalThis.Event,
-  DOMParser: globalThis.DOMParser,
-}
+let fixtureWindow: Window | undefined
 
 afterEach(() => {
-  Object.assign(globalThis, originalGlobals)
+  fixtureWindow?.close()
+  fixtureWindow = undefined
 })
 
 /** Records assignments to location.href — the full-navigation fallback. */
 function installRouter(html: string, fetchImpl: typeof fetch) {
   const window = new Window({ url: 'http://localhost/' })
+  fixtureWindow = window
   window.document.write(html)
   ;(window as any).stx = {}
   ;(window as any).__stxRouterConfig = {
@@ -50,7 +43,7 @@ function installRouter(html: string, fetchImpl: typeof fetch) {
   }
 
   // very-happy-dom's location.href is non-configurable, so stand in a stub as
-  // the global `location` the router resolves — it reads bare `location`.
+  // the `location` the router resolves — it reads bare `location`.
   const navigations: string[] = []
   let href = 'http://localhost/'
   const real = window.location as any
@@ -65,7 +58,15 @@ function installRouter(html: string, fetchImpl: typeof fetch) {
   locationStub.replace = (v: string) => { locationStub.href = v }
   locationStub.toString = () => href
 
-  Object.assign(globalThis, {
+  // Keep the router's browser globals and timers owned by this document.
+  // A render announcement can still be pending when the navigation assertion
+  // finishes. Closing the fixture cancels its timers before the next test.
+  const runRouter = new Function('fixture', `
+    const { window, document, location, history, fetch, CustomEvent, Event, DOMParser,
+      setTimeout, clearTimeout, setInterval, clearInterval } = fixture;
+    ${getRouterScript()}
+  `)
+  runRouter({
     window,
     document: window.document,
     location: locationStub,
@@ -74,9 +75,11 @@ function installRouter(html: string, fetchImpl: typeof fetch) {
     CustomEvent: window.CustomEvent,
     Event: window.Event,
     DOMParser: window.DOMParser,
+    setTimeout: window.setTimeout.bind(window),
+    clearTimeout: window.clearTimeout.bind(window),
+    setInterval: window.setInterval.bind(window),
+    clearInterval: window.clearInterval.bind(window),
   })
-
-  new Function(getRouterScript())()
 
   return { window: window as Window & { stxRouter: any }, navigations }
 }
