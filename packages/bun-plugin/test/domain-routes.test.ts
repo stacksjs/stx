@@ -33,6 +33,15 @@ describe('compileDomainRoutes', () => {
     expect(warnings).toHaveLength(4)
     expect(warnings[2]).toContain('{b}')
   })
+
+  it('discards invalid allowlist entries and keeps the host scoped', () => {
+    const warnings: string[] = []
+    const [route] = compileDomainRoutes({
+      'status.example.com': { to: '/status/example', only: ['/*', '/assets/*', '/favicon.ico', 'https://example.com/assets'] },
+    }, message => warnings.push(message))
+    expect(route?.only).toEqual(['/assets/*', '/favicon.ico'])
+    expect(warnings).toHaveLength(1)
+  })
 })
 
 describe('resolveDomainRoute', () => {
@@ -117,6 +126,10 @@ describe('serve() with domains', () => {
     dir = createTempDir('stx-domain-routes-')
     await Bun.write(path.join(dir, 'views', 'index.stx'), '<main><p>page:home</p></main>\n')
     await Bun.write(path.join(dir, 'views', 'pricing.stx'), '<main><p>page:pricing</p></main>\n')
+    await Bun.write(path.join(dir, 'views', 'status', '[slug]', 'incidents', '[id].stx'), '<main><p>page:incident</p></main>\n')
+    await Bun.write(path.join(dir, 'public', 'status-assets', 'page.css'), '.status { color: black }\n')
+    await Bun.write(path.join(dir, 'public', 'chunks', 'status.12.js'), '// public status chunk\n')
+    await Bun.write(path.join(dir, 'public', 'chunks', 'status.other', 'app.js'), '// other app chunk\n')
     await Bun.write(path.join(dir, 'views', '[username].stx'), `<script server>
 const route = useRoute()
 const who = String(route.params?.username ?? '')
@@ -124,7 +137,22 @@ const who = String(route.params?.username ?? '')
 <main><p>page:profile:{{ who }}</p></main>
 `)
     await Bun.write(path.join(dir, 'driver.ts'), `import { serve } from ${JSON.stringify(SERVE_SRC)}
-serve({ patterns: ['views'], port: ${PORT}, quiet: true, domains: { '{username}.example.com': '/{username}' } })
+serve({
+  patterns: ['views'],
+  port: ${PORT},
+  quiet: true,
+  domains: {
+    '{username}.example.com': '/{username}',
+    'status.example.com': { to: '/support', only: ['/status-assets/*', '/status/support/incidents/*', '/chunks/status.*'] },
+    'root-only.example.net': { to: '/support', only: [] },
+  },
+  onRequest(request) {
+    const pathname = new URL(request.url).pathname
+    if (pathname === '/api/health' || request.method === 'POST')
+      return new Response('application handler')
+    return null
+  },
+})
 serve({ patterns: ['views'], port: ${ELSEWHERE_PORT}, quiet: true, domains: { '{username}.example.com': { to: '/{username}', elsewhere: 'https://example.com' } } })
 `)
     await Bun.write(path.join(dir, 'public', 'robots.txt'), 'User-agent: *\n')
@@ -175,6 +203,28 @@ serve({ patterns: ['views'], port: ${ELSEWHERE_PORT}, quiet: true, domains: { '{
     const routed = await fetch(`${ELSEWHERE}/pricing`, { headers: { ...host, 'X-STX-Router': 'true' }, redirect: 'manual' })
     expect([routed.status, routed.headers.get('x-stx-location')]).toEqual([200, 'https://example.com/pricing'])
     expect(await (await fetch(`${ELSEWHERE}/pricing`)).text()).toContain('page:pricing')
+  })
+
+  it('serves only the bound page and its declared resources on a scoped domain', async () => {
+    const host = 'status.example.com'
+    expect((await page('/', host)).text).toContain('page:profile:support')
+    expect((await page('/status/support/incidents/12', host)).text).toContain('page:incident')
+    expect((await page('/status-assets/page.css', host)).text).toContain('.status')
+    expect((await page('/chunks/status.12.js', host)).text).toContain('public status chunk')
+    const hidden = ['/chunks/status.other/app.js', '/pricing', '/other-team', '/status/other-team/incidents/12', '/api/health', '/robots.txt', '/_stx/warmup', '/status-assets-private/app.css']
+    for (const pathname of hidden)
+      expect((await page(pathname, host)).status, pathname).toBe(404)
+    expect((await page('/api/health')).text).toBe('application handler')
+    expect((await page('/_stx/warmup')).status).toBe(200)
+    expect((await page('/', 'root-only.example.net')).text).toContain('page:profile:support')
+    expect((await page('/robots.txt', 'root-only.example.net')).status).toBe(404)
+  })
+
+  it('limits a scoped domain to GET and HEAD before the application callback', async () => {
+    const headers = { 'x-forwarded-host': 'status.example.com' }
+    expect((await fetch(`${BASE}/status-assets/page.css`, { headers, method: 'HEAD' })).status).toBe(200)
+    expect((await fetch(`${BASE}/`, { headers, method: 'POST' })).status).toBe(404)
+    expect((await fetch(`${BASE}/api/health`, { method: 'POST' })).status).toBe(200)
   })
 
   it('leaves the home page of the main host, and the other pages of the routed one, alone', async () => {

@@ -36,6 +36,20 @@
  * this, signing in from a profile's own domain signs in to that domain, and
  * the visitor ends up using the whole app under someone else's name.
  *
+ * A domain can instead serve only its root page and selected read-only paths:
+ *
+ * ```ts
+ * domains: {
+ *   'status.example.com': { to: '/status/example', only: ['/status/example/incidents/*', '/status-assets/*'] },
+ * }
+ * ```
+ *
+ * `only` accepts exact paths, directory patterns ending in `/*`, and file
+ * patterns ending in `.*` within one directory. An empty list serves just
+ * the root page. Other paths, writes and upgrades
+ * return 404 before application routing. With both options, `only` takes
+ * precedence over `elsewhere`.
+ *
  * A pattern is a hostname whose labels are either literal or `{name}`, which
  * matches exactly one DNS label (`{username}.example.com` matches
  * `chris.example.com`, not `a.b.example.com` and not the bare apex). Literal
@@ -47,6 +61,9 @@
  * gateway the latter is the upstream's address. Trusting it is safe here: a
  * forged value can only choose which page of this same site renders for the
  * root path, which the requester could have asked for by its own path.
+ * To enforce `only` at a public edge, put the origin behind a trusted proxy
+ * that overwrites X-Forwarded-Host with the hostname selected by the proxy.
+ * Keep application authorization on the underlying routes.
  */
 
 /** One label of a compiled pattern. */
@@ -60,14 +77,28 @@ export interface DomainRoute {
   to: string
   /** Where the host's other pages live, an origin like `https://example.com`. */
   elsewhere?: string
+  /** Extra paths allowed on a read-only domain. Undefined leaves the domain unrestricted. */
+  only?: readonly string[]
   /** How many labels are literal: more is more specific. */
   literals: number
 }
 
-export type DomainRoutesOption = Record<string, string | { to: string, elsewhere?: string }>
+export type DomainRoutesOption = Record<string, string | { to: string, elsewhere?: string, only?: readonly string[] }>
 
 const LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/
 const PARAM = /^\{([A-Za-z_]\w*)\}$/
+
+function validScopedPath(path: unknown): path is string {
+  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//') || /[?#%\\]/.test(path))
+    return false
+  if (path === '/*' || path.slice(0, -1).includes('*') || (path.endsWith('*') && !path.endsWith('/*') && !path.endsWith('.*')))
+    return false
+  return new URL(path, 'https://domain.test').pathname === path
+}
+
+function isDomainRoot(pathname: string): boolean {
+  return pathname === '/' || pathname === '' || pathname === '/index'
+}
 
 /**
  * Compile `{ pattern: path }` into routes, most specific first. Invalid
@@ -80,8 +111,16 @@ export function compileDomainRoutes(input: DomainRoutesOption | undefined, warn:
     const pattern = String(rawPattern).trim().toLowerCase().replace(/\.$/, '')
     const rawTo = typeof target === 'object' && target ? target.to : target
     const to = String(rawTo ?? '').trim()
+    const rawOnly = typeof target === 'object' ? target?.only : undefined
+    let only: string[] | undefined
+    if (rawOnly !== undefined) {
+      only = Array.isArray(rawOnly) ? rawOnly.filter(validScopedPath) : []
+      if (!Array.isArray(rawOnly) || only.length !== rawOnly.length)
+        warn(`[stx] domain route "${rawPattern}" ignores invalid paths in "only"`)
+    }
+
     let elsewhere: string | undefined
-    if (typeof target === 'object' && target?.elsewhere) {
+    if (!only && typeof target === 'object' && target?.elsewhere) {
       try {
         const url = new URL(String(target.elsewhere))
         if (url.protocol === 'https:' || url.protocol === 'http:')
@@ -119,7 +158,7 @@ export function compileDomainRoutes(input: DomainRoutesOption | undefined, warn:
       warn(`[stx] domain route "${rawPattern}" -> "${rawTo}" ignored: ${!valid ? 'a label is neither a hostname label nor {name}' : `the path uses {${missing.join('}, {')}} which the hostname does not capture`}`)
       continue
     }
-    routes.push({ pattern, labels, to, ...(elsewhere ? { elsewhere } : {}), literals: labels.filter(label => 'literal' in label).length })
+    routes.push({ pattern, labels, to, ...(elsewhere ? { elsewhere } : {}), ...(only ? { only } : {}), literals: labels.filter(label => 'literal' in label).length })
   }
   return routes.sort((a, b) => b.literals - a.literals || b.labels.length - a.labels.length)
 }
@@ -153,6 +192,25 @@ export function matchDomain(host: string, route: DomainRoute): Record<string, st
   return params
 }
 
+/** Check the requested host and path before invoking any application handler. */
+export function isDomainRequestAllowed(host: string, pathname: string, request: Request, routes: DomainRoute[]): boolean {
+  const route = routes.find(route => matchDomain(host, route))
+  if (!route?.only)
+    return true
+  if ((request.method !== 'GET' && request.method !== 'HEAD') || request.headers.has('upgrade'))
+    return false
+  if (isDomainRoot(pathname))
+    return true
+  if (/%(?:2f|5c)/i.test(pathname))
+    return false
+  return route.only.some((path) => {
+    if (!path.endsWith('*'))
+      return pathname === path
+    const prefix = path.slice(0, -1)
+    return pathname.startsWith(prefix) && (path.endsWith('/*') || !pathname.includes('/', prefix.length))
+  })
+}
+
 /**
  * The path a request to `host` at `pathname` should render, or null when no
  * domain route applies (a host that matches nothing, or a path other than
@@ -161,7 +219,7 @@ export function matchDomain(host: string, route: DomainRoute): Record<string, st
 export function resolveDomainRoute(host: string, pathname: string, routes: DomainRoute[]): string | null {
   if (!routes.length)
     return null
-  if (pathname !== '/' && pathname !== '' && pathname !== '/index')
+  if (!isDomainRoot(pathname))
     return null
   for (const route of routes) {
     const params = matchDomain(host, route)
@@ -182,7 +240,7 @@ export function resolveDomainRoute(host: string, pathname: string, routes: Domai
  * which stay where the page at the root can load them.
  */
 export function resolveDomainElsewhere(host: string, pathname: string, search: string, routes: DomainRoute[], isAsset: (pathname: string) => boolean): string | null {
-  if (!routes.length || pathname === '/' || pathname === '' || pathname === '/index')
+  if (!routes.length || isDomainRoot(pathname))
     return null
   for (const route of routes) {
     if (!matchDomain(host, route))
@@ -196,5 +254,5 @@ export function resolveDomainElsewhere(host: string, pathname: string, search: s
 
 /** One line for boot output: `{username}.example.com/ → /{username}`. */
 export function describeDomainRoutes(routes: DomainRoute[]): string {
-  return routes.map(route => `${route.pattern}/ → ${route.to}${route.elsewhere ? ` (other pages: ${route.elsewhere})` : ''}`).join(', ')
+  return routes.map(route => `${route.pattern}/ → ${route.to}${route.only ? ' (read-only scope)' : route.elsewhere ? ` (other pages: ${route.elsewhere})` : ''}`).join(', ')
 }

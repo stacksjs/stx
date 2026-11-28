@@ -28,7 +28,7 @@ import { clearBundleFailures, getBundleFailures } from '@stacksjs/stx/client-scr
 import { extractLayoutMetadata, layoutChanges, type LayoutMetadata, layoutTheRouterHas } from 'stx-router/layout-metadata'
 import { FILE_SEGMENT_GUARD, isFileRequestPath } from 'stx-router/file-requests'
 import { insertBeforeBodyClose, actionRedirectResponse, compressResponse, runPageAction as sharedRunPageAction } from '@stacksjs/stx'
-import { compileDomainRoutes, describeDomainRoutes, requestHost, resolveDomainElsewhere, resolveDomainRoute } from './domain-routes'
+import { compileDomainRoutes, describeDomainRoutes, isDomainRequestAllowed, requestHost, resolveDomainElsewhere, resolveDomainRoute } from './domain-routes'
 import type { DomainRoutesOption } from './domain-routes'
 import { IMAGE_BUILTIN_PATTERN, servedTemplatesUseImageBuiltins } from './image-warmup-scope'
 import type { ImageTemplateScope } from './image-warmup-scope'
@@ -1828,6 +1828,7 @@ export async function serve(options: ServeOptions): Promise<void> {
     : undefined
   // Compiled once: a request only walks the list.
   const domainRoutes = compileDomainRoutes(options.domains ?? (stxConfig as any).server?.domains, message => console.warn(message))
+  const hasScopedDomain = domainRoutes.some(route => route.only !== undefined)
   if (domainRoutes.length)
     console.log(`[stx] domain routes: ${describeDomainRoutes(domainRoutes)}`)
 
@@ -4475,6 +4476,10 @@ function __stxOverlay(errs){
         if (malformed)
           return malformed
 
+        const scopedDomainHost = hasScopedDomain ? requestHost(req) : undefined
+        if (scopedDomainHost && !isDomainRequestAllowed(scopedDomainHost, new URL(req.url).pathname, req, domainRoutes))
+          return new Response('Not Found', { status: 404 })
+
         // What the page warm-up did, before anything that could wait on it,
         // route or redirect it: a deploy reads this to know whether the
         // release it just bound is warm.
@@ -4500,11 +4505,12 @@ function __stxOverlay(errs){
           // path had been asked for. See domain-routes.ts.
           if (domainRoutes.length) {
             const original = new URL(req.url)
-            const routed = resolveDomainRoute(requestHost(req), original.pathname, domainRoutes)
+            const host = scopedDomainHost ?? requestHost(req)
+            const routed = resolveDomainRoute(host, original.pathname, domainRoutes)
             if (routed) {
               original.pathname = routed
               const headers = new Headers(req.headers)
-              headers.set('x-stx-domain-route', requestHost(req))
+              headers.set('x-stx-domain-route', host)
               req = new Request(original, { headers, method: req.method, body: req.body, redirect: req.redirect, duplex: 'half' } as RequestInit)
             }
             // Another page on a host whose route names where the rest of
@@ -4515,7 +4521,7 @@ function __stxOverlay(errs){
                 return pathname.startsWith('/api/') || pathname.startsWith('/_stx/') || pathname.startsWith('/.well-known/')
                   || isStaticAssetPath(pathname) || publicFileExists(pathname, publicDir)
               }
-              const location = resolveDomainElsewhere(requestHost(req), original.pathname, original.search, domainRoutes, staysHere)
+              const location = resolveDomainElsewhere(host, original.pathname, original.search, domainRoutes, staysHere)
               if (location) {
                 // The client router cannot follow a cross-origin redirect
                 // (its X-STX-Router header makes the follow fail CORS), so
