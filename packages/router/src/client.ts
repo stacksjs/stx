@@ -1888,8 +1888,8 @@ else {
     return found;
   }
 
-  // Before the swap: add each sheet the page does not have yet, as
-  // media="print" so it downloads without restyling the page still on screen.
+  // Before the swap: fetch each sheet the page does not have yet, and hold
+  // the loaded sheet disabled until the destination takes over.
   // Returns a promise for them to finish (load OR error, capped at
   // cssLoadTimeout so a slow sheet never stalls navigation), or null when
   // nothing new is needed and the swap can go ahead in the same turn. The
@@ -1919,12 +1919,11 @@ else {
   // Put a sheet in <head> unapplied and answer with its __stxCssReady, the
   // promise the swap waits on. Shared by generated and page stylesheets.
   function holdCss(link){
-    link.setAttribute('media','print');
     link.setAttribute('data-stx-css-pending','');
     link.__stxCssReady=new Promise(function(resolve){
       var timer=setTimeout(finish,o.cssLoadTimeout);
       function finish(failed){
-        clearTimeout(timer);link.onload=null;link.onerror=null;link.__stxCssReady=null;
+        clearTimeout(timer);link.__stxCssReady=null;
         // A sheet that failed (a 5xx, a dropped connection) is gone for good:
         // swapping anyway painted the page with only the styles the
         // previous page happened to share, which reads as a broken layout.
@@ -1932,8 +1931,15 @@ else {
         if(failed===true&&link.parentNode)link.parentNode.removeChild(link);
         resolve(failed!==true);
       }
-      link.onload=function(){finish(false)};
-      link.onerror=function(){finish(true)};
+      // Changing a link's media after load can start another stylesheet
+      // load. Keep the authored media and enable the parsed sheet at swap.
+      // Keep these handlers after a timeout too: an abandoned prefetch
+      // must still hold its sheet whenever the download finishes.
+      link.onload=function(){
+        if(link.sheet&&link.hasAttribute('data-stx-css-pending'))link.sheet.disabled=true;
+        link.onload=null;link.onerror=null;finish(false);
+      };
+      link.onerror=function(){link.onload=null;link.onerror=null;finish(true)};
     });
     dhead().appendChild(link);
     return link.__stxCssReady;
@@ -1970,10 +1976,7 @@ else {
         link=findGeneratedCss(abs);
         if(!link)return;
       }
-      if(link.hasAttribute('data-stx-css-pending')){
-        link.removeAttribute('data-stx-css-pending');
-        link.removeAttribute('media');
-      }
+      activateCss(link,null);
       dhead().appendChild(link);
     });
   }
@@ -2023,10 +2026,14 @@ else {
   }
   // A sheet this path added goes live under the media its page declared. One
   // the document already had is left exactly as it was.
-  function releasePageCss(link,media){
+  function activateCss(link,media){
     if(!link||!link.hasAttribute('data-stx-css-pending'))return;
     link.removeAttribute('data-stx-css-pending');
-    if(media)link.setAttribute('media',media);else link.removeAttribute('media');
+    // A prefetch may have declared this same URL under a different media.
+    if(link.getAttribute('media')!==media){
+      if(media)link.setAttribute('media',media);else link.removeAttribute('media');
+    }
+    if(link.sheet)link.sheet.disabled=false;
   }
   // Before the swap, as preloadGeneratedCss: the sheets the document lacks are
   // added unapplied, and the swap waits for them so the new markup never
@@ -2045,7 +2052,7 @@ else {
       link=findPageCss(abs);
       if(!link){
         link=ce('link');
-        ['crossorigin','integrity'].forEach(function(name){
+        ['crossorigin','integrity','media'].forEach(function(name){
           if(decl.hasAttribute(name))link.setAttribute(name,decl.getAttribute(name));
         });
         link.setAttribute('rel','stylesheet');
@@ -2053,7 +2060,7 @@ else {
         holdCss(link);
       }
       pending.push(link.__stxCssReady);
-      if(live)releasePageCss(link,decl.getAttribute('media'));
+      if(live)activateCss(link,decl.getAttribute('media'));
     });
     return allCss(pending);
   }
@@ -2466,7 +2473,7 @@ else {
         var abs=new URL(href,docBase).href;
         // Present, but possibly still held unapplied by a fragment navigation
         // or a prefetch that never swapped; this page makes it live.
-        if(curLinks[abs]){releasePageCss(findPageCss(abs),l.getAttribute('media'));return}
+        if(curLinks[abs]){activateCss(findPageCss(abs),l.getAttribute('media'));return}
         curLinks[abs]=1;
         var nl=ce('link');
         Array.from(l.attributes).forEach(function(a){nl.setAttribute(a.name,a.value)});

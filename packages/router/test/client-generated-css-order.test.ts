@@ -197,7 +197,7 @@ describe('router generated stylesheet order', () => {
 
     // Downloading, but inert: it must not restyle the page still on screen.
     const pending = window.document.querySelector(`head link[href="${CSS_B}"]`) as any
-    expect(pending?.getAttribute('media')).toBe('print')
+    expect(pending?.hasAttribute('data-stx-css-pending')).toBeTrue()
     expect(window.document.querySelector('main')?.textContent).toBe('Home')
     expect(settled).toBeFalse()
 
